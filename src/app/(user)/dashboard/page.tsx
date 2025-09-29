@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import UserLayout from "@/components/user-layout"
 import { Building2, Microscope, Users, Calendar, Clock, TrendingUp } from "lucide-react"
 import { useSession } from "next-auth/react"
 
@@ -32,7 +31,7 @@ export default function DashboardPage() {
     console.log(session)
     console.log(status)
     if (status === "loading") return
-    
+
     if (!session) {
       router.push("/")
       return
@@ -58,11 +57,9 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <UserLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
-        </div>
-      </UserLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+      </div>
     )
   }
 
@@ -95,7 +92,6 @@ export default function DashboardPage() {
   ]
 
   return (
-    <UserLayout>
       <div className="space-y-6">
         {/* Welcome section */}
         <div>
@@ -200,18 +196,17 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-medium">{reservation.service}</p>
                         <p className="text-sm text-gray-600">
-                          {new Date(reservation.startTime).toLocaleDateString()} - 
-                          {new Date(reservation.startTime).toLocaleTimeString()} a 
+                          {new Date(reservation.startTime).toLocaleDateString()} -
+                          {new Date(reservation.startTime).toLocaleTimeString()} a
                           {new Date(reservation.endTime).toLocaleTimeString()}
                         </p>
                       </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        reservation.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                        reservation.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${reservation.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                          reservation.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }`}>
                         {reservation.status === 'APPROVED' ? 'Aprobada' :
-                         reservation.status === 'PENDING' ? 'Pendiente' : 'Rechazada'}
+                          reservation.status === 'PENDING' ? 'Pendiente' : 'Rechazada'}
                       </div>
                     </div>
                   ))}
@@ -221,6 +216,5 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-    </UserLayout>
   )
 }
