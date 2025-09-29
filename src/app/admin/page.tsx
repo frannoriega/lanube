@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import AdminLayout from "@/components/admin-layout"
 import { 
   Users, 
   Calendar, 
@@ -133,11 +132,9 @@ export default function AdminDashboard() {
 
   if (status === "loading" || loading) {
     return (
-      <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
         </div>
-      </AdminLayout>
     )
   }
 
@@ -146,7 +143,6 @@ export default function AdminDashboard() {
   }
 
   return (
-    <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -354,6 +350,5 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
   )
 }

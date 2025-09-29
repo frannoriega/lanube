@@ -39,6 +39,7 @@ interface AdminLayoutProps {
 
 const navigation = [
   { name: "Panel", href: "/admin", icon: LayoutDashboard },
+  { name: "Usuarios", href: "/admin/users", icon: Users },
   { 
     name: "Reservas", 
     icon: Calendar,
@@ -78,7 +79,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   const isActive = (href: string) => {
-    return pathname === href || pathname.startsWith(href + '/')
+    return pathname === href
   }
 
               const hasActiveChild = (children: { href: string }[]) => {
