@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import UserLayout from "@/components/user-layout"
 import { toast } from "sonner"
 
 export default function SettingsPage() {
@@ -104,11 +103,9 @@ export default function SettingsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <UserLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
         </div>
-      </UserLayout>
     )
   }
 
@@ -117,7 +114,6 @@ export default function SettingsPage() {
   }
 
   return (
-    <UserLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuración</h1>
@@ -244,6 +240,5 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
-    </UserLayout>
   )
 }

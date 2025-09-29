@@ -12,50 +12,55 @@ datasource db {
 
 model Account {
   id                String  @id @default(cuid())
-  userId            String
+  userId            String  @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String @map("provider_account_id")
   refresh_token     String? @db.Text
   access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
+  expires_at        Int?    @map("expires_at")
+  token_type        String? @map("token_type")
+  scope             String? 
   id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       String
+  userId       String   @map("user_id")
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model User {
-  id              String    @id @default(cuid())
-  name            String?
-  email           String    @unique
-  emailVerified   DateTime?
-  image           String?
-  lastName        String?
-  dni             String?   @unique
-  institution     String?
-  reasonToJoin    String?
-  role            UserRole  @default(USER)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  lastName      String?   @map("last_name")
+  dni           String?   @unique
+  institution   String?
+  reasonToJoin  String?   @map("reason_to_join")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  signedUp      Boolean   @default(false) @map("signed_up")
 
-  accounts        Account[]
-  sessions        Session[]
-  reservations    Reservation[]
-  checkIns        CheckIn[]
-  incidentUsers   IncidentUser[]
+  accounts      Account[]
+  sessions      Session[]
+  reservations  Reservation[]
+  checkIns      CheckIn[]
+  incidentUsers IncidentUser[]
+
+  @@map("users")
 }
 
 model VerificationToken {
@@ -72,29 +77,32 @@ enum UserRole {
 }
 
 model Reservation {
-  id          String            @id @default(cuid())
-  userId      String
-  service     ServiceType
-  startTime   DateTime
-  endTime     DateTime
-  reason      String
-  status      ReservationStatus @default(PENDING)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id        String            @id @default(cuid())
+  userId    String
+  service   ServiceType
+  startTime DateTime          @map("start_time")
+  endTime   DateTime          @map("end_time")
+  reason    String
+  status    ReservationStatus @default(PENDING)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  checkIns    CheckIn[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIns CheckIn[]
 
   @@index([userId])
   @@index([service])
   @@index([status])
   @@index([startTime])
+  @@map("reservations")
 }
 
 enum ServiceType {
   COWORKING
   LAB
   AUDITORIUM
+
+  @@map("service_types")
 }
 
 enum ReservationStatus {
@@ -102,35 +110,40 @@ enum ReservationStatus {
   APPROVED
   REJECTED
   CANCELLED
+
+  @@map("reservation_statuses")
 }
 
 model CheckIn {
-  id            String   @id @default(cuid())
-  userId        String
-  reservationId String?
-  checkInTime   DateTime @default(now())
-  checkOutTime  DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  reservationId String?   @map("reservation_id")
+  checkInTime   DateTime  @default(now()) @map("check_in_time")
+  checkOutTime  DateTime? @map("check_out_time")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation   Reservation?   @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   incidentUsers IncidentUser[]
 
   @@index([userId])
   @@index([checkInTime])
+  @@map("check_ins")
 }
 
 model Incident {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   subject     String
   description String
   status      IncidentStatus @default(OPEN)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
   resolvedAt  DateTime?
 
   incidentUsers IncidentUser[]
+
+  @@map("incidents")
 }
 
 enum IncidentStatus {
@@ -141,14 +154,15 @@ enum IncidentStatus {
 
 model IncidentUser {
   id         String   @id @default(cuid())
-  incidentId String
-  userId     String
-  checkInId  String?
-  createdAt  DateTime @default(now())
+  incidentId String   @map("incident_id")
+  userId     String   @map("user_id")
+  checkInId  String?  @map("check_in_id")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  incident  Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  checkIn   CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIn  CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
 
   @@unique([incidentId, userId])
+  @@map("incident_users")
 }

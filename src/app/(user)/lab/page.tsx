@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import UserLayout from "@/components/user-layout"
 import { CalendarIcon, Clock, Plus, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -27,7 +26,7 @@ interface Reservation {
   createdAt: string
 }
 
-export default function CoworkingPage() {
+export default function LabPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -56,7 +55,7 @@ export default function CoworkingPage() {
 
   const fetchReservations = async () => {
     try {
-      const response = await fetch('/api/reservations?service=COWORKING')
+      const response = await fetch('/api/reservations?service=LAB')
       if (response.ok) {
         const data = await response.json()
         setReservations(data)
@@ -93,7 +92,7 @@ export default function CoworkingPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          service: 'COWORKING',
+          service: 'LAB',
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
           reason
@@ -148,11 +147,9 @@ export default function CoworkingPage() {
 
   if (status === "loading" || loading) {
     return (
-      <UserLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
         </div>
-      </UserLayout>
     )
   }
 
@@ -161,12 +158,11 @@ export default function CoworkingPage() {
   }
 
   return (
-    <UserLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Coworking</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Laboratorio</h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Reserva un espacio de trabajo colaborativo en La Nube
+            Reserva acceso a equipamiento especializado en La Nube
           </p>
         </div>
 
@@ -181,10 +177,10 @@ export default function CoworkingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Plus className="h-5 w-5" />
-                  Nueva Reserva de Coworking
+                  Nueva Reserva de Laboratorio
                 </CardTitle>
                 <CardDescription>
-                  Selecciona la fecha y hora para tu espacio de coworking
+                  Selecciona la fecha y hora para acceder al laboratorio
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -258,7 +254,7 @@ export default function CoworkingPage() {
                         id="reason"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        placeholder="Describe qué trabajarás en el espacio de coworking..."
+                        placeholder="Describe qué tipo de trabajo realizarás en el laboratorio..."
                         rows={3}
                         required
                       />
@@ -278,7 +274,7 @@ export default function CoworkingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  Mis Reservas de Coworking
+                  Mis Reservas de Laboratorio
                 </CardTitle>
                 <CardDescription>
                   Gestiona tus reservas existentes
@@ -290,7 +286,7 @@ export default function CoworkingPage() {
                     <Clock className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay reservas</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Aún no tienes reservas de coworking.
+                      Aún no tienes reservas de laboratorio.
                     </p>
                   </div>
                 ) : (
@@ -305,7 +301,7 @@ export default function CoworkingPage() {
                                 {format(new Date(reservation.startTime), "PPP", { locale: es })}
                               </span>
                             </div>
-                            <div className="text-sm text-gray-600 space-y-1">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                               <p>
                                 {format(new Date(reservation.startTime), "HH:mm", { locale: es })} - 
                                 {format(new Date(reservation.endTime), "HH:mm", { locale: es })}
@@ -336,6 +332,5 @@ export default function CoworkingPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </UserLayout>
   )
 }
