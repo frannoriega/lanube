@@ -89,7 +89,6 @@ export async function GET() {
       }))
     })
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

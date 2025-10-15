@@ -19,10 +19,6 @@ export async function PATCH(
       where: { email: session.user.email }
     })
 
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
-    }
-
     const { status } = await request.json()
 
     if (!status || !['OPEN', 'RESOLVED', 'CLOSED'].includes(status)) {
@@ -70,7 +66,6 @@ export async function PATCH(
 
     return NextResponse.json(updatedIncident)
   } catch (error) {
-    console.error("Error updating incident:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

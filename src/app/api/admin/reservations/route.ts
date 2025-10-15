@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(reservations)
   } catch (error) {
-    console.error("Error fetching admin reservations:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
