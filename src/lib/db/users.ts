@@ -1,4 +1,60 @@
+/** User profile helpers */
 import { prisma } from "@/lib/prisma";
+
+export async function getPublicUserByEmail(email: string) {
+  return prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      lastName: true,
+      email: true,
+      dni: true,
+      institution: true,
+      reasonToJoin: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
+export async function updateUserProfileByEmail(
+  email: string,
+  data: { name?: string; lastName?: string; dni?: string; institution?: string | null; reasonToJoin?: string }
+) {
+  // If DNI provided, ensure unique per user (skip same user)
+  if (data.dni) {
+    const existing = await prisma.user.findFirst({ where: { dni: data.dni, NOT: { email } } });
+    if (existing) {
+      throw new Error("DNI ya registrado por otro usuario");
+    }
+  }
+
+  return prisma.user.update({
+    where: { email },
+    data: {
+      name: data.name,
+      lastName: data.lastName,
+      dni: data.dni,
+      institution: data.institution ?? null,
+      reasonToJoin: data.reasonToJoin,
+    },
+    select: {
+      id: true,
+      name: true,
+      lastName: true,
+      email: true,
+      dni: true,
+      institution: true,
+      reasonToJoin: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
 import { Ban, RegisteredUser } from "@prisma/client";
 
 interface RegisteredUserWithBans extends RegisteredUser {

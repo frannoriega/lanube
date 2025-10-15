@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { ResourceType, UserRole } from "@prisma/client"
+import { isAdminUser, listAdminReservationsByType } from "@/lib/db/adminReservations"
+import { ResourceType } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
@@ -13,13 +13,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin
-    const user = await prisma.registeredUser.findUnique({
-      where: { userId: session.userId }
-    })
-
-    console.log(user)
-
-    if (!user || user.role !== UserRole.ADMIN) {
+    const isAdmin = await isAdminUser(session.userId)
+    if (!isAdmin) {
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
 
@@ -30,37 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Tipo de recurso inválido" }, { status: 400 })
     }
 
-    const reservations = await prisma.reservation.findMany({
-      where: {
-        resource: {
-          fungibleResource: {
-            type: service as ResourceType
-          }
-        }
-      },
-      include: {
-        resource: true,
-        registeredUser: {
-          select: {
-            name: true,
-            lastName: true,
-            dni: true,
-            institution: true,
-            user: {
-              select: {
-                email: true
-              }
-            }
-          },
-          where: {
-            userId: session.userId
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const reservations = await listAdminReservationsByType(service as ResourceType)
 
     return NextResponse.json(reservations)
   } catch (error) {
