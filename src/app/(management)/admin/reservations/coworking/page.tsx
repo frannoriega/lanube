@@ -1,26 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  AlertCircle,
   CheckCircle,
-  XCircle,
   Clock,
-  AlertCircle
+  XCircle
 } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 interface Reservation {
   id: string
-  user: {
+  registeredUser: {
     name: string
     lastName: string
-    email: string
+    user: {
+      email: string
+    }
     dni: string
     institution: string | null
   }
@@ -55,6 +57,7 @@ export default function CoworkingReservationsPage() {
       const response = await fetch('/api/admin/reservations?service=COWORKING')
       if (response.ok) {
         const data = await response.json()
+        console.log("reservations", data)
         setReservations(data)
       }
     } catch {
@@ -212,7 +215,7 @@ export default function CoworkingReservationsPage() {
                         <div className="flex items-center gap-2 mb-3">
                           {getStatusIcon(reservation.status)}
                           <h3 className="font-semibold text-lg">
-                            {reservation.user.name} {reservation.user.lastName}
+                            {reservation.registeredUser.name} {reservation.registeredUser.lastName}
                           </h3>
                           {getStatusBadge(reservation.status)}
                         </div>
@@ -220,10 +223,10 @@ export default function CoworkingReservationsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Información del Usuario</p>
-                            <p className="text-sm">Email: {reservation.user.email}</p>
-                            <p className="text-sm">DNI: {reservation.user.dni}</p>
-                            {reservation.user.institution && (
-                              <p className="text-sm">Institución: {reservation.user.institution}</p>
+                            <p className="text-sm">Email: {reservation.registeredUser.user.email}</p>
+                            <p className="text-sm">DNI: {reservation.registeredUser.dni}</p>
+                            {reservation.registeredUser.institution && (
+                              <p className="text-sm">Institución: {reservation.registeredUser.institution}</p>
                             )}
                           </div>
                           <div>
@@ -292,7 +295,7 @@ export default function CoworkingReservationsPage() {
                         <div className="flex items-center gap-2 mb-3">
                           {getStatusIcon(reservation.status)}
                           <h3 className="font-semibold text-lg">
-                            {reservation.user.name} {reservation.user.lastName}
+                            {reservation.registeredUser.name} {reservation.registeredUser.lastName}
                           </h3>
                           {getStatusBadge(reservation.status)}
                         </div>
@@ -300,10 +303,10 @@ export default function CoworkingReservationsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Información del Usuario</p>
-                            <p className="text-sm">Email: {reservation.user.email}</p>
-                            <p className="text-sm">DNI: {reservation.user.dni}</p>
-                            {reservation.user.institution && (
-                              <p className="text-sm">Institución: {reservation.user.institution}</p>
+                            <p className="text-sm">Email: {reservation.registeredUser.user.email}</p>
+                            <p className="text-sm">DNI: {reservation.registeredUser.dni}</p>
+                            {reservation.registeredUser.institution && (
+                              <p className="text-sm">Institución: {reservation.registeredUser.institution}</p>
                             )}
                           </div>
                           <div>
@@ -351,7 +354,7 @@ export default function CoworkingReservationsPage() {
                         <div className="flex items-center gap-2 mb-3">
                           {getStatusIcon(reservation.status)}
                           <h3 className="font-semibold text-lg">
-                            {reservation.user.name} {reservation.user.lastName}
+                            {reservation.registeredUser.name} {reservation.registeredUser.lastName}
                           </h3>
                           {getStatusBadge(reservation.status)}
                         </div>
@@ -359,10 +362,10 @@ export default function CoworkingReservationsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Información del Usuario</p>
-                            <p className="text-sm">Email: {reservation.user.email}</p>
-                            <p className="text-sm">DNI: {reservation.user.dni}</p>
-                            {reservation.user.institution && (
-                              <p className="text-sm">Institución: {reservation.user.institution}</p>
+                            <p className="text-sm">Email: {reservation.registeredUser.user.email}</p>
+                            <p className="text-sm">DNI: {reservation.registeredUser.dni}</p>
+                            {reservation.registeredUser.institution && (
+                              <p className="text-sm">Institución: {reservation.registeredUser.institution}</p>
                             )}
                           </div>
                           <div>
