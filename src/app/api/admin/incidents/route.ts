@@ -15,11 +15,7 @@ export async function GET() {
       where: { email: session.user.email }
     })
 
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
-    }
-
-    const incidents = await prisma.incident.findMany({
+   const incidents = await prisma.incident.findMany({
       include: {
         incidentUsers: {
           include: {
@@ -41,7 +37,6 @@ export async function GET() {
 
     return NextResponse.json(incidents)
   } catch (error) {
-    console.error("Error fetching incidents:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
@@ -58,10 +53,6 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     })
-
-    if (!user || user.role !== 'ADMIN') {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
-    }
 
     const { subject, description } = await request.json()
 
@@ -128,7 +119,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(incidentWithUsers, { status: 201 })
   } catch (error) {
-    console.error("Error creating incident:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

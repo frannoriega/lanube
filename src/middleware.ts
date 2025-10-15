@@ -1,38 +1,49 @@
-import { NextRequest, NextResponse } from "next/server"
+import { UserRole } from "@prisma/client"
 import { getToken } from "next-auth/jwt"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ 
+  const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET 
+    secret: process.env.NEXTAUTH_SECRET
   })
   const isAuth = !!token
+  const isSignedUp = isAuth && token?.signedUp
+  const isBanned = isAuth && token?.banned
+  const role = token?.role
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth")
-  const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard")
-  const isProtectedPage = request.nextUrl.pathname.startsWith("/coworking") || 
-                         request.nextUrl.pathname.startsWith("/lab") || 
-                         request.nextUrl.pathname.startsWith("/auditorium") ||
-                         request.nextUrl.pathname.startsWith("/settings") ||
-                         request.nextUrl.pathname.startsWith("/admin")
 
-  if (isAuthPage && isAuth) {
+  const requiresSession = 
+    request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/user")
+
+  const requiresAdmin = 
+    request.nextUrl.pathname.startsWith("/admin")
+
+  if (!isAuth && requiresSession) {
+    return NextResponse.redirect(new URL("/auth/signin", request.url))
+  }
+
+  if (requiresSession && isBanned) {
+    return NextResponse.redirect(new URL("/banned", request.url))
+  }
+
+  if (isAuthPage && isSignedUp) {
     // If user is already authenticated and trying to access auth pages, redirect to dashboard
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/user/dashboard", request.url))
   }
 
-  // Handle root path - redirect authenticated users to dashboard
-  if (request.nextUrl.pathname === "/" && isAuth) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+  if (requiresSession && !isSignedUp) {
+    return NextResponse.redirect(new URL("/auth/signup", request.url))
   }
 
-  if (!isAuth && (isDashboardPage || isProtectedPage)) {
-    // If user is not authenticated and trying to access protected pages, redirect to home
-    return NextResponse.redirect(new URL("/", request.url))
+  if (isSignedUp && requiresAdmin && role !== UserRole.ADMIN) {
+    return NextResponse.redirect(new URL("/user/dashboard", request.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/coworking/:path*", "/lab/:path*", "/auditorium/:path*", "/admin/:path*", "/auth/:path*", "/settings/:path*"]
+  matcher: ["/", "/user/:path*", "/admin/:path*", "/auth/:path*"]
 }

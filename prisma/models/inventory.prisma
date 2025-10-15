@@ -1,0 +1,33 @@
+// Inventory and Purchase Orders
+
+model Inventory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  quantity    Int
+  location    String?
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy      RegisteredUser  @relation(fields: [createdById], references: [id])
+  purchaseOrders PurchaseOrder[]
+
+  @@map("inventories")
+}
+
+model PurchaseOrder {
+  id          String      @id @default(cuid())
+  inventoryId String      @map("inventory_id")
+  requestedBy String      @map("requested_by")
+  quantity    Int
+  status      OrderStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  inventory      Inventory      @relation(fields: [inventoryId], references: [id])
+  registeredUser RegisteredUser @relation(fields: [requestedBy], references: [id])
+
+  @@map("purchase_orders")
+}

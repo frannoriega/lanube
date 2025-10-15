@@ -59,14 +59,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-      console.error('Resend error:', error)
       return NextResponse.json(
         { message: "Error al enviar el email" },
         { status: 500 }
       )
     }
 
-    console.log('Email sent successfully:', data)
 
     return NextResponse.json(
       { message: "Email enviado exitosamente" },
@@ -74,7 +72,6 @@ export async function POST(request: NextRequest) {
     )
 
   } catch (error) {
-    console.error('Email login error:', error)
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }
