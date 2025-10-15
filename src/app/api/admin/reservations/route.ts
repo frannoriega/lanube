@@ -1,44 +1,59 @@
-import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { ServiceType } from "@prisma/client"
+import { ResourceType, UserRole } from "@prisma/client"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
-    
-    if (!session?.user?.email) {
+
+    console.log(session)
+    if (!session?.user?.email || !session?.userId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
     // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+    const user = await prisma.registeredUser.findUnique({
+      where: { userId: session.userId }
     })
 
-    if (!user || user.role !== 'ADMIN') {
+    console.log(user)
+
+    if (!user || user.role !== UserRole.ADMIN) {
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
     const service = searchParams.get('service')
 
-    const whereClause: { service?: ServiceType } = {}
-
-    if (service && ['COWORKING', 'LAB', 'AUDITORIUM'].includes(service)) {
-      whereClause.service = service as ServiceType
+    if (!service || !ResourceType[service as keyof typeof ResourceType]) {
+      return NextResponse.json({ message: "Tipo de recurso inválido" }, { status: 400 })
     }
 
     const reservations = await prisma.reservation.findMany({
-      where: whereClause,
+      where: {
+        resource: {
+          fungibleResource: {
+            type: service as ResourceType
+          }
+        }
+      },
       include: {
-        user: {
+        resource: true,
+        registeredUser: {
           select: {
             name: true,
             lastName: true,
-            email: true,
             dni: true,
-            institution: true
+            institution: true,
+            user: {
+              select: {
+                email: true
+              }
+            }
+          },
+          where: {
+            userId: session.userId
           }
         }
       },
@@ -49,6 +64,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(reservations)
   } catch (error) {
+    console.error(error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

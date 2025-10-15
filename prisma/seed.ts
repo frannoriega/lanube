@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, ResourceType } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -7,32 +7,34 @@ async function main() {
    const meetingRoomResource = await prisma.fungibleResource.create({
     data: {
       name: "Sala de reuniones",
-      type: "MEETING",
-      capacity: -1,
+      type: ResourceType.MEETING,
+      capacity: 6,
+      isExclusive: true,
     },
    })
 
    const laboratoryResource = await prisma.fungibleResource.create({
     data: {
       name: "Laboratorio",
-      type: "LAB",
-      capacity: -1,
+      type: ResourceType.LAB,
+      capacity: 8,
+      isExclusive: true,
     },
    })
 
    const auditoriumResource = await prisma.fungibleResource.create({
     data: {
       name: "Auditorio",
-      type: "AUDITORIUM",
-      capacity: -1,
+      type: ResourceType.AUDITORIUM,
+      capacity: 40,
     },
    })
 
    const coworkingResource = await prisma.fungibleResource.create({
     data: {
       name: "Coworking",
-      type: "COWORKING",
-      capacity: 40,
+      type: ResourceType.COWORKING,
+      capacity: 12,
     },
    })
 
@@ -63,6 +65,7 @@ main()
     await prisma.$disconnect()
   })
   .catch(async (e) => {
+    console.error(e)
     await prisma.$disconnect()
     process.exit(1)
   })

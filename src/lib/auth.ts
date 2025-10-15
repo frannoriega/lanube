@@ -2,8 +2,8 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { UserRole } from "@prisma/client"
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { prisma } from "./prisma"
 import { getUserByEmail } from "./db/users"
+import { prisma } from "./prisma"
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60 // 7 days
 
@@ -13,6 +13,7 @@ declare module 'next-auth' {
     bannedReason: string
     bannedUntil: Date
     role: UserRole
+    userId: string
   }
 
   interface JWT {
@@ -20,6 +21,7 @@ declare module 'next-auth' {
     bannedReason: string
     bannedUntil: Date
     role: UserRole
+    userId: string
   }
 }
 
@@ -38,6 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.bannedReason = token.bannedReason as string
         session.bannedUntil = token.bannedUntil as Date
         session.role = token.role as UserRole
+        session.userId = token.userId as string
         if (token.exp) {
           session.expires = new Date(token.exp * 1000) as any
         }
@@ -53,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const activeBan = registeredUser.bans[0] ?? null
           token.signedUp = registeredUser
           token.role = registeredUser.role
+          token.userId = registeredUser.userId
           if (activeBan) {
             const minExp = Math.min(activeBan.endTime?.getTime() ?? Infinity, defaultExp)
             token.banned = true
