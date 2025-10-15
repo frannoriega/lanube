@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { createReservation, getExpandedReservationsForCalendar } from "@/lib/db/reservations";
-import { prisma } from "@/lib/prisma";
+import { createReservationForType, getCalendarDataByType, getRegisteredUserIdByEmail } from "@/lib/db/resourceCalendar";
 import { ResourceType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -40,50 +39,21 @@ export async function GET(
       );
     }
 
-    // Get user's registered user ID for filtering
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { registeredUser: true },
-    });
-
-    if (!user?.registeredUser) {
+    const registeredUserId = await getRegisteredUserIdByEmail(session.user.email)
+    if (!registeredUserId) {
       return NextResponse.json(
         { error: "Usuario no encontrado" },
         { status: 404 }
       );
     }
-
-    // Get expanded reservations for all resources of this type
-    // PostgreSQL function handles finding fungible resources and their individual resources
-    console.log('Fetching reservations for:', {
+    const data = await getCalendarDataByType(
       resourceType,
-      userId: user.registeredUser.id,
-      startDate,
-      endDate
-    });
-
-    const occurrences = await getExpandedReservationsForCalendar(
-      resourceType,
-      user.registeredUser.id,
+      registeredUserId,
       new Date(startDate),
       new Date(endDate)
-    );
+    )
 
-    console.log(`Found ${occurrences.length} occurrences`);
-
-    // Get fungible resource info for capacity/metadata
-    const fungibleResource = await prisma.fungibleResource.findFirst({
-      where: { type: resourceType },
-      include: { resources: true },
-    });
-
-    console.log('Fungible resource:', fungibleResource?.name, 'Resources:', fungibleResource?.resources.length);
-
-    return NextResponse.json({
-      occurrences,
-      capacity: fungibleResource?.capacity || 1,
-      resources: fungibleResource?.resources || [],
-    });
+    return NextResponse.json(data);
   } catch (error) {
     const { type } = await params;
     console.error(`Error fetching ${type} reservations:`, error);
@@ -109,12 +79,8 @@ export async function POST(
       return NextResponse.json({ error: "Tipo de recurso inválido" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { registeredUser: true },
-    });
-
-    if (!user?.registeredUser) {
+    const registeredUserId = await getRegisteredUserIdByEmail(session.user.email)
+    if (!registeredUserId) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
@@ -163,43 +129,14 @@ export async function POST(
       );
     }
 
-    // Get an available resource of this type
-    const fungibleResource = await prisma.fungibleResource.findFirst({
-      where: { type: resourceType },
-      include: { resources: true },
-    });
-
-    if (!fungibleResource || fungibleResource.resources.length === 0) {
-      return NextResponse.json(
-        { error: `No hay recursos de tipo ${type} disponibles` },
-        { status: 404 }
-      );
-    }
-
-    // Use the first available resource (in a real app, you'd check availability)
-    const resourceId = fungibleResource.resources[0].id;
-
-    console.log('Creating reservation:', {
+    const reservation = await createReservationForType(
       resourceType,
-      resourceId,
-      userId: user.registeredUser.id,
-      startTime: startDateTime.toISOString(),
-      endTime: endDateTime.toISOString(),
-      reason
-    });
-
-    // Create the reservation
-    const reservation = await createReservation({
-      reservableType: "USER",
-      reservableId: user.registeredUser.id,
-      resourceId,
-      eventType: eventType || "MEETING",
+      registeredUserId,
+      startDateTime,
+      endDateTime,
       reason,
-      startTime: startDateTime,
-      endTime: endDateTime,
-    });
-
-    console.log('Created reservation:', reservation.id);
+      eventType || "MEETING"
+    )
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error: any) {

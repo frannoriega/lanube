@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { ReservationStatus, UserRole } from "@prisma/client"
+import { isAdminUser, setReservationStatus } from "@/lib/db/adminReservations"
+import { ReservationStatus } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
@@ -15,11 +15,8 @@ export async function PATCH(
     }
 
     // Check if user is admin
-    const user = await prisma.registeredUser.findUnique({
-      where: { userId: session.userId }
-    })
-
-    if (!user || user.role !== UserRole.ADMIN) {
+    const isAdmin = await isAdminUser(session.userId)
+    if (!isAdmin) {
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
 
@@ -31,38 +28,9 @@ export async function PATCH(
 
     const resolvedParams = await params
     
-    const reservation = await prisma.reservation.findUnique({
-      where: { id: resolvedParams.id }
-    })
+    const reservation = await setReservationStatus(resolvedParams.id, status as ReservationStatus)
 
-    if (!reservation) {
-      return NextResponse.json({ message: "Reserva no encontrada" }, { status: 404 })
-    }
-
-    const updatedReservation = await prisma.reservation.update({
-      where: { id: resolvedParams.id },
-      data: { 
-        status: status as ReservationStatus,
-        updatedAt: new Date()
-      },
-      include: {
-        registeredUser: {
-          select: {
-            name: true,
-            lastName: true,
-            user: {
-              select: {
-                email: true
-              }
-            },
-            dni: true,
-            institution: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(updatedReservation)
+    return NextResponse.json(reservation)
   } catch (error) {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
