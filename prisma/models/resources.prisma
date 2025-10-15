@@ -1,12 +1,13 @@
 // Resource Management
 
 model FungibleResource {
-  id        String       @id @default(cuid())
-  name      String
-  type      ResourceType
-  capacity  Int
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
+  id          String       @id @default(cuid())
+  name        String
+  type        ResourceType @map("type")
+  capacity    Int
+  isExclusive Boolean      @default(false) @map("is_exclusive")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
 
   resources Resource[]
 
