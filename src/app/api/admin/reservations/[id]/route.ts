@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { ReservationStatus } from "@prisma/client"
+import { ReservationStatus, UserRole } from "@prisma/client"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
   request: NextRequest,
@@ -10,16 +10,16 @@ export async function PATCH(
   try {
     const session = await auth()
     
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.userId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
     // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+    const user = await prisma.registeredUser.findUnique({
+      where: { userId: session.userId }
     })
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || user.role !== UserRole.ADMIN) {
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
 
@@ -46,11 +46,15 @@ export async function PATCH(
         updatedAt: new Date()
       },
       include: {
-        user: {
+        registeredUser: {
           select: {
             name: true,
             lastName: true,
-            email: true,
+            user: {
+              select: {
+                email: true
+              }
+            },
             dni: true,
             institution: true
           }
