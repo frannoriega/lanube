@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { checkoutActiveCheckinByUserId, isAdminByEmail } from "@/lib/db/adminStats"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
   request: NextRequest,
@@ -13,12 +13,8 @@ export async function PATCH(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    // Check if user is admin
-    const admin = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!admin || admin.role !== 'ADMIN') {
+    const isAdmin = await isAdminByEmail(session.user.email)
+    if (!isAdmin) {
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
 
@@ -30,46 +26,11 @@ export async function PATCH(
 
     const resolvedParams = await params
     
-    // Find check-in by user ID (not check-in ID)
-    const checkIn = await prisma.checkIn.findFirst({
-      where: {
-        user: {
-          id: resolvedParams.id
-        },
-        checkOutTime: null
-      }
-    })
-
-    if (!checkIn) {
+    const updated = await checkoutActiveCheckinByUserId(resolvedParams.id)
+    if (!updated) {
       return NextResponse.json({ message: "Check-in no encontrado o ya cerrado" }, { status: 404 })
     }
-
-    // Update check-out time
-    const updatedCheckIn = await prisma.checkIn.update({
-      where: { id: checkIn.id },
-      data: { 
-        checkOutTime: new Date(),
-        updatedAt: new Date()
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            lastName: true,
-            email: true
-          }
-        },
-        reservation: {
-          select: {
-            service: true,
-            startTime: true,
-            endTime: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(updatedCheckIn)
+    return NextResponse.json(updated)
   } catch (error) {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }

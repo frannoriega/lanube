@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { ServiceType } from "@prisma/client"
+import { createUserReservation, getUserByEmail, listUserReservations } from "@/lib/db/userReservations"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,9 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
+    const user = await getUserByEmail(session.user.email)
 
     if (!user) {
       return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 })
@@ -22,20 +19,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const service = searchParams.get('service')
 
-    const whereClause: { userId: string; service?: ServiceType } = {
+    const whereClause: { userId: string; service?: string } = {
       userId: user.id
     }
 
     if (service && ['COWORKING', 'LAB', 'AUDITORIUM'].includes(service)) {
-      whereClause.service = service as ServiceType
+      whereClause.service = service as string
     }
 
-    const reservations = await prisma.reservation.findMany({
-      where: whereClause,
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const reservations = await listUserReservations(whereClause.userId, whereClause.service)
 
     return NextResponse.json(reservations)
   } catch (error) {
@@ -51,9 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
+    const user = await getUserByEmail(session.user.email)
 
     if (!user) {
       return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 })
@@ -78,41 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "No se pueden hacer reservas en el pasado" }, { status: 400 })
     }
 
-    // Check for overlapping reservations
-    const overlappingReservation = await prisma.reservation.findFirst({
-      where: {
-        service,
-        status: {
-          in: ['PENDING', 'APPROVED']
-        },
-        OR: [
-          {
-            startTime: {
-              lt: endDateTime
-            },
-            endTime: {
-              gt: startDateTime
-            }
-          }
-        ]
-      }
-    })
-
-    if (overlappingReservation) {
-      return NextResponse.json({ message: "Ya existe una reserva en ese horario" }, { status: 400 })
-    }
-
-    // Create reservation
-    const reservation = await prisma.reservation.create({
-      data: {
-        userId: user.id,
-        service,
-        startTime: startDateTime,
-        endTime: endDateTime,
-        reason,
-        status: 'PENDING'
-      }
-    })
+    const reservation = await createUserReservation(user.id, service as string, startDateTime, endDateTime, reason)
 
     return NextResponse.json(reservation, { status: 201 })
   } catch (error) {

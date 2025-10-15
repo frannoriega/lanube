@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { checkoutUserCheckin, getUserByEmail } from "@/lib/db/checkins"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
   request: NextRequest,
@@ -13,9 +13,7 @@ export async function PATCH(
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
+    const user = await getUserByEmail(session.user.email)
 
     if (!user) {
       return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 })
@@ -29,37 +27,11 @@ export async function PATCH(
 
     const resolvedParams = await params
     
-    const checkIn = await prisma.checkIn.findFirst({
-      where: {
-        id: resolvedParams.id,
-        userId: user.id,
-        checkOutTime: null
-      }
-    })
-
-    if (!checkIn) {
+    const updated = await checkoutUserCheckin(user.id, resolvedParams.id)
+    if (!updated) {
       return NextResponse.json({ message: "Check-in no encontrado o ya cerrado" }, { status: 404 })
     }
-
-    // Update check-out time
-    const updatedCheckIn = await prisma.checkIn.update({
-      where: { id: resolvedParams.id },
-      data: { 
-        checkOutTime: new Date(),
-        updatedAt: new Date()
-      },
-      include: {
-        reservation: {
-          select: {
-            service: true,
-            startTime: true,
-            endTime: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(updatedCheckIn)
+    return NextResponse.json(updated)
   } catch (error) {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
