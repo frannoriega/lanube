@@ -77,7 +77,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(checkIn, { status: 201 })
   } catch (error) {
-    console.error("Error creating check-in:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
@@ -117,7 +116,6 @@ export async function GET() {
 
     return NextResponse.json(activeCheckIn)
   } catch (error) {
-    console.error("Error fetching check-in:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

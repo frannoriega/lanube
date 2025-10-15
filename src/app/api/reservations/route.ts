@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(reservations)
   } catch (error) {
-    console.error("Error fetching reservations:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
@@ -117,7 +116,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(reservation, { status: 201 })
   } catch (error) {
-    console.error("Error creating reservation:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
