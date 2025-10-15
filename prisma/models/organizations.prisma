@@ -1,0 +1,49 @@
+// Organizations and Teams
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  memberships OrgMembership[]
+  teams       Team[]
+
+  @@map("organizations")
+}
+
+model OrgMembership {
+  organizationId String @map("organization_id")
+  userId         String @map("user_id")
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@map("org_memberships")
+}
+
+model Team {
+  id             String   @id @default(cuid())
+  name           String
+  organizationId String   @map("organization_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId String @map("team_id")
+  userId String @map("user_id")
+
+  team           Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("team_members")
+}

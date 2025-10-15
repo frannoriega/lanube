@@ -1,0 +1,56 @@
+// Proposals and Comments
+
+model Proposal {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+  authorId    String         @map("author_id")
+  status      ProposalStatus @default(PENDING)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  author   RegisteredUser    @relation(fields: [authorId], references: [id])
+  comments ProposalComment[]
+  likes    ProposalLike[]
+
+  @@index([status])
+  @@map("proposals")
+}
+
+model ProposalComment {
+  id         String   @id @default(cuid())
+  proposalId String   @map("proposal_id")
+  authorId   String   @map("author_id")
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  proposal Proposal              @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author   RegisteredUser        @relation(fields: [authorId], references: [id])
+  likes    ProposalCommentLike[]
+
+  @@index([proposalId])
+  @@map("proposal_comments")
+}
+
+model ProposalLike {
+  proposalId String @map("proposal_id")
+  userId     String @map("user_id")
+
+  proposal       Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([proposalId, userId])
+  @@map("proposal_likes")
+}
+
+model ProposalCommentLike {
+  commentId String @map("comment_id")
+  userId    String @map("user_id")
+
+  comment        ProposalComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
+  @@map("proposal_comment_likes")
+}

@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
     )
 
   } catch (error) {
-    console.error('Magic link validation error:', error)
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }

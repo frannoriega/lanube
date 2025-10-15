@@ -1,0 +1,66 @@
+// Enums used across the application
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum IncidentStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+
+  @@map("incident_statuses")
+}
+
+enum OrderStatus {
+  PENDING
+  DONE
+  CANCELLED
+
+  @@map("order_statuses")
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("proposal_statuses")
+}
+
+enum ReservableType {
+  USER
+  EVENT
+  ORGANIZATION
+  TEAM
+
+  @@map("reservable_types")
+}
+
+enum EventType {
+  MEETING
+  WORKSHOP
+  CONFERENCE
+  OTHER
+
+  @@map("event_types")
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@map("reservation_statuses")
+}
+
+enum ResourceType {
+  MEETING
+  AUDITORIUM
+  COWORKING
+  LAB
+
+  @@map("resource_types")
+}

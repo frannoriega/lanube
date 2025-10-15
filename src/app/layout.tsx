@@ -1,20 +1,18 @@
+import { SessionProvider } from "@/components/providers/session/session-provider";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "@/components/session-provider";
-import { ThemeProvider } from "next-themes";
-import { Toaster } from "@/components/ui/sonner";
-import LandingPage from "./page";
-import { auth } from "@/lib/auth";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const roboto = Roboto({
+  variable: "--font-roboto",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "700", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const robotoMono = Roboto_Mono({
+  variable: "--font-roboto-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
 });
 
 export const metadata: Metadata = {
@@ -27,17 +25,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth()
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-100 dark:bg-slate-800 transition-colors`}
+        className={`${roboto.variable} ${robotoMono.variable} font-sans h-full antialiased -z-100 bg-slate-100 dark:bg-slate-800 transition-colors`}
       >
         <SessionProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="la-nube-theme" forcedTheme={session == null ? 'light' : undefined}>
             {children}
-            <Toaster />
-          </ThemeProvider>
         </SessionProvider>
       </body>
     </html>

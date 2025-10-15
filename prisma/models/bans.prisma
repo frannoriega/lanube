@@ -1,0 +1,15 @@
+// Ban Management
+
+model Ban {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  reason    String
+  startTime DateTime  @map("start_time")
+  endTime   DateTime? @map("end_time")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("bans")
+}

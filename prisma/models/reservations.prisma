@@ -1,0 +1,82 @@
+// Reservations and Check-ins
+
+model Reservation {
+  id             String            @id @default(cuid())
+  reservableType ReservableType    @map("reservable_type")
+  reservableId   String            @map("reservable_id")
+  resourceId     String?           @map("resource_id")
+  eventType      EventType         @map("event_type")
+  reason         String
+  deniedReason   String?           @map("denied_reason")
+  status         ReservationStatus @default(PENDING)
+  startTime      DateTime          @map("start_time")
+  endTime        DateTime          @map("end_time")
+  isRecurring    Boolean           @default(false) @map("is_recurring")
+  rrule          String?
+  recurrenceEnd  DateTime?         @map("recurrence_end")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  resource       Resource?              @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  registeredUser RegisteredUser?        @relation(fields: [reservableId], references: [id], onDelete: Cascade)
+  checkIns       CheckIn[]
+  exceptions     ReservationException[]
+
+  @@index([reservableType, reservableId])
+  @@index([resourceId])
+  @@index([status])
+  @@index([startTime, endTime])
+  @@map("reservations")
+}
+
+model ReservationException {
+  id            String    @id @default(cuid())
+  reservationId String    @map("reservation_id")
+  exceptionDate DateTime  @map("exception_date")
+  isCancelled   Boolean   @default(false) @map("is_cancelled")
+  newStartTime  DateTime? @map("new_start_time")
+  newEndTime    DateTime? @map("new_end_time")
+  reason        String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([exceptionDate])
+  @@map("reservation_exceptions")
+}
+
+model ReservationLedger {
+  id                   String   @id @default(cuid())
+  reservationId        String   @map("reservation_id")
+  occurrenceStartTime  DateTime @map("occurrence_start_time")
+  occurrenceEndTime    DateTime @map("occurrence_end_time")
+  reservableType       ReservableType @map("reservable_type")
+  reservableId         String   @map("reservable_id")
+  resourceId           String   @map("resource_id")
+  eventType            EventType @map("event_type")
+  reason               String?
+  actorSize            Int      @map("actor_size")
+  status               ReservationStatus
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("reservation_ledger")
+}
+
+model CheckIn {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  reservationId String?   @map("reservation_id")
+  checkInTime   DateTime  @default(now()) @map("check_in_time")
+  checkOutTime  DateTime? @map("check_out_time")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation    Reservation?   @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  incidentUsers  IncidentUser[]
+
+  @@index([userId])
+  @@index([checkInTime])
+  @@map("check_ins")
+}

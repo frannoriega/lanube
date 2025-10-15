@@ -60,7 +60,6 @@ export async function PATCH(
 
     return NextResponse.json(updatedReservation)
   } catch (error) {
-    console.error("Error updating reservation:", error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
