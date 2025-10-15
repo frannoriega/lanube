@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { createReservation, getExpandedReservationsForCalendar } from "@/lib/db/reservations";
-import { prisma } from "@/lib/prisma";
+import { createReservationForType, getCalendarDataByType, getRegisteredUserIdByEmail } from "@/lib/db/resourceCalendar";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET: Fetch expanded reservations for meeting room
@@ -23,39 +22,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user's registered user ID for filtering
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { registeredUser: true },
-    });
-
-    if (!user?.registeredUser) {
+    const registeredUserId = await getRegisteredUserIdByEmail(session.user.email)
+    if (!registeredUserId) {
       return NextResponse.json(
         { error: "Usuario no encontrado" },
         { status: 404 }
       );
     }
-
-    // Get expanded reservations for all meeting room resources
-    // PostgreSQL function handles finding all fungible resources and their resources
-    const occurrences = await getExpandedReservationsForCalendar(
-      "MEETING",
-      user.registeredUser.id,
-      new Date(startDate),
-      new Date(endDate)
-    );
-
-    // Get fungible resource info for capacity/metadata
-    const meetingRoomResource = await prisma.fungibleResource.findFirst({
-      where: { type: "MEETING" },
-      include: { resources: true },
-    });
-
-    return NextResponse.json({
-      occurrences,
-      capacity: meetingRoomResource?.capacity || 1,
-      resources: meetingRoomResource?.resources || [],
-    });
+    const data = await getCalendarDataByType("MEETING", registeredUserId, new Date(startDate), new Date(endDate))
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching meeting room reservations:", error);
     return NextResponse.json(
@@ -74,12 +49,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { registeredUser: true },
-    });
-
-    if (!user?.registeredUser) {
+    const registeredUserId = await getRegisteredUserIdByEmail(session.user.email)
+    if (!registeredUserId) {
       return NextResponse.json(
         { error: "Usuario no encontrado" },
         { status: 404 }
@@ -134,32 +105,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get an available meeting room resource
-    const meetingRoomResource = await prisma.fungibleResource.findFirst({
-      where: { type: "MEETING" },
-      include: { resources: true },
-    });
-
-    if (!meetingRoomResource || meetingRoomResource.resources.length === 0) {
-      return NextResponse.json(
-        { error: "No hay salas de reuniones disponibles" },
-        { status: 404 }
-      );
-    }
-
-    // Use the first available resource (in a real app, you'd check availability)
-    const resourceId = meetingRoomResource.resources[0].id;
-
-    // Create the reservation
-    const reservation = await createReservation({
-      reservableType: "USER",
-      reservableId: user.registeredUser.id,
-      resourceId,
-      eventType: eventType || "MEETING",
+    const reservation = await createReservationForType(
+      "MEETING",
+      registeredUserId,
+      startDateTime,
+      endDateTime,
       reason,
-      startTime: startDateTime,
-      endTime: endDateTime,
-    });
+      eventType || "MEETING"
+    )
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error: any) {
