@@ -23,7 +23,7 @@ export default function BannedPage() {
             <Card className="w-full max-w-md relative z-20 glass-card text-white">
                 <CardHeader className="text-center">
                     <div className="mx-auto bg-slate-100 flex items-center justify-center rounded-full p-4">
-                        <LogoLaNube width={256} height={256} />
+                        <LogoLaNube size={256} />
                     </div>
                     <CardTitle className="text-2xl">Acceso denegado</CardTitle>
                     <CardDescription className="text-white sr-only">
