@@ -1,9 +1,9 @@
 "use client";
-import { WeekCalendar, type ReservationFormData } from "@/components/organisms/calendar";
+import { WeekCalendar } from "@/components/organisms/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResourceType } from "@prisma/client";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 interface EventTypeOption { value: string; label: string }
 
@@ -20,7 +20,7 @@ export function CalendarTemplateClient({
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   apiEndpoint: string;
-  resourceType: string;
+  resourceType: ResourceType;
   eventTypes: EventTypeOption[];
   defaultEventType: string;
 }) {
@@ -30,40 +30,11 @@ export function CalendarTemplateClient({
 
   useEffect(() => {
     if (status === "loading") return;
-    if (!session) return;
-    const run = async () => {
-      try {
-        const response = await fetch("/api/user/profile");
-        if (response.ok) {
-          const data = await response.json();
-          setUserId(data.id);
-        }
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-    run();
+    if (!session || !session.userId) return;
+    setUserId(session.userId);
+    setLoadingUser(false);
   }, [session, status]);
 
-  const handleCreateReservation = useCallback(async (data: ReservationFormData) => {
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        startTime: data.startTime.toISOString(),
-        endTime: data.endTime.toISOString(),
-        reason: data.reason,
-        eventType: data.eventType,
-      }),
-    });
-    if (response.ok) {
-      toast.success("Reserva creada exitosamente");
-    } else {
-      const error = await response.json();
-      toast.error(error.error || "Error al crear la reserva");
-      throw new Error(error.error);
-    }
-  }, [apiEndpoint]);
 
   // Skeleton while auth/user loads
   if (status === "loading" || loadingUser) {
@@ -101,9 +72,7 @@ export function CalendarTemplateClient({
         </CardHeader>
         <CardContent>
           <WeekCalendar
-            resourceType={resourceType}
             apiEndpoint={apiEndpoint}
-            onCreateReservation={handleCreateReservation}
             eventTypes={eventTypes}
             defaultEventType={defaultEventType}
             title="Nueva Reserva"

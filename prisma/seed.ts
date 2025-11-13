@@ -7,7 +7,6 @@ async function main() {
    const meetingRoomResource = await prisma.fungibleResource.create({
     data: {
       name: "Sala de reuniones",
-      type: ResourceType.MEETING,
       capacity: 6,
       isExclusive: true,
     },
@@ -16,7 +15,6 @@ async function main() {
    const laboratoryResource = await prisma.fungibleResource.create({
     data: {
       name: "Laboratorio",
-      type: ResourceType.LAB,
       capacity: 8,
       isExclusive: true,
     },
@@ -25,7 +23,6 @@ async function main() {
    const auditoriumResource = await prisma.fungibleResource.create({
     data: {
       name: "Auditorio",
-      type: ResourceType.AUDITORIUM,
       capacity: 40,
     },
    })
@@ -33,7 +30,6 @@ async function main() {
    const coworkingResource = await prisma.fungibleResource.create({
     data: {
       name: "Coworking",
-      type: ResourceType.COWORKING,
       capacity: 12,
     },
    })
@@ -42,18 +38,22 @@ async function main() {
     data: [
       {
         name: "Sala de reuniones",
+        type: ResourceType.MEETING,
         fungibleResourceId: meetingRoomResource.id,
       },
       {
         name: "Laboratorio",
+        type: ResourceType.LAB,
         fungibleResourceId: laboratoryResource.id,
       },
       {
         name: "Auditorio",
+        type: ResourceType.AUDITORIUM,
         fungibleResourceId: auditoriumResource.id,
       },
       {
         name: "Coworking",
+        type: ResourceType.COWORKING,
         fungibleResourceId: coworkingResource.id,
       },
     ],

@@ -5,11 +5,11 @@ model Event {
   name        String
   description String?
   location    String?
-  startTime   DateTime @map("start_time")
-  endTime     DateTime @map("end_time")
+  startTime   DateTime @db.Timestamptz(3) @map("start_time")
+  endTime     DateTime @db.Timestamptz(3) @map("end_time")
   imageUrl    String?  @map("image_url")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
+  updatedAt   DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
 
   userEvents UserEvent[]
 

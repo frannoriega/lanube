@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const service = searchParams.get('service')
 
-    if (!service || !ResourceType[service as keyof typeof ResourceType]) {
+    if (!service || !ResourceType[service.toUpperCase() as keyof typeof ResourceType]) {
       return NextResponse.json({ message: "Tipo de recurso inválido" }, { status: 400 })
     }
 
-    const reservations = await listAdminReservationsByType(service as ResourceType)
+    const reservations = await listAdminReservationsByType(service.toUpperCase() as ResourceType)
 
     return NextResponse.json(reservations)
   } catch (error) {
