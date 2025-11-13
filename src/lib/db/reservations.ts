@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { createId } from '@paralleldrive/cuid2';
 import {
-    EventType,
-    Prisma,
-    ReservableType,
-    Reservation,
-    ReservationException,
-    ReservationStatus,
+  EventType,
+  Prisma,
+  ReservableType,
+  Reservation,
+  ReservationException,
+  ReservationStatus,
+  ResourceType,
 } from "@prisma/client";
 
 // Types
@@ -13,11 +15,11 @@ export interface ReservationWithRelations extends Reservation {
   resource?: {
     id: string;
     name: string;
+    type: ResourceType;
     serialNumber: string | null;
     fungibleResource: {
       id: string;
       name: string;
-      type: string;
       capacity: number;
     } | null;
   } | null;
@@ -37,7 +39,7 @@ export interface ReservationWithRelations extends Reservation {
 export interface CreateReservationInput {
   reservableType: ReservableType;
   reservableId: string;
-  resourceId?: string;
+  resourceType: ResourceType;
   eventType: EventType;
   reason: string;
   startTime: Date;
@@ -96,6 +98,7 @@ export interface ExpandedReservationOccurrence {
 
 // Ledger row type
 export interface ReservationLedgerRow {
+  id: string;
   reservationId: string;
   occurrenceStartTime: Date;
   occurrenceEndTime: Date;
@@ -106,78 +109,31 @@ export interface ReservationLedgerRow {
   reason: string | null;
   actorSize: number;
   status: ReservationStatus;
+  createdAt: Date;
 }
 
-// Refresh reservation ledger for a time window (or full if not provided)
-export async function rebuildReservationLedger(
-  startTime?: Date,
-  endTime?: Date
-): Promise<void> {
-  await prisma.$executeRaw`
-    SELECT rebuild_reservation_ledger(
-      ${startTime || null}::timestamptz,
-      ${endTime || null}::timestamptz
-    )
-  `;
+// Unavailable slot type
+export interface UnavailableSlot {
+  resourceId: string;
+  startTime: Date;
+  endTime: Date;
 }
-
-// Get ledger rows by fungible resource type
-export async function getReservationLedgerByType(
-  resourceType: string,
-  startTime: Date,
-  endTime: Date
-): Promise<ReservationLedgerRow[]> {
-  const rows = await prisma.$queryRaw<any[]>`
-    SELECT * FROM get_reservation_ledger_by_type(
-      ${resourceType}::resource_types,
-      ${startTime}::timestamptz,
-      ${endTime}::timestamptz
-    )
-  `;
-
-  return rows.map((row) => ({
-    reservationId: row.reservation_id,
-    occurrenceStartTime: new Date(row.occurrence_start_time),
-    occurrenceEndTime: new Date(row.occurrence_end_time),
-    reservableType: row.reservable_type as ReservableType,
-    reservableId: row.reservable_id,
-    resourceId: row.resource_id,
-    eventType: row.event_type as EventType,
-    reason: row.reason ?? null,
-    actorSize: Number(row.actor_size),
-    status: row.status as ReservationStatus,
-  }));
+export interface ReservationOccurrence {
+  reservationId: string;
+  occurrenceStartTime: string;
+  occurrenceEndTime: string;
+  reason: string;
+  status: string;
+  reservableType: string;
+  reservableId: string;
 }
-
-// Find merged full-capacity time slots by resource type
-export async function findFullCapacitySlotsByType(
-  resourceType: string,
-  startTime: Date,
-  endTime: Date
-): Promise<{ slotStart: Date; slotEnd: Date; capacity: number; totalUsed: number }[]> {
-  const rows = await prisma.$queryRaw<any[]>`
-    SELECT * FROM find_full_capacity_slots_by_type(
-      ${resourceType}::resource_types,
-      ${startTime}::timestamptz,
-      ${endTime}::timestamptz
-    )
-  `;
-
-  return rows.map((row) => ({
-    slotStart: new Date(row.slot_start),
-    slotEnd: new Date(row.slot_end),
-    capacity: Number(row.capacity),
-    totalUsed: Number(row.total_used),
-  }));
-}
-
 // ============================================================================
 // CREATE
 // ============================================================================
 
 /**
- * Creates a new reservation
- * Validates capacity using the database function check_availability_with_actor
+ * Creates a new reservation using the ledger-based system
+ * Auto-selects an available resource of the given type
  */
 export async function createReservation(
   data: CreateReservationInput
@@ -191,21 +147,6 @@ export async function createReservation(
     throw new Error("Cannot create reservations in the past");
   }
 
-  // If resourceId is provided, check capacity
-  if (data.resourceId) {
-    const hasCapacity = await checkResourceAvailability(
-      data.resourceId,
-      data.reservableType,
-      data.reservableId,
-      data.startTime,
-      data.endTime
-    );
-
-    if (!hasCapacity) {
-      throw new Error("Resource is not available for the selected time range");
-    }
-  }
-
   // Validate recurring reservation data
   if (data.isRecurring && !data.rrule) {
     throw new Error("Recurring reservations must have an rrule");
@@ -215,43 +156,54 @@ export async function createReservation(
     throw new Error("Recurring reservations must have a recurrence end date");
   }
 
-  const reservation = await prisma.reservation.create({
-    data: {
-      reservableType: data.reservableType,
-      reservableId: data.reservableId,
-      resourceId: data.resourceId,
-      eventType: data.eventType,
-      reason: data.reason,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      isRecurring: data.isRecurring || false,
-      rrule: data.rrule,
-      recurrenceEnd: data.recurrenceEnd,
-      status: "PENDING",
-    },
+  // Generate IDs
+  const reservationId = createId();
+
+  // Call SQL function to create reservation with automatic resource selection
+  try {
+    await prisma.$executeRaw`
+      SELECT create_reservation(
+        ${reservationId}::text,
+        ${data.reservableType}::reservable_types,
+        ${data.reservableId}::text,
+        ${data.resourceType}::resource_types,
+        ${data.eventType}::event_types,
+        ${data.reason}::text,
+        ${data.startTime.toISOString()}::timestamptz,
+        ${data.endTime.toISOString()}::timestamptz,
+        ${Boolean(data.isRecurring)}::boolean,
+        ${data.rrule || null}::text,
+        ${data.recurrenceEnd?.toISOString() || null}::timestamptz
+      )
+    `;
+  } catch (error: any) {
+    // Parse SQL errors for user-friendly messages
+    if (error.message?.includes('No available')) {
+      throw new Error("No hay recursos disponibles para el horario seleccionado");
+    }
+    if (error.message?.includes('Conflict on')) {
+      throw new Error("Conflicto en una de las fechas de la recurrencia");
+    }
+    if (error.message?.includes('Capacity exceeded')) {
+      throw new Error("Capacidad excedida en una de las fechas");
+    }
+    throw error;
+  }
+
+  // Fetch the created reservation with relations
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
     include: {
-      resource: {
-        include: {
-          fungibleResource: true,
-        },
-      },
-      registeredUser: {
-        select: {
-          id: true,
-          name: true,
-          lastName: true,
-        },
-      },
-      checkIns: {
-        select: {
-          id: true,
-          checkInTime: true,
-          checkOutTime: true,
-        },
-      },
+      resource: { include: { fungibleResource: true } },
+      registeredUser: { select: { id: true, name: true, lastName: true } },
+      checkIns: { select: { id: true, checkInTime: true, checkOutTime: true } },
       exceptions: true,
     },
   });
+
+  if (!reservation) {
+    throw new Error("Created reservation not found");
+  }
 
   return reservation;
 }
@@ -504,237 +456,6 @@ export async function getUpcomingReservations(
   return reservations;
 }
 
-/**
- * Lists expanded reservation occurrences (including recurring reservation instances)
- * Uses the PostgreSQL function expand_recurring_reservations
- */
-export async function listExpandedReservations(
-  filters?: ReservationFilters,
-  options?: {
-    limit?: number;
-    offset?: number;
-  }
-): Promise<{ occurrences: ExpandedReservationOccurrence[]; total: number }> {
-  const limit = Math.min(options?.limit || 50, 100);
-  const offset = Math.max(options?.offset || 0, 0);
-
-  // Build filter parameters for the PostgreSQL function
-  const params: any[] = [
-    filters?.reservableType || null,
-    filters?.reservableId || null,
-    filters?.resourceId || null,
-    Array.isArray(filters?.status) ? filters.status[0] : filters?.status || null,
-    filters?.eventType || null,
-    filters?.startTimeFrom || null,
-    filters?.startTimeTo || null,
-    filters?.endTimeFrom || null,
-    filters?.endTimeTo || null,
-    limit,
-    offset,
-  ];
-
-  // Call the PostgreSQL function to expand recurring reservations
-  const occurrences = await prisma.$queryRaw<any[]>`
-    SELECT * FROM expand_recurring_reservations(
-      ${params[0]}::reservable_types,
-      ${params[1]}::text,
-      ${params[2]}::text,
-      ${params[3]}::reservation_statuses,
-      ${params[4]}::event_types,
-      ${params[5]}::timestamptz,
-      ${params[6]}::timestamptz,
-      ${params[7]}::timestamptz,
-      ${params[8]}::timestamptz,
-      ${params[9]}::int,
-      ${params[10]}::int
-    )
-  `;
-
-  // Get total count
-  const countParams = params.slice(0, 9); // Exclude limit and offset
-  const totalResult = await prisma.$queryRaw<[{ count_expanded_reservations: bigint }]>`
-    SELECT count_expanded_reservations(
-      ${countParams[0]}::reservable_types,
-      ${countParams[1]}::text,
-      ${countParams[2]}::text,
-      ${countParams[3]}::reservation_statuses,
-      ${countParams[4]}::event_types,
-      ${countParams[5]}::timestamptz,
-      ${countParams[6]}::timestamptz,
-      ${countParams[7]}::timestamptz,
-      ${countParams[8]}::timestamptz
-    )
-  `;
-
-  const total = Number(totalResult[0]?.count_expanded_reservations || 0);
-
-  // Map database result to our interface
-  const mappedOccurrences: ExpandedReservationOccurrence[] = occurrences.map(
-    (row: any) => ({
-      reservationId: row.reservation_id,
-      occurrenceDate: new Date(row.occurrence_date),
-      occurrenceStartTime: new Date(row.occurrence_start_time),
-      occurrenceEndTime: new Date(row.occurrence_end_time),
-      reservableType: row.reservable_type as ReservableType,
-      reservableId: row.reservable_id,
-      resourceId: row.resource_id,
-      eventType: row.event_type as EventType,
-      reason: row.reason,
-      deniedReason: row.denied_reason,
-      status: row.status as ReservationStatus,
-      isRecurring: row.is_recurring,
-      isException: row.is_exception,
-      exceptionCancelled: row.exception_cancelled,
-      rrule: row.rrule,
-      recurrenceEnd: row.recurrence_end ? new Date(row.recurrence_end) : null,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-    })
-  );
-
-  return { occurrences: mappedOccurrences, total };
-}
-
-/**
- * Gets expanded user reservations (including recurring instances)
- */
-export async function getExpandedUserReservations(
-  userId: string,
-  options?: {
-    includeExpired?: boolean;
-    status?: ReservationStatus[];
-    limit?: number;
-    offset?: number;
-  }
-): Promise<{ occurrences: ExpandedReservationOccurrence[]; total: number }> {
-  const filters: ReservationFilters = {
-    reservableType: "USER",
-    reservableId: userId,
-  };
-
-  if (options?.status) {
-    filters.status = options.status;
-  }
-
-  if (!options?.includeExpired) {
-    filters.endTimeFrom = new Date();
-  }
-
-  return await listExpandedReservations(filters, {
-    limit: options?.limit,
-    offset: options?.offset,
-  });
-}
-
-/**
- * Gets expanded resource reservations (including recurring instances)
- */
-export async function getExpandedResourceReservations(
-  resourceId: string,
-  startTime: Date,
-  endTime: Date,
-  includeStatuses: ReservationStatus[] = ["PENDING", "APPROVED"]
-): Promise<ExpandedReservationOccurrence[]> {
-  const { occurrences } = await listExpandedReservations(
-    {
-      resourceId,
-      status: includeStatuses,
-      startTimeFrom: startTime,
-      endTimeTo: endTime,
-    },
-    {
-      limit: 100,
-    }
-  );
-
-  return occurrences;
-}
-
-/**
- * Gets upcoming expanded reservations (including recurring instances)
- */
-export async function getExpandedUpcomingReservations(
-  reservableType: ReservableType,
-  reservableId: string,
-  limit: number = 10
-): Promise<ExpandedReservationOccurrence[]> {
-  const { occurrences } = await listExpandedReservations(
-    {
-      reservableType,
-      reservableId,
-      status: ["PENDING", "APPROVED"],
-      startTimeFrom: new Date(),
-    },
-    {
-      limit,
-    }
-  );
-
-  return occurrences;
-}
-
-/**
- * Gets expanded reservations for calendar view by resource type
- * Shows APPROVED reservations OR user's own reservations
- * Automatically finds all fungible resources and their individual resources
- * Single database query for maximum efficiency
- */
-export async function getExpandedReservationsForCalendar(
-  resourceType: string,
-  userId: string,
-  startTime: Date,
-  endTime: Date
-): Promise<ExpandedReservationOccurrence[]> {
-  try {
-    console.log('CRUD: Calling expand_reservations_for_calendar_by_type with:', {
-      resourceType,
-      userId,
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString()
-    });
-
-    // Call the PostgreSQL function that handles everything in one query
-    const occurrences = await prisma.$queryRaw<any[]>`
-      SELECT * FROM expand_reservations_for_calendar_by_type(
-        ${resourceType}::resource_types,
-        ${userId}::text,
-        ${startTime}::timestamptz,
-        ${endTime}::timestamptz
-      )
-    `;
-
-    console.log('CRUD: Raw occurrences from DB:', occurrences.length, occurrences);
-
-    // Map database result to our interface
-    const mappedOccurrences: ExpandedReservationOccurrence[] = occurrences.map(
-      (row: any) => ({
-        reservationId: row.reservation_id,
-        occurrenceDate: new Date(row.occurrence_date),
-        occurrenceStartTime: new Date(row.occurrence_start_time),
-        occurrenceEndTime: new Date(row.occurrence_end_time),
-        reservableType: row.reservable_type as ReservableType,
-        reservableId: row.reservable_id,
-        resourceId: row.resource_id,
-        eventType: row.event_type as EventType,
-        reason: row.reason,
-        deniedReason: row.denied_reason,
-        status: row.status as ReservationStatus,
-        isRecurring: row.is_recurring,
-        isException: row.is_exception,
-        exceptionCancelled: row.exception_cancelled,
-        rrule: row.rrule,
-        recurrenceEnd: row.recurrence_end ? new Date(row.recurrence_end) : null,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-      })
-    );
-
-    return mappedOccurrences;
-  } catch (error) {
-    console.error("Error getting calendar reservations:", error);
-    throw new Error("Failed to fetch calendar reservations");
-  }
-}
 
 // ============================================================================
 // UPDATE
@@ -742,6 +463,7 @@ export async function getExpandedReservationsForCalendar(
 
 /**
  * Updates a reservation
+ * Note: In the ledger-based system, capacity validation happens during approval
  */
 export async function updateReservation(
   id: string,
@@ -764,27 +486,6 @@ export async function updateReservation(
     throw new Error("Start time must be before end time");
   }
 
-  // If changing resource or time, check capacity
-  const resourceChanged = data.resourceId && data.resourceId !== existing.resourceId;
-  const timeChanged = data.startTime || data.endTime;
-
-  if ((resourceChanged || timeChanged) && (data.resourceId || existing.resourceId)) {
-    const resourceToCheck = data.resourceId || existing.resourceId!;
-
-    const hasCapacity = await checkResourceAvailability(
-      resourceToCheck,
-      existing.reservableType,
-      existing.reservableId,
-      newStartTime,
-      newEndTime,
-      id // Exclude current reservation from capacity check
-    );
-
-    if (!hasCapacity) {
-      throw new Error("Resource is not available for the selected time range");
-    }
-  }
-
   // Validate recurring reservation updates
   if (data.isRecurring && !data.rrule && !existing.rrule) {
     throw new Error("Recurring reservations must have an rrule");
@@ -794,6 +495,8 @@ export async function updateReservation(
     throw new Error("Recurring reservations must have a recurrence end date");
   }
 
+  // Update reservation
+  // Note: Capacity validation is handled by the ledger system during approval
   return await prisma.reservation.update({
     where: { id },
     data: {
@@ -834,12 +537,37 @@ export async function updateReservation(
 }
 
 /**
- * Approves a reservation
+ * Approves a reservation and auto-rejects conflicting pending reservations
+ * Uses the ledger-based SQL function
  */
 export async function approveReservation(
   id: string
-): Promise<ReservationWithRelations> {
-  return await updateReservation(id, { status: "APPROVED" });
+): Promise<{ reservation: ReservationWithRelations; autoRejectedIds: string[] }> {
+  // Call SQL function
+  const result = await prisma.$queryRaw<{ approved_id: string; auto_rejected_ids: string }[]>`
+    SELECT * FROM approve_reservation(${id}::text)
+  `;
+
+  const autoRejectedIds = result[0]?.auto_rejected_ids
+    ? result[0].auto_rejected_ids.split(',').filter(Boolean)
+    : [];
+
+  // Fetch updated reservation
+  const reservation = await prisma.reservation.findUnique({
+    where: { id },
+    include: {
+      resource: { include: { fungibleResource: true } },
+      registeredUser: { select: { id: true, name: true, lastName: true } },
+      checkIns: { select: { id: true, checkInTime: true, checkOutTime: true } },
+      exceptions: true,
+    },
+  });
+
+  if (!reservation) {
+    throw new Error("Reservation not found after approval");
+  }
+
+  return { reservation, autoRejectedIds };
 }
 
 /**
@@ -903,88 +631,6 @@ export async function deleteReservationException(id: string): Promise<void> {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-/**
- * Checks if a resource is available for a given time range
- * Uses the database function check_availability_with_actor
- */
-export async function checkResourceAvailability(
-  resourceId: string,
-  reservableType: ReservableType,
-  reservableId: string,
-  startTime: Date,
-  endTime: Date,
-  excludeReservationId?: string
-): Promise<boolean> {
-  try {
-    // Use raw SQL to call the database function
-    const result = await prisma.$queryRaw<[{ check_availability_with_actor: boolean }]>`
-      SELECT check_availability_with_actor(
-        ${resourceId}::text,
-        ${reservableType}::reservable_types,
-        ${reservableId}::text,
-        ${startTime}::timestamptz,
-        ${endTime}::timestamptz
-      )
-    `;
-
-    if (!result[0]?.check_availability_with_actor) {
-      return false;
-    }
-
-    // Additional check: ensure no overlapping reservations
-    // (the function checks capacity, but we also want to avoid exact overlaps)
-    const whereClause: Prisma.ReservationWhereInput = {
-      resourceId,
-      status: {
-        in: ["APPROVED", "PENDING"],
-      },
-      startTime: {
-        lt: endTime,
-      },
-      endTime: {
-        gt: startTime,
-      },
-    };
-
-    if (excludeReservationId) {
-      whereClause.id = {
-        not: excludeReservationId,
-      };
-    }
-
-    const overlapping = await prisma.reservation.findFirst({
-      where: whereClause,
-    });
-
-    return !overlapping;
-  } catch (error) {
-    console.error("Error checking resource availability:", error);
-    throw new Error("Failed to check resource availability");
-  }
-}
-
-/**
- * Gets the actor size (number of people represented by a reservable entity)
- * Uses the database function get_actor_size
- */
-export async function getActorSize(
-  reservableType: ReservableType,
-  reservableId: string
-): Promise<number> {
-  try {
-    const result = await prisma.$queryRaw<[{ get_actor_size: number }]>`
-      SELECT get_actor_size(
-        ${reservableType}::reservable_types,
-        ${reservableId}::text
-      )
-    `;
-
-    return result[0]?.get_actor_size || 1;
-  } catch (error) {
-    console.error("Error getting actor size:", error);
-    return 1;
-  }
-}
 
 /**
  * Gets reservation statistics for a time period
@@ -1129,4 +775,68 @@ export async function getConflictingReservations(
       startTime: "asc",
     },
   });
+}
+
+// ============================================================================
+// LEDGER-BASED FUNCTIONS
+// ============================================================================
+
+/**
+ * Gets upcoming user reservations from the ledger (includes expanded recurrences)
+ */
+export async function getUserNextReservations(
+  userId: string,
+  resourceType?: ResourceType,
+  limit: number = 10,
+  offset: number = 0
+): Promise<ReservationLedgerRow[]> {
+  const rows = await prisma.$queryRaw<any[]>`
+    SELECT * FROM get_user_next_reservations(
+      ${userId}::text,
+      ${resourceType}::resource_types,
+      ${limit}::int,
+      ${offset}::int
+    )
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    reservationId: row.reservation_id,
+    occurrenceStartTime: new Date(row.occurrence_start_time),
+    occurrenceEndTime: new Date(row.occurrence_end_time),
+    reservableType: row.reservable_type as ReservableType,
+    reservableId: row.reservable_id,
+    resourceId: row.resource_id,
+    eventType: row.event_type as EventType,
+    reason: row.reason ?? null,
+    actorSize: Number(row.actor_size),
+    status: row.status as ReservationStatus,
+    createdAt: new Date(row.created_at),
+  }));
+}
+
+/**
+ * Gets unavailable time slots for a resource type
+ * (slots that are fully booked or exclusive by OTHER users)
+ */
+export async function getUnavailableSlots(
+  resourceType: ResourceType,
+  startTime: Date,
+  endTime: Date,
+  excludeUserId?: string
+): Promise<UnavailableSlot[]> {
+  const rows = await prisma.$queryRaw<any[]>`
+    SELECT * FROM get_unavailable_slots(
+      ${resourceType}::resource_types,
+      ${startTime.toISOString()}::timestamptz,
+      ${endTime.toISOString()}::timestamptz,
+      ${excludeUserId || null}::text
+    )
+  `;
+
+  return rows.map((row) => ({
+    resourceId: row.r_id,
+    startTime: new Date(row.start_time),
+    endTime: new Date(row.end_time),
+  }));
 }

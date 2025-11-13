@@ -5,8 +5,8 @@ model Incident {
   title       String
   description String?
   status      IncidentStatus @default(OPEN)
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  createdAt   DateTime       @db.Timestamptz(3) @default(now()) @map("created_at")
+  updatedAt   DateTime       @db.Timestamptz(3) @updatedAt @map("updated_at")
 
   incidentUsers IncidentUser[]
 

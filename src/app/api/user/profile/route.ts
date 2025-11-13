@@ -1,19 +1,18 @@
 import { auth } from "@/lib/auth"
-import { getPublicUserByEmail, updateUserProfileByEmail } from "@/lib/db/users"
+import { getUserById, updateUserProfileByEmail } from "@/lib/db/users"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET() {
   try {
     const session = await auth()
     
-    if (!session?.user?.email) {
+    if (!session?.userId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const user = await getPublicUserByEmail(session.user.email)
-
+    const user = await getUserById(session.userId);
     if (!user) {
-      return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 })
+      return NextResponse.json({ message: "Usuario no encontrado" }, { status: 401 })
     }
 
     return NextResponse.json(user)

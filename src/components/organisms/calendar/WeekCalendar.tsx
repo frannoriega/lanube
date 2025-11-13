@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
+import { toCapitalCase } from "@/lib/utils/string";
 import { addDays, addWeeks, format, getDay, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -20,14 +21,9 @@ const BUSINESS_HOURS = {
 
 const TIME_INTERVAL_MINUTES = 15;
 
-export interface ReservationOccurrence {
-  reservationId: string;
-  occurrenceStartTime: string;
-  occurrenceEndTime: string;
-  reason: string;
-  status: string;
-  reservableType: string;
-  reservableId: string;
+export interface UnavailableSlot {
+  startTime: string;
+  endTime: string;
 }
 
 export interface DragSelection {
@@ -44,9 +40,7 @@ export interface ReservationFormData {
 }
 
 interface WeekCalendarProps {
-  resourceType: string; // MEETING, COWORKING, LAB, AUDITORIUM
   apiEndpoint: string; // API endpoint to fetch reservations and create them
-  onCreateReservation: (data: ReservationFormData) => Promise<void>;
   eventTypes: Array<{ value: string; label: string }>;
   defaultEventType: string;
   title?: string;
@@ -58,13 +52,13 @@ interface WeekCalendarProps {
 function getCurrentWorkWeekStart(): Date {
   const now = new Date();
   const dayOfWeek = getDay(now); // 0 = Sunday, 6 = Saturday
-  
+
   // If it's weekend (Saturday or Sunday), get next Monday
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     const monday = startOfWeek(now, { weekStartsOn: 1 });
     return addWeeks(monday, 1); // Next week's Monday
   }
-  
+
   // Otherwise, get this week's Monday
   return startOfWeek(now, { weekStartsOn: 1 });
 }
@@ -86,9 +80,7 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
 }
 
 export function WeekCalendar({
-  resourceType,
   apiEndpoint,
-  onCreateReservation,
   eventTypes,
   defaultEventType,
   title,
@@ -97,10 +89,10 @@ export function WeekCalendar({
 }: WeekCalendarProps) {
   // Week navigation state
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getCurrentWorkWeekStart());
-  
+
   // Data state
+  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
   const [occurrences, setOccurrences] = useState<ReservationOccurrence[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
@@ -117,6 +109,10 @@ export function WeekCalendar({
   const [endTime, setEndTime] = useState("10:00");
   const [submitting, setSubmitting] = useState(false);
 
+  // View details / delete dialog state
+  const [selectedOccurrence, setSelectedOccurrence] = useState<ReservationOccurrence | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const calendarRef = useRef<HTMLDivElement>(null);
   const weekDays = Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i));
 
@@ -130,32 +126,48 @@ export function WeekCalendar({
   // Fetch reservations when week changes
   useEffect(() => {
     const fetchReservations = async () => {
-      setLoading(true);
       try {
         // Get Friday (last work day) at end of day
-        const weekEnd = addDays(currentWeekStart, 4); // Monday + 4 = Friday
+        const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1); // Monday + 4 = Friday, + 1 week = next week's Friday
         weekEnd.setHours(23, 59, 59, 999);
-        
+
         const response = await fetch(
           `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`
         );
-        
+
         if (response.ok) {
           const data = await response.json();
-          setOccurrences(data.occurrences || []);
+          let unavailableSlots = data.unavailableSlots || [];
+          unavailableSlots.sort((a: UnavailableSlot, b: UnavailableSlot) => {
+            return parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime();
+          });
+          let processedUnavailableSlots: UnavailableSlot[] = [];
+          if (unavailableSlots.length > 0) {
+            let currentUnavailableSlot = unavailableSlots[0];
+            for (let i = 1; i < unavailableSlots.length; i++) {
+              const slot = unavailableSlots[i];
+              if (currentUnavailableSlot.endTime === slot.startTime) {
+                currentUnavailableSlot.endTime = slot.endTime;
+              } else {
+                processedUnavailableSlots.push(currentUnavailableSlot);
+                currentUnavailableSlot = slot;
+              }
+            }
+            processedUnavailableSlots.push(currentUnavailableSlot);
+          }
+          setOccurrences(data.userReservations || []);
+          setUnavailableSlots(processedUnavailableSlots || []);
         } else {
           toast.error("Error al cargar las reservas");
         }
       } catch (error) {
         console.error("Error fetching reservations:", error);
         toast.error("Error al cargar las reservas");
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchReservations();
-  }, [currentWeekStart, apiEndpoint]);
+  }, [apiEndpoint]);
 
   // Convert minutes from midnight to time string (HH:mm)
   const minutesToTime = (minutes: number): string => {
@@ -169,6 +181,21 @@ export function WeekCalendar({
     const [hours, mins] = time.split(":").map(Number);
     return hours * 60 + mins;
   };
+
+  const overlapsUnavailableOrReservation = (day: Date, startMinutes: number, endMinutes: number) => {
+    const getMinutes = (time: Date) => {
+      return time.getHours() * 60 + time.getMinutes();
+    }
+    return unavailableSlots.some((slot) =>
+      isSameDay(parseISO(slot.startTime), day) &&
+      ((startMinutes > getMinutes(parseISO(slot.startTime)) && endMinutes < getMinutes(parseISO(slot.endTime))) ||
+        (startMinutes < getMinutes(parseISO(slot.startTime)) && endMinutes > getMinutes(parseISO(slot.startTime))))) ||
+      occurrences.some((occ) =>
+        isSameDay(parseISO(occ.occurrenceStartTime), day) &&
+        ((startMinutes > getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes < getMinutes(parseISO(occ.occurrenceEndTime))) ||
+          (startMinutes < getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes > getMinutes(parseISO(occ.occurrenceStartTime))))
+      )
+  }
 
   // Get position info from mouse event
   const getPositionInfo = useCallback(
@@ -207,6 +234,10 @@ export function WeekCalendar({
       const posInfo = getPositionInfo(e, dayIndex);
       if (!posInfo) return;
 
+      if (overlapsUnavailableOrReservation(posInfo.day, posInfo.minutes, posInfo.minutes)) {
+        return;
+      }
+
       const now = new Date();
       const selectedDateTime = new Date(posInfo.day);
       selectedDateTime.setHours(0, posInfo.minutes, 0, 0);
@@ -229,6 +260,10 @@ export function WeekCalendar({
 
       const posInfo = getPositionInfo(e, dayIndex);
       if (!posInfo) return;
+
+      if (overlapsUnavailableOrReservation(posInfo.day, dragStart.minutes, posInfo.minutes)) {
+        return;
+      }
 
       if (isSameDay(posInfo.day, dragStart.day)) {
         setDragCurrent(posInfo);
@@ -260,6 +295,29 @@ export function WeekCalendar({
       setDragStart(null);
       setDragCurrent(null);
       toast.error(`La reserva mínima es de ${TIME_INTERVAL_MINUTES} minutos`);
+      return;
+    }
+
+    // Overlap prevention against own reservations
+    const dayStart = new Date(dragStart.day);
+    dayStart.setHours(0, 0, 0, 0);
+    const selStart = new Date(dayStart);
+    selStart.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+    const selEnd = new Date(dayStart);
+    selEnd.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
+
+    const overlapsOwn = occurrences.some((occ) => {
+      if (!(userId && occ.reservableType === 'USER' && occ.reservableId === userId)) return false;
+      const occStart = parseISO(occ.occurrenceStartTime);
+      const occEnd = parseISO(occ.occurrenceEndTime);
+      return occStart < selEnd && occEnd > selStart;
+    });
+
+    if (overlapsOwn) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+      toast.error('Ya tienes una reserva en ese horario');
       return;
     }
 
@@ -308,15 +366,25 @@ export function WeekCalendar({
   // Get reservations for a specific day
   const getReservationsForDay = (day: Date) => {
     return occurrences.filter((occ) => {
+      console.log(occ);
       const occStart = parseISO(occ.occurrenceStartTime);
       return isSameDay(occStart, day);
     });
   };
 
+  // Get unavailable slots for a specific day
+  const getUnavailableSlotsForDay = (day: Date) => {
+    return unavailableSlots.filter((slot) => {
+      const slotStart = parseISO(slot.startTime);
+      const slotEnd = parseISO(slot.endTime);
+      return isSameDay(slotStart, day);
+    });
+  };
+
   // Calculate reservation position
-  const getReservationStyle = (occ: ReservationOccurrence) => {
-    const occStart = parseISO(occ.occurrenceStartTime);
-    const occEnd = parseISO(occ.occurrenceEndTime);
+  const getReservationStyle = (occ: { startTime: string; endTime: string }) => {
+    const occStart = parseISO(occ.startTime);
+    const occEnd = parseISO(occ.endTime);
 
     const startMinutes = occStart.getHours() * 60 + occStart.getMinutes();
     const endMinutes = occEnd.getHours() * 60 + occEnd.getMinutes();
@@ -371,32 +439,30 @@ export function WeekCalendar({
         endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
       }
 
-      await onCreateReservation({
-        startTime: startDateTime,
-        endTime: endDateTime,
-        reason,
-        eventType,
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          reason,
+          eventType,
+        }),
       });
 
       // Success - close dialog and reset form
-      setDialogOpen(false);
-      setReason("");
-      setEventType(defaultEventType);
-      setIsWholeDay(false);
-      setSelection(null);
-
-      // Refetch reservations to show the new one
-      const weekEnd = addDays(currentWeekStart, 4);
-      weekEnd.setHours(23, 59, 59, 999);
-      const response = await fetch(
-        `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`
-      );
       if (response.ok) {
-        const data = await response.json();
-        setOccurrences(data.occurrences || []);
+        setDialogOpen(false);
+        setReason("");
+        setEventType(defaultEventType);
+        setIsWholeDay(false);
+        setSelection(null);
+
+        setOccurrences([...occurrences, await response.json()]);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Error al crear la reserva");
       }
-    } catch (error: any) {
-      // Error is already handled by parent component
     } finally {
       setSubmitting(false);
     }
@@ -404,14 +470,6 @@ export function WeekCalendar({
 
   const dragSelection = getDragSelectionStyle();
   const timeOptions = generateTimeOptions();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -460,11 +518,10 @@ export function WeekCalendar({
               {weekDays.map((day, idx) => (
                 <div
                   key={idx}
-                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
-                    isSameDay(day, new Date())
-                      ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
-                      : "text-gray-700 dark:text-gray-300"
-                  }`}
+                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${isSameDay(day, new Date())
+                    ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
+                    : "text-gray-700 dark:text-gray-300"
+                    }`}
                 >
                   <div className="text-xs font-medium">{format(day, "EEE", { locale: es }).toUpperCase()}</div>
                   <div className="text-xl font-bold">{format(day, "d")}</div>
@@ -493,6 +550,12 @@ export function WeekCalendar({
               )}
             </div>
 
+            {/* {loading && (
+              <div className="absolute inset-0 left-14 flex items-center justify-center z-50 bg-black/20 dark:bg-white/20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+              </div>
+            )} */}
+
             {/* Day columns */}
             <div
               ref={calendarRef}
@@ -508,18 +571,17 @@ export function WeekCalendar({
               }}
             >
               {weekDays.map((day, dayIdx) => {
-                const isPastDay = day < new Date() && !isSameDay(day, new Date());
+                const isPastOrUnavailableDay = day < addDays(new Date(), 1);
                 const dayReservations = getReservationsForDay(day);
+                const unavailableSlots = getUnavailableSlotsForDay(day);
 
                 return (
                   <div
                     key={dayIdx}
-                    className={`relative border-l border-gray-200 dark:border-gray-700 ${
-                      isPastDay ? "bg-gray-50 dark:bg-gray-900" : "bg-white dark:bg-gray-950"
-                    }`}
-                    style={{ cursor: isPastDay ? "not-allowed" : "crosshair" }}
-                    onMouseDown={(e) => !isPastDay && handleMouseDown(e, dayIdx)}
-                    onMouseMove={(e) => !isPastDay && handleMouseMove(e, dayIdx)}
+                    className={`relative z-40 border-l border-gray-200 dark:border-gray-700 ${isPastOrUnavailableDay ? "bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed" : "bg-white dark:bg-gray-950"
+                      }`}
+                    onMouseDown={(e) => !isPastOrUnavailableDay && handleMouseDown(e, dayIdx)}
+                    onMouseMove={(e) => !isPastOrUnavailableDay && handleMouseMove(e, dayIdx)}
                   >
                     {/* Hour lines */}
                     {Array.from({ length: BUSINESS_HOURS.END - BUSINESS_HOURS.START }, (_, i) => i + 1).map((hour) => (
@@ -530,24 +592,35 @@ export function WeekCalendar({
                       />
                     ))}
 
+                    {/* Unavailable slots */}
+                    {!isPastOrUnavailableDay && unavailableSlots.map((slot, idx) => {
+                      const style = getReservationStyle({ startTime: slot.startTime, endTime: slot.endTime });
+                      return (
+                        <div key={idx} className="absolute w-full bg-red z-50" style={{ top: style.top, height: style.height }}>
+                          <div className="h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed" />
+                        </div>
+                      )
+                    })}
+
                     {/* Existing reservations */}
                     {dayReservations.map((occ, idx) => {
-                      const style = getReservationStyle(occ);
+                      const style = getReservationStyle({ startTime: occ.occurrenceStartTime, endTime: occ.occurrenceEndTime });
                       const isOwnReservation = userId && occ.reservableType === "USER" && occ.reservableId === userId;
                       const isPending = occ.status === "PENDING";
-                      
+
                       // Visual styling based on reservation ownership and status
                       const bgColor = isOwnReservation && isPending
                         ? "bg-yellow-500" // User's pending reservation (yellow)
                         : isOwnReservation
-                        ? "bg-green-600"   // User's approved reservation (green)
-                        : "bg-la-nube-primary"; // Other's approved reservation (blue)
+                          ? "bg-green-600"   // User's approved reservation (green)
+                          : "bg-la-nube-primary"; // Other's approved reservation (blue)
 
                       return (
                         <div key={idx} className="absolute w-full px-1" style={{ top: style.top, height: style.height }}>
                           <div
-                            className={`h-full rounded ${bgColor} text-white text-xs p-1 overflow-hidden cursor-default shadow-sm`}
+                            className={`h-full rounded ${bgColor} text-white text-xs p-1 overflow-hidden cursor-pointer shadow-sm`}
                             title={`${occ.reason} ${isOwnReservation ? '(Tu reserva)' : ''} ${isPending ? '(Pendiente)' : ''}`}
+                            onClick={() => setSelectedOccurrence(occ)}
                           >
                             <div className="font-semibold truncate">
                               {occ.reason}
@@ -578,40 +651,6 @@ export function WeekCalendar({
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-6 text-sm mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-la-nube-primary"></div>
-              <span className="text-gray-600 dark:text-gray-400">Reserva aprobada</span>
-            </div>
-            {userId && (
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-green-600"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Tu reserva aprobada ✓</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-yellow-500"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Tu reserva pendiente ⏳</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Instructions */}
-          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <p>
-              💡 <strong>Cómo usar:</strong>
-            </p>
-            <ul className="list-disc list-inside space-y-1 ml-4">
-              <li>Haz clic y arrastra en el calendario para seleccionar un horario</li>
-              <li>Los intervalos son de {TIME_INTERVAL_MINUTES} minutos</li>
-              <li>Las reservas deben ser del mismo día</li>
-              <li>
-                Horario disponible: Lunes a Viernes, {BUSINESS_HOURS.START}:00 - {BUSINESS_HOURS.END}:00
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
 
@@ -621,61 +660,45 @@ export function WeekCalendar({
           <DialogHeader>
             <DialogTitle>{title || "Nueva Reserva"}</DialogTitle>
             <DialogDescription>
-              {selection && `${format(selection.day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}`}
+              {selection && `${toCapitalCase(format(selection.day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}`}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Whole day toggle */}
-            <div className="flex items-center justify-between space-x-2 p-3 border rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="wholeDay" className="text-base">
-                  Evento de día completo
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {BUSINESS_HOURS.START}:00 - {BUSINESS_HOURS.END}:00
-                </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Hora de inicio</Label>
+                <Select value={startTime} onValueChange={setStartTime}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Switch id="wholeDay" checked={isWholeDay} onCheckedChange={setIsWholeDay} />
-            </div>
-
-            {/* Time inputs (hidden when whole day) */}
-            {!isWholeDay && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime">Hora de inicio</Label>
-                  <Select value={startTime} onValueChange={setStartTime}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((option) => (
+              <div className="space-y-2">
+                <Label htmlFor="endTime">Hora de fin</Label>
+                <Select value={endTime} onValueChange={setEndTime}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeOptions
+                      .filter((option) => timeToMinutes(option.value) > timeToMinutes(startTime))
+                      .map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endTime">Hora de fin</Label>
-                  <Select value={endTime} onValueChange={setEndTime}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions
-                        .filter((option) => timeToMinutes(option.value) > timeToMinutes(startTime))
-                        .map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="eventType">Tipo de evento</Label>
@@ -724,6 +747,61 @@ export function WeekCalendar({
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Reservation Details Dialog */}
+      <Dialog open={!!selectedOccurrence} onOpenChange={(open) => !open && setSelectedOccurrence(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Detalle de la reserva</DialogTitle>
+            {selectedOccurrence && (
+              <DialogDescription>
+                {toCapitalCase(format(parseISO(selectedOccurrence.occurrenceStartTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          {selectedOccurrence && (
+            <div className="space-y-3">
+              <div className="text-sm">
+                <span className="font-medium">Horario:</span>{" "}
+                {format(parseISO(selectedOccurrence.occurrenceStartTime), "HH:mm")} - {format(parseISO(selectedOccurrence.occurrenceEndTime), "HH:mm")}
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Motivo:</span>{" "}
+                <span className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">{selectedOccurrence.reason}</span>
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Estado:</span>{" "}{selectedOccurrence.status}
+              </div>
+              {userId && selectedOccurrence.reservableType === 'USER' && selectedOccurrence.reservableId === userId && (
+                <div className="pt-2 flex justify-end">
+                  <Button variant="destructive" disabled={deleting} onClick={async () => {
+                    try {
+                      setDeleting(true);
+                      const res = await fetch(apiEndpoint, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reservationId: selectedOccurrence.reservationId }),
+                      });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        toast.error(err.error || 'No se pudo eliminar la reserva');
+                      } else {
+                        toast.success('Reserva eliminada');
+                        setOccurrences(occurrences => occurrences.filter((occ) => occ.reservationId !== selectedOccurrence.reservationId));
+                        setSelectedOccurrence(null);
+                      }
+                    } catch (e) {
+                      toast.error('Error al eliminar la reserva');
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }}>Eliminar</Button>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
