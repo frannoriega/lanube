@@ -17,7 +17,6 @@ export default function MeetingRoomPage() {
       description="Arrastra para seleccionar el horario de tu reunión"
       icon={Users}
       apiEndpoint={`/api/resources/${ResourceType.MEETING.toLowerCase()}`}
-      resourceType={ResourceType.MEETING}
       eventTypes={EVENT_TYPES}
       defaultEventType="MEETING"
     />

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }
 
-    const { name, lastName, dni, institution, reasonToJoin, image } = await request.json()
+    const { name, lastName, dni, institution, reasonToJoin } = await request.json()
 
     // Check if user already exists
     const existingUser = await prisma.registeredUser.findFirst({

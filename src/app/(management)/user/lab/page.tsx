@@ -15,7 +15,6 @@ export default function LabPage() {
       description="Reserva el laboratorio para tus proyectos tecnológicos"
       icon={FlaskConical}
       apiEndpoint="/api/resources/lab"
-      resourceType="LAB"
       eventTypes={EVENT_TYPES}
       defaultEventType="WORKSHOP"
     />

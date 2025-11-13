@@ -17,6 +17,7 @@ export async function GET() {
 
     return NextResponse.json(user)
   } catch (error) {
+    console.error(error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
@@ -33,10 +34,12 @@ export async function PUT(request: NextRequest) {
     try {
       const updatedUser = await updateUserProfileByEmail(session.user.email, { name, lastName, dni, institution, reasonToJoin })
       return NextResponse.json(updatedUser)
-    } catch (e: any) {
-      return NextResponse.json({ message: e.message }, { status: 400 })
+    } catch (error) {
+      const knownError = error as Error;
+      return NextResponse.json({ message: knownError.message }, { status: 400 })
     }
   } catch (error) {
+    console.error(error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

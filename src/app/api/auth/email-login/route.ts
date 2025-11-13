@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
-import { auth } from "@/lib/auth"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
     const magicLink = `${process.env.NEXTAUTH_URL}/auth/magic-link?token=${magicLinkToken}`
 
     // Send email using Resend
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: 'La Nube <noreply@lanube.com>', // You'll need to verify this domain
       to: [email],
       subject: 'Inicia sesión en La Nube',
@@ -72,6 +71,7 @@ export async function POST(request: NextRequest) {
     )
 
   } catch (error) {
+    console.error(error)
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }

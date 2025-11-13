@@ -17,6 +17,7 @@ export async function GET() {
     const rows = await getCurrentCheckinsForToday()
     return NextResponse.json(rows)
   } catch (error) {
+    console.error(error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

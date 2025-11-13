@@ -176,16 +176,18 @@ export async function createReservation(
         ${data.recurrenceEnd?.toISOString() || null}::timestamptz
       )
     `;
-  } catch (error: any) {
-    // Parse SQL errors for user-friendly messages
-    if (error.message?.includes('No available')) {
-      throw new Error("No hay recursos disponibles para el horario seleccionado");
-    }
-    if (error.message?.includes('Conflict on')) {
-      throw new Error("Conflicto en una de las fechas de la recurrencia");
-    }
-    if (error.message?.includes('Capacity exceeded')) {
-      throw new Error("Capacidad excedida en una de las fechas");
+  } catch (error) {
+    if (error instanceof Error) {
+      // Parse SQL errors for user-friendly messages
+      if (error.message?.includes('No available')) {
+        throw new Error("No hay recursos disponibles para el horario seleccionado");
+      }
+      if (error.message?.includes('Conflict on')) {
+        throw new Error("Conflicto en una de las fechas de la recurrencia");
+      }
+      if (error.message?.includes('Capacity exceeded')) {
+        throw new Error("Capacidad excedida en una de las fechas");
+      }
     }
     throw error;
   }
@@ -790,7 +792,20 @@ export async function getUserNextReservations(
   limit: number = 10,
   offset: number = 0
 ): Promise<ReservationLedgerRow[]> {
-  const rows = await prisma.$queryRaw<any[]>`
+  const rows = await prisma.$queryRaw<{
+    id: string;
+    reservation_id: string;
+    occurrence_start_time: Date;
+    occurrence_end_time: Date;
+    reservable_type: ReservableType;
+    reservable_id: string;
+    resource_id: string;
+    event_type: EventType;
+    reason: string | null;
+    actor_size: number;
+    status: ReservationStatus;
+    created_at: Date;
+  }[]>`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
       ${resourceType}::resource_types,
@@ -825,7 +840,11 @@ export async function getUnavailableSlots(
   endTime: Date,
   excludeUserId?: string
 ): Promise<UnavailableSlot[]> {
-  const rows = await prisma.$queryRaw<any[]>`
+  const rows = await prisma.$queryRaw<{
+    r_id: string;
+    start_time: Date;
+    end_time: Date;
+  }[]>`
     SELECT * FROM get_unavailable_slots(
       ${resourceType}::resource_types,
       ${startTime.toISOString()}::timestamptz,

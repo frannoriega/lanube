@@ -3,51 +3,22 @@
 import { CoworkingReservationsTemplate } from "@/components/templates/admin/coworking-reservations"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AdminReservationListResult } from "@/lib/db/adminReservations"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-
-interface Reservation {
-  id: string
-  registeredUser: {
-    name: string
-    lastName: string
-    user: {
-      email: string
-    }
-    dni: string
-    institution: string | null
-  }
-  service: string
-  startTime: string
-  endTime: string
-  reason: string
-  status: string
-  createdAt: string
-}
 
 export default function ServiceReservationsPage({ params }: { params: { service: string } }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [reservations, setReservations] = useState<AdminReservationListResult[]>([])
   const [processing, setProcessing] = useState<string | null>(null)
   const [confirmData, setConfirmData] = useState<{ reservationId: string, conflicts: string[] } | null>(null)
   const [confirming, setConfirming] = useState(false)
 
-  useEffect(() => {
-    if (status === "loading") return
-
-    if (!session) {
-      router.push("/")
-      return
-    }
-
-    fetchReservations()
-  }, [session, status, router])
-
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/reservations?service=${params.service}`)
       if (response.ok) {
@@ -59,7 +30,18 @@ export default function ServiceReservationsPage({ params }: { params: { service:
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.service])
+
+  useEffect(() => {
+    if (status === "loading") return
+
+    if (!session) {
+      router.push("/")
+      return
+    }
+
+    fetchReservations()
+  }, [session, status, router, fetchReservations])
 
   const handleReservationAction = async (reservationId: string, action: 'APPROVED' | 'REJECTED', deniedReason?: string) => {
     setProcessing(reservationId)

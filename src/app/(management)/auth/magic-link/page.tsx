@@ -1,14 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export default function MagicLinkPage() {
   const [isValidating, setIsValidating] = useState(true)
-  const [isValid, setIsValid] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -52,7 +51,6 @@ export default function MagicLinkPage() {
           throw new Error(errorData.message || "Error al validar el enlace")
         }
 
-        setIsValid(true)
         toast.success("¡Inicio de sesión exitoso!")
         
         // Redirect to dashboard after a short delay
@@ -60,8 +58,9 @@ export default function MagicLinkPage() {
           router.push("/dashboard")
         }, 2000)
 
-      } catch (error: any) {
-        setError(error.message || "Error al validar el enlace")
+      } catch (error: unknown) {
+        const knownError = error as Error;
+        setError(knownError.message || "Error al validar el enlace")
         setIsValidating(false)
       }
     }

@@ -25,7 +25,33 @@ export async function isAdminUser(id: string): Promise<boolean> {
 /**
  * Lists reservations filtered by resource type, including basic user and resource info.
  */
-export async function listAdminReservationsByType(service: ResourceType) {
+export interface AdminReservationListResult {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  reason: string;
+  status: string;
+  createdAt: Date;
+  deniedReason?: string | null;
+  resource: {
+    id: string;
+    name: string;
+    type: ResourceType;
+  };
+  registeredUser: {
+    name: string;
+    lastName: string;
+    dni: string;
+    institution: string | null;
+    user: {
+      email: string;
+    }
+  };
+}
+
+export async function listAdminReservationsByType(
+  service: ResourceType
+): Promise<AdminReservationListResult[]> {
   return prisma.reservation.findMany({
     where: {
       resource: {
@@ -76,7 +102,7 @@ export async function setReservationStatus(
  */
 export async function approveReservationAndRejectConflicts(
   reservationId: string,
-  deniedReason?: string
+  // deniedReason?: string
 ): Promise<{ approvedId: string | null; autoRejectedIds: string[] }> {
   // Call the SQL function that handles approval and conflict resolution
   const rows = await prisma.$queryRaw<{ approved_id: string; auto_rejected_ids: string }[]>`
@@ -94,7 +120,7 @@ export async function approveReservationAndRejectConflicts(
  * Previews which pending reservations would be rejected if the given reservation is approved.
  * This is the same as approveReservationAndRejectConflicts but without actually making changes.
  */
-export async function previewConflictingPending(reservationId: string): Promise<string[]> {
+export async function previewConflictingPending(/*reservationId: string*/): Promise<string[]> {
   // We can simulate this by checking the ledger for conflicts
   // For now, we'll just return empty since the SQL function doesn't have a preview mode
   // The admin can see the result after approval

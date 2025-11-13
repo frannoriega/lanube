@@ -1,21 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Eye,
+  TrendingUp,
+  Users,
+  XCircle
+} from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { 
-  Users, 
-  Calendar, 
-  Clock, 
-  TrendingUp, 
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Eye
-} from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
 interface AdminStats {
   todayUsers: number
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<AdminStats | null>(null)
 
-  const fetchAdminStats = async () => {
+  const fetchAdminStats = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/stats')
       if (response.ok) {
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (status === "loading") return

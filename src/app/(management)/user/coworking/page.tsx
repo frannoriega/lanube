@@ -1,6 +1,5 @@
 "use client";
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
-import { ResourceType } from "@prisma/client";
 import { Building2 } from "lucide-react";
 
 const EVENT_TYPES = [
@@ -16,7 +15,6 @@ export default function CoworkingPage() {
       description="Reserva un espacio de trabajo colaborativo en La Nube"
       icon={Building2}
       apiEndpoint="/api/resources/coworking"
-      resourceType={ResourceType.COWORKING}
       eventTypes={EVENT_TYPES}
       defaultEventType="OTHER"
     />

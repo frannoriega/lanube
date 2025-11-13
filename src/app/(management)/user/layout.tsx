@@ -15,10 +15,10 @@ import {
   Users,
   X
 } from "lucide-react"
-import { signOut, useSession } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { ThemeProvider } from "next-themes"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useState } from "react"
 
 interface UserLayoutProps {
@@ -35,13 +35,8 @@ const navigation = [
 
 export default function UserLayout({ children }: UserLayoutProps) {
   const { data: session } = useSession()
-  const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" })
-  }
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="la-nube-theme">

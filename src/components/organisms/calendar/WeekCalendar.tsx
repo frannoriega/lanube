@@ -123,6 +123,21 @@ export function WeekCalendar({
   const canGoNext = nextWeekStart <= maxWeekStart;
   const canGoPrev = currentWeekStart > todayWeekStart;
 
+  const overlapsUnavailableOrReservation = useCallback((day: Date, startMinutes: number, endMinutes: number) => {
+    const getMinutes = (time: Date) => {
+      return time.getHours() * 60 + time.getMinutes();
+    }
+    return unavailableSlots.some((slot) =>
+      isSameDay(parseISO(slot.startTime), day) &&
+      ((startMinutes > getMinutes(parseISO(slot.startTime)) && endMinutes < getMinutes(parseISO(slot.endTime))) ||
+        (startMinutes < getMinutes(parseISO(slot.startTime)) && endMinutes > getMinutes(parseISO(slot.startTime))))) ||
+      occurrences.some((occ) =>
+        isSameDay(parseISO(occ.occurrenceStartTime), day) &&
+        ((startMinutes > getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes < getMinutes(parseISO(occ.occurrenceEndTime))) ||
+          (startMinutes < getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes > getMinutes(parseISO(occ.occurrenceStartTime))))
+      )
+  }, [unavailableSlots, occurrences]); 
+
   // Fetch reservations when week changes
   useEffect(() => {
     const fetchReservations = async () => {
@@ -137,11 +152,11 @@ export function WeekCalendar({
 
         if (response.ok) {
           const data = await response.json();
-          let unavailableSlots = data.unavailableSlots || [];
+          const unavailableSlots = data.unavailableSlots || [];
           unavailableSlots.sort((a: UnavailableSlot, b: UnavailableSlot) => {
             return parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime();
           });
-          let processedUnavailableSlots: UnavailableSlot[] = [];
+          const processedUnavailableSlots: UnavailableSlot[] = [];
           if (unavailableSlots.length > 0) {
             let currentUnavailableSlot = unavailableSlots[0];
             for (let i = 1; i < unavailableSlots.length; i++) {
@@ -160,14 +175,13 @@ export function WeekCalendar({
         } else {
           toast.error("Error al cargar las reservas");
         }
-      } catch (error) {
-        console.error("Error fetching reservations:", error);
+      } catch (ignored) {
         toast.error("Error al cargar las reservas");
       }
     };
 
     fetchReservations();
-  }, [apiEndpoint]);
+  }, [currentWeekStart, overlapsUnavailableOrReservation, occurrences, userId, apiEndpoint]);
 
   // Convert minutes from midnight to time string (HH:mm)
   const minutesToTime = (minutes: number): string => {
@@ -182,20 +196,6 @@ export function WeekCalendar({
     return hours * 60 + mins;
   };
 
-  const overlapsUnavailableOrReservation = (day: Date, startMinutes: number, endMinutes: number) => {
-    const getMinutes = (time: Date) => {
-      return time.getHours() * 60 + time.getMinutes();
-    }
-    return unavailableSlots.some((slot) =>
-      isSameDay(parseISO(slot.startTime), day) &&
-      ((startMinutes > getMinutes(parseISO(slot.startTime)) && endMinutes < getMinutes(parseISO(slot.endTime))) ||
-        (startMinutes < getMinutes(parseISO(slot.startTime)) && endMinutes > getMinutes(parseISO(slot.startTime))))) ||
-      occurrences.some((occ) =>
-        isSameDay(parseISO(occ.occurrenceStartTime), day) &&
-        ((startMinutes > getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes < getMinutes(parseISO(occ.occurrenceEndTime))) ||
-          (startMinutes < getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes > getMinutes(parseISO(occ.occurrenceStartTime))))
-      )
-  }
 
   // Get position info from mouse event
   const getPositionInfo = useCallback(
@@ -250,7 +250,7 @@ export function WeekCalendar({
       setDragStart(posInfo);
       setDragCurrent(posInfo);
     },
-    [getPositionInfo]
+    [getPositionInfo, overlapsUnavailableOrReservation]
   );
 
   // Handle mouse move - update drag
@@ -269,7 +269,7 @@ export function WeekCalendar({
         setDragCurrent(posInfo);
       }
     },
-    [isDragging, dragStart, getPositionInfo]
+    [isDragging, dragStart, getPositionInfo, overlapsUnavailableOrReservation]
   );
 
   // Handle mouse up - finish selection
@@ -336,7 +336,7 @@ export function WeekCalendar({
     setIsDragging(false);
     setDragStart(null);
     setDragCurrent(null);
-  }, [isDragging, dragStart, dragCurrent]);
+  }, [isDragging, dragStart, dragCurrent, occurrences, userId]);
 
   // Calculate drag selection style
   const getDragSelectionStyle = useCallback(() => {
@@ -376,7 +376,6 @@ export function WeekCalendar({
   const getUnavailableSlotsForDay = (day: Date) => {
     return unavailableSlots.filter((slot) => {
       const slotStart = parseISO(slot.startTime);
-      const slotEnd = parseISO(slot.endTime);
       return isSameDay(slotStart, day);
     });
   };
@@ -792,7 +791,7 @@ export function WeekCalendar({
                         setOccurrences(occurrences => occurrences.filter((occ) => occ.reservationId !== selectedOccurrence.reservationId));
                         setSelectedOccurrence(null);
                       }
-                    } catch (e) {
+                    } catch (ignored) {
                       toast.error('Error al eliminar la reserva');
                     } finally {
                       setDeleting(false);

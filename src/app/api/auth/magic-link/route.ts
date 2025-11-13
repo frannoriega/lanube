@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +71,7 @@ export async function POST(request: NextRequest) {
     )
 
   } catch (error) {
+    console.error(error)
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 }
