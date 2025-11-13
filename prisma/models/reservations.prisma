@@ -18,7 +18,7 @@ model Reservation {
   updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   resource       Resource               @relation(fields: [resourceId], references: [id], onDelete: SetNull)
-  registeredUser RegisteredUser?        @relation(fields: [reservableId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser        @relation(fields: [reservableId], references: [id], onDelete: Cascade)
   checkIns       CheckIn[]
   exceptions     ReservationException[]
 

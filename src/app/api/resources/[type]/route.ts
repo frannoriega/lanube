@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { createReservation } from "@/lib/db/reservations";
 import { getCalendarDataByType } from "@/lib/db/resourceCalendar";
 import { getUserById } from "@/lib/db/users";
+import { prisma } from "@/lib/prisma";
 import { ResourceType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -143,11 +144,12 @@ export async function POST(
     )
 
     return NextResponse.json(reservation, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
+    const knownError = error as Error;
     const { type } = await params;
     console.error(`Error creating ${type} reservation:`, error);
     return NextResponse.json(
-      { error: error.message || "Error interno del servidor" },
+      { error: knownError.message || "Error interno del servidor" },
       { status: 500 }
     );
   }
@@ -161,7 +163,7 @@ export async function DELETE(
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.userId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
@@ -178,32 +180,32 @@ export async function DELETE(
     }
 
     // Validate ownership
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { registeredUser: true },
+    const user = await prisma.registeredUser.findUnique({
+      where: { userId: session.userId },
     });
 
-    if (!user?.registeredUser) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
     }
 
-    const existing = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    const existing = await prisma.reservation.findUnique({ where: { id: reservationId, reservableId: user?.id } });
     if (!existing) {
       return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 });
     }
 
     if (
-      !(existing.reservableType === 'USER' && existing.reservableId === user.registeredUser.id)
+      !(existing.reservableType === 'USER' && existing.reservableId === user?.id)
     ) {
       return NextResponse.json({ error: "No puedes eliminar esta reserva" }, { status: 403 });
     }
 
     await prisma.reservation.delete({ where: { id: reservationId } });
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
+  } catch (error) {
+    const knownError = error as Error;
     const { type } = await params;
     console.error(`Error deleting ${type} reservation:`, error);
-    return NextResponse.json({ error: error.message || "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json({ error: knownError.message || "Error interno del servidor" }, { status: 500 });
   }
 }
 

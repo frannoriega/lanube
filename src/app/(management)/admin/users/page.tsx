@@ -2,26 +2,26 @@
 
 import { Button } from "@/components/ui/button"
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
 import { DataTable, DataTablePagination } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import {
-    getCoreRowModel,
-    type PaginationState,
-    type SortingState,
-    useReactTable,
+  getCoreRowModel,
+  type PaginationState,
+  type SortingState,
+  useReactTable,
 } from "@tanstack/react-table"
 import { RefreshCw, Search, Users as UsersIcon } from "lucide-react"
 import { useSession } from "next-auth/react"
@@ -239,7 +239,7 @@ export default function AdminUsersPage() {
   }, [session, status, fetchUsers, router])
 
   const handleSortingChange = (
-    updater: SortingState | ((old: SortingState) => SortingState)
+    updater: SortingState | ((_: SortingState) => SortingState)
   ) => {
     setSorting((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater

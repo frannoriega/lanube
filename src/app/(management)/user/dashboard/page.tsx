@@ -5,6 +5,7 @@ import { Calendar, Clock, TrendingUp } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface DashboardStats {
   upcomingReservations: number
@@ -36,7 +37,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboardStats()
-  }, [status])
+  }, [router, session, status])
 
   const fetchDashboardStats = async () => {
     try {
@@ -45,7 +46,8 @@ export default function DashboardPage() {
         const data = await response.json()
         setStats(data)
       }
-    } catch (error) {
+    } catch (ignored) {
+      toast.error("Error al obtener las estadísticas")
     } finally {
       setLoading(false)
     }

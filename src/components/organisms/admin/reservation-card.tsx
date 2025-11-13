@@ -4,6 +4,7 @@ import { StatusIcon } from "@/components/atoms/status-icon";
 import { ReservationInfo } from "@/components/molecules/reservation-info";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AdminReservationListResult } from "@/lib/db/adminReservations";
 import { CheckCircle, XCircle } from "lucide-react";
 import React from "react";
 
@@ -12,7 +13,7 @@ export function ReservationCard({
   onAction,
   processing,
 }: {
-  reservation: any;
+  reservation: AdminReservationListResult;
   onAction: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
   processing: string | null;
 }) {
@@ -47,9 +48,9 @@ export function ReservationCard({
                 dni: reservation.registeredUser.dni,
                 institution: reservation.registeredUser.institution,
               }}
-              startTime={reservation.startTime}
-              endTime={reservation.endTime}
-              createdAt={reservation.createdAt}
+              startTime={reservation.startTime.toISOString()}
+              endTime={reservation.endTime.toISOString()}
+              createdAt={reservation.createdAt.toISOString()}
               reason={reservation.reason}
             />
           </div>

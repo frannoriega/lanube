@@ -2,6 +2,7 @@
 import { ReservationCard } from "@/components/organisms/admin/reservation-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminReservationListResult } from "@/lib/db/adminReservations";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 
 export function CoworkingReservationsTemplate({
@@ -9,7 +10,7 @@ export function CoworkingReservationsTemplate({
   onAction,
   processing,
 }: {
-  reservations: any[];
+  reservations: AdminReservationListResult[];
   onAction: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
   processing: string | null;
 }) {
@@ -82,7 +83,7 @@ export function CoworkingReservationsTemplate({
           ) : (
             <div className="space-y-6">
               {Object.entries(
-                pending.reduce((acc: Record<string, any[]>, r: any) => {
+                pending.reduce((acc: Record<string, AdminReservationListResult[]>, r: AdminReservationListResult) => {
                   const key = new Date(r.startTime).toISOString().slice(0, 10);
                   (acc[key] ||= []).push(r);
                   return acc;
@@ -91,7 +92,7 @@ export function CoworkingReservationsTemplate({
                 <div key={date} className="space-y-3">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{new Date(date).toLocaleDateString()}</div>
                   <div className="space-y-3">
-                    {items.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()).map((reservation: any) => (
+                    {items.sort((a: AdminReservationListResult, b: AdminReservationListResult) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()).map((reservation: AdminReservationListResult) => (
                       <ReservationCard key={reservation.id} reservation={reservation} onAction={onAction} processing={processing} />
                     ))}
                   </div>
