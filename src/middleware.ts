@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from "next/server"
 export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production'
   })
   const isAuth = !!token
   const isSignedUp = isAuth && token?.signedUp
