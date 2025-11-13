@@ -11,13 +11,11 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export default function LandingPage() {
-  const [init, setInit] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setInit(true);
     setTimeout(() => {
       setFadeIn(true);
     }, 100);
@@ -47,8 +45,8 @@ export default function LandingPage() {
 
       toast.success("Te hemos enviado un enlace de inicio de sesión a tu email");
       setEmail("");
-    } catch (error: any) {
-      toast.error(error.message || "Error al enviar el email");
+    } catch (ignored) {
+      toast.error("Error al enviar el email");
     } finally {
       setIsLoading(false);
     }

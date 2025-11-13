@@ -12,7 +12,7 @@ import {
   Users,
   X
 } from "lucide-react"
-import { signOut, useSession } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
@@ -33,12 +33,6 @@ export default function UserLayout({ children }: UserLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" })
-  }
-
-  console.log(session)
 
   return (
     <div className={`min-h-screen bg-slate-100 dark:bg-slate-800`}>

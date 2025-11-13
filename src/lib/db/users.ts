@@ -396,18 +396,17 @@ async function unbanUser(banId: string): Promise<Ban> {
   return deletedBan;
 }
 
-async function getActiveUserBans(userId: string, limit: number, offset: number): Promise<Ban[]> {
-  const take = Math.min(10, limit);
-  const skip = Math.max(0, offset) * take;
-  const bans = await prisma.ban.findMany({
-    where: { userId, OR: [{ endTime: null }, { endTime: { gt: new Date() } }] },
-    orderBy: { endTime: 'desc' },
-    take,
-    skip,
-  });
-  return bans;
-}
-
+// async function getActiveUserBans(userId: string, limit: number, offset: number): Promise<Ban[]> {
+//   const take = Math.min(10, limit);
+//   const skip = Math.max(0, offset) * take;
+//   const bans = await prisma.ban.findMany({
+//     where: { userId, OR: [{ endTime: null }, { endTime: { gt: new Date() } }] },
+//     orderBy: { endTime: 'desc' },
+//     take,
+//     skip,
+//   });
+//   return bans;
+// }
 
 
 export { banUser, createUser, getUserByEmail, unbanUser, updateUser };

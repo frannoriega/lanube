@@ -1,7 +1,6 @@
 "use client";
 import { WeekCalendar } from "@/components/organisms/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResourceType } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
@@ -12,7 +11,6 @@ export function CalendarTemplateClient({
   description,
   icon: Icon,
   apiEndpoint,
-  resourceType,
   eventTypes,
   defaultEventType,
 }: {
@@ -20,7 +18,6 @@ export function CalendarTemplateClient({
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   apiEndpoint: string;
-  resourceType: ResourceType;
   eventTypes: EventTypeOption[];
   defaultEventType: string;
 }) {

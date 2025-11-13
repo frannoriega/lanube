@@ -42,7 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.role = token.role as UserRole
         session.userId = token.userId as string
         if (token.exp) {
-          session.expires = new Date(token.exp * 1000) as any
+          session.expires = new Date(token.exp * 1000) as Date & string
         }
       }
       return session

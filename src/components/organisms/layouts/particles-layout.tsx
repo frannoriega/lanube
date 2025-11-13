@@ -83,7 +83,7 @@ export default function ParticlesLayout({ children, className, forceTheme, backg
             },
         },
         detectRetina: true,
-    }), [theme]);
+    }), [themeToUse]);
 
     const cns = cn("relative w-full min-h-screen flex items-center justify-center transition-opacity duration-1000", className)
     const bgCns = cn("-z-50 absolute inset-0 w-full h-full", backgroundClass)
