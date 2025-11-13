@@ -1,3 +1,3 @@
 export { WeekCalendar } from "./WeekCalendar";
-export type { DragSelection, ReservationFormData, ReservationOccurrence } from "./WeekCalendar";
+export type { DragSelection, ReservationFormData } from "./WeekCalendar";
 

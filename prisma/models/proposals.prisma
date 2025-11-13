@@ -6,8 +6,8 @@ model Proposal {
   description String
   authorId    String         @map("author_id")
   status      ProposalStatus @default(PENDING)
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  createdAt   DateTime       @db.Timestamptz(3) @default(now()) @map("created_at")
+  updatedAt   DateTime       @db.Timestamptz(3) @updatedAt @map("updated_at")
 
   author   RegisteredUser    @relation(fields: [authorId], references: [id])
   comments ProposalComment[]
@@ -22,8 +22,8 @@ model ProposalComment {
   proposalId String   @map("proposal_id")
   authorId   String   @map("author_id")
   content    String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
+  updatedAt  DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
 
   proposal Proposal              @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   author   RegisteredUser        @relation(fields: [authorId], references: [id])

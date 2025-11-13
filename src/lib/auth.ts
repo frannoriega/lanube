@@ -56,7 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const activeBan = registeredUser.bans[0] ?? null
           token.signedUp = registeredUser
           token.role = registeredUser.role
-          token.userId = registeredUser.userId
+          token.userId = registeredUser.id
           if (activeBan) {
             const minExp = Math.min(activeBan.endTime?.getTime() ?? Infinity, defaultExp)
             token.banned = true

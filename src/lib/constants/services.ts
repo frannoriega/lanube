@@ -11,7 +11,7 @@ interface Service {
 const services: Service[] = [
     {
         name: "Coworking",
-        description: "Espacios modernos y colaborativos para desarrollar tu proyecto",
+        description: "Espacio flexible para trabajo individual y colaborativo. Mesas compartidas y livings con puntos de energía y conectividad de alta velocidad. Ideal para programar, diseñar, investigar, atender reuniones breves y avanzar proyectos tecnológicos.",
         image: "/images/services/coworking.jpg",
         link: "/services/coworking",
         icon: Building2,
