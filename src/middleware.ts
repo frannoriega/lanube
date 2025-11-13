@@ -20,6 +20,11 @@ export async function middleware(request: NextRequest) {
   const requiresAdmin = 
     request.nextUrl.pathname.startsWith("/admin")
 
+  console.debug({
+    token,
+    request
+  })
+
   if (!isAuth && requiresSession) {
     return NextResponse.redirect(new URL("/auth/signin", request.url))
   }
