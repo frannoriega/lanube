@@ -10,7 +10,7 @@ export function CoworkingReservationsTemplate({
   processing,
 }: {
   reservations: any[];
-  onAction: (id: string, action: "APPROVED" | "REJECTED") => void;
+  onAction: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
   processing: string | null;
 }) {
   const pending = reservations.filter((r) => r.status === "PENDING");
@@ -80,9 +80,22 @@ export function CoworkingReservationsTemplate({
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {pending.map((reservation) => (
-                <ReservationCard key={reservation.id} reservation={reservation} onAction={onAction} processing={processing} />
+            <div className="space-y-6">
+              {Object.entries(
+                pending.reduce((acc: Record<string, any[]>, r: any) => {
+                  const key = new Date(r.startTime).toISOString().slice(0, 10);
+                  (acc[key] ||= []).push(r);
+                  return acc;
+                }, {})
+              ).sort((a, b) => a[0].localeCompare(b[0])).map(([date, items]) => (
+                <div key={date} className="space-y-3">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{new Date(date).toLocaleDateString()}</div>
+                  <div className="space-y-3">
+                    {items.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()).map((reservation: any) => (
+                      <ReservationCard key={reservation.id} reservation={reservation} onAction={onAction} processing={processing} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

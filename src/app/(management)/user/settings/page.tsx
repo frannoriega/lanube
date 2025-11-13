@@ -1,14 +1,36 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useCallback, useEffect, useState } from "react"
+import { useForm, type Resolver } from "react-hook-form"
+import { toast } from "sonner"
+import z from "zod"
+
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
+
+const formSchema = z.object({
+  name: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres" }),
+  lastName: z.string().min(3, { message: "El apellido debe tener al menos 3 caracteres" }),
+  dni: z.coerce.number({ message: "Ingrese su DNI" }).min(0, { message: "El DNI debe ser un número positivo" }).max(999999999, { message: "El DNI debe tener menos de 9 dígitos" }),
+  institution: z.string().optional(),
+  reasonToJoin: z.string().min(20, { message: "El motivo debe tener al menos 20 caracteres" }).max(500, { message: "El motivo debe tener menos de 500 caracteres" })
+})
+
+type SettingsFormValues = z.infer<typeof formSchema>
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
@@ -26,14 +48,37 @@ export default function SettingsPage() {
     createdAt: string
     updatedAt: string
   } | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    lastName: "",
-    dni: "",
-    institution: "",
-    reasonToJoin: ""
-  })
   const [saving, setSaving] = useState(false)
+  const form = useForm<SettingsFormValues>({
+    resolver: zodResolver(formSchema) as Resolver<SettingsFormValues>,
+    defaultValues: {
+      name: "",
+      lastName: "",
+      dni: Number.NaN,
+      institution: "",
+      reasonToJoin: "",
+    },
+  })
+
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/profile')
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+        form.reset({
+          name: userData.name || "",
+          lastName: userData.lastName || "",
+          dni: userData.dni ? Number(userData.dni) : Number.NaN,
+          institution: userData.institution || "",
+          reasonToJoin: userData.reasonToJoin || "",
+        })
+      }
+    } catch {
+    } finally {
+      setLoading(false)
+    }
+  }, [form])
 
   useEffect(() => {
     if (status === "loading") return
@@ -44,30 +89,9 @@ export default function SettingsPage() {
     }
 
     fetchUserProfile()
-  }, [session, status, router])
+  }, [session, status, router, fetchUserProfile])
 
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/user/profile')
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-        setFormData({
-          name: userData.name || "",
-          lastName: userData.lastName || "",
-          dni: userData.dni || "",
-          institution: userData.institution || "",
-          reasonToJoin: userData.reasonToJoin || ""
-        })
-      }
-    } catch {
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (values: SettingsFormValues) => {
     setSaving(true)
 
     try {
@@ -76,7 +100,10 @@ export default function SettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...values,
+          dni: values.dni.toString(),
+        }),
       })
 
       if (response.ok) {
@@ -91,13 +118,6 @@ export default function SettingsPage() {
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
   }
 
   if (status === "loading" || loading) {
@@ -131,69 +151,97 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Nombre</Label>
-                    <Input
-                      id="name"
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
                       name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Tu nombre" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Apellido</Label>
-                    <Input
-                      id="lastName"
+                    <FormField
+                      control={form.control}
                       name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Apellido</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Tu apellido" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="dni">DNI</Label>
-                  <Input
-                    id="dni"
+                  <FormField
+                    control={form.control}
                     name="dni"
-                    value={formData.dni}
-                    onChange={handleChange}
-                    required
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>DNI</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="Número de documento"
+                              value={Number.isNaN(field.value) ? "" : field.value ?? ""}
+                              onChange={(event) => {
+                                const nextValue = event.target.value
+                                field.onChange(nextValue === "" ? Number.NaN : Number(nextValue))
+                              }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div>
-                  <Label htmlFor="institution">Institución (opcional)</Label>
-                  <Input
-                    id="institution"
+                  <FormField
+                    control={form.control}
                     name="institution"
-                    value={formData.institution}
-                    onChange={handleChange}
-                    placeholder="Universidad, empresa, etc."
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Institución (opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Universidad, empresa, etc." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div>
-                  <Label htmlFor="reasonToJoin">Motivo para unirse</Label>
-                  <Textarea
-                    id="reasonToJoin"
+                  <FormField
+                    control={form.control}
                     name="reasonToJoin"
-                    value={formData.reasonToJoin}
-                    onChange={handleChange}
-                    placeholder="Cuéntanos por qué quieres usar La Nube..."
-                    rows={3}
-                    required
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Motivo para unirse</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Cuéntanos por qué quieres usar La Nube..."
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Guardando...' : 'Guardar Cambios'}
-                </Button>
-              </form>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
 

@@ -29,47 +29,187 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 -- =========================================================
--- 2. Function: check_resource_capacity(_resource_id, _start, _end)
+-- 13. Create reservation with validations (overlap + capacity)
 -- =========================================================
--- Verifies whether a resource or its fungible group has capacity.
--- =========================================================
-
-CREATE OR REPLACE FUNCTION check_resource_capacity(
-  _resource_id text,
-  _start timestamptz,
-  _end timestamptz
+CREATE OR REPLACE FUNCTION create_reservation_with_checks(
+  p_reservable_type reservable_types,
+  p_reservable_id text,
+  p_resource_id text,
+  p_event_type event_types,
+  p_reason text,
+  p_start_time timestamptz,
+  p_end_time timestamptz,
+  p_is_recurring boolean DEFAULT false,
+  p_rrule text DEFAULT NULL,
+  p_recurrence_end timestamptz DEFAULT NULL
 )
-RETURNS boolean AS $$
+RETURNS reservations AS $$
 DECLARE
-  group_id text;
-  cap int;
-  used int;
+  v_group_id text;
+  v_capacity int;
+  v_used int;
+  v_actor_size int;
+  v_duration interval;
+  v_res reservations%ROWTYPE;
 BEGIN
-  SELECT fungible_resource_id INTO group_id
-  FROM resources
-  WHERE id = _resource_id;
-
-  SELECT capacity INTO cap
-  FROM fungible_resources
-  WHERE id = group_id;
-
-  IF cap IS NULL THEN
-    RAISE EXCEPTION 'Fungible resource group % not found for resource %', group_id, _resource_id;
+  -- Validate times
+  IF p_start_time >= p_end_time THEN
+    RAISE EXCEPTION 'Start time must be before end time';
   END IF;
 
-  SELECT COUNT(*) INTO used
-  FROM reservations r
-  WHERE (r.resource_id = _resource_id
-     OR r.resource_id IN (SELECT id FROM resources WHERE fungible_resource_id = group_id))
-    AND r.status IN ('APPROVED', 'PENDING')
-    AND r.start_time < _end
-    AND r.end_time > _start;
+  -- Optionally prevent past reservations
+  IF p_start_time < now() THEN
+    RAISE EXCEPTION 'Cannot create reservations in the past';
+  END IF;
 
-  RETURN used < cap;
+  -- Validate resource exists and derive fungible group + capacity
+  SELECT fungible_resource_id INTO v_group_id FROM resources WHERE id = p_resource_id;
+  IF v_group_id IS NULL THEN
+    RAISE EXCEPTION 'Resource % not found', p_resource_id;
+  END IF;
+
+  SELECT capacity INTO v_capacity FROM fungible_resources WHERE id = v_group_id;
+  IF v_capacity IS NULL THEN
+    RAISE EXCEPTION 'Fungible resource group for resource % not found', p_resource_id;
+  END IF;
+
+  v_actor_size := get_actor_size(p_reservable_type, p_reservable_id);
+  v_duration := (p_end_time - p_start_time);
+
+  -- Recurring-specific validations
+  IF p_is_recurring THEN
+    IF p_rrule IS NULL THEN
+      RAISE EXCEPTION 'Recurring reservations must include an RRULE';
+    END IF;
+    IF p_recurrence_end IS NULL THEN
+      RAISE EXCEPTION 'Recurring reservations must include a recurrence_end date';
+    END IF;
+  END IF;
+
+  -- Overlap validation for the same resource
+  IF NOT p_is_recurring THEN
+    IF EXISTS (
+      SELECT 1 FROM reservations r
+      WHERE r.resource_id = p_resource_id
+        AND r.status IN ('PENDING','APPROVED')
+        AND r.start_time < p_end_time
+        AND r.end_time   > p_start_time
+    ) THEN
+      RAISE EXCEPTION 'Overlapping reservation exists for this resource';
+    END IF;
+  ELSE
+    IF EXISTS (
+      WITH occ AS (
+        SELECT gs AS occ_start, (gs + v_duration) AS occ_end
+        FROM generate_series(
+          p_start_time,
+          COALESCE(p_recurrence_end, p_start_time + interval '1 year'),
+          parse_rrule_freq(p_rrule, parse_rrule_interval(p_rrule))
+        ) AS gs
+      )
+      SELECT 1
+      FROM occ o
+      JOIN reservations r
+        ON r.resource_id = p_resource_id
+       AND r.status IN ('PENDING','APPROVED')
+       AND r.start_time < o.occ_end
+       AND r.end_time   > o.occ_start
+      LIMIT 1
+    ) THEN
+      RAISE EXCEPTION 'Overlapping reservation exists for this resource (recurring)';
+    END IF;
+  END IF;
+
+  -- Capacity validation across fungible group
+  IF NOT p_is_recurring THEN
+    -- Use existing capacity helper semantics (counts existing bookings)
+    SELECT COUNT(*) INTO v_used
+    FROM reservations r
+    WHERE (r.resource_id = p_resource_id
+       OR r.resource_id IN (SELECT id FROM resources WHERE fungible_resource_id = v_group_id))
+      AND r.status IN ('APPROVED','PENDING')
+      AND r.start_time < p_end_time
+      AND r.end_time   > p_start_time;
+
+    IF v_capacity < 0 THEN
+      IF v_used <> 0 THEN
+        RAISE EXCEPTION 'No capacity available for the requested time range';
+      END IF;
+    ELSE
+      IF (v_used + v_actor_size) > v_capacity THEN
+        RAISE EXCEPTION 'No capacity available for the requested time range';
+      END IF;
+    END IF;
+  ELSE
+    -- Validate capacity for every generated occurrence
+    IF EXISTS (
+      WITH occ AS (
+        SELECT gs AS occ_start, (gs + v_duration) AS occ_end
+        FROM generate_series(
+          p_start_time,
+          COALESCE(p_recurrence_end, p_start_time + interval '1 year'),
+          parse_rrule_freq(p_rrule, parse_rrule_interval(p_rrule))
+        ) AS gs
+      ),
+      used_counts AS (
+        SELECT o.occ_start, o.occ_end,
+               (
+                 SELECT COUNT(*) FROM reservations r
+                 WHERE (r.resource_id = p_resource_id
+                    OR r.resource_id IN (SELECT id FROM resources WHERE fungible_resource_id = v_group_id))
+                   AND r.status IN ('APPROVED','PENDING')
+                   AND r.start_time < o.occ_end
+                   AND r.end_time   > o.occ_start
+               ) AS used
+        FROM occ o
+      )
+      SELECT 1 FROM used_counts u
+      WHERE (
+        (v_capacity < 0 AND u.used <> 0) OR
+        (v_capacity >= 0 AND (u.used + v_actor_size) > v_capacity)
+      )
+      LIMIT 1
+    ) THEN
+      RAISE EXCEPTION 'No capacity available for at least one occurrence';
+    END IF;
+  END IF;
+
+  -- All validations passed: insert reservation
+  INSERT INTO reservations (
+    reservable_type,
+    reservable_id,
+    resource_id,
+    event_type,
+    reason,
+    status,
+    start_time,
+    end_time,
+    is_recurring,
+    rrule,
+    recurrence_end
+  )
+  VALUES (
+    p_reservable_type,
+    p_reservable_id,
+    p_resource_id,
+    p_event_type,
+    p_reason,
+    'PENDING',
+    p_start_time,
+    p_end_time,
+    COALESCE(p_is_recurring, false),
+    p_rrule,
+    p_recurrence_end
+  )
+  RETURNING * INTO v_res;
+
+  RETURN v_res;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- [Removed] check_resource_capacity: superseded by check_availability_with_actor
 
 
 -- =========================================================
@@ -428,7 +568,7 @@ $$ LANGUAGE plpgsql;
 -- =========================================================
 -- 9. Function: expand_reservations_for_calendar_by_type
 -- Shows reservations for all resources of a given type
--- Finds all fungible resources of the type, then all their resources
+-- Finds all resources of the type
 -- Returns APPROVED reservations OR user's own reservations
 -- =========================================================
 CREATE OR REPLACE FUNCTION expand_reservations_for_calendar_by_type(
@@ -459,14 +599,10 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
-  WITH fungible_resources_of_type AS (
-    -- Get all fungible resources of this type
-    SELECT id FROM fungible_resources WHERE type = p_resource_type
-  ),
-  resource_ids AS (
+  WITH resource_ids AS (
     -- Get all individual resources from all fungible groups of this type
     SELECT id FROM resources 
-    WHERE fungible_resource_id IN (SELECT id FROM fungible_resources_of_type)
+    WHERE type = p_resource_type
   ),
   filtered_reservations AS (
     -- Get reservations for ANY resource in the group with OR logic
@@ -760,9 +896,7 @@ BEGIN
     l.status
   FROM reservation_ledger l
   WHERE l.resource_id IN (
-    SELECT id FROM resources WHERE fungible_resource_id IN (
-      SELECT id FROM fungible_resources WHERE type = p_resource_type
-    )
+    SELECT id FROM resources WHERE type = p_resource_type
   )
     AND l.occurrence_start_time < p_end_time
     AND l.occurrence_end_time > p_start_time
@@ -800,6 +934,7 @@ BEGIN
     JOIN resources r ON r.id = l.resource_id
     WHERE l.occurrence_start_time < p_end_time
       AND l.occurrence_end_time > p_start_time
+      AND l.status = 'APPROVED'
   ),
   endpoints AS (
     SELECT fr_id, occurrence_start_time AS ts, 1 AS kind, actor_size FROM ledger
@@ -852,5 +987,158 @@ BEGIN
   FROM merged
   GROUP BY grp
   ORDER BY slot_start;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =========================================================
+-- 11. Preview conflicting pending reservations for approval
+-- =========================================================
+CREATE OR REPLACE FUNCTION preview_conflicting_pending_reservations(
+  p_reservation_id text
+)
+RETURNS TABLE (
+  conflicting_reservation_id text
+) AS $$
+DECLARE
+  t_res reservations;
+  r_type resource_types;
+  actor_sz int;
+BEGIN
+  SELECT * INTO t_res FROM reservations WHERE id = p_reservation_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Reservation % not found', p_reservation_id;
+  END IF;
+  IF t_res.status <> 'PENDING' THEN
+    RETURN;
+  END IF;
+
+  -- Get fungible resource type
+  SELECT r.type INTO r_type
+  FROM resources r
+  WHERE r.id = t_res.resource_id;
+
+  actor_sz := get_actor_size(t_res.reservable_type, t_res.reservable_id);
+
+  RETURN QUERY
+  WITH base_window AS (
+    SELECT t_res.start_time AS w_start, t_res.end_time AS w_end
+  ),
+  approved_ledger AS (
+    SELECT l.* FROM reservation_ledger l
+    JOIN resources r ON r.id = l.resource_id
+    WHERE r.fungible_resource_id IN (
+      SELECT DISTINCT fungible_resource_id FROM resources WHERE type = r_type
+    )
+      AND l.status = 'APPROVED'
+      AND l.occurrence_start_time < (SELECT w_end FROM base_window)
+      AND l.occurrence_end_time > (SELECT w_start FROM base_window)
+  ),
+  target_row AS (
+    SELECT t_res.id::text AS reservation_id,
+           t_res.start_time::timestamptz AS occurrence_start_time,
+           t_res.end_time::timestamptz AS occurrence_end_time,
+           t_res.reservable_type,
+           t_res.reservable_id,
+           t_res.resource_id,
+           actor_sz AS actor_size
+  ),
+  endpoints AS (
+    SELECT r.fungible_resource_id AS fr_id, l.occurrence_start_time AS ts, 1 AS kind, l.actor_size
+    FROM approved_ledger l JOIN resources r ON r.id = l.resource_id
+    UNION ALL
+    SELECT r.fungible_resource_id, l.occurrence_end_time, -1, l.actor_size
+    FROM approved_ledger l JOIN resources r ON r.id = l.resource_id
+    UNION ALL
+    SELECT r.fungible_resource_id, t.occurrence_start_time, 1, t.actor_size FROM target_row t JOIN resources r ON r.id = t.resource_id
+    UNION ALL
+    SELECT r.fungible_resource_id, t.occurrence_end_time, -1, t.actor_size FROM target_row t JOIN resources r ON r.id = t.resource_id
+  ),
+  ordered AS (
+    SELECT fr_id, ts, kind, actor_size
+    FROM endpoints
+    ORDER BY fr_id, ts, kind DESC
+  ),
+  sweep AS (
+    SELECT fr_id, ts,
+           SUM(CASE WHEN kind = 1 THEN actor_size ELSE -actor_size END) OVER (
+             PARTITION BY fr_id ORDER BY ts, kind DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+           ) AS used
+    FROM ordered
+  ),
+  next_ts AS (
+    SELECT s.fr_id, s.ts AS slot_start,
+           LEAD(s.ts) OVER (PARTITION BY s.fr_id ORDER BY s.ts) AS slot_end,
+           s.used
+    FROM sweep s
+  ),
+  joined AS (
+    SELECT n.fr_id, n.slot_start, n.slot_end, n.used, fr.capacity
+    FROM next_ts n
+    JOIN fungible_resources fr ON fr.id = n.fr_id
+    WHERE n.slot_end IS NOT NULL
+  ),
+  full_slots AS (
+    SELECT slot_start, slot_end
+    FROM joined
+    WHERE used >= capacity AND slot_end > slot_start
+  )
+  SELECT p.id
+  FROM reservations p
+  WHERE p.status = 'PENDING'
+    AND p.id <> p_reservation_id
+    AND p.resource_id IN (
+      SELECT id FROM resources WHERE fungible_resource_id IN (
+        SELECT DISTINCT fungible_resource_id FROM resources WHERE type = r_type
+      )
+    )
+    AND EXISTS (
+      SELECT 1 FROM full_slots fs
+      WHERE p.start_time < fs.slot_end AND p.end_time > fs.slot_start
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =========================================================
+-- 12. Approve reservation and reject conflicts (transactional)
+-- =========================================================
+CREATE OR REPLACE FUNCTION approve_reservation_and_reject_conflicts(
+  p_reservation_id text,
+  p_denied_reason text DEFAULT 'Capacidad agotada'
+)
+RETURNS TABLE (
+  approved_id text,
+  auto_rejected_ids text
+) AS $$
+DECLARE
+  conflicts RECORD;
+BEGIN
+  -- Approve the reservation if pending
+  UPDATE reservations SET status = 'APPROVED', denied_reason = NULL
+  WHERE id = p_reservation_id AND status = 'PENDING'
+  RETURNING id INTO approved_id;
+
+  IF approved_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- Rebuild ledger narrowly around this reservation
+  PERFORM rebuild_reservation_ledger(NULL, NULL);
+
+  -- Gather conflicts
+  FOR conflicts IN (
+    SELECT conflicting_reservation_id FROM preview_conflicting_pending_reservations(p_reservation_id)
+    FOR UPDATE SKIP LOCKED
+  ) LOOP
+    UPDATE reservations
+    SET status = 'REJECTED', denied_reason = p_denied_reason
+    WHERE id = conflicts.conflicting_reservation_id AND status = 'PENDING';
+  END LOOP;
+
+  auto_rejected_ids := (
+    SELECT string_agg(conflicting_reservation_id, ',')
+    FROM preview_conflicting_pending_reservations(p_reservation_id)
+  );
+
+  RETURN NEXT;
 END;
 $$ LANGUAGE plpgsql;

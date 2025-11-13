@@ -4,9 +4,9 @@ model Ban {
   id        String    @id @default(cuid())
   userId    String    @map("user_id")
   reason    String
-  startTime DateTime  @map("start_time")
-  endTime   DateTime? @map("end_time")
-  createdAt DateTime  @default(now()) @map("created_at")
+  startTime DateTime  @db.Timestamptz(3) @map("start_time")
+  endTime   DateTime? @db.Timestamptz(3) @map("end_time")
+  createdAt DateTime  @db.Timestamptz(3) @default(now()) @map("created_at")
 
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 

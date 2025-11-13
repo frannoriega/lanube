@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth"
-import { isAdminUser, setReservationStatus } from "@/lib/db/adminReservations"
+import { approveReservationAndRejectConflicts, isAdminUser, previewConflictingPending, setReservationStatus } from "@/lib/db/adminReservations"
 import { ReservationStatus } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -20,18 +20,28 @@ export async function PATCH(
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
 
-    const { status } = await request.json()
+    const { status, deniedReason, preview } = await request.json()
 
     if (!status || !['APPROVED', 'REJECTED', 'CANCELLED'].includes(status)) {
       return NextResponse.json({ message: "Estado inválido" }, { status: 400 })
     }
 
     const resolvedParams = await params
-    
-    const reservation = await setReservationStatus(resolvedParams.id, status as ReservationStatus)
 
-    return NextResponse.json(reservation)
+    if (status === 'APPROVED') {
+      if (preview) {
+        const conflicts = await previewConflictingPending(resolvedParams.id)
+        return NextResponse.json({ approvedId: null, autoRejectedIds: conflicts })
+      } else {
+        const result = await approveReservationAndRejectConflicts(resolvedParams.id, deniedReason)
+        return NextResponse.json(result)
+      }
+    } else {
+      const reservation = await setReservationStatus(resolvedParams.id, status as ReservationStatus, deniedReason)
+      return NextResponse.json(reservation)
+    }
   } catch (error) {
+    console.error(error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

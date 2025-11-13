@@ -1,16 +1,18 @@
 import { auth } from "@/lib/auth";
-import { createReservationForType, getCalendarDataByType, getRegisteredUserIdByEmail } from "@/lib/db/resourceCalendar";
+import { createReservation } from "@/lib/db/reservations";
+import { getCalendarDataByType } from "@/lib/db/resourceCalendar";
+import { getUserById } from "@/lib/db/users";
 import { ResourceType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const RESOURCE_TYPE_MAP: Record<string, ResourceType> = {
-  coworking: "COWORKING",
-  lab: "LAB",
-  auditorium: "AUDITORIUM",
-  "meeting-room": "MEETING",
+  coworking: ResourceType.COWORKING,
+  lab: ResourceType.LAB,
+  auditorium: ResourceType.AUDITORIUM,
+  meeting: ResourceType.MEETING,
 };
 
-// GET: Fetch expanded reservations for a specific resource type
+// GET: Fetch calendar data (unavailable slots + user reservations) for a specific resource type
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ type: string }> }
@@ -18,13 +20,18 @@ export async function GET(
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.userId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const user = await getUserById(session.userId);
+    if (!user) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
+    }
+
     const { type } = await params;
-    const resourceType = RESOURCE_TYPE_MAP[type];
-    if (!resourceType) {
+    const resourceType = type.toUpperCase() as ResourceType;
+    if (!(resourceType in ResourceType)) {
       return NextResponse.json({ error: "Tipo de recurso inválido" }, { status: 400 });
     }
 
@@ -39,24 +46,18 @@ export async function GET(
       );
     }
 
-    const registeredUserId = await getRegisteredUserIdByEmail(session.user.email)
-    if (!registeredUserId) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
-    }
+    // Get both unavailable slots and user's own reservations
     const data = await getCalendarDataByType(
       resourceType,
-      registeredUserId,
+      user.id,
       new Date(startDate),
       new Date(endDate)
-    )
+    );
 
     return NextResponse.json(data);
   } catch (error) {
     const { type } = await params;
-    console.error(`Error fetching ${type} reservations:`, error);
+    console.error(`Error fetching ${type} calendar data:`, error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
@@ -69,19 +70,19 @@ export async function POST(
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.userId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { type } = await params;
-    const resourceType = RESOURCE_TYPE_MAP[type];
-    if (!resourceType) {
-      return NextResponse.json({ error: "Tipo de recurso inválido" }, { status: 400 });
+    const user = await getUserById(session.userId);
+    if (!user) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
     }
 
-    const registeredUserId = await getRegisteredUserIdByEmail(session.user.email)
-    if (!registeredUserId) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    const { type } = await params;
+    const resourceType = type.toUpperCase() as ResourceType;
+    if (!(resourceType in ResourceType)) {
+      return NextResponse.json({ error: "Tipo de recurso inválido" }, { status: 400 });
     }
 
     const body = await request.json();
@@ -129,13 +130,16 @@ export async function POST(
       );
     }
 
-    const reservation = await createReservationForType(
-      resourceType,
-      registeredUserId,
-      startDateTime,
-      endDateTime,
-      reason,
-      eventType || "MEETING"
+    const reservation = await createReservation(
+      {
+        reservableType: "USER",
+        reservableId: user.id,
+        resourceType,
+        eventType: eventType || "MEETING",
+        reason,
+        startTime: startDateTime,
+        endTime: endDateTime,
+      }
     )
 
     return NextResponse.json(reservation, { status: 201 });
@@ -146,6 +150,60 @@ export async function POST(
       { error: error.message || "Error interno del servidor" },
       { status: 500 }
     );
+  }
+}
+
+// DELETE: Delete a reservation (only owner can delete)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ type: string }> }
+) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const { type } = await params;
+    const resourceType = RESOURCE_TYPE_MAP[type];
+    if (!resourceType) {
+      return NextResponse.json({ error: "Tipo de recurso inválido" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { reservationId } = body || {};
+    if (!reservationId) {
+      return NextResponse.json({ error: "reservationId requerido" }, { status: 400 });
+    }
+
+    // Validate ownership
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { registeredUser: true },
+    });
+
+    if (!user?.registeredUser) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    }
+
+    const existing = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    if (!existing) {
+      return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 });
+    }
+
+    if (
+      !(existing.reservableType === 'USER' && existing.reservableId === user.registeredUser.id)
+    ) {
+      return NextResponse.json({ error: "No puedes eliminar esta reserva" }, { status: 403 });
+    }
+
+    await prisma.reservation.delete({ where: { id: reservationId } });
+    return NextResponse.json({ ok: true });
+  } catch (error: any) {
+    const { type } = await params;
+    console.error(`Error deleting ${type} reservation:`, error);
+    return NextResponse.json({ error: error.message || "Error interno del servidor" }, { status: 500 });
   }
 }
 

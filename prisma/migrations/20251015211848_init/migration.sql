@@ -1,3 +1,4 @@
+
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN');
 
@@ -45,7 +46,7 @@ CREATE TABLE "sessions" (
     "id" TEXT NOT NULL,
     "session_token" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
-    "expires" TIMESTAMP(3) NOT NULL,
+    "expires" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
 );
@@ -55,7 +56,7 @@ CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "email" TEXT NOT NULL,
-    "email_verified" TIMESTAMP(3),
+    "email_verified" TIMESTAMPTZ(3),
     "image" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
@@ -71,8 +72,8 @@ CREATE TABLE "registered_users" (
     "institution" TEXT,
     "reason_to_join" TEXT NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'USER',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "registered_users_pkey" PRIMARY KEY ("id")
 );
@@ -81,7 +82,7 @@ CREATE TABLE "registered_users" (
 CREATE TABLE "verification_tokens" (
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
-    "expires" TIMESTAMP(3) NOT NULL
+    "expires" TIMESTAMPTZ(3) NOT NULL
 );
 
 -- CreateTable
@@ -89,9 +90,9 @@ CREATE TABLE "bans" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "reason" TEXT NOT NULL,
-    "start_time" TIMESTAMP(3) NOT NULL,
-    "end_time" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "start_time" TIMESTAMPTZ(3) NOT NULL,
+    "end_time" TIMESTAMPTZ(3),
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "bans_pkey" PRIMARY KEY ("id")
 );
@@ -102,11 +103,11 @@ CREATE TABLE "events" (
     "name" TEXT NOT NULL,
     "description" TEXT,
     "location" TEXT,
-    "start_time" TIMESTAMP(3) NOT NULL,
-    "end_time" TIMESTAMP(3) NOT NULL,
+    "start_time" TIMESTAMPTZ(3) NOT NULL,
+    "end_time" TIMESTAMPTZ(3) NOT NULL,
     "image_url" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "events_pkey" PRIMARY KEY ("id")
 );
@@ -125,8 +126,8 @@ CREATE TABLE "incidents" (
     "title" TEXT NOT NULL,
     "description" TEXT,
     "status" "incident_statuses" NOT NULL DEFAULT 'OPEN',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "incidents_pkey" PRIMARY KEY ("id")
 );
@@ -148,8 +149,8 @@ CREATE TABLE "inventories" (
     "quantity" INTEGER NOT NULL,
     "location" TEXT,
     "created_by_id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "inventories_pkey" PRIMARY KEY ("id")
 );
@@ -162,8 +163,8 @@ CREATE TABLE "purchase_orders" (
     "quantity" INTEGER NOT NULL,
     "status" "order_statuses" NOT NULL DEFAULT 'PENDING',
     "notes" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "purchase_orders_pkey" PRIMARY KEY ("id")
 );
@@ -173,8 +174,8 @@ CREATE TABLE "organizations" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "organizations_pkey" PRIMARY KEY ("id")
 );
@@ -192,8 +193,8 @@ CREATE TABLE "teams" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "organization_id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "teams_pkey" PRIMARY KEY ("id")
 );
@@ -213,8 +214,8 @@ CREATE TABLE "proposals" (
     "description" TEXT NOT NULL,
     "author_id" TEXT NOT NULL,
     "status" "proposal_statuses" NOT NULL DEFAULT 'PENDING',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "proposals_pkey" PRIMARY KEY ("id")
 );
@@ -225,8 +226,8 @@ CREATE TABLE "proposal_comments" (
     "proposal_id" TEXT NOT NULL,
     "author_id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "proposal_comments_pkey" PRIMARY KEY ("id")
 );
@@ -252,18 +253,18 @@ CREATE TABLE "reservations" (
     "id" TEXT NOT NULL,
     "reservable_type" "reservable_types" NOT NULL,
     "reservable_id" TEXT NOT NULL,
-    "resource_id" TEXT,
+    "resource_id" TEXT NOT NULL,
     "event_type" "event_types" NOT NULL,
     "reason" TEXT NOT NULL,
     "denied_reason" TEXT,
     "status" "reservation_statuses" NOT NULL DEFAULT 'PENDING',
-    "start_time" TIMESTAMP(3) NOT NULL,
-    "end_time" TIMESTAMP(3) NOT NULL,
+    "start_time" TIMESTAMPTZ(3) NOT NULL,
+    "end_time" TIMESTAMPTZ(3) NOT NULL,
     "is_recurring" BOOLEAN NOT NULL DEFAULT false,
     "rrule" TEXT,
-    "recurrence_end" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "recurrence_end" TIMESTAMPTZ(3),
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "reservations_pkey" PRIMARY KEY ("id")
 );
@@ -272,22 +273,22 @@ CREATE TABLE "reservations" (
 CREATE TABLE "reservation_exceptions" (
     "id" TEXT NOT NULL,
     "reservation_id" TEXT NOT NULL,
-    "exception_date" TIMESTAMP(3) NOT NULL,
+    "exception_date" TIMESTAMPTZ(3) NOT NULL,
     "is_cancelled" BOOLEAN NOT NULL DEFAULT false,
-    "new_start_time" TIMESTAMP(3),
-    "new_end_time" TIMESTAMP(3),
+    "new_start_time" TIMESTAMPTZ(3),
+    "new_end_time" TIMESTAMPTZ(3),
     "reason" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "reservation_exceptions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "reservation_ledger" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "reservation_id" TEXT NOT NULL,
-    "occurrence_start_time" TIMESTAMP(3) NOT NULL,
-    "occurrence_end_time" TIMESTAMP(3) NOT NULL,
+    "occurrence_start_time" TIMESTAMPTZ(3) NOT NULL,
+    "occurrence_end_time" TIMESTAMPTZ(3) NOT NULL,
     "reservable_type" "reservable_types" NOT NULL,
     "reservable_id" TEXT NOT NULL,
     "resource_id" TEXT NOT NULL,
@@ -295,7 +296,7 @@ CREATE TABLE "reservation_ledger" (
     "reason" TEXT,
     "actor_size" INTEGER NOT NULL,
     "status" "reservation_statuses" NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "reservation_ledger_pkey" PRIMARY KEY ("id")
 );
@@ -305,10 +306,10 @@ CREATE TABLE "check_ins" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "reservation_id" TEXT,
-    "check_in_time" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "check_out_time" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "check_in_time" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "check_out_time" TIMESTAMPTZ(3),
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "check_ins_pkey" PRIMARY KEY ("id")
 );
@@ -317,11 +318,10 @@ CREATE TABLE "check_ins" (
 CREATE TABLE "fungible_resources" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "type" "resource_types" NOT NULL,
     "capacity" INTEGER NOT NULL,
     "is_exclusive" BOOLEAN NOT NULL DEFAULT false,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "fungible_resources_pkey" PRIMARY KEY ("id")
 );
@@ -330,11 +330,12 @@ CREATE TABLE "fungible_resources" (
 CREATE TABLE "resources" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "type" "resource_types" NOT NULL,
     "fungible_resource_id" TEXT NOT NULL,
     "serial_number" TEXT,
     "metadata" JSONB,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "resources_pkey" PRIMARY KEY ("id")
 );

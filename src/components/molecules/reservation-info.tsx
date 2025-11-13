@@ -32,7 +32,7 @@ export function ReservationInfo({
       </div>
       <div className="md:col-span-2">
         <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Motivo de la reserva:</p>
-        <p className="text-sm bg-gray-50 p-3 rounded-lg">{reason}</p>
+        <p className="text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">{reason}</p>
       </div>
     </div>
   );

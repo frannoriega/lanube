@@ -1,11 +1,10 @@
 "use client"
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar, Clock, TrendingUp } from "lucide-react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Building2, Microscope, Users, Calendar, Clock, TrendingUp } from "lucide-react"
-import { useSession } from "next-auth/react"
 
 interface DashboardStats {
   upcomingReservations: number
@@ -14,10 +13,11 @@ interface DashboardStats {
   recentReservations: {
     id: string
     service: string
+    serviceType: string
     startTime: string
     endTime: string
     status: string
-    reason: string
+    reason: string | null
   }[]
 }
 
@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/dashboard/stats')
+      const response = await fetch('/api/user/stats', { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -62,30 +62,6 @@ export default function DashboardPage() {
   if (!session) {
     return null
   }
-
-  const services = [
-    {
-      name: "Coworking",
-      description: "Reserva un espacio de trabajo colaborativo",
-      icon: Building2,
-      href: "/coworking",
-      color: "bg-blue-500"
-    },
-    {
-      name: "Laboratorio",
-      description: "Accede a equipamiento especializado",
-      icon: Microscope,
-      href: "/lab",
-      color: "bg-green-500"
-    },
-    {
-      name: "Auditorio",
-      description: "Organiza eventos y presentaciones",
-      icon: Users,
-      href: "/auditorium",
-      color: "bg-purple-500"
-    }
-  ]
 
   return (
       <div className="space-y-6">
@@ -148,36 +124,6 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Services */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Servicios Disponibles</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => {
-              const Icon = service.icon
-              return (
-                <Card key={service.name} className="hover:shadow-md transition-shadow glass-card dark:glass-card-dark">
-                  <CardHeader>
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${service.color} text-white`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{service.name}</CardTitle>
-                        <CardDescription>{service.description}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full">
-                      <a href={service.href}>Acceder</a>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
         </div>
 
         {/* Recent reservations */}

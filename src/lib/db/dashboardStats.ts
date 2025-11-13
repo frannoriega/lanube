@@ -1,38 +1,130 @@
-/**
- * Dashboard stats for a user's account email.
- */
 import { prisma } from "@/lib/prisma";
 
-export async function getDashboardStatsByEmail(email: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return null;
+export interface DashboardStats {
+  upcomingReservations: number;
+  totalTimeThisWeek: number;
+  totalTimeThisMonth: number;
+  recentReservations: Array<{
+    id: string;
+    service: string;
+    serviceType: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    reason: string | null;
+  }>;
+}
+
+const HOURS_IN_MS = 1000 * 60 * 60;
+
+function toHours(reservations: Array<{ startTime: Date; endTime: Date }>): number {
+  const total = reservations.reduce((acc, reservation) => {
+    const duration = reservation.endTime.getTime() - reservation.startTime.getTime();
+    return acc + Math.max(duration, 0);
+  }, 0);
+
+  return Math.round((total / HOURS_IN_MS) * 10) / 10;
+}
+
+export async function getDashboardStatsByUserId(userId: string): Promise<DashboardStats> {
   const now = new Date();
-  const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0, 0, 0, 0);
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [upcomingReservations, reservationsThisWeek, reservationsThisMonth, recentReservations] = await Promise.all([
-    prisma.reservation.count({ where: { userId: user.id, startTime: { gte: now }, status: 'APPROVED' } }),
-    prisma.reservation.findMany({ where: { userId: user.id, startTime: { gte: startOfWeek }, status: 'APPROVED' } }),
-    prisma.reservation.findMany({ where: { userId: user.id, startTime: { gte: startOfMonth }, status: 'APPROVED' } }),
-    prisma.reservation.findMany({ where: { userId: user.id }, orderBy: { createdAt: 'desc' }, take: 10 }),
-  ]);
-
-  const totalTimeThisWeek = Math.round(reservationsThisWeek.reduce((total, r) => total + ((new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / (1000*60*60)), 0) * 10) / 10;
-  const totalTimeThisMonth = Math.round(reservationsThisMonth.reduce((total, r) => total + ((new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / (1000*60*60)), 0) * 10) / 10;
+  const [upcomingReservations, reservationsThisWeek, reservationsThisMonth, recentReservations] =
+    await Promise.all([
+      prisma.reservation.count({
+        where: {
+          reservableId: userId,
+          startTime: {
+            gte: now,
+          },
+          status: "APPROVED",
+        },
+      }),
+      prisma.reservation.findMany({
+        select: {
+          startTime: true,
+          endTime: true,
+        },
+        where: {
+          reservableId: userId,
+          startTime: {
+            gte: startOfWeek,
+          },
+          status: "APPROVED",
+        },
+      }),
+      prisma.reservation.findMany({
+        select: {
+          startTime: true,
+          endTime: true,
+        },
+        where: {
+          reservableId: userId,
+          startTime: {
+            gte: startOfMonth,
+          },
+          status: "APPROVED",
+        },
+      }),
+      prisma.reservation.findMany({
+        select: {
+          id: true,
+          resource: {
+            select: {
+              name: true,
+              type: true,
+            },
+          },
+          startTime: true,
+          endTime: true,
+          status: true,
+          reason: true,
+        },
+        where: {
+          reservableId: userId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      }),
+    ]);
 
   return {
     upcomingReservations,
-    totalTimeThisWeek,
-    totalTimeThisMonth,
-    recentReservations: recentReservations.map(r => ({
-      id: r.id,
-      service: r.service,
-      startTime: r.startTime,
-      endTime: r.endTime,
-      status: r.status,
-      reason: r.reason,
+    totalTimeThisWeek: toHours(reservationsThisWeek),
+    totalTimeThisMonth: toHours(reservationsThisMonth),
+    recentReservations: recentReservations.map((reservation) => ({
+      id: reservation.id,
+      service: reservation.resource?.name ?? reservation.resource?.type ?? "Servicio",
+      serviceType: reservation.resource?.type ?? "UNKNOWN",
+      startTime: reservation.startTime,
+      endTime: reservation.endTime,
+      status: reservation.status,
+      reason: reservation.reason ?? null,
     })),
   };
 }
 
+export async function getDashboardStatsByEmail(email: string): Promise<DashboardStats | null> {
+  const user = await prisma.registeredUser.findFirst({
+    select: {
+      id: true,
+    },
+    where: {
+      user: {
+        email,
+      },
+    },
+  });
 
+  if (!user) {
+    return null;
+  }
+
+  return getDashboardStatsByUserId(user.id);
+}

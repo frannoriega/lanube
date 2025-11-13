@@ -6,9 +6,9 @@ import { links } from "@/lib/constants/nav";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
-export default function Footer() {
+export default function Footer({ transparent = true }: { transparent?: boolean }) {
     return (
-        <footer className="w-full h-fit bg-slate-300/60 dark:bg-slate-950/60 backdrop-blur-xs">
+        <footer className={`w-full h-fit ${transparent ? "bg-slate-300/60 dark:bg-slate-950/60  backdrop-blur-xs" : "bg-slate-300 dark:bg-slate-950"}`}>
             <Container>
                 <div className="p-8 flex flex-row justify-evenly">
                     <section className="flex flex-col gap-2 max-w-1/3 justify-between">

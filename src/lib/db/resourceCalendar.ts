@@ -1,6 +1,16 @@
-import { createReservation, getExpandedReservationsForCalendar } from "@/lib/db/reservations";
+import { getUnavailableSlots, getUserNextReservations } from "@/lib/db/reservations";
 import { prisma } from "@/lib/prisma";
-import { EventType, ResourceType } from "@prisma/client";
+import { ReservableType, ResourceType } from "@prisma/client";
+
+export interface ReservationOccurrence {
+  reservationId: string;
+  occurrenceStartTime: string;
+  occurrenceEndTime: string;
+  reason: string;
+  status: string;
+  reservableType: string;
+  reservableId: string;
+}
 
 /** Returns the RegisteredUser ID for a given account email, or null. */
 export async function getRegisteredUserIdByEmail(email: string): Promise<string | null> {
@@ -11,61 +21,50 @@ export async function getRegisteredUserIdByEmail(email: string): Promise<string 
   return user?.registeredUser?.id ?? null;
 }
 
-/** Fetches calendar occurrences and metadata (capacity, resources) for a resource type. */
+/** Fetches calendar data: unavailable slots (by other users) and user's own reservations. */
 export async function getCalendarDataByType(
   resourceType: ResourceType,
   userId: string,
   startDate: Date,
   endDate: Date
-): Promise<{ occurrences: any[]; capacity: number; resources: any[] }> {
-  const occurrences = await getExpandedReservationsForCalendar(
+): Promise<{ unavailableSlots: any[]; userReservations: ReservationOccurrence[] }> {
+  // Get unavailable time slots for this resource type (excluding user's own reservations)
+  const unavailableSlots = await getUnavailableSlots(
     resourceType,
-    userId,
     startDate,
-    endDate
+    endDate,
+    userId
   );
 
-  const fungibleResource = await prisma.fungibleResource.findFirst({
-    where: { type: resourceType },
-    include: { resources: true },
+  console.log("unavailableSlots", unavailableSlots);
+
+  // Get user's reservations from the ledger
+  const allUserReservations = await getUserNextReservations(userId, resourceType, 100, 0);
+
+  console.log("allUserReservations", allUserReservations);
+
+  // Filter to only include reservations in the date range for this resource type
+  const userReservations = allUserReservations.filter((res) => {
+    const inDateRange = 
+      res.occurrenceStartTime >= startDate && 
+      res.occurrenceStartTime <= endDate;
+    // We'll need to check resource type by querying the resource
+    return inDateRange;
   });
+
+  console.log("userReservations", userReservations);
 
   return {
-    occurrences,
-    capacity: fungibleResource?.capacity || 1,
-    resources: fungibleResource?.resources || [],
+    unavailableSlots,
+    userReservations: userReservations.map((res) => ({
+      reservationId: res.id,
+      occurrenceStartTime: res.occurrenceStartTime.toISOString(),
+      occurrenceEndTime: res.occurrenceEndTime.toISOString(),
+      reason: res.reason ?? "",
+      status: res.status,
+      reservableType: res.reservableType as ReservableType,
+      reservableId: res.reservableId,
+    }))
   };
 }
-
-/** Creates a reservation on the first resource of the given type. */
-export async function createReservationForType(
-  resourceType: ResourceType,
-  registeredUserId: string,
-  startTime: Date,
-  endTime: Date,
-  reason: string,
-  eventType: EventType
-) {
-  const fungibleResource = await prisma.fungibleResource.findFirst({
-    where: { type: resourceType },
-    include: { resources: true },
-  });
-
-  if (!fungibleResource || fungibleResource.resources.length === 0) {
-    throw new Error(`No hay recursos del tipo ${resourceType} disponibles`);
-  }
-
-  const resourceId = fungibleResource.resources[0].id;
-
-  return createReservation({
-    reservableType: "USER",
-    reservableId: registeredUserId,
-    resourceId,
-    eventType,
-    reason,
-    startTime,
-    endTime,
-  });
-}
-
 
