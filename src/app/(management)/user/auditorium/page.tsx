@@ -16,7 +16,6 @@ export default function AuditoriumPage() {
       description="Reserva el auditorio para eventos y presentaciones"
       icon={Presentation}
       apiEndpoint="/api/resources/auditorium"
-      resourceType="AUDITORIUM"
       eventTypes={EVENT_TYPES}
       defaultEventType="CONFERENCE"
     />

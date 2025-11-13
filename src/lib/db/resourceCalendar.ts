@@ -1,4 +1,4 @@
-import { getUnavailableSlots, getUserNextReservations } from "@/lib/db/reservations";
+import { getUnavailableSlots, getUserNextReservations, UnavailableSlot } from "@/lib/db/reservations";
 import { prisma } from "@/lib/prisma";
 import { ReservableType, ResourceType } from "@prisma/client";
 
@@ -27,7 +27,7 @@ export async function getCalendarDataByType(
   userId: string,
   startDate: Date,
   endDate: Date
-): Promise<{ unavailableSlots: any[]; userReservations: ReservationOccurrence[] }> {
+): Promise<{ unavailableSlots: UnavailableSlot[]; userReservations: ReservationOccurrence[] }> {
   // Get unavailable time slots for this resource type (excluding user's own reservations)
   const unavailableSlots = await getUnavailableSlots(
     resourceType,
@@ -36,12 +36,8 @@ export async function getCalendarDataByType(
     userId
   );
 
-  console.log("unavailableSlots", unavailableSlots);
-
   // Get user's reservations from the ledger
   const allUserReservations = await getUserNextReservations(userId, resourceType, 100, 0);
-
-  console.log("allUserReservations", allUserReservations);
 
   // Filter to only include reservations in the date range for this resource type
   const userReservations = allUserReservations.filter((res) => {
