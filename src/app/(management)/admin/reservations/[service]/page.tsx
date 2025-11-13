@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AdminReservationListResult } from "@/lib/db/adminReservations"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-export default function ServiceReservationsPage({ params }: { params: { service: string } }) {
+export default function ServiceReservationsPage() {
+  const service = useParams<{ service: string }>().service
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -20,17 +21,16 @@ export default function ServiceReservationsPage({ params }: { params: { service:
 
   const fetchReservations = useCallback(async () => {
     try {
-      const response = await fetch(`/api/admin/reservations?service=${params.service}`)
+      const response = await fetch(`/api/admin/reservations?service=${service}`)
       if (response.ok) {
         const data = await response.json()
-        console.log("reservations", data)
         setReservations(data)
       }
     } catch {
     } finally {
       setLoading(false)
     }
-  }, [params.service])
+  }, [service])
 
   useEffect(() => {
     if (status === "loading") return

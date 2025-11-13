@@ -30,10 +30,10 @@ export async function PATCH(
 
     if (status === 'APPROVED') {
       if (preview) {
-        const conflicts = await previewConflictingPending(resolvedParams.id)
+        const conflicts = await previewConflictingPending(/*resolvedParams.id*/)
         return NextResponse.json({ approvedId: null, autoRejectedIds: conflicts })
       } else {
-        const result = await approveReservationAndRejectConflicts(resolvedParams.id, deniedReason)
+        const result = await approveReservationAndRejectConflicts(resolvedParams.id/*, deniedReason*/)
         return NextResponse.json(result)
       }
     } else {

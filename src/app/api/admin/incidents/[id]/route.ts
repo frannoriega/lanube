@@ -1,7 +1,12 @@
-// import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 // import { auth } from "@/lib/auth"
 // import { prisma } from "@/lib/prisma"
 // import { IncidentStatus } from "@prisma/client"
+
+
+export async function GET(/*request: NextRequest, { params }: { params: Promise<{ id: string }> }*/) {
+    return NextResponse.json({ message: "Servicio no implementado" }, { status: 501 })
+}
 
 // export async function PATCH(
 //   request: NextRequest,
