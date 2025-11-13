@@ -17,7 +17,6 @@ export async function GET() {
     const result = await getAdminAggregateStats()
     return NextResponse.json(result)
   } catch (error) {
-    console.error(error)
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }
