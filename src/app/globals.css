@@ -41,13 +41,13 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
+
   /* La Nube brand colors */
-  --color-la-nube-primary: #4E87C2;
-  --color-la-nube-selected: #2A6297;
-  --color-la-nube-secondary: #75E3F1;
-  --color-la-nube-accent: #C8F1FC;
-  
+  --color-la-nube-primary: #4e87c2;
+  --color-la-nube-selected: #2a6297;
+  --color-la-nube-secondary: #75e3f1;
+  --color-la-nube-accent: #c8f1fc;
+
   /* Container configuration */
   --container-center: true;
   --container-padding: 2rem;
@@ -57,10 +57,12 @@
   --animate-blink: blink 1s step-end infinite;
 
   @keyframes blink {
-    0%, 50% {
+    0%,
+    50% {
       visibility: visible;
     }
-    51%, 100% {
+    51%,
+    100% {
       visibility: hidden;
     }
   }
@@ -68,7 +70,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: #4E87C2;
+  --background: #4e87c2;
   --foreground: #424242;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -85,7 +87,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: #C8F1FC;
+  --ring: #c8f1fc;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -154,7 +156,7 @@
       height: var(--radix-accordion-content-height);
     }
   }
-  
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
@@ -169,11 +171,11 @@
   button {
     @apply cursor-pointer;
   }
-  
+
   .animate-accordion-down {
     animation: accordion-down 0.2s ease-out;
   }
-  
+
   .animate-accordion-up {
     animation: accordion-up 0.2s ease-out;
   }
@@ -198,7 +200,7 @@
     background: rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    box-shadow:
       0 8px 32px 0 rgba(0, 0, 0, 0.37),
       inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   }
@@ -244,5 +246,20 @@
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .markdown {
+    h1 {
+      @apply text-2xl font-bold;
+    }
+
+    h2 {
+      @apply text-xl font-bold;
+    }
+
+    ul,
+    ol {
+      @apply list-disc list-inside;
+    }
   }
 }
