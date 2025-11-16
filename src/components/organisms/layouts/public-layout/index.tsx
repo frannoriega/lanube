@@ -4,7 +4,7 @@ import Header from "./header";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
     return (
-        <ParticlesLayout className="h-full flex flex-col items-start justify-start">
+        <ParticlesLayout className="h-full min-h-screen flex flex-col items-start justify-start">
             <Header />
             {children}
             <Footer />
