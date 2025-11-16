@@ -98,9 +98,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="fixed inset-y-0 left-0 flex w-64 flex-col glass-sidebar dark:glass-sidebar-dark shadow-xl">
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center space-x-2">
-                <a href="/">
+                <Link href="/">
                   <Logo />
-                </a>
+                </Link>
               </div>
               <Button
                 variant="ghost"
@@ -186,9 +186,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex min-h-0 flex-1 flex-col glass-sidebar dark:glass-sidebar-dark shadow">
               <div className="flex h-16 items-center px-4">
                 <div className="flex items-center space-x-2">
-                  <a href="/">
+                  <Link href="/">
                     <Logo />
-                  </a>
+                  </Link>
                   <h1>Admin</h1>
                 </div>
               </div>
