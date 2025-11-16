@@ -3,7 +3,7 @@ import Container from "@/components/atoms/container";
 export default function AboutPage() {
   return (
     <Container>
-      <div className="h-full flex flex-col gap-8 my-12 bg-slate-200/30 dark:bg-slate-900/30 backdrop-blur-sm p-4 rounded-xl">
+      <div className="h-full flex flex-col gap-8 my-12 bg-slate-200/30 dark:bg-slate-900/30 backdrop-blur-sm p-4 rounded-xl mx-8">
         <div className="flex flex-col gap-4">
           <p>
             El <b>Polo Tecnológico La Nube</b> es una iniciativa estratégica

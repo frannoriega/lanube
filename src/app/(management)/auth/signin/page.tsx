@@ -1,14 +1,15 @@
-"use client"
+"use client";
 
-import Logo from "@/components/atoms/logos/lanube"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { signIn } from "next-auth/react"
-import { useEffect, useState } from "react"
-import { toast } from "sonner"
+import Logo from "@/components/atoms/logos/lanube";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function LandingPage() {
   const [fadeIn, setFadeIn] = useState(false);
@@ -43,7 +44,9 @@ export default function LandingPage() {
         throw new Error(errorData.message || "Error al enviar el email");
       }
 
-      toast.success("Te hemos enviado un enlace de inicio de sesión a tu email");
+      toast.success(
+        "Te hemos enviado un enlace de inicio de sesión a tu email",
+      );
       setEmail("");
     } catch (ignored) {
       toast.error("Error al enviar el email");
@@ -64,33 +67,44 @@ export default function LandingPage() {
           </div>
         </div>
       )} */}
-      <div className={`min-h-screen flex items-center justify-center relative transition-opacity duration-1000 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
-
+      <div
+        className={`min-h-screen flex items-center justify-center relative transition-opacity duration-1000 ${fadeIn ? "opacity-100" : "opacity-0"}`}
+      >
         {/* Content with fade-in animation */}
         <div className={`relative z-20 max-w-md w-full space-y-8 p-8`}>
           <Card className="glass-card">
             <CardHeader className="text-center flex flex-col items-center">
               {/* La Nube Logo */}
               <div className="flex flex-col items-center bg-slate-100 p-8 w-fit rounded-full">
-                <Logo size={200}/>
+                <Logo size={200} />
               </div>
               <CardTitle className="text-3xl font-bold text-white sr-only">
                 La Nube
               </CardTitle>
-              <p className="text-white/90">
-                Espacio de Coworking e Innovación
-              </p>
+              <p className="text-white/90">Espacio de Coworking e Innovación</p>
             </CardHeader>
-            <CardContent className="bg-transparent">
+            <CardContent className="bg-transparent w-full flex flex-col gap-6">
               <Tabs defaultValue="google" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 glass">
-                  <TabsTrigger value="google" className="data-[state=active]:bg-la-nube-selected text-white">Google</TabsTrigger>
-                  <TabsTrigger value="email" className="data-[state=active]:bg-la-nube-selected text-white">Email</TabsTrigger>
+                  <TabsTrigger
+                    value="google"
+                    className="data-[state=active]:bg-la-nube-selected text-white"
+                  >
+                    Google
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="email"
+                    className="data-[state=active]:bg-la-nube-selected text-white"
+                  >
+                    Email
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="google" className="space-y-4 mt-6">
                   <Button
-                    onClick={() => signIn("google", { redirectTo: "/user/dashboard" })}
+                    onClick={() =>
+                      signIn("google", { redirectTo: "/user/dashboard" })
+                    }
                     className="w-full bg-slate-700 text-white font-semibold py-6 text-lg"
                     size="lg"
                   >
@@ -101,7 +115,9 @@ export default function LandingPage() {
                 <TabsContent value="email" className="space-y-4 mt-6">
                   <form onSubmit={handleEmailLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-white">Email</Label>
+                      <Label htmlFor="email" className="text-white">
+                        Email
+                      </Label>
                       <Input
                         id="email"
                         type="email"
@@ -124,13 +140,21 @@ export default function LandingPage() {
                 </TabsContent>
               </Tabs>
 
-              <p className="text-white/80 text-sm text-center mt-6">
+              <p className="text-white/80 text-sm text-center">
                 Accede a nuestros espacios de coworking, laboratorio y auditorio
               </p>
+              <div className="flex w-full justify-center">
+                <Link
+                  href="/policies/privacy"
+                  className="text-white/80 text-sm text-center"
+                >
+                  Política de privacidad
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
     </>
-  )
+  );
 }
