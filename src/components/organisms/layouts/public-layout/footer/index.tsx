@@ -1,7 +1,8 @@
 import Container from "@/components/atoms/container";
+import Instagram from "@/components/atoms/icons/instagram";
 import LogoLaNube from "@/components/atoms/logos/lanube";
 import LogoMunicipio from "@/components/atoms/logos/municipio";
-import { address, email, phone } from "@/lib/constants/contact";
+import { address, clickablePhone, email, phone, socialMedia } from "@/lib/constants/contact";
 import { links } from "@/lib/constants/nav";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
@@ -43,12 +44,22 @@ export default function Footer({ transparent = true }: { transparent?: boolean }
                                 <span>{address.street}, {address.city}, {address.state}</span>
                             </li>
                             <li className="flex flex-row gap-2 items-start justify-start">
-                                <Mail size={16} className="mt-[4px]" />
-                                <span>{email}</span>
+                                <a href={`mailto:${email}`} className="flex flex-row gap-2 items-start justify-start">
+                                    <Mail size={16} className="mt-[4px]" />
+                                    <span>{email}</span>
+                                </a>
                             </li>
                             <li className="flex flex-row gap-2 items-start justify-start">
-                                <Phone size={16} className="mt-[4px]" />
-                                <span>{phone}</span>
+                                <a href={`tel:${clickablePhone}`} className="flex flex-row gap-2 items-start justify-start">
+                                    <Phone size={16} className="mt-[4px]" />
+                                    <span>{phone}</span>
+                                </a>
+                            </li>
+                            <li className="flex flex-row gap-2 items-start justify-start">
+                                <a href={socialMedia.instagram.url} className="flex flex-row gap-2 items-start justify-start">
+                                    <Instagram size={16} className="mt-[4px]" />
+                                    <span>{socialMedia.instagram.text}</span>
+                                </a>
                             </li>
                         </ul>
                     </section>

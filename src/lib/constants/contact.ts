@@ -7,13 +7,14 @@ const address = {
     country: "Argentina",
 }
 
-const email = "<Email>"
+const email = "polotecnologicolanube@gmail.com"
 
-const phone = "<Teléfono>"
+const phone = "(+54) 9 3442 550836"
+const clickablePhone = "+5493442550836"
 
 const socialMedia = {
     facebook: "<Facebook>",
-    instagram: "<Instagram>",
+    instagram: { url: "https://www.instagram.com/lanubepolotec", text: "lanubepolotec" },
     twitter: "<Twitter>",
     linkedin: "<Linkedin>",
     youtube: "<Youtube>",
@@ -22,4 +23,5 @@ const socialMedia = {
     whatsapp: "<Whatsapp>",
 }
 
-export { address, email, phone, socialMedia }
+export { address, clickablePhone, email, phone, socialMedia }
+

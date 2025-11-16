@@ -1,5 +1,6 @@
 "use client"
 
+import Container from "@/components/atoms/container";
 import { ArrowDown } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -45,21 +46,23 @@ export default function HeroSection() {
     }, [displayedText, isDeleting, keywordIndex]);
 
     return (
-        <section className="w-full h-[calc(100vh-var(--spacing)*24)] flex flex-col items-center justify-between py-8 gap-16" aria-label="Sección inicial">
-            <div className="flex flex-col items-center justify-evenly gap-16 h-3/4 w-full">
-                <div className="flex flex-col items-center justify-center gap-8">
-                    <div className="text-6xl font-bold text-center">
-                        <h1 className="text-7xl">La Nube</h1>
-                        <h2>un espacio de <span className="bg-gradient-to-r from-la-nube-primary to-la-nube-secondary text-transparent bg-clip-text">{displayedText}<span className="animate-blink">|</span></span></h2>
+        <Container>
+            <section className="w-full h-[calc(100vh-var(--spacing)*24)] flex flex-col items-center justify-between py-8 gap-16" aria-label="Sección inicial">
+                <div className="flex flex-col items-center justify-evenly gap-16 h-3/4 w-full">
+                    <div className="flex flex-col items-center justify-center gap-8">
+                        <div className="text-6xl font-bold text-center">
+                            <h1 className="text-7xl">La Nube</h1>
+                            <h2>un espacio de <span className="bg-gradient-to-r from-la-nube-primary to-la-nube-secondary text-transparent bg-clip-text">{displayedText}<span className="animate-blink">|</span></span></h2>
+                        </div>
+                        <p className="text-center max-w-prose text-xl">Impulsamos la Economía del Conocimiento en nuestra ciudad, conectando empresas, universidades, emprendedores y sector público para transformar el futuro.</p>
                     </div>
-                    <p className="text-center max-w-prose text-xl">Impulsamos la Economía del Conocimiento en nuestra ciudad, conectando empresas, universidades, emprendedores y sector público para transformar el futuro.</p>
                 </div>
-            </div>
-            <div className="flex flex-col items-center self-end justify-self-end w-full">
-                <div className="animate-bounce rounded-full p-4 bg-slate-300/60 dark:bg-slate-950/60">
-                    <ArrowDown/>
+                <div className="flex flex-col items-center self-end justify-self-end w-full">
+                    <div className="animate-bounce rounded-full p-4 bg-slate-300/60 dark:bg-slate-950/60">
+                        <ArrowDown />
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </Container>
     )
 }

@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Service } from "@/lib/constants/services";
-import Image from "next/image";
 
 export default function ServiceCard({ service }: { service: Service }) {
     return (
@@ -16,7 +15,7 @@ export default function ServiceCard({ service }: { service: Service }) {
             </CardHeader>
             <CardContent>
                 <p>{service.description}</p>
-                <Image src={service.image} alt={service.name} width={100} height={100} />
+                {/* <Image src={service.image} alt={service.name} width={100} height={100} /> */}
             </CardContent>
         </Card>
     )
