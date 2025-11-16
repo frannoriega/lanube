@@ -28,7 +28,7 @@ export default async function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${roboto.variable} ${robotoMono.variable} font-sans h-full antialiased -z-100 bg-slate-100 dark:bg-slate-800 transition-colors`}
+        className={`${roboto.variable} ${robotoMono.variable} font-sans h-full min-h-screen overflow-y-scroll antialiased -z-100 bg-slate-100 dark:bg-slate-800 transition-colors`}
       >
         <SessionProvider>
             {children}
