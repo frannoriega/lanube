@@ -5,6 +5,7 @@ Sistema completo de gestión para el espacio de coworking La Nube, desarrollado 
 ## Características
 
 ### Para Usuarios
+
 - ✅ Autenticación con Google OAuth
 - ✅ Registro con información personal (nombre, apellido, DNI, institución, motivo)
 - ✅ Dashboard con estadísticas personales
@@ -13,6 +14,7 @@ Sistema completo de gestión para el espacio de coworking La Nube, desarrollado 
 - ✅ Configuración de perfil personal
 
 ### Para Administradores
+
 - 🔄 Panel de control administrativo
 - 🔄 Gestión de reservas (aprobar/rechazar)
 - 🔄 Sistema de check-in/check-out
@@ -31,17 +33,20 @@ Sistema completo de gestión para el espacio de coworking La Nube, desarrollado 
 ## Instalación y Configuración
 
 ### 1. Clonar el repositorio
+
 ```bash
 git clone <repository-url>
 cd la-nube-coworking
 ```
 
 ### 2. Instalar dependencias
+
 ```bash
 npm install
 ```
 
 ### 3. Configurar variables de entorno
+
 Copia el archivo `env.example` a `.env.local` y configura las variables:
 
 ```bash
@@ -165,4 +170,4 @@ La aplicación utiliza los colores oficiales de La Nube:
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la Licencia GNU Affero General Public License. Ver el archivo `LICENSE` para más detalles.
