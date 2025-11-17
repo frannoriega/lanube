@@ -1,4 +1,5 @@
 import Container from "@/components/atoms/container";
+import Github from "@/components/atoms/icons/github";
 import Instagram from "@/components/atoms/icons/instagram";
 import LogoLaNube from "@/components/atoms/logos/lanube";
 import LogoMunicipio from "@/components/atoms/logos/municipio";
@@ -121,6 +122,15 @@ export default function Footer({
                 >
                   <Instagram size={16} className="mt-[4px]" />
                   <span>{socialMedia.instagram.text}</span>
+                </a>
+              </li>
+              <li className="flex flex-row gap-2 items-start justify-start">
+                <a
+                  href={socialMedia.github.url}
+                  className="flex flex-row gap-2 items-start justify-start"
+                >
+                  <Github size={16} className="mt-[4px]" />
+                  <span>{socialMedia.github.text}</span>
                 </a>
               </li>
             </ul>
