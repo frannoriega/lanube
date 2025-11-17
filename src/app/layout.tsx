@@ -16,8 +16,8 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "La Nube - Coworking & Innovation Space",
-  description: "Sistema de gestión para el espacio de coworking La Nube",
+  title: "La Nube - Polo Tecnológico",
+  description: 'Espacio de coworking e innovación "La Nube"',
 };
 
 export default async function RootLayout({
@@ -30,9 +30,7 @@ export default async function RootLayout({
       <body
         className={`${roboto.variable} ${robotoMono.variable} font-sans h-full min-h-screen overflow-y-scroll antialiased -z-100 bg-slate-100 dark:bg-slate-800 transition-colors`}
       >
-        <SessionProvider>
-            {children}
-        </SessionProvider>
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );
