@@ -1,13 +1,10 @@
-// Incidents Management
-
 model Incident {
-  id          String         @id @default(cuid())
-  title       String
-  description String?
-  status      IncidentStatus @default(OPEN)
-  createdAt   DateTime       @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt   DateTime       @db.Timestamptz(3) @updatedAt @map("updated_at")
-
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  status        IncidentStatus @default(OPEN)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
   incidentUsers IncidentUser[]
 
   @@index([status])
@@ -15,13 +12,12 @@ model Incident {
 }
 
 model IncidentUser {
-  incidentId String @map("incident_id")
-  userId     String @map("user_id")
-  checkInId  String @map("check_in_id")
-
+  incidentId     String         @map("incident_id")
+  userId         String         @map("user_id")
+  checkInId      String         @map("check_in_id")
+  checkIn        CheckIn        @relation(fields: [checkInId], references: [id], onDelete: Cascade)
   incident       Incident       @relation(fields: [incidentId], references: [id], onDelete: Cascade)
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  checkIn        CheckIn        @relation(fields: [checkInId], references: [id], onDelete: Cascade)
 
   @@id([incidentId, userId, checkInId])
   @@map("incident_users")

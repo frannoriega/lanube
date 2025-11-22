@@ -1,42 +1,37 @@
-// Proposals and Comments
-
 model Proposal {
-  id          String         @id @default(cuid())
+  id          String            @id @default(cuid())
   title       String
   description String
-  authorId    String         @map("author_id")
-  status      ProposalStatus @default(PENDING)
-  createdAt   DateTime       @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt   DateTime       @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  author   RegisteredUser    @relation(fields: [authorId], references: [id])
-  comments ProposalComment[]
-  likes    ProposalLike[]
+  authorId    String            @map("author_id")
+  status      ProposalStatus    @default(PENDING)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  comments    ProposalComment[]
+  likes       ProposalLike[]
+  author      RegisteredUser    @relation(fields: [authorId], references: [id])
 
   @@index([status])
   @@map("proposals")
 }
 
 model ProposalComment {
-  id         String   @id @default(cuid())
-  proposalId String   @map("proposal_id")
-  authorId   String   @map("author_id")
+  id         String                @id @default(cuid())
+  proposalId String                @map("proposal_id")
+  authorId   String                @map("author_id")
   content    String
-  createdAt  DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt  DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  proposal Proposal              @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  author   RegisteredUser        @relation(fields: [authorId], references: [id])
-  likes    ProposalCommentLike[]
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  likes      ProposalCommentLike[]
+  author     RegisteredUser        @relation(fields: [authorId], references: [id])
+  proposal   Proposal              @relation(fields: [proposalId], references: [id], onDelete: Cascade)
 
   @@index([proposalId])
   @@map("proposal_comments")
 }
 
 model ProposalLike {
-  proposalId String @map("proposal_id")
-  userId     String @map("user_id")
-
+  proposalId     String         @map("proposal_id")
+  userId         String         @map("user_id")
   proposal       Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -45,9 +40,8 @@ model ProposalLike {
 }
 
 model ProposalCommentLike {
-  commentId String @map("comment_id")
-  userId    String @map("user_id")
-
+  commentId      String          @map("comment_id")
+  userId         String          @map("user_id")
   comment        ProposalComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
   registeredUser RegisteredUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
 

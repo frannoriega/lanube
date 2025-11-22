@@ -1,9 +1,3 @@
-// Main Prisma Schema Configuration
-// Models are organized in separate files under ./models/
-// 
-// When schema is set to "prisma" directory in prisma.config.ts,
-// Prisma automatically loads all .prisma files from this directory
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["relationJoins"]

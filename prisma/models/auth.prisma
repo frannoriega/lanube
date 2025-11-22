@@ -1,20 +1,17 @@
-// Authentication and User Models
-
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")
   type              String
   provider          String
   providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?    @map("expires_at")
   token_type        String? @map("token_type")
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -31,51 +28,46 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime? @db.Timestamptz(3) @map("email_verified")
-  image         String?
-
+  id             String          @id @default(cuid())
+  name           String?
+  email          String          @unique
+  emailVerified  DateTime?       @map("email_verified") @db.Timestamptz(3)
+  image          String?
+  passwordHash   String?
   accounts       Account[]
-  sessions       Session[]
   registeredUser RegisteredUser?
+  sessions       Session[]
 
   @@map("users")
 }
 
 model RegisteredUser {
-  id           String   @id @default(cuid())
-  userId       String   @unique @map("user_id")
-  name         String
-  lastName     String   @map("last_name")
-  dni          String   @unique
-  institution  String?
-  reasonToJoin String   @map("reason_to_join")
-  role         UserRole @default(USER)
-  createdAt    DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt    DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  reservations     Reservation[]
+  id               String                @id @default(cuid())
+  userId           String                @unique @map("user_id")
+  name             String
+  lastName         String                @map("last_name")
+  dni              String                @unique
+  institution      String?
+  reasonToJoin     String                @map("reason_to_join")
+  role             UserRole              @default(USER)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  bans             Ban[]
   checkIns         CheckIn[]
   incidentUsers    IncidentUser[]
-  bans             Ban[]
-  userEvents       UserEvent[]
-  proposals        Proposal[]
+  inventories      Inventory[]
+  orgMemberships   OrgMembership[]
+  commentLikes     ProposalCommentLike[]
   proposalComments ProposalComment[]
   proposalLikes    ProposalLike[]
-  commentLikes     ProposalCommentLike[]
-  inventories      Inventory[]
+  proposals        Proposal[]
   purchaseOrders   PurchaseOrder[]
-  orgMemberships   OrgMembership[]
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservations     Reservation[]
   teamMembers      TeamMember[]
+  userEvents       UserEvent[]
 
   @@map("registered_users")
-  @@index([name])
-  @@index([lastName])
-  @@index([createdAt])
 }
 
 model VerificationToken {
