@@ -1,26 +1,23 @@
-// Reservations and Check-ins
-
 model Reservation {
-  id             String            @id @default(cuid())
-  reservableType ReservableType    @map("reservable_type")
-  reservableId   String            @map("reservable_id")
-  resourceId     String            @map("resource_id")
-  eventType      EventType         @map("event_type")
+  id             String                 @id @default(cuid())
+  reservableType ReservableType         @map("reservable_type")
+  reservableId   String                 @map("reservable_id")
+  resourceId     String                 @map("resource_id")
+  eventType      EventType              @map("event_type")
   reason         String
-  deniedReason   String?           @map("denied_reason")
-  status         ReservationStatus @default(PENDING)
-  startTime      DateTime          @map("start_time") @db.Timestamptz(3)
-  endTime        DateTime          @map("end_time") @db.Timestamptz(3)
-  isRecurring    Boolean           @default(false) @map("is_recurring")
+  deniedReason   String?                @map("denied_reason")
+  status         ReservationStatus      @default(PENDING)
+  startTime      DateTime               @map("start_time") @db.Timestamptz(3)
+  endTime        DateTime               @map("end_time") @db.Timestamptz(3)
+  isRecurring    Boolean                @default(false) @map("is_recurring")
   rrule          String?
-  recurrenceEnd  DateTime?         @map("recurrence_end") @db.Timestamptz(3)
-  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  resource       Resource               @relation(fields: [resourceId], references: [id], onDelete: SetNull)
-  registeredUser RegisteredUser        @relation(fields: [reservableId], references: [id], onDelete: Cascade)
+  recurrenceEnd  DateTime?              @map("recurrence_end") @db.Timestamptz(3)
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
   checkIns       CheckIn[]
   exceptions     ReservationException[]
+  registeredUser RegisteredUser         @relation(fields: [reservableId], references: [id], onDelete: Cascade)
+  resource       Resource               @relation(fields: [resourceId], references: [id], onDelete: SetNull)
 
   @@index([reservableType, reservableId])
   @@index([resourceId])
@@ -30,16 +27,15 @@ model Reservation {
 }
 
 model ReservationException {
-  id            String    @id @default(cuid())
-  reservationId String    @map("reservation_id")
-  exceptionDate DateTime  @map("exception_date") @db.Timestamptz(3)
-  isCancelled   Boolean   @default(false) @map("is_cancelled")
-  newStartTime  DateTime? @map("new_start_time") @db.Timestamptz(3)
-  newEndTime    DateTime? @map("new_end_time") @db.Timestamptz(3)
+  id            String      @id @default(cuid())
+  reservationId String      @map("reservation_id")
+  exceptionDate DateTime    @map("exception_date") @db.Timestamptz(3)
+  isCancelled   Boolean     @default(false) @map("is_cancelled")
+  newStartTime  DateTime?   @map("new_start_time") @db.Timestamptz(3)
+  newEndTime    DateTime?   @map("new_end_time") @db.Timestamptz(3)
   reason        String?
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-
-  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 
   @@index([reservationId])
   @@index([exceptionDate])
@@ -64,16 +60,15 @@ model ReservationLedger {
 }
 
 model CheckIn {
-  id            String    @id @default(cuid())
-  userId        String    @map("user_id")
-  reservationId String?   @map("reservation_id")
-  checkInTime   DateTime  @default(now()) @map("check_in_time") @db.Timestamptz(3)
-  checkOutTime  DateTime? @map("check_out_time") @db.Timestamptz(3)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-
+  id             String         @id @default(cuid())
+  userId         String         @map("user_id")
+  reservationId  String?        @map("reservation_id")
+  checkInTime    DateTime       @default(now()) @map("check_in_time") @db.Timestamptz(3)
+  checkOutTime   DateTime?      @map("check_out_time") @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  reservation    Reservation?   @relation(fields: [reservationId], references: [id])
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reservation    Reservation?   @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   incidentUsers  IncidentUser[]
 
   @@index([userId])

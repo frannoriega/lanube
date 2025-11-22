@@ -1,30 +1,26 @@
-// Resource Management
-
 model FungibleResource {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   capacity    Int
-  isExclusive Boolean  @default(false) @map("is_exclusive")
-  createdAt   DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt   DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  resources Resource[]
+  isExclusive Boolean    @default(false) @map("is_exclusive")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  resources   Resource[]
 
   @@map("fungible_resources")
 }
 
 model Resource {
-  id                 String       @id @default(cuid())
+  id                 String           @id @default(cuid())
   name               String
-  type               ResourceType @map("type")
-  fungibleResourceId String       @map("fungible_resource_id")
-  serialNumber       String?      @unique @map("serial_number")
+  type               ResourceType     @map("type")
+  fungibleResourceId String           @map("fungible_resource_id")
+  serialNumber       String?          @unique @map("serial_number")
   metadata           Json?
-  createdAt          DateTime     @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt          DateTime     @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  fungibleResource FungibleResource @relation(fields: [fungibleResourceId], references: [id], onDelete: Cascade)
-  reservations     Reservation[]
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  reservations       Reservation[]
+  fungibleResource   FungibleResource @relation(fields: [fungibleResourceId], references: [id], onDelete: Cascade)
 
   @@index([fungibleResourceId])
   @@map("resources")

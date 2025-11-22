@@ -3,18 +3,65 @@
 import Logo from "@/components/atoms/logos/lanube";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { signIn } from "next-auth/react";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { signInSchema } from "@/lib/auth";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import z from "zod";
+
+const registerSchema = z
+  .object({
+    email: z.email({ message: "Por favor ingresa un email válido" }),
+    password: z
+      .string()
+      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    passwordConfirmation: z
+      .string()
+      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirmation"],
+  });
 
 export default function LandingPage() {
   const [fadeIn, setFadeIn] = useState(false);
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const form = useForm<z.infer<typeof signInSchema>>({
+    resolver: standardSchemaResolver(signInSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+  const registerForm = useForm<z.infer<typeof registerSchema>>({
+    resolver: standardSchemaResolver(registerSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      passwordConfirmation: "",
+    },
+    mode: "all",
+  });
+
+  const [error, setError] = useState<boolean>(false);
+  const [isSignIn, setIsSignIn] = useState<boolean>(true);
 
   useEffect(() => {
     setTimeout(() => {
@@ -22,37 +69,78 @@ export default function LandingPage() {
     }, 100);
   }, []);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Por favor ingresa tu email");
-      return;
+  // const handleEmailLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!email) {
+  //     toast.error("Por favor ingresa tu email");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await fetch("/api/auth/email-login", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ email }),
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.message || "Error al enviar el email");
+  //     }
+
+  //     toast.success(
+  //       "Te hemos enviado un enlace de inicio de sesión a tu email",
+  //     );
+  //     setEmail("");
+  //   } catch (ignored) {
+  //     toast.error("Error al enviar el email");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  const onSubmit = async (data: z.infer<typeof signInSchema>) => {
+    setError(false);
+    const res = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+      redirectTo: "/user/dashboard",
+    });
+    if (res?.error) {
+      setError(true);
     }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/auth/email-login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al enviar el email");
-      }
-
-      toast.success(
-        "Te hemos enviado un enlace de inicio de sesión a tu email",
-      );
-      setEmail("");
-    } catch (ignored) {
-      toast.error("Error al enviar el email");
-    } finally {
-      setIsLoading(false);
+    if (res?.url) {
+      router.replace(res.url);
     }
+  };
+
+  const onRegisterSubmit = async (data: z.infer<typeof registerSchema>) => {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      toast.error(error.message || "Error al crear la cuenta");
+    }
+    const signInRes = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+    console.log(signInRes);
+    if (!signInRes.ok) {
+      const error = await res.json();
+      toast.error(error.message || "Error al crear la cuenta");
+    }
+    toast.success("Cuenta creada correctamente");
+    setTimeout(() => {
+      router.push("/auth/signup");
+    }, 1000);
   };
 
   return (
@@ -84,7 +172,7 @@ export default function LandingPage() {
               <p className="text-white/90">Espacio de Coworking e Innovación</p>
             </CardHeader>
             <CardContent className="bg-transparent w-full flex flex-col gap-6">
-              <Tabs defaultValue="google" className="w-full">
+              {/* <Tabs defaultValue="google" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 glass">
                   <TabsTrigger
                     value="google"
@@ -138,8 +226,189 @@ export default function LandingPage() {
                     </Button>
                   </form>
                 </TabsContent>
-              </Tabs>
+              </Tabs> */}
 
+              <div className="w-full overflow-hidden">
+                <AnimatePresence mode="wait">
+                  {isSignIn ? (
+                    <motion.div
+                      key="A"
+                      initial={{ opacity: 0, x: -40 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -40 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(onSubmit)}
+                          className="space-y-4"
+                        >
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                  Correo electrónico
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-200" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                  Contraseña
+                                </FormLabel>
+                                <FormControl className="aria-invalid:border-red-300">
+                                  <Input
+                                    {...field}
+                                    type="password"
+                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-200" />
+                              </FormItem>
+                            )}
+                          />
+                          <Button
+                            type="submit"
+                            className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                            size="lg"
+                            disabled={
+                              !form.formState.isValid ||
+                              form.formState.isSubmitting
+                            }
+                          >
+                            Iniciar Sesión
+                          </Button>
+                          {error && (
+                            <p className="text-red-200 text-sm font-semibold text-center">
+                              Correo electrónico o contraseña incorrectos
+                            </p>
+                          )}
+                        </form>
+                      </Form>
+                      <div className="flex flex-row w-full h-fit items-center gap-2">
+                        <Separator
+                          orientation="horizontal"
+                          className="flex-1"
+                        />
+                        <span className="text-white">o</span>
+                        <Separator
+                          orientation="horizontal"
+                          className="flex-1"
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                        size="lg"
+                        onClick={() => setIsSignIn(false)}
+                      >
+                        Crear una cuenta
+                      </Button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="B"
+                      initial={{ opacity: 0, x: 40 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 40 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full"
+                    >
+                      <Form {...registerForm}>
+                        <form
+                          onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
+                          className="space-y-4"
+                        >
+                          <FormField
+                            control={registerForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                  Correo electrónico
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-200" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={registerForm.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                  Contraseña
+                                </FormLabel>
+                                <FormControl className="aria-invalid:border-red-300">
+                                  <Input
+                                    {...field}
+                                    type="password"
+                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-200" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={registerForm.control}
+                            name="passwordConfirmation"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                  Confirmar contraseña
+                                </FormLabel>
+                                <FormControl className="aria-invalid:border-red-300">
+                                  <Input
+                                    {...field}
+                                    type="password"
+                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-200" />
+                              </FormItem>
+                            )}
+                          />
+                          <Button
+                            type="submit"
+                            className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                            size="lg"
+                          >
+                            Crear cuenta
+                          </Button>
+                        </form>
+                      </Form>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                        size="lg"
+                        onClick={() => setIsSignIn(true)}
+                      >
+                        Volver a iniciar sesión
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               <p className="text-white/80 text-sm text-center">
                 Accede a nuestros espacios de coworking, laboratorio y auditorio
               </p>

@@ -1,7 +1,12 @@
 /** User profile helpers */
 import { prisma } from "@/lib/prisma";
-import { Ban, Prisma, RegisteredUser } from "@prisma/client";
+import { Ban, Prisma, RegisteredUser, User } from "@prisma/client";
+import bcrypt from "bcryptjs";
 import { startOfMonth } from "date-fns";
+
+interface WrongPasswordError extends Error {
+  message: "Contraseña incorrecta";
+}
 
 type RegisteredUserListRow = RegisteredUser & {
   user: {
@@ -52,7 +57,10 @@ export interface UsersSummary {
   monthUsers: number;
 }
 
-const ORDERABLE_FIELD_MAP: Record<UsersOrderableField, "name" | "lastName" | "dni" | "institution" | "role" | "createdAt" | "email"> = {
+const ORDERABLE_FIELD_MAP: Record<
+  UsersOrderableField,
+  "name" | "lastName" | "dni" | "institution" | "role" | "createdAt" | "email"
+> = {
   name: "name",
   lastName: "lastName",
   dni: "dni",
@@ -62,13 +70,15 @@ const ORDERABLE_FIELD_MAP: Record<UsersOrderableField, "name" | "lastName" | "dn
   email: "email",
 };
 
-export async function getUserById(id: string): Promise<RegisteredUser | null> {
+export async function getRegisteredUserById(
+  id: string,
+): Promise<RegisteredUser | null> {
   return prisma.registeredUser.findUnique({
     where: { id },
   });
 }
 
-export async function getUsers({
+export async function getRegisteredUsers({
   limit,
   offset,
   search,
@@ -77,7 +87,8 @@ export async function getUsers({
 }: GetUsersOptions = {}): Promise<GetUsersResult> {
   const safeLimit = Math.min(50, Math.max(1, Math.floor(limit ?? 10)));
   const safeOffset = Math.max(0, Math.floor(offset ?? 0));
-  const direction: UsersOrderDirection = orderDirection === "desc" ? "desc" : "asc";
+  const direction: UsersOrderDirection =
+    orderDirection === "desc" ? "desc" : "asc";
   const trimmedSearch = search?.trim();
   const where: Prisma.RegisteredUserWhereInput | undefined = trimmedSearch
     ? {
@@ -130,10 +141,7 @@ export async function getUsers({
         },
         bans: {
           where: {
-            OR: [
-              { endTime: null },
-              { endTime: { gt: new Date() } },
-            ],
+            OR: [{ endTime: null }, { endTime: { gt: new Date() } }],
           },
           orderBy: {
             endTime: "desc",
@@ -177,25 +185,27 @@ export async function getUsers({
   ]);
 
   const now = Date.now();
-  const payload: GetUsersResult["users"] = rows.map((user: RegisteredUserListRow) => {
-    const activeBan = user.bans[0] ?? null;
-    const isBanned =
-      !!activeBan &&
-      (!activeBan.endTime || activeBan.endTime.getTime() > now);
+  const payload: GetUsersResult["users"] = rows.map(
+    (user: RegisteredUserListRow) => {
+      const activeBan = user.bans[0] ?? null;
+      const isBanned =
+        !!activeBan &&
+        (!activeBan.endTime || activeBan.endTime.getTime() > now);
 
-    return {
-      id: user.id,
-      name: user.name,
-      lastName: user.lastName,
-      dni: user.dni,
-      institution: user.institution ?? null,
-      role: user.role,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      email: user.user.email,
-      status: isBanned ? "BANNED" : "ACTIVE",
-    };
-  });
+      return {
+        id: user.id,
+        name: user.name,
+        lastName: user.lastName,
+        dni: user.dni,
+        institution: user.institution ?? null,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        email: user.user.email,
+        status: isBanned ? "BANNED" : "ACTIVE",
+      };
+    },
+  );
 
   return {
     total,
@@ -203,7 +213,7 @@ export async function getUsers({
   };
 }
 
-export async function getUsersSummary(): Promise<UsersSummary> {
+export async function getRegisteredUsersSummary(): Promise<UsersSummary> {
   const now = new Date();
   const monthStart = startOfMonth(now);
 
@@ -213,10 +223,7 @@ export async function getUsersSummary(): Promise<UsersSummary> {
       where: {
         bans: {
           some: {
-            OR: [
-              { endTime: null },
-              { endTime: { gt: now } },
-            ],
+            OR: [{ endTime: null }, { endTime: { gt: now } }],
           },
         },
       },
@@ -238,48 +245,15 @@ export async function getUsersSummary(): Promise<UsersSummary> {
   };
 }
 
-export async function getPublicUserByEmail(email: string) {
-  const user = await prisma.registeredUser.findFirst({
-    where: { user: { email } },
-    select: {
-      id: true,
-      name: true,
-      lastName: true,
-      dni: true,
-      institution: true,
-      reasonToJoin: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-      user: {
-        select: {
-          email: true,
-        },
-      },
-    },
-  });
-
-  if (!user) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    name: user.name,
-    lastName: user.lastName,
-    email: user.user.email,
-    dni: user.dni,
-    institution: user.institution ?? null,
-    reasonToJoin: user.reasonToJoin,
-    role: user.role,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-}
-
-export async function updateUserProfileByEmail(
+export async function updateRegisteredUserProfileByEmail(
   email: string,
-  data: { name?: string; lastName?: string; dni?: string; institution?: string | null; reasonToJoin?: string }
+  data: {
+    name?: string;
+    lastName?: string;
+    dni?: string;
+    institution?: string | null;
+    reasonToJoin?: string;
+  },
 ) {
   const currentUser = await prisma.registeredUser.findFirst({
     where: { user: { email } },
@@ -314,8 +288,12 @@ export async function updateUserProfileByEmail(
       ...(data.name !== undefined ? { name: data.name } : {}),
       ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
       ...(data.dni !== undefined ? { dni: data.dni } : {}),
-      ...(data.institution !== undefined ? { institution: data.institution ?? null } : {}),
-      ...(data.reasonToJoin !== undefined ? { reasonToJoin: data.reasonToJoin } : {}),
+      ...(data.institution !== undefined
+        ? { institution: data.institution ?? null }
+        : {}),
+      ...(data.reasonToJoin !== undefined
+        ? { reasonToJoin: data.reasonToJoin }
+        : {}),
     },
     include: {
       user: {
@@ -339,32 +317,79 @@ export async function updateUserProfileByEmail(
 }
 
 interface RegisteredUserWithBans extends RegisteredUser {
+  user: User;
   bans: Ban[];
 }
 
-async function createUser(user: RegisteredUser): Promise<RegisteredUser> {
-  const newUser = await prisma.registeredUser.create({
-    data: user,
+async function createUser(email: string, password: string): Promise<User> {
+  const passwordHash = await hashPassword(password);
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+    },
   });
-  return newUser;
+  return user;
 }
 
-async function getUserByEmail(email: string): Promise<RegisteredUserWithBans | null> {
-  // Even though this is a find first, there's only one user with the given
-  // email, so it'll be correct
+async function getUserByEmailAndPassword(
+  email: string,
+  password: string,
+): Promise<User | null> {
+  const user = await prisma.user.findFirst({
+    where: { email },
+  });
+  if (!user) {
+    return null;
+  }
+  if (
+    user.passwordHash &&
+    (await bcrypt.compare(password, user.passwordHash))
+  ) {
+    return user;
+  }
+  return null;
+}
+
+async function getRegisteredUserByEmailAndPassword(
+  email: string,
+  password: string,
+): Promise<RegisteredUserWithBans | null> {
+  const passwordHash = await hashPassword(password);
   const user = await prisma.registeredUser.findFirst({
-    relationLoadStrategy: 'join',
+    relationLoadStrategy: "join",
     include: {
       user: true,
       bans: {
         where: {
-          OR: [
-            { endTime: null },
-            { endTime: { gt: new Date() } },
-          ],
+          OR: [{ endTime: null }, { endTime: { gt: new Date() } }],
         },
         orderBy: {
-          endTime: 'desc',
+          endTime: "desc",
+        },
+        take: 1,
+      },
+    },
+    where: { user: { email, passwordHash } },
+  });
+  return user ?? null;
+}
+
+async function getRegisteredUserByEmail(
+  email: string,
+): Promise<RegisteredUserWithBans | null> {
+  // Even though this is a find first, there's only one user with the given
+  // email, so it'll be correct
+  const user = await prisma.registeredUser.findFirst({
+    relationLoadStrategy: "join",
+    include: {
+      user: true,
+      bans: {
+        where: {
+          OR: [{ endTime: null }, { endTime: { gt: new Date() } }],
+        },
+        orderBy: {
+          endTime: "desc",
         },
         take: 1,
       },
@@ -374,7 +399,9 @@ async function getUserByEmail(email: string): Promise<RegisteredUserWithBans | n
   return user ?? null;
 }
 
-async function updateUser(user: Omit<RegisteredUser, 'user'>): Promise<RegisteredUser> {
+async function updateUser(
+  user: Omit<RegisteredUser, "user">,
+): Promise<RegisteredUser> {
   const updatedUser = await prisma.registeredUser.update({
     where: { id: user.id },
     data: user,
@@ -408,6 +435,17 @@ async function unbanUser(banId: string): Promise<Ban> {
 //   return bans;
 // }
 
+async function hashPassword(password: string) {
+  const saltRounds = 12; // recomendado entre 10–14
+  return bcrypt.hash(password, saltRounds);
+}
 
-export { banUser, createUser, getUserByEmail, unbanUser, updateUser };
-
+export {
+  banUser,
+  createUser,
+  getRegisteredUserByEmail,
+  getRegisteredUserByEmailAndPassword,
+  getUserByEmailAndPassword,
+  unbanUser,
+  updateUser,
+};

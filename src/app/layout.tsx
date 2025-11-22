@@ -1,4 +1,4 @@
-import { SessionProvider } from "@/components/providers/session/session-provider";
+import { SessionProvider } from "@/components/providers/session";
 import type { Metadata } from "next";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
