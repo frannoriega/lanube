@@ -1,12 +1,9 @@
-// Organizations and Teams
-
 model Organization {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt   DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
-
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
   memberships OrgMembership[]
   teams       Team[]
 
@@ -14,9 +11,8 @@ model Organization {
 }
 
 model OrgMembership {
-  organizationId String @map("organization_id")
-  userId         String @map("user_id")
-
+  organizationId String         @map("organization_id")
+  userId         String         @map("user_id")
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -25,22 +21,20 @@ model OrgMembership {
 }
 
 model Team {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   name           String
-  organizationId String   @map("organization_id")
-  createdAt      DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt      DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  members      TeamMember[]
+  organizationId String       @map("organization_id")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  members        TeamMember[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("teams")
 }
 
 model TeamMember {
-  teamId String @map("team_id")
-  userId String @map("user_id")
-
+  teamId         String         @map("team_id")
+  userId         String         @map("user_id")
   team           Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
