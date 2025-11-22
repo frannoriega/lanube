@@ -1,28 +1,24 @@
-// Events Management
-
 model Event {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
   description String?
   location    String?
-  startTime   DateTime @db.Timestamptz(3) @map("start_time")
-  endTime     DateTime @db.Timestamptz(3) @map("end_time")
-  imageUrl    String?  @map("image_url")
-  createdAt   DateTime @db.Timestamptz(3) @default(now()) @map("created_at")
-  updatedAt   DateTime @db.Timestamptz(3) @updatedAt @map("updated_at")
-
-  userEvents UserEvent[]
+  startTime   DateTime    @map("start_time") @db.Timestamptz(3)
+  endTime     DateTime    @map("end_time") @db.Timestamptz(3)
+  imageUrl    String?     @map("image_url")
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userEvents  UserEvent[]
 
   @@index([startTime, endTime])
   @@map("events")
 }
 
 model UserEvent {
-  userId  String @map("user_id")
-  eventId String @map("event_id")
-
-  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String         @map("user_id")
+  eventId        String         @map("event_id")
   event          Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, eventId])
   @@map("user_events")
