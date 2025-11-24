@@ -4,10 +4,6 @@ import { Ban, Prisma, RegisteredUser, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { startOfMonth } from "date-fns";
 
-interface WrongPasswordError extends Error {
-  message: "Contraseña incorrecta";
-}
-
 type RegisteredUserListRow = RegisteredUser & {
   user: {
     email: string;

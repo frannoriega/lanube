@@ -325,7 +325,7 @@ export default function LandingPage() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 40 }}
                       transition={{ duration: 0.3 }}
-                      className="w-full"
+                      className="w-full flex-col flex gap-4"
                     >
                       <Form {...registerForm}>
                         <form
@@ -399,7 +399,7 @@ export default function LandingPage() {
                       </Form>
                       <Button
                         variant="outline"
-                        className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                        className="w-full text-white font-semibold py-2 text-lg"
                         size="lg"
                         onClick={() => setIsSignIn(true)}
                       >
