@@ -17,18 +17,23 @@ import {
   socialMedia,
 } from "@/lib/constants/contact";
 import { links } from "@/lib/constants/nav";
+import { cn } from "@/lib/utils";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer({
   transparent = true,
+  className,
 }: {
   transparent?: boolean;
+  className?: string;
 }) {
+  const cns = cn(
+    `w-full h-fit ${transparent ? "bg-slate-300/60 dark:bg-slate-950/60  backdrop-blur-xs" : "bg-slate-300 dark:bg-slate-950"}`,
+    className,
+  );
   return (
-    <footer
-      className={`w-full h-fit ${transparent ? "bg-slate-300/60 dark:bg-slate-950/60  backdrop-blur-xs" : "bg-slate-300 dark:bg-slate-950"}`}
-    >
+    <footer className={cns}>
       <Container>
         <div className="p-8 flex flex-row justify-evenly">
           <section className="flex flex-col gap-2 max-w-1/3 justify-between">
