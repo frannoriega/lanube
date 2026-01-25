@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Engine } from "@tsparticles/engine";
+import { Engine, OutMode } from "@tsparticles/engine";
 import { initParticlesEngine, Particles } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import { useTheme } from "next-themes";
@@ -56,7 +56,7 @@ export default function ParticlesLayout({
           width: 1,
           color: themeToUse === "dark" ? "#ffffff" : "#000000",
         },
-        move: { enable: true, speed: 1, outModes: { default: "bounce" } },
+        move: { enable: true, speed: 1, outModes: { default: OutMode.bounce } },
         color: { value: themeToUse === "dark" ? "#ffffff" : "#000000" },
         opacity: { value: 0.5 },
         shape: { type: "circle" },
@@ -64,7 +64,7 @@ export default function ParticlesLayout({
       },
       detectRetina: !mobile,
     };
-  }, [themeToUse]);
+  }, [themeToUse, isCoarsePointer, prefersReducedMotion]);
 
   const cns = cn(
     "relative w-full flex items-center justify-center transition-opacity duration-1000",
