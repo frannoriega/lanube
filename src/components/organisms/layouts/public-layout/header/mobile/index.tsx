@@ -19,9 +19,9 @@ export default function MobileMenu() {
                 <DrawerContent className="dark:bg-slate-900 bg-slate-400">
                     <div className="py-8 pl-4 flex flex-col gap-8">
                         <LogoLaNube />
-                        <div className="flex flex-row gap-4 items-start justify-start">
+                        {/* <div className="flex flex-row gap-4 items-start justify-start">
                             <SignIn />
-                        </div>
+                        </div> */}
                         <nav className="w-full">
                             <ul className="flex flex-col gap-8 items-start justify-start">
                                 {links.map((item) => (
