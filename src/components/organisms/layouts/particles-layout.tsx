@@ -67,15 +67,18 @@ export default function ParticlesLayout({
   }, [themeToUse, isCoarsePointer, prefersReducedMotion]);
 
   const cns = cn(
-    "relative w-full flex items-center justify-center transition-opacity duration-1000",
+    "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
     className,
   );
-  const bgCns = cn("-z-50 absolute inset-0 w-full h-full", backgroundClass);
+  const bgCns = cn(
+    "absolute inset-0 z-0 h-full w-full pointer-events-none",
+    backgroundClass,
+  );
 
   return (
     <div className={cns}>
       <Particles options={options} className={bgCns} />
-      {children}
+      <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
     </div>
   );
 }
