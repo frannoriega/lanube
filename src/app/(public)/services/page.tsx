@@ -358,12 +358,12 @@ function ImageWithTitle({
   className?: string;
 }) {
   const cns = cn(
-    `relative flex flex-col h-fit mb-0 mt-0 ${pos === "left" ? "float-left mr-4" : "float-right ml-4"}`,
+    `relative flex flex-col h-fit mb-0 mt-0 ${pos === "left" ? "sm:float-left sm:mr-4" : "sm:float-right sm:ml-4"}`,
     className,
   );
   return (
     <div className={cns}>
-      <div className="w-full h-full text-center sm:hidden bg-la-nube-primary/50 backdrop-blur-xs py-2">
+      <div className="w-full h-full text-center text-white font-bold sm:font-normal sm:hidden bg-la-nube-primary sm:bg-opacity-50 sm:backdrop-blur-xs py-2">
         <h3>{title}</h3>
       </div>
       <Image

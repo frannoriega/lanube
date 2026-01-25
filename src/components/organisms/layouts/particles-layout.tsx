@@ -27,71 +27,44 @@ export default function ParticlesLayout({
 
   const themeToUse = forceTheme || theme;
 
-  const options = useMemo(
-    () => ({
-      style: {
-        position: "absolute",
-        inset: "0",
-      },
-      fpsLimit: 120,
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const options = useMemo(() => {
+    const mobile = isCoarsePointer || prefersReducedMotion;
+
+    return {
+      style: { position: "absolute", inset: "0" },
+      fpsLimit: mobile ? 30 : 60,
       interactivity: {
         events: {
-          onHover: {
-            enable: true,
-            mode: "repulse",
-          },
+          onHover: { enable: !mobile, mode: "repulse" },
         },
-        modes: {
-          push: {
-            quantity: 4,
-          },
-          repulse: {
-            distance: 100,
-            duration: 0.4,
-          },
-        },
+        modes: { repulse: { distance: 100, duration: 0.4 } },
       },
       particles: {
-        color: {
-          value: themeToUse === "dark" ? "#ffffff" : "#000000",
-        },
+        number: { density: { enable: true }, value: mobile ? 50 : 120 },
         links: {
-          color: themeToUse === "dark" ? "#ffffff" : "#000000",
+          enable: !mobile,          // big win on mobile
           distance: 150,
-          enable: true,
           opacity: 0.5,
           width: 1,
+          color: themeToUse === "dark" ? "#ffffff" : "#000000",
         },
-        move: {
-          direction: "none" as const,
-          enable: true,
-          outModes: {
-            default: "bounce" as const,
-          },
-          random: false,
-          speed: 1,
-          straight: false,
-        },
-        number: {
-          density: {
-            enable: true,
-          },
-          value: 120,
-        },
-        opacity: {
-          value: 0.5,
-        },
-        shape: {
-          type: "circle",
-        },
-        size: {
-          value: { min: 1, max: 5 },
-        },
+        move: { enable: true, speed: 1, outModes: { default: "bounce" } },
+        color: { value: themeToUse === "dark" ? "#ffffff" : "#000000" },
+        opacity: { value: 0.5 },
+        shape: { type: "circle" },
+        size: { value: { min: 1, max: 5 } },
       },
-      detectRetina: true,
-    }),
-    [themeToUse],
-  );
+      detectRetina: !mobile,
+    };
+  }, [themeToUse]);
 
   const cns = cn(
     "relative w-full flex items-center justify-center transition-opacity duration-1000",
