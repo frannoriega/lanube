@@ -33,8 +33,8 @@ export function ThemeToggle({ className, toggleMode = false }: ThemeToggleProps)
 
   if (toggleMode) {
     return (
-      <ToggleGroup type="single" value={theme} onValueChange={toggleSetValue} className="dark:bg-slate-800 bg-slate-200">
-        <ToggleGroupItem value="light" className="data-[state=on]:bg-slate-100 dark:data-[state=on]:bg-blue-600">
+      <ToggleGroup type="single" value={theme} onValueChange={toggleSetValue} className="dark:bg-slate-800 bg-slate-400">
+        <ToggleGroupItem value="light" className="data-[state=on]:bg-slate-300 dark:data-[state=on]:bg-blue-600">
           <Sun />
         </ToggleGroupItem>
         <ToggleGroupItem value="dark" className="data-[state=on]:bg-slate-400 dark:data-[state=on]:bg-slate-600">
