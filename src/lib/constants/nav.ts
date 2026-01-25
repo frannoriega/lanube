@@ -4,7 +4,7 @@ const links = [
     { name: "Servicios", href: "/services" },
     // { name: "Noticias", href: "/news" },
     // { name: "Eventos", href: "/events" },
-    { name: "Contacto", href: "/contact" },
+    // { name: "Contacto", href: "/contact" },
     { name: "Quienes Somos", href: "/about" },
 ]
 
