@@ -35,8 +35,8 @@ export default function Footer({
   return (
     <footer className={cns}>
       <Container>
-        <div className="p-8 flex flex-row justify-evenly">
-          <section className="flex flex-col gap-2 max-w-1/3 justify-between">
+        <div className="p-8 flex flex-col md:flex-row gap-16">
+          <section className="flex flex-col gap-2 w-fit md:max-w-1/3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2">
                 <h1 className="text-xl font-bold">La Nube</h1>
@@ -54,14 +54,16 @@ export default function Footer({
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <p className="dark:text-muted-foreground text-slate-600">
+              <p className="dark:text-muted-foreground text-slate-600 max-w-prose">
                 Impulsamos la Economía del Conocimiento en nuestra ciudad,
                 conectando empresas, universidades, emprendedores y sector
                 público para transformar el futuro.
               </p>
             </div>
-            <div className="flex flex-row gap-12 items-center justify-start">
-              <LogoLaNube />
+            <div className="flex flex-row flex-wrap w-full items-center gap-4 justify-center md:justify-start">
+              <div>
+                <LogoLaNube />
+              </div>
               <Link
                 href="https://www.cdeluruguay.gob.ar/"
                 target="_blank"
@@ -71,74 +73,76 @@ export default function Footer({
               </Link>
             </div>
           </section>
-          <section className="flex flex-col gap-2 max-w-1/3 px-4">
-            <h1 className="text-xl font-bold">Enlaces Rápidos</h1>
-            <nav>
-              <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
-                {links.map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href}>{item.name}</Link>
+          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 w-fit">
+            <div className="flex flex-col gap-2 w-fit">
+              <h1 className="text-xl font-bold">Enlaces Rápidos</h1>
+              <nav>
+                <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
+                  {links.map((item) => (
+                    <li key={item.name}>
+                      <Link href={item.href}>{item.name}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+            <div className="flex flex-col gap-2 w-fit">
+              <h1 className="text-xl font-bold">Políticas</h1>
+              <nav>
+                <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
+                  <li>
+                    <Link href="/policies/privacy">Política de Privacidad</Link>
                   </li>
-                ))}
-              </ul>
-            </nav>
-          </section>
-          <section className="flex flex-col gap-2 max-w-1/3 px-4">
-            <h1 className="text-xl font-bold">Políticas</h1>
-            <nav>
+                </ul>
+              </nav>
+            </div>
+            <div className="flex flex-col gap-2 max-w-100 w-fit">
+              <h1 className="text-xl font-bold">Contacto</h1>
               <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
-                <li>
-                  <Link href="/policies/privacy">Política de Privacidad</Link>
+                <li className="flex flex-row gap-2 items-start justify-start">
+                  <div className="flex items-center justify-center w-[16px] h-[16px] mt-[4px]">
+                    <MapPin size={16} />
+                  </div>
+                  <span>{address.street}, {address.city}, {address.state}</span>
+                </li>
+                <li className="flex flex-row gap-2 items-start justify-start">
+                  <a
+                    href={`mailto:${email}`}
+                    className="flex flex-row gap-2 items-start justify-start"
+                  >
+                    <Mail size={16} className="mt-[4px]" />
+                    <span>{email}</span>
+                  </a>
+                </li>
+                <li className="flex flex-row gap-2 items-start justify-start">
+                  <a
+                    href={`tel:${clickablePhone}`}
+                    className="flex flex-row gap-2 items-start justify-start"
+                  >
+                    <Phone size={16} className="mt-[4px]" />
+                    <span>{phone}</span>
+                  </a>
+                </li>
+                <li className="flex flex-row gap-2 items-start justify-start">
+                  <a
+                    href={socialMedia.instagram.url}
+                    className="flex flex-row gap-2 items-start justify-start"
+                  >
+                    <Instagram size={16} className="mt-[4px]" />
+                    <span>{socialMedia.instagram.text}</span>
+                  </a>
+                </li>
+                <li className="flex flex-row gap-2 items-start justify-start">
+                  <a
+                    href={socialMedia.github.url}
+                    className="flex flex-row gap-2 items-start justify-start"
+                  >
+                    <Github size={16} className="mt-[4px]" />
+                    <span>{socialMedia.github.text}</span>
+                  </a>
                 </li>
               </ul>
-            </nav>
-          </section>
-          <section className="flex flex-col gap-2 max-w-1/3 px-4">
-            <h1 className="text-xl font-bold">Contacto</h1>
-            <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
-              <li className="flex flex-row gap-2 items-start justify-start">
-                <MapPin size={16} className="mt-[4px]" />
-                <span>
-                  {address.street}, {address.city}, {address.state}
-                </span>
-              </li>
-              <li className="flex flex-row gap-2 items-start justify-start">
-                <a
-                  href={`mailto:${email}`}
-                  className="flex flex-row gap-2 items-start justify-start"
-                >
-                  <Mail size={16} className="mt-[4px]" />
-                  <span>{email}</span>
-                </a>
-              </li>
-              <li className="flex flex-row gap-2 items-start justify-start">
-                <a
-                  href={`tel:${clickablePhone}`}
-                  className="flex flex-row gap-2 items-start justify-start"
-                >
-                  <Phone size={16} className="mt-[4px]" />
-                  <span>{phone}</span>
-                </a>
-              </li>
-              <li className="flex flex-row gap-2 items-start justify-start">
-                <a
-                  href={socialMedia.instagram.url}
-                  className="flex flex-row gap-2 items-start justify-start"
-                >
-                  <Instagram size={16} className="mt-[4px]" />
-                  <span>{socialMedia.instagram.text}</span>
-                </a>
-              </li>
-              <li className="flex flex-row gap-2 items-start justify-start">
-                <a
-                  href={socialMedia.github.url}
-                  className="flex flex-row gap-2 items-start justify-start"
-                >
-                  <Github size={16} className="mt-[4px]" />
-                  <span>{socialMedia.github.text}</span>
-                </a>
-              </li>
-            </ul>
+            </div>
           </section>
         </div>
       </Container>

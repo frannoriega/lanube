@@ -4,6 +4,9 @@
   "[html]": {
     "editor.defaultFormatter": "vscode.html-language-features",
     "html.format.wrapAttributes": "force-aligned"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }
 

@@ -314,7 +314,7 @@ function ServiceCard({
             image={image}
             title={title}
             pos={pos}
-            className="rounded-xl overflow-hidden w-3/5 mb-2"
+            className="rounded-xl overflow-hidden w-full sm:w-3/5 mb-2"
           />
           {description()}
         </div>
@@ -358,11 +358,14 @@ function ImageWithTitle({
   className?: string;
 }) {
   const cns = cn(
-    `relative flex flex-col gap-4 h-fit mb-0 mt-0 ${pos === "left" ? "float-left mr-4" : "float-right ml-4"}`,
+    `relative flex flex-col h-fit mb-0 mt-0 ${pos === "left" ? "float-left mr-4" : "float-right ml-4"}`,
     className,
   );
   return (
     <div className={cns}>
+      <div className="w-full h-full text-center sm:hidden bg-la-nube-primary/50 backdrop-blur-xs py-2">
+        <h3>{title}</h3>
+      </div>
       <Image
         src={image}
         alt={title}
@@ -372,7 +375,7 @@ function ImageWithTitle({
         className="self-start"
       />
       <div
-        className={`absolute py-8 px-24 bg-la-nube-primary/50 backdrop-blur-xs top-4 ${pos === "left" ? "left-0 rounded-r-full" : "right-0 rounded-l-full"}`}
+        className={`hidden sm:block absolute py-2 lg:py-8 px-8 lg:px-24 bg-la-nube-primary/50 backdrop-blur-xs top-4 ${pos === "left" ? "left-0 rounded-r-full" : "right-0 rounded-l-full"}`}
       >
         <h3 className="text-2xl font-bold text-white">{title}</h3>
       </div>
