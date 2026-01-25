@@ -4,7 +4,6 @@ import { Menu } from "lucide-react"
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import LogoLaNube from "@/components/atoms/logos/lanube";
-import SignIn from "../signin";
 import { ThemeToggle } from "@/components/molecules/theme";
 
 export default function MobileMenu() {
