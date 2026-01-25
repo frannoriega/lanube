@@ -1,7 +1,6 @@
 import Container from "@/components/atoms/container";
 import LogoLaNube from "@/components/atoms/logos/lanube";
 import { ThemeToggle } from "@/components/molecules/theme";
-import SignIn from "@/components/organisms/layouts/public-layout/header/signin";
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import MobileMenu from "./mobile";
@@ -29,7 +28,7 @@ export default function Header() {
           </nav>
           <div className="flex flex-row gap-4 items-center justify-center">
             <ThemeToggle className="hover:bg-slate-400 dark:hover:bg-slate-600 rounded-full" />
-            <SignIn />
+            {/* <SignIn /> */}
           </div>
         </Container>
       </div>
