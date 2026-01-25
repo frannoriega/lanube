@@ -19,7 +19,7 @@ interface ThemeToggleProps extends React.ComponentPropsWithoutRef<typeof Button>
 }
 
 export function ThemeToggle({ className, toggleMode = false }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
 
   const cns = cn("w-9 px-0", className)
 
@@ -33,7 +33,7 @@ export function ThemeToggle({ className, toggleMode = false }: ThemeToggleProps)
 
   if (toggleMode) {
     return (
-      <ToggleGroup type="single" value={theme} onValueChange={toggleSetValue} className="dark:bg-slate-800 bg-slate-400">
+      <ToggleGroup type="single" value={resolvedTheme} onValueChange={toggleSetValue} className="dark:bg-slate-800 bg-slate-400">
         <ToggleGroupItem value="light" className="data-[state=on]:bg-slate-300 dark:data-[state=on]:bg-blue-600">
           <Sun />
         </ToggleGroupItem>
