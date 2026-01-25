@@ -21,21 +21,15 @@ import { cn } from "@/lib/utils";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
-export default function Footer({
-  transparent = true,
-  className,
-}: {
-  transparent?: boolean;
-  className?: string;
-}) {
+export default function Footer({ className }: { className?: string }) {
   const cns = cn(
-    `w-full h-fit ${transparent ? "bg-slate-300/60 dark:bg-slate-950/60  backdrop-blur-xs" : "bg-slate-300 dark:bg-slate-950"}`,
+    `w-full h-fit bg-slate-950 dark:bg-slate-950/80`,
     className,
   );
   return (
     <footer className={cns}>
       <Container>
-        <div className="p-8 flex flex-col md:flex-row gap-16">
+        <div className="dark text-[#fafafa] p-8 flex flex-col md:flex-row gap-16">
           <section className="flex flex-col gap-2 w-fit md:max-w-1/3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2">
@@ -54,7 +48,7 @@ export default function Footer({
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <p className="dark:text-muted-foreground text-slate-600 max-w-prose">
+              <p className="text-foreground max-w-prose">
                 Impulsamos la Economía del Conocimiento en nuestra ciudad,
                 conectando empresas, universidades, emprendedores y sector
                 público para transformar el futuro.
@@ -77,7 +71,7 @@ export default function Footer({
             <div className="flex flex-col gap-2 w-fit">
               <h1 className="text-xl font-bold">Enlaces Rápidos</h1>
               <nav>
-                <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
+                <ul className="text-foreground flex flex-col gap-1">
                   {links.map((item) => (
                     <li key={item.name}>
                       <Link href={item.href}>{item.name}</Link>
@@ -89,7 +83,7 @@ export default function Footer({
             <div className="flex flex-col gap-2 w-fit">
               <h1 className="text-xl font-bold">Políticas</h1>
               <nav>
-                <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
+                <ul className="text-foreground flex flex-col gap-1">
                   <li>
                     <Link href="/policies/privacy">Política de Privacidad</Link>
                   </li>
@@ -98,7 +92,7 @@ export default function Footer({
             </div>
             <div className="flex flex-col gap-2 max-w-100 w-fit">
               <h1 className="text-xl font-bold">Contacto</h1>
-              <ul className="dark:text-muted-foreground text-slate-600 flex flex-col gap-1">
+              <ul className="text-foreground flex flex-col gap-1">
                 <li className="flex flex-row gap-2 items-start justify-start">
                   <div className="flex items-center justify-center w-[16px] h-[16px] mt-[4px]">
                     <MapPin size={16} />
