@@ -6,16 +6,14 @@ import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
-import { UserRole } from "@prisma/client";
+import { getServiceIcon } from "@/lib/constants/services";
+import { ResourceType, UserRole } from "@prisma/client";
 import {
-  Building2,
   Calendar,
   ChevronDown,
-  FlaskConical,
   LayoutDashboard,
   LucideProps,
   Menu,
-  Presentation,
   Users,
   X,
 } from "lucide-react";
@@ -44,13 +42,13 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/user/dashboard",
       icon: LayoutDashboard,
     },
-    { name: "Coworking", href: "/user/coworking", icon: Building2 },
-    { name: "Laboratorio", href: "/user/lab", icon: FlaskConical },
-    { name: "Auditorio", href: "/user/auditorium", icon: Presentation },
-    { name: "Sala de reuniones", href: "/user/meeting-room", icon: Users },
+    { name: "Coworking", href: "/user/coworking", icon: getServiceIcon(ResourceType.COWORKING) },
+    { name: "Laboratorio", href: "/user/lab", icon: getServiceIcon(ResourceType.LAB) },
+    { name: "Auditorio", href: "/user/auditorium", icon: getServiceIcon(ResourceType.AUDITORIUM) },
+    { name: "Sala de reuniones", href: "/user/meeting-room", icon: getServiceIcon(ResourceType.MEETING) },
   ],
   admin: [
-    { name: "Panel", href: "/admin", icon: LayoutDashboard },
+    { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Usuarios", href: "/admin/users", icon: Users },
     {
       name: "Reservas",
@@ -59,22 +57,22 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
         {
           name: "Coworking",
           href: "/admin/reservations/coworking",
-          icon: Building2,
+          icon: getServiceIcon(ResourceType.COWORKING),
         },
         {
           name: "Laboratorio",
           href: "/admin/reservations/lab",
-          icon: FlaskConical,
+          icon: getServiceIcon(ResourceType.LAB),
         },
         {
           name: "Auditorio",
           href: "/admin/reservations/auditorium",
-          icon: Presentation,
+          icon: getServiceIcon(ResourceType.AUDITORIUM),
         },
         {
           name: "Sala de reuniones",
           href: "/admin/reservations/meeting",
-          icon: Users,
+          icon: getServiceIcon(ResourceType.MEETING),
         },
       ],
     },
@@ -114,11 +112,10 @@ export default function ManagementLayout({
         <div key={item.name}>
           <button
             onClick={() => toggleExpanded(item.name)}
-            className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${
-              hasActive && !item.children
-                ? "bg-la-nube-primary text-white"
-                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
+            className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${hasActive && !item.children
+              ? "bg-la-nube-primary text-white"
+              : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+              }`}
           >
             <Icon className="mr-3 h-5 w-5" />
             {item.name}
@@ -142,11 +139,10 @@ export default function ManagementLayout({
           <Link
             key={item.name}
             href={item.href}
-            className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-              isActive(item.href)
-                ? "bg-la-nube-primary text-white"
-                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-            }`}
+            className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${isActive(item.href)
+              ? "bg-la-nube-primary text-white"
+              : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+              }`}
             onClick={() => setSidebarOpen(false)}
           >
             <Icon className="mr-3 h-5 w-5" />
@@ -240,9 +236,13 @@ export default function ManagementLayout({
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1" />
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                {user.role === UserRole.ADMIN && (
+                {(userType === "user" && user.role === UserRole.ADMIN) ? (
                   <Link href="/admin/dashboard">
                     <Button>Panel de administrador</Button>
+                  </Link>
+                ) : (
+                  <Link href="/user/dashboard">
+                    <Button>Panel de usuario</Button>
                   </Link>
                 )}
                 {/* Theme toggle */}
