@@ -196,6 +196,20 @@
     animation: accordion-up 0.2s ease-out;
   }
 
+  /* Marquee infinite scroll */
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(var(--marquee-translate, -100%));
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee var(--marquee-duration, 20s) linear infinite;
+  }
+
   /* Glassmorphism utilities */
   .glass {
     @apply bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg;
