@@ -9,6 +9,7 @@ import {
   getUserByEmailAndPassword,
 } from "./db/users";
 import { prisma } from "./prisma";
+import { CredentialsSignin } from "next-auth";
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60; // 7 days
 
@@ -62,8 +63,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const { email, password } =
             await signInSchema.parseAsync(credentials);
           const user = await getUserByEmailAndPassword(email, password);
-          return user ?? null;
-        } catch {
+          if (!user) return null;
+          if (!user.emailVerified) {
+            const err = new CredentialsSignin(
+              "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada."
+            );
+            err.code = "email_not_verified";
+            throw err;
+          }
+          return user;
+        } catch (error) {
+          if (error instanceof CredentialsSignin) throw error;
           return null;
         }
       },

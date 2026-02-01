@@ -436,6 +436,14 @@ async function hashPassword(password: string) {
   return bcrypt.hash(password, saltRounds);
 }
 
+export async function markUserEmailVerified(email: string): Promise<boolean> {
+  const result = await prisma.user.updateMany({
+    where: { email },
+    data: { emailVerified: new Date() },
+  });
+  return result.count > 0;
+}
+
 export {
   banUser,
   createUser,

@@ -1,4 +1,6 @@
 import { createUser } from "@/lib/db/users";
+import { createEmailVerificationToken } from "@/lib/db/verificationTokens";
+import { sendEmailConfirmation } from "@/lib/email/confirmation";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,8 +14,24 @@ export async function POST(request: NextRequest) {
   }
   try {
     await createUser(email, password);
+    const token = await createEmailVerificationToken(email);
+    const { success, error } = await sendEmailConfirmation(email, token);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          message:
+            error ?? "Cuenta creada pero no pudimos enviar el email de confirmación. Intenta iniciar sesión más tarde.",
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
-      { message: "Usuario creado correctamente" },
+      {
+        message:
+          "Cuenta creada. Revisa tu correo para confirmar tu email y continuar.",
+      },
       { status: 201 },
     );
   } catch (error) {

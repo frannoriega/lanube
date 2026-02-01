@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import {
@@ -43,6 +44,26 @@ const registerSchema = z
 export default function LandingPage() {
   const [fadeIn, setFadeIn] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const confirmed = searchParams.get("confirmed");
+    const error = searchParams.get("error");
+    if (confirmed === "1") {
+      toast.success("Correo confirmado. Inicia sesión para continuar.");
+      router.replace("/auth/signin", { scroll: false });
+    } else if (error === "invalid_or_expired_token") {
+      toast.error("El enlace de confirmación ha expirado o no es válido.");
+      router.replace("/auth/signin", { scroll: false });
+    } else if (error === "missing_token") {
+      toast.error("Enlace de confirmación inválido.");
+      router.replace("/auth/signin", { scroll: false });
+    } else if (error === "verification_failed") {
+      toast.error("No pudimos verificar tu correo. Intenta de nuevo.");
+      router.replace("/auth/signin", { scroll: false });
+    }
+  }, [searchParams, router]);
+
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: standardSchemaResolver(signInSchema),
     defaultValues: {
@@ -111,7 +132,13 @@ export default function LandingPage() {
       redirectTo: "/user/dashboard",
     });
     if (res?.error) {
-      setError(true);
+      if (res?.code === "email_not_verified") {
+        toast.error(
+          "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada."
+        );
+      } else {
+        setError(true);
+      }
     }
     if (res?.url) {
       router.replace(res.url);
@@ -123,24 +150,16 @@ export default function LandingPage() {
       method: "POST",
       body: JSON.stringify(data),
     });
+    const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const error = await res.json();
-      toast.error(error.message || "Error al crear la cuenta");
+      toast.error(body.message || "Error al crear la cuenta");
       return;
     }
-    const signInRes = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
-    if (!signInRes.ok) {
-      const error = await res.json();
-      toast.error(error.message || "Error al crear la cuenta");
-    }
-    toast.success("Cuenta creada correctamente");
-    setTimeout(() => {
-      router.push("/auth/signup");
-    }, 1000);
+    toast.success(
+      body.message ??
+        "Revisa tu correo para confirmar tu cuenta y continuar con el registro."
+    );
+    setIsSignIn(true);
   };
 
   return (
