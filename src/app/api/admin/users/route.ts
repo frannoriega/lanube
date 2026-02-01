@@ -85,8 +85,7 @@ export async function GET(request: NextRequest) {
       },
       summary,
     });
-  } catch (error) {
-    console.error("Error fetching admin users", error);
+  } catch {
     return NextResponse.json(
       { message: "Error interno del servidor" },
       { status: 500 },

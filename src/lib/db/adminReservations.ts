@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { ReservationStatus, ResourceType, UserRole } from "@prisma/client";
+
+const MAX_PAGE_SIZE = 100;
 
 /**
  * Admin Reservations DB helpers
@@ -49,31 +52,198 @@ export interface AdminReservationListResult {
   };
 }
 
+/**
+ * Parses API response (where dates come as ISO strings) into AdminReservationListResult
+ * with proper Date objects. Use this when receiving reservations from fetch/JSON.
+ */
+export function parseAdminReservationListFromApi(
+  raw: unknown
+): AdminReservationListResult[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item: Record<string, unknown>) => ({
+    ...item,
+    startTime: new Date(item.startTime as string | number | Date),
+    endTime: new Date(item.endTime as string | number | Date),
+    createdAt: new Date(item.createdAt as string | number | Date),
+  })) as AdminReservationListResult[];
+}
+
+export interface ListAdminReservationsOptions {
+  date?: string; // YYYY-MM-DD
+  status?: ReservationStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ListAdminReservationsResult {
+  items: AdminReservationListResult[];
+  total: number;
+}
+
 export async function listAdminReservationsByType(
-  service: ResourceType
-): Promise<AdminReservationListResult[]> {
-  return prisma.reservation.findMany({
-    where: {
-      resource: {
-        type: service,
-      },
-    },
-    include: {
-      resource: true,
-      registeredUser: {
-        select: {
-          name: true,
-          lastName: true,
-          dni: true,
-          institution: true,
-          user: {
-            select: { email: true },
+  service: ResourceType,
+  options?: ListAdminReservationsOptions
+): Promise<ListAdminReservationsResult> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+
+  const where: Prisma.ReservationWhereInput = {
+    resource: { type: service },
+  };
+
+  if (options?.date) {
+    const [y, m, d] = options.date.split("-").map(Number);
+    const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+    where.startTime = { gte: startOfDay, lte: endOfDay };
+  }
+
+  if (options?.status) {
+    where.status = options.status;
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.reservation.findMany({
+      where,
+      include: {
+        resource: true,
+        registeredUser: {
+          select: {
+            name: true,
+            lastName: true,
+            dni: true,
+            institution: true,
+            user: { select: { email: true } },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
+      orderBy: { startTime: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.reservation.count({ where }),
+  ]);
+
+  return { items, total };
+}
+
+export interface DayWithReservations {
+  date: string; // YYYY-MM-DD
+  count: number;
+}
+
+export interface ListDaysWithReservationsOptions {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ListDaysWithReservationsResult {
+  items: DayWithReservations[];
+  total: number;
+}
+
+export async function listDaysWithReservations(
+  service: ResourceType,
+  status?: ReservationStatus,
+  options?: ListDaysWithReservationsOptions
+): Promise<ListDaysWithReservationsResult> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+
+  const where: Prisma.ReservationWhereInput = {
+    resource: { type: service },
+  };
+  if (status) where.status = status;
+
+  const rows = await prisma.reservation.findMany({
+    where,
+    select: { startTime: true },
+    orderBy: { startTime: "asc" },
   });
+
+  const byDay = rows.reduce<Record<string, number>>((acc, r) => {
+    const key = r.startTime.toISOString().slice(0, 10);
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const allDays = Object.entries(byDay)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const total = allDays.length;
+  const items = allDays.slice((page - 1) * pageSize, page * pageSize);
+
+  return { items, total };
+}
+
+export async function listDaysWithPendingReservationsAllServices(
+  options?: ListDaysWithReservationsOptions
+): Promise<ListDaysWithReservationsResult> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+
+  const rows = await prisma.reservation.findMany({
+    where: { status: "PENDING" },
+    select: { startTime: true },
+    orderBy: { startTime: "asc" },
+  });
+
+  const byDay = rows.reduce<Record<string, number>>((acc, r) => {
+    const key = r.startTime.toISOString().slice(0, 10);
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const allDays = Object.entries(byDay)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const total = allDays.length;
+  const items = allDays.slice((page - 1) * pageSize, page * pageSize);
+
+  return { items, total };
+}
+
+export async function listAdminReservationsByDate(
+  date: string,
+  options?: { page?: number; pageSize?: number }
+): Promise<ListAdminReservationsResult> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+
+  const [y, m, d] = date.split("-").map(Number);
+  const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
+  const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+
+  const where = {
+    status: "PENDING" as const,
+    startTime: { gte: startOfDay, lte: endOfDay },
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.reservation.findMany({
+      where,
+      include: {
+        resource: true,
+        registeredUser: {
+          select: {
+            name: true,
+            lastName: true,
+            dni: true,
+            institution: true,
+            user: { select: { email: true } },
+          },
+        },
+      },
+      orderBy: { startTime: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.reservation.count({ where }),
+  ]);
+
+  return { items, total };
 }
 
 /**
