@@ -11,6 +11,7 @@ export async function sendEmailConfirmation(
 ): Promise<{ success: boolean; error?: string }> {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const confirmLink = `${baseUrl}/api/auth/confirm-email?token=${token}`;
+  const logoUrl = `${baseUrl}/images/lanube-logo.svg`;
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
@@ -19,7 +20,7 @@ export async function sendEmailConfirmation(
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #4E87C2; font-size: 32px; margin: 0;">🌩️ La Nube</h1>
+          <img src="${logoUrl}" alt="La Nube" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
           <p style="color: #666; margin: 10px 0;">Espacio de Coworking e Innovación</p>
         </div>
         
