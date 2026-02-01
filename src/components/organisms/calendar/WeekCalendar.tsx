@@ -138,7 +138,7 @@ export function WeekCalendar({
       )
   }, [unavailableSlots, occurrences]);
 
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     try {
       // Get Friday (last work day) at end of day
       const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1); // Monday + 4 = Friday, + 1 week = next week's Friday
@@ -176,12 +176,12 @@ export function WeekCalendar({
     } catch (ignored) {
       toast.error("Error al cargar las reservas");
     }
-  };
+  }, [currentWeekStart, apiEndpoint]);
 
   // Fetch reservations when week changes
   useEffect(() => {
     fetchReservations();
-  }, [currentWeekStart, userId, apiEndpoint]);
+  }, [fetchReservations]);
 
   // Convert minutes from midnight to time string (HH:mm)
   const minutesToTime = (minutes: number): string => {
