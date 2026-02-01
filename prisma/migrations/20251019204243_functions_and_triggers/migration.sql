@@ -27,6 +27,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION insert_into_ledger(
   _reservation_id text,
   _occurrence_start_time timestamptz,
+  _occurrence_end_time timestamptz,
   _reservable_type reservable_types,
   _reservable_id text,
   _resource_id text,

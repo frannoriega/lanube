@@ -48,8 +48,6 @@ export async function getCalendarDataByType(
     return inDateRange;
   });
 
-  console.log("userReservations", userReservations);
-
   return {
     unavailableSlots,
     userReservations: userReservations.map((res) => ({

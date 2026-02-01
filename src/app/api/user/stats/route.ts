@@ -13,8 +13,7 @@ export async function GET() {
     const stats = await getDashboardStatsByUserId(session.userId);
 
     return NextResponse.json(stats);
-  } catch (error) {
-    console.error("[GET /api/user/stats] Failed to load dashboard stats", error);
+  } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
   }
 }

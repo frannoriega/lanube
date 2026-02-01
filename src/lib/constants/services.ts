@@ -1,4 +1,5 @@
-import { Building2, FlaskConical, LucideIcon, Presentation, Users } from "lucide-react";
+import { ResourceType } from "@prisma/client";
+import { Building2, FlaskConical, LucideIcon, MessagesSquare, Presentation } from "lucide-react";
 
 interface Service {
     name: string;
@@ -35,10 +36,38 @@ const services: Service[] = [
         description: "Ámbito reservado para 6–10 personas (según montaje). Mesa de trabajo, pantalla/pizarra digital. Pensada para planificaciones, presentaciones a equipos y entrevistas.",
         image: "/images/services/sala-de-reuniones.jpg",
         link: "/services/sala-de-reuniones",
-        icon: Users,
+        icon: MessagesSquare,
     },
 ]
 
-export { services };
+const getServiceIcon = (service: ResourceType) => {
+    switch (service) {
+        case ResourceType.COWORKING:
+            return Building2;
+        case ResourceType.LAB:
+            return FlaskConical
+        case ResourceType.AUDITORIUM:
+            return Presentation;
+        case ResourceType.MEETING:
+            return MessagesSquare;
+    }
+}
+
+const getServiceName = (service: ResourceType) => {
+    switch (service) {
+        case ResourceType.COWORKING:
+            return "Coworking";
+        case ResourceType.LAB:
+            return "Laboratorio";
+        case ResourceType.AUDITORIUM:
+            return "Auditorio";
+        case ResourceType.MEETING:
+            return "Sala de reuniones";
+        default:
+            return service;
+    }
+}
+
+export { services, getServiceIcon, getServiceName };
 export type { Service };
 

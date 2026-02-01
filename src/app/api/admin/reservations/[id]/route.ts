@@ -40,8 +40,7 @@ export async function PATCH(
       const reservation = await setReservationStatus(resolvedParams.id, status as ReservationStatus, deniedReason)
       return NextResponse.json(reservation)
     }
-  } catch (error) {
-    console.error(error)
+  } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

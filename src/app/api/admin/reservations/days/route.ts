@@ -1,5 +1,9 @@
 import { auth } from "@/lib/auth"
-import { isAdminUser, listAdminReservationsByType } from "@/lib/db/adminReservations"
+import {
+  isAdminUser,
+  listDaysWithPendingReservationsAllServices,
+  listDaysWithReservations,
+} from "@/lib/db/adminReservations"
 import { ResourceType } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -20,30 +24,31 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const service = searchParams.get("service")
-    const date = searchParams.get("date")
+    const status = searchParams.get("status")
     const pageRaw = searchParams.get("page")
     const pageSizeRaw = searchParams.get("pageSize")
-    const status = searchParams.get("status")
-
-    if (!service || !ResourceType[service.toUpperCase() as keyof typeof ResourceType]) {
-      return NextResponse.json({ message: "Tipo de recurso inválido" }, { status: 400 })
-    }
 
     const page = Math.max(1, parseInt(pageRaw ?? "1", 10) || 1)
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(pageSizeRaw ?? "50", 10) || 50))
 
-    const statusFilter = status && ["PENDING", "APPROVED", "REJECTED"].includes(status)
-      ? (status as "PENDING" | "APPROVED" | "REJECTED")
-      : undefined
+    if (!service) {
+      const { items, total } = await listDaysWithPendingReservationsAllServices({ page, pageSize })
+      return NextResponse.json({ items, total })
+    }
 
-    const { items, total } = await listAdminReservationsByType(
+    if (!ResourceType[service.toUpperCase() as keyof typeof ResourceType]) {
+      return NextResponse.json({ message: "Tipo de recurso inválido" }, { status: 400 })
+    }
+
+    const statusFilter =
+      status && ["PENDING", "APPROVED", "REJECTED"].includes(status)
+        ? (status as "PENDING" | "APPROVED" | "REJECTED")
+        : undefined
+
+    const { items, total } = await listDaysWithReservations(
       service.toUpperCase() as ResourceType,
-      {
-        date: date ?? undefined,
-        status: statusFilter,
-        page,
-        pageSize,
-      }
+      statusFilter,
+      { page, pageSize }
     )
 
     return NextResponse.json({ items, total })

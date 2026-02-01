@@ -62,9 +62,7 @@ export async function GET(
     );
 
     return NextResponse.json(data);
-  } catch (error) {
-    const { type } = await params;
-    console.error(`Error fetching ${type} calendar data:`, error);
+  } catch {
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 },
@@ -166,8 +164,6 @@ export async function POST(
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {
     const knownError = error as Error;
-    const { type } = await params;
-    console.error(`Error creating ${type} reservation:`, error);
     return NextResponse.json(
       { error: knownError.message || "Error interno del servidor" },
       { status: 500 },
@@ -242,8 +238,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (error) {
     const knownError = error as Error;
-    const { type } = await params;
-    console.error(`Error deleting ${type} reservation:`, error);
     return NextResponse.json(
       { error: knownError.message || "Error interno del servidor" },
       { status: 500 },

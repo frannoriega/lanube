@@ -21,6 +21,8 @@ export function ReservationCard({
   const [rejecting, setRejecting] = React.useState(false);
   const [denyReason, setDenyReason] = React.useState("");
 
+  console.log("reservation", reservation);
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -40,59 +42,59 @@ export function ReservationCard({
         </div>
 
         {expanded && (
-        <div className="flex items-start justify-between mt-4">
-          <div className="flex-1">
-            <ReservationInfo
-              user={{
-                email: reservation.registeredUser.user.email,
-                dni: reservation.registeredUser.dni,
-                institution: reservation.registeredUser.institution,
-              }}
-              startTime={reservation.startTime.toISOString()}
-              endTime={reservation.endTime.toISOString()}
-              createdAt={reservation.createdAt.toISOString()}
-              reason={reservation.reason}
-            />
-          </div>
+          <div className="flex items-start justify-between mt-4">
+            <div className="flex-1">
+              <ReservationInfo
+                user={{
+                  email: reservation.registeredUser.user.email,
+                  dni: reservation.registeredUser.dni,
+                  institution: reservation.registeredUser.institution,
+                }}
+                startTime={reservation.startTime.toISOString()}
+                endTime={reservation.endTime.toISOString()}
+                createdAt={reservation.createdAt.toISOString()}
+                reason={reservation.reason}
+              />
+            </div>
 
-          <div className="flex flex-col gap-2 ml-4">
-            <Button
-              size="sm"
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => onAction(reservation.id, "APPROVED")}
-              disabled={processing === reservation.id}
-            >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Aprobar
-            </Button>
-            {!rejecting ? (
+            <div className="flex flex-col gap-2 ml-4">
               <Button
                 size="sm"
-                variant="destructive"
-                onClick={() => setRejecting(true)}
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => onAction(reservation.id, "APPROVED")}
                 disabled={processing === reservation.id}
               >
-                <XCircle className="h-4 w-4 mr-1" />
-                Rechazar
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Aprobar
               </Button>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <textarea
-                  className="w-64 h-20 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-sm"
-                  placeholder="Motivo del rechazo"
-                  value={denyReason}
-                  onChange={(e) => setDenyReason(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => { setRejecting(false); setDenyReason(""); }}>Cancelar</Button>
-                  <Button size="sm" variant="destructive" onClick={() => onAction(reservation.id, "REJECTED", denyReason)} disabled={processing === reservation.id || !denyReason.trim()}>
-                    Confirmar rechazo
-                  </Button>
+              {!rejecting ? (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setRejecting(true)}
+                  disabled={processing === reservation.id}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Rechazar
+                </Button>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    className="w-64 h-20 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-sm"
+                    placeholder="Motivo del rechazo"
+                    value={denyReason}
+                    onChange={(e) => setDenyReason(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => { setRejecting(false); setDenyReason(""); }}>Cancelar</Button>
+                    <Button size="sm" variant="destructive" onClick={() => onAction(reservation.id, "REJECTED", denyReason)} disabled={processing === reservation.id || !denyReason.trim()}>
+                      Confirmar rechazo
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
         )}
       </CardContent>
     </Card>

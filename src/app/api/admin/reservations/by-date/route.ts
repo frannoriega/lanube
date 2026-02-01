@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth"
-import { isAdminUser, listAdminReservationsByType } from "@/lib/db/adminReservations"
-import { ResourceType } from "@prisma/client"
+import { isAdminUser, listAdminReservationsByDate } from "@/lib/db/adminReservations"
 import { NextRequest, NextResponse } from "next/server"
 
 const MAX_PAGE_SIZE = 100
@@ -19,32 +18,18 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const service = searchParams.get("service")
     const date = searchParams.get("date")
     const pageRaw = searchParams.get("page")
     const pageSizeRaw = searchParams.get("pageSize")
-    const status = searchParams.get("status")
 
-    if (!service || !ResourceType[service.toUpperCase() as keyof typeof ResourceType]) {
-      return NextResponse.json({ message: "Tipo de recurso inválido" }, { status: 400 })
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json({ message: "Fecha inválida (use YYYY-MM-DD)" }, { status: 400 })
     }
 
     const page = Math.max(1, parseInt(pageRaw ?? "1", 10) || 1)
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(pageSizeRaw ?? "50", 10) || 50))
 
-    const statusFilter = status && ["PENDING", "APPROVED", "REJECTED"].includes(status)
-      ? (status as "PENDING" | "APPROVED" | "REJECTED")
-      : undefined
-
-    const { items, total } = await listAdminReservationsByType(
-      service.toUpperCase() as ResourceType,
-      {
-        date: date ?? undefined,
-        status: statusFilter,
-        page,
-        pageSize,
-      }
-    )
+    const { items, total } = await listAdminReservationsByDate(date, { page, pageSize })
 
     return NextResponse.json({ items, total })
   } catch {

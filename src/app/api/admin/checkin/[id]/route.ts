@@ -31,8 +31,7 @@ export async function PATCH(
       return NextResponse.json({ message: "Check-in no encontrado o ya cerrado" }, { status: 404 })
     }
     return NextResponse.json(updated)
-  } catch (error) {
-    console.error(error)
+  } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
 }

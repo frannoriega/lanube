@@ -136,52 +136,52 @@ export function WeekCalendar({
         ((startMinutes > getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes < getMinutes(parseISO(occ.occurrenceEndTime))) ||
           (startMinutes < getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes > getMinutes(parseISO(occ.occurrenceStartTime))))
       )
-  }, [unavailableSlots, occurrences]); 
+  }, [unavailableSlots, occurrences]);
+
+  const fetchReservations = async () => {
+    try {
+      // Get Friday (last work day) at end of day
+      const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1); // Monday + 4 = Friday, + 1 week = next week's Friday
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const response = await fetch(
+        `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const unavailableSlots = data.unavailableSlots || [];
+        unavailableSlots.sort((a: UnavailableSlot, b: UnavailableSlot) => {
+          return parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime();
+        });
+        const processedUnavailableSlots: UnavailableSlot[] = [];
+        if (unavailableSlots.length > 0) {
+          let currentUnavailableSlot = unavailableSlots[0];
+          for (let i = 1; i < unavailableSlots.length; i++) {
+            const slot = unavailableSlots[i];
+            if (currentUnavailableSlot.endTime === slot.startTime) {
+              currentUnavailableSlot.endTime = slot.endTime;
+            } else {
+              processedUnavailableSlots.push(currentUnavailableSlot);
+              currentUnavailableSlot = slot;
+            }
+          }
+          processedUnavailableSlots.push(currentUnavailableSlot);
+        }
+        setOccurrences(data.userReservations || []);
+        setUnavailableSlots(processedUnavailableSlots || []);
+      } else {
+        toast.error("Error al cargar las reservas");
+      }
+    } catch (ignored) {
+      toast.error("Error al cargar las reservas");
+    }
+  };
 
   // Fetch reservations when week changes
   useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        // Get Friday (last work day) at end of day
-        const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1); // Monday + 4 = Friday, + 1 week = next week's Friday
-        weekEnd.setHours(23, 59, 59, 999);
-
-        const response = await fetch(
-          `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const unavailableSlots = data.unavailableSlots || [];
-          unavailableSlots.sort((a: UnavailableSlot, b: UnavailableSlot) => {
-            return parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime();
-          });
-          const processedUnavailableSlots: UnavailableSlot[] = [];
-          if (unavailableSlots.length > 0) {
-            let currentUnavailableSlot = unavailableSlots[0];
-            for (let i = 1; i < unavailableSlots.length; i++) {
-              const slot = unavailableSlots[i];
-              if (currentUnavailableSlot.endTime === slot.startTime) {
-                currentUnavailableSlot.endTime = slot.endTime;
-              } else {
-                processedUnavailableSlots.push(currentUnavailableSlot);
-                currentUnavailableSlot = slot;
-              }
-            }
-            processedUnavailableSlots.push(currentUnavailableSlot);
-          }
-          setOccurrences(data.userReservations || []);
-          setUnavailableSlots(processedUnavailableSlots || []);
-        } else {
-          toast.error("Error al cargar las reservas");
-        }
-      } catch (ignored) {
-        toast.error("Error al cargar las reservas");
-      }
-    };
-
     fetchReservations();
-  }, [currentWeekStart, overlapsUnavailableOrReservation, occurrences, userId, apiEndpoint]);
+  }, [currentWeekStart, userId, apiEndpoint]);
 
   // Convert minutes from midnight to time string (HH:mm)
   const minutesToTime = (minutes: number): string => {
@@ -365,8 +365,8 @@ export function WeekCalendar({
 
   // Get reservations for a specific day
   const getReservationsForDay = (day: Date) => {
+    console.log("occurrences", occurrences);
     return occurrences.filter((occ) => {
-      console.log(occ);
       const occStart = parseISO(occ.occurrenceStartTime);
       return isSameDay(occStart, day);
     });
@@ -457,7 +457,7 @@ export function WeekCalendar({
         setIsWholeDay(false);
         setSelection(null);
 
-        setOccurrences([...occurrences, await response.json()]);
+        await fetchReservations();
       } else {
         const error = await response.json();
         toast.error(error.error || "Error al crear la reserva");
@@ -724,6 +724,7 @@ export function WeekCalendar({
                 placeholder="Describe el propósito de la reserva..."
                 rows={3}
                 required
+                className="max-h-60"
               />
             </div>
 

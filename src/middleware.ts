@@ -14,7 +14,6 @@ export async function middleware(request: NextRequest) {
   const role = token?.role;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
 
-  console.log("token", token);
   const requiresSession =
     request.nextUrl.pathname.startsWith("/admin") ||
     request.nextUrl.pathname.startsWith("/user");

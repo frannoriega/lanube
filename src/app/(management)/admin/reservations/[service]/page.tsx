@@ -3,7 +3,6 @@
 import { CoworkingReservationsTemplate } from "@/components/templates/admin/coworking-reservations"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AdminReservationListResult } from "@/lib/db/adminReservations"
 import { useSession } from "next-auth/react"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
@@ -14,23 +13,12 @@ export default function ServiceReservationsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [reservations, setReservations] = useState<AdminReservationListResult[]>([])
   const [processing, setProcessing] = useState<string | null>(null)
   const [confirmData, setConfirmData] = useState<{ reservationId: string, conflicts: string[] } | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [refetchKey, setRefetchKey] = useState(0)
 
-  const fetchReservations = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/admin/reservations?service=${service}`)
-      if (response.ok) {
-        const data = await response.json()
-        setReservations(data)
-      }
-    } catch {
-    } finally {
-      setLoading(false)
-    }
-  }, [service])
+  const triggerRefetch = useCallback(() => setRefetchKey((k) => k + 1), [])
 
   useEffect(() => {
     if (status === "loading") return
@@ -40,8 +28,8 @@ export default function ServiceReservationsPage() {
       return
     }
 
-    fetchReservations()
-  }, [session, status, router, fetchReservations])
+    setLoading(false)
+  }, [session, status, router])
 
   const handleReservationAction = async (reservationId: string, action: 'APPROVED' | 'REJECTED', deniedReason?: string) => {
     setProcessing(reservationId)
@@ -71,7 +59,7 @@ export default function ServiceReservationsPage() {
         })
         if (response.ok) {
           toast.success('Reserva rechazada exitosamente')
-          fetchReservations()
+          triggerRefetch()
         } else {
           const error = await response.json()
           toast.error(error.message || 'Error al procesar la reserva')
@@ -101,7 +89,7 @@ export default function ServiceReservationsPage() {
         const count = (data.autoRejectedIds || []).length
         toast.success(`Reserva aprobada. ${count > 0 ? `${count} reservas rechazadas automáticamente` : 'Sin conflictos'}`)
         setConfirmData(null)
-        fetchReservations()
+        triggerRefetch()
       }
     } catch {
       toast.error('Error al aprobar la reserva')
@@ -126,9 +114,10 @@ export default function ServiceReservationsPage() {
   return (
     <>
       <CoworkingReservationsTemplate
-        reservations={reservations}
+        service={service ?? ""}
         onAction={handleReservationAction}
         processing={processing}
+        refetchKey={refetchKey}
       />
 
       <Dialog open={!!confirmData} onOpenChange={(open) => !open && setConfirmData(null)}>
