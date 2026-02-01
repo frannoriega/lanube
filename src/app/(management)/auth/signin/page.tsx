@@ -126,13 +126,13 @@ export default function LandingPage() {
     if (!res.ok) {
       const error = await res.json();
       toast.error(error.message || "Error al crear la cuenta");
+      return;
     }
     const signInRes = await signIn("credentials", {
       email: data.email,
       password: data.password,
       redirect: false,
     });
-    console.log(signInRes);
     if (!signInRes.ok) {
       const error = await res.json();
       toast.error(error.message || "Error al crear la cuenta");
@@ -166,10 +166,10 @@ export default function LandingPage() {
               <div className="flex flex-col items-center bg-slate-100 p-8 w-fit rounded-full">
                 <Logo size={200} />
               </div>
-              <CardTitle className="text-3xl font-bold text-white sr-only">
+              <CardTitle className="text-3xl font-bold sr-only">
                 La Nube
               </CardTitle>
-              <p className="text-white/90">Espacio de Coworking e Innovación</p>
+              <p>Espacio de Coworking e Innovación</p>
             </CardHeader>
             <CardContent className="bg-transparent w-full flex flex-col gap-6">
               {/* <Tabs defaultValue="google" className="w-full">
@@ -248,16 +248,16 @@ export default function LandingPage() {
                             name="email"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                <FormLabel className="data-[error=true]:text-red-600">
                                   Correo electrónico
                                 </FormLabel>
                                 <FormControl>
                                   <Input
                                     {...field}
-                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                    className="bg-slate-200 aria-invalid:border-red-600"
                                   />
                                 </FormControl>
-                                <FormMessage className="text-red-200" />
+                                <FormMessage className="text-red-600" />
                               </FormItem>
                             )}
                           />
@@ -266,17 +266,17 @@ export default function LandingPage() {
                             name="password"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                <FormLabel className="data-[error=true]:text-red-600">
                                   Contraseña
                                 </FormLabel>
-                                <FormControl className="aria-invalid:border-red-300">
+                                <FormControl className="aria-invalid:border-red-600">
                                   <Input
                                     {...field}
                                     type="password"
-                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                    className="bg-slate-200 aria-invalid:border-red-600"
                                   />
                                 </FormControl>
-                                <FormMessage className="text-red-200" />
+                                <FormMessage className="text-red-600" />
                               </FormItem>
                             )}
                           />
@@ -292,7 +292,7 @@ export default function LandingPage() {
                             Iniciar Sesión
                           </Button>
                           {error && (
-                            <p className="text-red-200 text-sm font-semibold text-center">
+                            <p className="text-red-600 text-sm font-semibold text-center">
                               Correo electrónico o contraseña incorrectos
                             </p>
                           )}
@@ -303,7 +303,7 @@ export default function LandingPage() {
                           orientation="horizontal"
                           className="flex-1"
                         />
-                        <span className="text-white">o</span>
+                        <span className="">o</span>
                         <Separator
                           orientation="horizontal"
                           className="flex-1"
@@ -337,16 +337,16 @@ export default function LandingPage() {
                             name="email"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                <FormLabel className="data-[error=true]:text-red-600">
                                   Correo electrónico
                                 </FormLabel>
                                 <FormControl>
                                   <Input
                                     {...field}
-                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                    className="bg-slate-200 aria-invalid:border-red-600"
                                   />
                                 </FormControl>
-                                <FormMessage className="text-red-200" />
+                                <FormMessage className="text-red-600" />
                               </FormItem>
                             )}
                           />
@@ -355,17 +355,17 @@ export default function LandingPage() {
                             name="password"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                <FormLabel className="data-[error=true]:text-red-600">
                                   Contraseña
                                 </FormLabel>
-                                <FormControl className="aria-invalid:border-red-300">
+                                <FormControl className="aria-invalid:border-red-600">
                                   <Input
                                     {...field}
                                     type="password"
-                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                    className="bg-slate-200 aria-invalid:border-red-600"
                                   />
                                 </FormControl>
-                                <FormMessage className="text-red-200" />
+                                <FormMessage className="text-red-600" />
                               </FormItem>
                             )}
                           />
@@ -374,17 +374,17 @@ export default function LandingPage() {
                             name="passwordConfirmation"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white data-[error=true]:text-red-200">
+                                <FormLabel className="data-[error=true]:text-red-600">
                                   Confirmar contraseña
                                 </FormLabel>
-                                <FormControl className="aria-invalid:border-red-300">
+                                <FormControl className="aria-invalid:border-red-600">
                                   <Input
                                     {...field}
                                     type="password"
-                                    className="bg-la-nube-primary text-white aria-invalid:border-red-300"
+                                    className="bg-slate-200 aria-invalid:border-red-600"
                                   />
                                 </FormControl>
-                                <FormMessage className="text-red-200" />
+                                <FormMessage className="text-red-600" />
                               </FormItem>
                             )}
                           />
@@ -399,7 +399,7 @@ export default function LandingPage() {
                       </Form>
                       <Button
                         variant="outline"
-                        className="w-full text-white font-semibold py-2 text-lg"
+                        className="w-full font-semibold py-2 text-lg"
                         size="lg"
                         onClick={() => setIsSignIn(true)}
                       >
@@ -409,13 +409,13 @@ export default function LandingPage() {
                   )}
                 </AnimatePresence>
               </div>
-              <p className="text-white/80 text-sm text-center">
+              <p className="text-sm text-center">
                 Accede a nuestros espacios de coworking, laboratorio y auditorio
               </p>
               <div className="flex w-full justify-center">
                 <Link
                   href="/policies/privacy"
-                  className="text-white/80 text-sm text-center"
+                  className="text-sm text-center"
                 >
                   Política de privacidad
                 </Link>

@@ -9,18 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
+import { getServiceIcon } from "@/lib/constants/services";
+import { ResourceType } from "@prisma/client";
 import {
   Calendar,
-  CheckCircle,
   Clock,
   Eye,
   TrendingUp,
   Users,
-  XCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface AdminStats {
   todayUsers: number;
@@ -56,6 +59,15 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [confirmData, setConfirmData] = useState<{
+    reservationId: string;
+    conflicts: string[];
+  } | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [refetchKey, setRefetchKey] = useState(0);
+
+  const triggerRefetch = useCallback(() => setRefetchKey((k) => k + 1), []);
 
   const fetchAdminStats = useCallback(async () => {
     try {
@@ -70,6 +82,98 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const handleReservationAction = useCallback(
+    async (
+      reservationId: string,
+      action: "APPROVED" | "REJECTED",
+      deniedReason?: string
+    ) => {
+      setProcessing(reservationId);
+      try {
+        if (action === "APPROVED") {
+          const previewRes = await fetch(
+            `/api/admin/reservations/${reservationId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: action, preview: true }),
+            }
+          );
+          if (!previewRes.ok) {
+            const err = await previewRes.json().catch(() => ({}));
+            toast.error(err.message || "No se pudo previsualizar conflictos");
+            setProcessing(null);
+            return;
+          }
+          const previewData = await previewRes.json();
+          setConfirmData({
+            reservationId,
+            conflicts: previewData.autoRejectedIds || [],
+          });
+        } else {
+          const response = await fetch(
+            `/api/admin/reservations/${reservationId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: action, deniedReason }),
+            }
+          );
+          if (response.ok) {
+            toast.success("Reserva rechazada exitosamente");
+            fetchAdminStats();
+            triggerRefetch();
+          } else {
+            const error = await response.json();
+            toast.error(error.message || "Error al procesar la reserva");
+          }
+        }
+      } catch {
+        toast.error("Error al procesar la reserva");
+      } finally {
+        if (action !== "APPROVED") setProcessing(null);
+      }
+    },
+    [fetchAdminStats, triggerRefetch]
+  );
+
+  const confirmApprove = useCallback(async () => {
+    if (!confirmData) return;
+    setConfirming(true);
+    try {
+      const res = await fetch(
+        `/api/admin/reservations/${confirmData.reservationId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "APPROVED" }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.message || "No se pudo aprobar la reserva");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const count = (data.autoRejectedIds || []).length;
+        toast.success(
+          `Reserva aprobada. ${
+            count > 0
+              ? `${count} reservas rechazadas automáticamente`
+              : "Sin conflictos"
+          }`
+        );
+        setConfirmData(null);
+        fetchAdminStats();
+        triggerRefetch();
+      }
+    } catch {
+      toast.error("Error al aprobar la reserva");
+    } finally {
+      setConfirming(false);
+      setProcessing(null);
+    }
+  }, [confirmData, fetchAdminStats, triggerRefetch]);
+
   useEffect(() => {
     if (status === "loading") return;
 
@@ -82,32 +186,9 @@ export default function AdminDashboard() {
     fetchAdminStats();
   }, [session, status, router, fetchAdminStats]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return <Badge className="bg-green-100 text-green-800">Aprobada</Badge>;
-      case "REJECTED":
-        return <Badge className="bg-red-100 text-red-800">Rechazada</Badge>;
-      case "PENDING":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>
-        );
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
-    }
-  };
-
-  const getServiceIcon = (service: string) => {
-    switch (service) {
-      case "COWORKING":
-        return <Users className="h-4 w-4 text-blue-500" />;
-      case "LAB":
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case "AUDITORIUM":
-        return <Calendar className="h-4 w-4 text-purple-500" />;
-      default:
-        return <Calendar className="h-4 w-4 text-gray-500" />;
-    }
+  const createServiceIcon = (service: ResourceType) => {
+    const Icon = getServiceIcon(service);
+    return <Icon className="h-8 w-8 text-blue-500" />;
   };
 
   const getServiceName = (service: string) => {
@@ -227,7 +308,7 @@ export default function AdminDashboard() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    {getServiceIcon(user.service)}
+                    {createServiceIcon(user.service as ResourceType)}
                     <div>
                       <p className="font-medium">
                         {user.name} {user.lastName}
@@ -262,68 +343,47 @@ export default function AdminDashboard() {
       )}
 
       {/* Recent reservations */}
-      {stats?.recentReservations && stats.recentReservations.length > 0 && (
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Reservas Recientes
-            </CardTitle>
-            <CardDescription>Últimas reservas solicitadas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.recentReservations.slice(0, 5).map((reservation) => (
+      <DashboardRecentReservations
+        onAction={handleReservationAction}
+        processing={processing}
+        refetchKey={refetchKey}
+      />
+
+      <Dialog
+        open={!!confirmData}
+        onOpenChange={(open) => !open && setConfirmData(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar aprobación</DialogTitle>
+            <DialogDescription>
+              {confirmData?.conflicts?.length
+                ? `Aprobar esta reserva rechazará automáticamente ${confirmData.conflicts.length} reservas pendientes.`
+                : "No hay conflictos detectados."}
+            </DialogDescription>
+          </DialogHeader>
+          {confirmData?.conflicts?.length ? (
+            <div className="max-h-48 overflow-auto text-sm border rounded p-2">
+              {confirmData.conflicts.map((id) => (
                 <div
-                  key={reservation.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  key={id}
+                  className="py-1 border-b last:border-b-0 border-gray-200 dark:border-gray-800"
                 >
-                  <div className="flex items-center gap-3">
-                    {getServiceIcon(reservation.service)}
-                    <div>
-                      <p className="font-medium">
-                        {reservation.user.name} {reservation.user.lastName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {getServiceName(reservation.service)} •
-                        {new Date(reservation.startTime).toLocaleDateString()} -
-                        {new Date(reservation.startTime).toLocaleTimeString()} a
-                        {new Date(reservation.endTime).toLocaleTimeString()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {reservation.reason}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(reservation.status)}
-                    {reservation.status === "PENDING" && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-green-600 border-green-600"
-                        >
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Aprobar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 border-red-600"
-                        >
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Rechazar
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {id}
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : null}
+          <div className="flex justify-end gap-2 pt-3">
+            <Button variant="outline" onClick={() => setConfirmData(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmApprove} disabled={confirming}>
+              {confirming ? "Aprobando..." : "Confirmar"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Quick actions */}
       {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
