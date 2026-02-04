@@ -240,11 +240,11 @@ export default function ManagementLayout({
                   <Link href="/admin/dashboard">
                     <Button>Panel de administrador</Button>
                   </Link>
-                ) : (
+                ) : (userType === "admin" && (
                   <Link href="/user/dashboard">
                     <Button>Panel de usuario</Button>
                   </Link>
-                )}
+                ))}
                 {/* Theme toggle */}
                 <div className="flex items-center gap-x-2">
                   <ThemeToggle />
