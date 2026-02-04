@@ -150,6 +150,7 @@ export default function LandingPage() {
       method: "POST",
       body: JSON.stringify(data),
     });
+    registerForm.reset();
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       toast.error(body.message || "Error al crear la cuenta");
@@ -157,7 +158,7 @@ export default function LandingPage() {
     }
     toast.success(
       body.message ??
-        "Revisa tu correo para confirmar tu cuenta y continuar con el registro."
+      "Revisa tu correo para confirmar tu cuenta y continuar con el registro."
     );
     setIsSignIn(true);
   };
