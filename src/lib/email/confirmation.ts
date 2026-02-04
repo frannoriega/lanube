@@ -11,7 +11,7 @@ export async function sendEmailConfirmation(
 ): Promise<{ success: boolean; error?: string }> {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const confirmLink = `${baseUrl}/api/auth/confirm-email?token=${token}`;
-  const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.svg";
+  const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
