@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { LogOut, Settings } from "lucide-react"
+import { LogOut, Settings, User } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
@@ -14,6 +14,7 @@ export default function UserProfile() {
         await signOut({ callbackUrl: "/" })
     }
 
+    console.log(session);
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -21,7 +22,7 @@ export default function UserProfile() {
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
                         <AvatarFallback>
-                            {session?.user?.name?.charAt(0) || "U"}
+                            {session?.user?.name?.charAt(0) || <User />}
                         </AvatarFallback>
                     </Avatar>
                 </Button>

@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "La Nube <onboarding@resend.dev>";
+  process.env.RESEND_FROM_EMAIL ?? "La Nube <no-reply@lanube.cdeluruguay.gob.ar>";
 
 export async function sendEmailConfirmation(
   email: string,
