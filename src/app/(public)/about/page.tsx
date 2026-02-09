@@ -14,6 +14,9 @@ export default function AboutPage() {
           </div>
           <div className="flex flex-col w-full items-start gap-8">
             <h2 className="text-2xl font-bold">Presentación institucional</h2>
+            <div className="md:hidden w-full h-full rounded-sm overflow-hidden">
+              <Image src="/images/stock/coworking.webp" alt="Polo Tecnológico La Nube" width={1024} height={1024} objectFit="contain" />
+            </div>
             <div className="flex flex-row w-full items-start gap-8">
               <div className="flex flex-col gap-4 w-full">
                 <p>
@@ -44,7 +47,7 @@ export default function AboutPage() {
                   globalizado.
                 </p>
               </div>
-              <div className="w-full h-full rounded-sm overflow-hidden">
+              <div className="hidden md:block w-full h-full rounded-sm overflow-hidden">
                 <Image src="/images/stock/coworking.webp" alt="Polo Tecnológico La Nube" width={1024} height={1024} objectFit="contain" />
               </div>
             </div>
@@ -67,7 +70,7 @@ export default function AboutPage() {
               </p>
             </div>
           </div>
-          <div className="flex flex-row gap-12 items-stretch justify-between">
+          <div className="flex flex-col sm:flex-row gap-12 items-stretch justify-between">
             <InfoCard data="+25" title="Empresas SSI" />
             <InfoCard data="+130" title="Carreras superiores" />
             <InfoCard data="+500" title="Estudiantes de carreras tecnológicas por año" />
@@ -79,7 +82,7 @@ export default function AboutPage() {
           <div className="flex flex-row items-center justify-center w-full py-8">
             <h1 className="text-4xl font-bold">Misión, Visión y Valores</h1>
           </div>
-          <div className="flex flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-3xl font-semibold">
