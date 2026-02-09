@@ -1,19 +1,37 @@
-import { Resend } from "resend";
+'use server';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const SMTP_SERVER_HOST = process.env.SMTP_SERVER_HOST;
+const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
+const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD;
+const SMTP_SERVER_PORT = process.env.SMTP_SERVER_PORT;
+const transporter = nodemailer.createTransport({
+  host: SMTP_SERVER_HOST,
+  port: SMTP_SERVER_PORT,
+  secure: true,
+  auth: {
+    user: SMTP_SERVER_USERNAME,
+    pass: SMTP_SERVER_PASSWORD,
+  }
+});
 
-const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "La Nube <no-reply@lanube.cdeluruguay.gob.ar>";
+const FROM_EMAIL = "La Nube <no-responder@cdeluruguay.gob.ar>";
 
 export async function sendEmailConfirmation(
   email: string,
   token: string
 ): Promise<{ success: boolean; error?: string }> {
+  try {
+    await transporter.verify();
+  } catch (error) {
+    console.error('Error al verificar el servidor de correo', SMTP_SERVER_USERNAME, SMTP_SERVER_PASSWORD, error);
+    return { success: false, error: 'Error al verificar el servidor de correo' };
+  }
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const confirmLink = `${baseUrl}/api/auth/confirm-email?token=${token}`;
   const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
-  const { error } = await resend.emails.send({
+  const info = await transporter.sendMail({
     from: FROM_EMAIL,
     to: [email],
     subject: "Confirma tu correo - La Nube",
@@ -51,8 +69,8 @@ export async function sendEmailConfirmation(
     `,
   });
 
-  if (error) {
-    return { success: false, error: error.message };
+  if (info.rejected.length > 0) {
+    return { success: false, error: 'Error al enviar el email' };
   }
   return { success: true };
 }
