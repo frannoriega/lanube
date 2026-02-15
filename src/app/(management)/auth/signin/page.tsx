@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Turnstile } from '@marsidev/react-turnstile'
 
 import {
   Form,
@@ -35,6 +36,7 @@ const registerSchema = z
     passwordConfirmation: z
       .string()
       .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    captcha: z.string().min(1, { message: "Por favor completá la verificación de seguridad" }),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: "Las contraseñas no coinciden",
@@ -45,6 +47,7 @@ export default function LandingPage() {
   const [fadeIn, setFadeIn] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [requireCaptcha, setRequireCaptcha] = useState(false);
 
   useEffect(() => {
     const confirmed = searchParams.get("confirmed");
@@ -77,6 +80,7 @@ export default function LandingPage() {
       email: "",
       password: "",
       passwordConfirmation: "",
+      captcha: "",
     },
     mode: "all",
   });
@@ -309,7 +313,7 @@ export default function LandingPage() {
                               form.formState.isSubmitting
                             }
                           >
-                            Iniciar Sesión
+                            {form.formState.isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
                           </Button>
                           {error && (
                             <p className="text-red-600 text-sm font-semibold text-center">
@@ -408,12 +412,40 @@ export default function LandingPage() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={registerForm.control}
+                            name="captcha"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Turnstile
+                                    className={`w-full rounded-md overflow-hidden ${!requireCaptcha && "hidden"}`}
+                                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY ?? '1x00000000000000000000AA'}
+                                    options={{
+                                      action: 'submit-form',
+                                      size: 'flexible',
+                                      language: 'es',
+                                    }}
+                                    scriptOptions={{
+                                      appendTo: 'body'
+                                    }}
+                                    onBeforeInteractive={() => setRequireCaptcha(true)}
+                                    onSuccess={(token) => field.onChange(token)}
+                                    onExpire={() => field.onChange("")}
+                                    onError={() => field.onChange("")}
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-red-600" />
+                              </FormItem>
+                            )}
+                          />
                           <Button
                             type="submit"
                             className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
                             size="lg"
+                            disabled={registerForm.formState.isSubmitting || !registerForm.formState.isValid}
                           >
-                            Crear cuenta
+                            {registerForm.formState.isSubmitting ? "Registrando..." : "Crear cuenta"}
                           </Button>
                         </form>
                       </Form>
