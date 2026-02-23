@@ -12,7 +12,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
 import { getServiceIcon } from "@/lib/constants/services";
-import { ResourceType } from "@prisma/client";
+import { ResourceType } from "@/types/prisma";
 import {
   Calendar,
   Clock,
@@ -156,10 +156,9 @@ export default function AdminDashboard() {
         const data = await res.json().catch(() => ({}));
         const count = (data.autoRejectedIds || []).length;
         toast.success(
-          `Reserva aprobada. ${
-            count > 0
-              ? `${count} reservas rechazadas automáticamente`
-              : "Sin conflictos"
+          `Reserva aprobada. ${count > 0
+            ? `${count} reservas rechazadas automáticamente`
+            : "Sin conflictos"
           }`
         );
         setConfirmData(null);
