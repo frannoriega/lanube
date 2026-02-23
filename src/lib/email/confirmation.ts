@@ -28,7 +28,7 @@ export async function sendEmailConfirmation(
     console.error('Error al verificar el servidor de correo', SMTP_SERVER_USERNAME, SMTP_SERVER_PASSWORD, error);
     return { success: false, error: 'Error al verificar el servidor de correo' };
   }
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
   const confirmLink = `${baseUrl}/api/auth/confirm-email?token=${token}`;
   const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
