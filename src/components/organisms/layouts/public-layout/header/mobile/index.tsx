@@ -7,6 +7,7 @@ import LogoLaNube from "@/components/atoms/logos/lanube";
 import { ThemeToggle } from "@/components/molecules/theme";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import SignIn from "../signin";
 
 export default function MobileMenu() {
     return (
@@ -22,7 +23,7 @@ export default function MobileMenu() {
                         <LogoLaNube />
                         <Separator orientation="horizontal" className="bg-slate-800" />
                         <div className="flex flex-row gap-4 items-start justify-start">
-                            <Link href="/auth/signin">Acceder</Link>
+                            <SignIn />
                         </div>
                         <Separator orientation="horizontal" className="bg-slate-800" />
                         <nav className="w-full">
