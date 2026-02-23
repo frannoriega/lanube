@@ -1,0 +1,13 @@
+model RateLimit {
+   id           String    @id @default(cuid())
+   key          String // IP, userId, o combinación "ip:endpoint"
+   endpoint     String // ej: "/api/login"
+   attempts     Int       @default(1)
+   windowStart  DateTime  @default(now())
+   blockedUntil DateTime?
+   createdAt    DateTime  @default(now())
+   updatedAt    DateTime  @updatedAt
+
+   @@unique([key, endpoint])
+   @@index([key, endpoint, windowStart])
+}

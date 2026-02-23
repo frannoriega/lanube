@@ -3,7 +3,7 @@
 import { ThemeToggle } from "@/components/molecules/theme"
 import UserProfile from "@/components/molecules/user-profile"
 import { Button } from "@/components/ui/button"
-import { UserRole } from "@prisma/client"
+import { UserRole } from "@/types/prisma"
 import {
   Building2,
   LayoutDashboard,
@@ -58,11 +58,10 @@ export default function UserLayout({ children }: UserLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                    pathname === item.href
+                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname === item.href
                       ? 'bg-la-nube-primary text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                  }`}
+                    }`}
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Icon className="mr-3 h-5 w-5" />
@@ -92,11 +91,10 @@ export default function UserLayout({ children }: UserLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                    pathname === item.href
+                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname === item.href
                       ? 'bg-la-nube-primary text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Icon className="mr-3 h-5 w-5" />
                   {item.name}

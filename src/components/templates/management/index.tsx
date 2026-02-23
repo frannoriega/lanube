@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
 import { getServiceIcon } from "@/lib/constants/services";
-import { ResourceType, UserRole } from "@prisma/client";
+import { ResourceType, UserRole } from "@/types/prisma";
 import {
   Calendar,
   ChevronDown,

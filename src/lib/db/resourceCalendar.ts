@@ -1,6 +1,6 @@
 import { getUnavailableSlots, getUserNextReservations, UnavailableSlot } from "@/lib/db/reservations";
 import { prisma } from "@/lib/prisma";
-import { ReservableType, ResourceType } from "@prisma/client";
+import { ReservableType, ResourceType } from "@/generated/prisma/client";
 
 export interface ReservationOccurrence {
   reservationId: string;
@@ -41,8 +41,8 @@ export async function getCalendarDataByType(
 
   // Filter to only include reservations in the date range for this resource type
   const userReservations = allUserReservations.filter((res) => {
-    const inDateRange = 
-      res.occurrenceStartTime >= startDate && 
+    const inDateRange =
+      res.occurrenceStartTime >= startDate &&
       res.occurrenceStartTime <= endDate;
     // We'll need to check resource type by querying the resource
     return inDateRange;

@@ -8,7 +8,7 @@ import {
   ReservationException,
   ReservationStatus,
   ResourceType,
-} from "@prisma/client";
+} from "@/generated/prisma/client";
 
 // Types
 export interface ReservationWithRelations extends Reservation {

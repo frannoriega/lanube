@@ -11,5 +11,15 @@ const withMDX = createMDX({
   extension: /\.(md|mdx)$/,
 });
 
+nextConfig.stats = {
+  all: false,
+  assets: true,
+  modules: true,
+  reasons: true,
+  chunks: true,
+  chunkModules: true,
+  errorDetails: true,
+};
+
 // Merge MDX config with Next.js config
 export default withMDX(nextConfig);
