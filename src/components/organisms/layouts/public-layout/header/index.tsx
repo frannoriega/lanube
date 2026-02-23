@@ -5,6 +5,7 @@ import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import MobileMenu from "./mobile";
 import { Button } from "@/components/ui/button";
+import SignIn from "./signin";
 
 export default function Header() {
   return (
@@ -29,10 +30,7 @@ export default function Header() {
           </nav>
           <div className="flex flex-row gap-4 items-center justify-center">
             <ThemeToggle className="hover:bg-slate-400 dark:hover:bg-slate-600 rounded-full" />
-            <Button asChild className="rounded-full">
-              <Link href="/auth/signin">Acceder</Link>
-            </Button>
-            {/* <SignIn /> */}
+            <SignIn />
           </div>
         </Container>
       </div>
