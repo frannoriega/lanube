@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { ReservationTimeline } from "./reservation-timeline";
-import { AdminReservationListResult } from "@/lib/db/adminReservations";
+import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import { formatDate, parseDateStringLocal } from "@/lib/utils/date";
 
 export interface DayWithReservations {
