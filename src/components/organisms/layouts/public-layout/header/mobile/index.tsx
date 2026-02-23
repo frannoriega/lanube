@@ -5,6 +5,8 @@ import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import LogoLaNube from "@/components/atoms/logos/lanube";
 import { ThemeToggle } from "@/components/molecules/theme";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function MobileMenu() {
     return (
@@ -16,11 +18,13 @@ export default function MobileMenu() {
                     </div>
                 </DrawerTrigger>
                 <DrawerContent className="dark:bg-slate-900 bg-slate-200 border-none">
-                    <div className="py-8 pl-4 flex flex-col gap-8">
+                    <div className="py-8 pl-4 flex flex-col gap-4">
                         <LogoLaNube />
-                        {/* <div className="flex flex-row gap-4 items-start justify-start">
-                            <SignIn />
-                        </div> */}
+                        <Separator orientation="horizontal" className="bg-slate-800" />
+                        <div className="flex flex-row gap-4 items-start justify-start">
+                            <Link href="/auth/signin">Acceder</Link>
+                        </div>
+                        <Separator orientation="horizontal" className="bg-slate-800" />
                         <nav className="w-full">
                             <ul className="flex flex-col gap-8 items-start justify-start">
                                 {links.map((item) => (
