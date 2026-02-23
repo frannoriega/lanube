@@ -2,13 +2,36 @@
 
 import { DayReservationCard } from "@/components/organisms/admin/day-reservation-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  AdminReservationListResult,
-  parseAdminReservationListFromApi,
-} from "@/lib/db/adminReservations";
+import { ResourceType } from "@/types/prisma";
 import { Calendar } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+/**
+ * Lists reservations filtered by resource type, including basic user and resource info.
+ */
+export interface AdminReservationListResult {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  reason: string;
+  status: string;
+  createdAt: Date;
+  deniedReason?: string | null;
+  resource: {
+    id: string;
+    name: string;
+    type: ResourceType;
+  };
+  registeredUser: {
+    name: string;
+    lastName: string;
+    dni: string;
+    institution: string | null;
+    user: {
+      email: string;
+    }
+  };
+}
 export interface DayWithReservations {
   date: string;
   count: number;
@@ -134,4 +157,20 @@ export function DashboardRecentReservations({
       </CardContent>
     </Card>
   );
+}
+
+/**
+ * Parses API response (where dates come as ISO strings) into AdminReservationListResult
+ * with proper Date objects. Use this when receiving reservations from fetch/JSON.
+ */
+export function parseAdminReservationListFromApi(
+  raw: unknown
+): AdminReservationListResult[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item: Record<string, unknown>) => ({
+    ...item,
+    startTime: new Date(item.startTime as string | number | Date),
+    endTime: new Date(item.endTime as string | number | Date),
+    createdAt: new Date(item.createdAt as string | number | Date),
+  })) as AdminReservationListResult[];
 }

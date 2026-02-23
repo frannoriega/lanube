@@ -1,4 +1,4 @@
-import { ResourceType } from "@prisma/client";
+import { ResourceType } from "@/types/prisma";
 import { Building2, FlaskConical, LucideIcon, MessagesSquare, Presentation } from "lucide-react";
 
 interface Service {
