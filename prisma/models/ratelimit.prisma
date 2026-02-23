@@ -10,4 +10,5 @@ model RateLimit {
 
    @@unique([key, endpoint])
    @@index([key, endpoint, windowStart])
+   @@map("rate_limits")
 }

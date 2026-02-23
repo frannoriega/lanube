@@ -1,7 +1,7 @@
 import UserProvider from "@/components/providers/user";
 import ManagementLayout from "@/components/templates/management";
 import { auth } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/types/prisma";
 import { ThemeProvider } from "next-themes";
 import { redirect } from "next/navigation";
 

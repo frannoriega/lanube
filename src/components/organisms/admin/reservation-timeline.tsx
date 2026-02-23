@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminReservationListResult } from "@/lib/db/adminReservations";
+import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 import {
@@ -65,7 +65,7 @@ export function ReservationTimeline({
   const [denyReason, setDenyReason] = useState("");
   const [reasonModalReservation, setReasonModalReservation] =
     useState<AdminReservationListResult | null>(null);
-    const { timelineStart, slots, displaySlots } = useMemo(() => {
+  const { timelineStart, slots, displaySlots } = useMemo(() => {
     const baseDate = reservations.length > 0 ? new Date(reservations[0].startTime) : new Date();
     const start = new Date(baseDate);
     start.setHours(9, 0, 0, 0);

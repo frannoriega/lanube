@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AdminReservationListResult,
   parseAdminReservationListFromApi,
-} from "@/lib/db/adminReservations";
+} from "@/components/templates/admin/dashboard-recent-reservations";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 

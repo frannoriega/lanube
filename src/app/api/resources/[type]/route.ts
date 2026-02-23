@@ -1,9 +1,9 @@
+import { ResourceType } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { createReservation } from "@/lib/db/reservations";
 import { getCalendarDataByType } from "@/lib/db/resourceCalendar";
 import { getRegisteredUserById } from "@/lib/db/users";
 import { prisma } from "@/lib/prisma";
-import { ResourceType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const RESOURCE_TYPE_MAP: Record<string, ResourceType> = {
@@ -163,6 +163,7 @@ export async function POST(
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {
+    console.error(error);
     const knownError = error as Error;
     return NextResponse.json(
       { error: knownError.message || "Error interno del servidor" },

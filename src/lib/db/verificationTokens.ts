@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "node:crypto";
-import { hash } from "../utils";
+import { bcryptHash, hash } from "../utils";
 
 const TOKEN_EXPIRY_HOURS = 24;
 
@@ -10,7 +10,7 @@ function createToken(length: number) {
 
 export async function createEmailVerificationToken(email: string): Promise<string> {
   const token = createToken(32);
-  const hashedToken = await hash(token);
+  const hashedToken = hash(token);
   const expires = new Date();
   expires.setHours(expires.getHours() + TOKEN_EXPIRY_HOURS);
 
@@ -32,7 +32,7 @@ export async function createEmailVerificationToken(email: string): Promise<strin
 export async function consumeEmailVerificationToken(
   token: string
 ): Promise<string | null> {
-  const hashedToken = await hash(token);
+  const hashedToken = hash(token);
   const record = await prisma.verificationToken.findUnique({
     where: { token: hashedToken },
   });
@@ -50,7 +50,9 @@ export async function consumeEmailVerificationToken(
 
 export async function createResetToken(userId: string): Promise<string> {
   const token = createToken(32);
-  const hashedToken = await hash(token);
+  const hashedToken = hash(token);
+  console.log(token);
+  console.log(hashedToken);
   const data = await prisma.passwordResetToken.create({
     data: {
       userId,
@@ -62,14 +64,16 @@ export async function createResetToken(userId: string): Promise<string> {
 }
 
 export async function consumeResetToken(token: string, password: string): Promise<string | null> {
-  const hashedToken = await hash(token);
+  const hashedToken = hash(token);
+  console.log(token);
+  console.log(hashedToken);
   const record = await prisma.passwordResetToken.delete({
     where: { token: hashedToken },
   });
   if (!record || record.expiresAt < new Date()) {
     return null;
   }
-  const hashedPassword = await hash(password);
+  const hashedPassword = await bcryptHash(password);
   await prisma.user.update({
     where: { id: record.userId },
     data: { passwordHash: hashedPassword },

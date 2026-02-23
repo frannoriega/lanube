@@ -1,40 +1,42 @@
-import { PrismaClient, ResourceType } from '@prisma/client'
+import { PrismaClient, ResourceType } from "@/generated/prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient()
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
-   // Fill in later
-   const meetingRoomResource = await prisma.fungibleResource.create({
+  // Fill in later
+  const meetingRoomResource = await prisma.fungibleResource.create({
     data: {
       name: "Sala de reuniones",
       capacity: 6,
       isExclusive: true,
     },
-   })
+  })
 
-   const laboratoryResource = await prisma.fungibleResource.create({
+  const laboratoryResource = await prisma.fungibleResource.create({
     data: {
       name: "Laboratorio",
       capacity: 8,
       isExclusive: true,
     },
-   })
+  })
 
-   const auditoriumResource = await prisma.fungibleResource.create({
+  const auditoriumResource = await prisma.fungibleResource.create({
     data: {
       name: "Auditorio",
       capacity: 40,
     },
-   })
+  })
 
-   const coworkingResource = await prisma.fungibleResource.create({
+  const coworkingResource = await prisma.fungibleResource.create({
     data: {
       name: "Coworking",
       capacity: 12,
     },
-   })
+  })
 
-   const resources = await prisma.resource.createMany({
+  const resources = await prisma.resource.createMany({
     data: [
       {
         name: "Sala de reuniones",
@@ -57,7 +59,7 @@ async function main() {
         fungibleResourceId: coworkingResource.id,
       },
     ],
-   })
+  })
 }
 
 main()

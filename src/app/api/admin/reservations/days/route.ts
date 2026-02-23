@@ -4,7 +4,7 @@ import {
   listDaysWithPendingReservationsAllServices,
   listDaysWithReservations,
 } from "@/lib/db/adminReservations"
-import { ResourceType } from "@prisma/client"
+import { ResourceType } from "@/generated/prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 const MAX_PAGE_SIZE = 100

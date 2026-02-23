@@ -178,6 +178,7 @@ export async function createReservation(
     `;
   } catch (error) {
     if (error instanceof Error) {
+      console.error(error);
       // Parse SQL errors for user-friendly messages
       if (error.message?.includes('No available')) {
         throw new Error("No hay recursos disponibles para el horario seleccionado");

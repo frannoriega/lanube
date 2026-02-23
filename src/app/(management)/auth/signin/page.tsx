@@ -364,7 +364,13 @@ export default function LandingPage() {
         );
       case "reset":
         return (
-          <motion.div key="C" initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }}>
+          <motion.div key="C"
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.3 }}
+            className="w-full flex-col flex gap-4"
+          >
             <Form {...resetForm}>
               <form onSubmit={resetForm.handleSubmit(onResetSubmit)} className="space-y-4">
                 <FormField control={resetForm.control} name="email" render={({ field }) => (
@@ -411,6 +417,14 @@ export default function LandingPage() {
                 </Button>
               </form>
             </Form>
+            <Button
+              variant="outline"
+              className="w-full font-semibold py-2 text-lg"
+              size="lg"
+              onClick={() => setScreen("signin")}
+            >
+              Volver a iniciar sesión
+            </Button>
           </motion.div>
         );
       default:
