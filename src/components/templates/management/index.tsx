@@ -223,7 +223,7 @@ export default function ManagementLayout({
         {/* Main content */}
         <div className="lg:pl-64">
           {/* Header */}
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 glass-header dark:glass-header-dark px-4 sm:gap-x-6 sm:px-6 lg:px-8">
+          <div className="sticky top-0 z-100 flex h-16 shrink-0 items-center gap-x-4 glass-header dark:glass-header-dark px-4 sm:gap-x-6 sm:px-6 lg:px-8">
             <Button
               variant="ghost"
               size="sm"
