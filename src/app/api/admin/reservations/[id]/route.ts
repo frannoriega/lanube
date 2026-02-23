@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth"
 import { approveReservationAndRejectConflicts, isAdminUser, previewConflictingPending, setReservationStatus } from "@/lib/db/adminReservations"
-import { ReservationStatus } from "@prisma/client"
+import { ReservationStatus } from "@/generated/prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const session = await auth()
-    
+
     if (!session?.user?.email || !session?.userId) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
     }

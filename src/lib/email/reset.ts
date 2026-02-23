@@ -1,43 +1,44 @@
 'use server';
 import nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 const SMTP_SERVER_HOST = process.env.SMTP_SERVER_HOST;
 const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
 const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD;
 const SMTP_SERVER_PORT = process.env.SMTP_SERVER_PORT;
 const transporter = nodemailer.createTransport({
-    host: SMTP_SERVER_HOST,
-    port: SMTP_SERVER_PORT,
-    secure: true,
-    auth: {
-        user: SMTP_SERVER_USERNAME,
-        pass: SMTP_SERVER_PASSWORD,
-    }
-});
+  host: SMTP_SERVER_HOST,
+  port: SMTP_SERVER_PORT,
+  secure: true,
+  auth: {
+    user: SMTP_SERVER_USERNAME,
+    pass: SMTP_SERVER_PASSWORD,
+  }
+} as SMTPTransport.Options);
 
 const FROM_EMAIL = "La Nube <no-responder@cdeluruguay.gob.ar>";
 
 export async function sendResetEmail(
-    email: string,
-    token: string
+  email: string,
+  token: string
 ): Promise<{ success: boolean; error?: string }> {
-    try {
-        await transporter.verify();
-    } catch (error) {
-        console.error('Error al verificar el servidor de correo', SMTP_SERVER_USERNAME, SMTP_SERVER_PASSWORD, error);
-        return { success: false, error: 'Error al verificar el servidor de correo' };
-    }
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const encodedEmail = encodeURIComponent(email);
-    const encodedToken = encodeURIComponent(token);
-    const resetLink = `${baseUrl}/auth/reset?token=${encodedToken}&email=${encodedEmail}`;
-    const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
+  try {
+    await transporter.verify();
+  } catch (error) {
+    console.error('Error al verificar el servidor de correo', SMTP_SERVER_USERNAME, SMTP_SERVER_PASSWORD, error);
+    return { success: false, error: 'Error al verificar el servidor de correo' };
+  }
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const encodedEmail = encodeURIComponent(email);
+  const encodedToken = encodeURIComponent(token);
+  const resetLink = `${baseUrl}/auth/reset?token=${encodedToken}&email=${encodedEmail}`;
+  const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
-    const info = await transporter.sendMail({
-        from: FROM_EMAIL,
-        to: [email],
-        subject: "Reestablece tu contraseña - La Nube",
-        html: `
+  const info = await transporter.sendMail({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: "Reestablece tu contraseña - La Nube",
+    html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px;">
           <img src="${logoUrl}" alt="La Nube" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
@@ -69,10 +70,10 @@ export async function sendResetEmail(
         </div>
       </div>
     `,
-    });
+  });
 
-    if (info.rejected.length > 0) {
-        return { success: false, error: 'Error al enviar el email' };
-    }
-    return { success: true };
+  if (info.rejected.length > 0) {
+    return { success: false, error: 'Error al enviar el email' };
+  }
+  return { success: true };
 }

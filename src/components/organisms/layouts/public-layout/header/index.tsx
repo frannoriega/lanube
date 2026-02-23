@@ -4,7 +4,6 @@ import { ThemeToggle } from "@/components/molecules/theme";
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import MobileMenu from "./mobile";
-import { Button } from "@/components/ui/button";
 import SignIn from "./signin";
 
 export default function Header() {
