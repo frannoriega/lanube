@@ -5,17 +5,30 @@
  * IMPORTANT: Keep these in sync with prisma/models/enums.prisma
  */
 
+export type RegisteredUser = {
+  id: string
+  userId: string
+  name: string
+  lastName: string
+  dni: string
+  institution: string | null
+  reasonToJoin: string
+  role: UserRole
+  createdAt: Date
+  updatedAt: Date
+}
+
 export enum UserRole {
   USER = "USER",
   ADMIN = "ADMIN",
 }
 
-export enum ResourceType {
-  MEETING = "MEETING",
-  AUDITORIUM = "AUDITORIUM",
-  COWORKING = "COWORKING",
-  LAB = "LAB",
-}
+export const ResourceType = {
+  MEETING: "MEETING",
+  AUDITORIUM: "AUDITORIUM",
+  COWORKING: "COWORKING",
+  LAB: "LAB",
+} as const
 
 export enum IncidentStatus {
   OPEN = "OPEN",

@@ -1,5 +1,5 @@
 import { verifyCaptcha } from "@/lib/auth";
-import { getRegisteredUserByEmail, updateUser } from "@/lib/db/users";
+import { getRegisteredUserByEmail } from "@/lib/db/users";
 import { consumeResetToken, createResetToken } from "@/lib/db/verificationTokens";
 import { sendResetEmail } from "@/lib/email/reset";
 import { checkRateLimit } from "@/lib/ratelimit";

@@ -1,4 +1,4 @@
-import { ResourceType } from "@/types/prisma";
+import { ResourceType } from "@/generated/prisma/enums";
 import { Building2, FlaskConical, LucideIcon, MessagesSquare, Presentation } from "lucide-react";
 
 interface Service {
