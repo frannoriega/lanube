@@ -1,6 +1,6 @@
 /** User profile helpers */
 import { prisma } from "@/lib/prisma";
-import { Ban, Prisma, RegisteredUser, User } from "@prisma/client";
+import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { startOfMonth } from "date-fns";
 
@@ -88,41 +88,41 @@ export async function getRegisteredUsers({
   const trimmedSearch = search?.trim();
   const where: Prisma.RegisteredUserWhereInput | undefined = trimmedSearch
     ? {
-        OR: [
-          {
-            name: {
+      OR: [
+        {
+          name: {
+            contains: trimmedSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          lastName: {
+            contains: trimmedSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          dni: {
+            contains: trimmedSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          institution: {
+            contains: trimmedSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          user: {
+            email: {
               contains: trimmedSearch,
               mode: "insensitive",
             },
           },
-          {
-            lastName: {
-              contains: trimmedSearch,
-              mode: "insensitive",
-            },
-          },
-          {
-            dni: {
-              contains: trimmedSearch,
-              mode: "insensitive",
-            },
-          },
-          {
-            institution: {
-              contains: trimmedSearch,
-              mode: "insensitive",
-            },
-          },
-          {
-            user: {
-              email: {
-                contains: trimmedSearch,
-                mode: "insensitive",
-              },
-            },
-          },
-        ],
-      }
+        },
+      ],
+    }
     : undefined;
 
   const [total, rows] = await Promise.all([

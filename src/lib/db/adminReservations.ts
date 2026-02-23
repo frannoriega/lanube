@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { ReservationStatus, ResourceType, UserRole } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
+import { ReservationStatus, ResourceType, UserRole } from "@/generated/prisma/client";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -278,11 +278,11 @@ export async function approveReservationAndRejectConflicts(
   const rows = await prisma.$queryRaw<{ approved_id: string; auto_rejected_ids: string }[]>`
     SELECT * FROM approve_reservation(${reservationId}::text)
   `;
-  
+
   const approvedId = rows?.[0]?.approved_id ?? null;
   const autoRejectedCsv = rows?.[0]?.auto_rejected_ids as string | null;
   const autoRejectedIds = autoRejectedCsv ? autoRejectedCsv.split(',').filter(Boolean) : [];
-  
+
   return { approvedId, autoRejectedIds };
 }
 
