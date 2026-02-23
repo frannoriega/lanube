@@ -28,7 +28,7 @@ export async function sendResetEmail(
     console.error('Error al verificar el servidor de correo', SMTP_SERVER_USERNAME, SMTP_SERVER_PASSWORD, error);
     return { success: false, error: 'Error al verificar el servidor de correo' };
   }
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
   const encodedEmail = encodeURIComponent(email);
   const encodedToken = encodeURIComponent(token);
   const resetLink = `${baseUrl}/auth/reset?token=${encodedToken}&email=${encodedEmail}`;
