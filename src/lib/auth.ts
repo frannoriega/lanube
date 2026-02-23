@@ -1,15 +1,16 @@
+import "server-only";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/types/prisma";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import z from "zod";
 import {
   getRegisteredUserByEmail,
   getUserByEmailAndPassword,
 } from "./db/users";
 import { prisma } from "./prisma";
 import { CredentialsSignin } from "next-auth";
+import { signInSchema } from "./schemas/auth";
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60; // 7 days
 
@@ -30,13 +31,6 @@ declare module "next-auth" {
     userId: string;
   }
 }
-
-export const signInSchema = z.object({
-  email: z.email({ message: "Por favor ingresa un email válido" }),
-  password: z
-    .string()
-    .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -129,3 +123,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     newUser: "/auth/signup",
   },
 });
+
+async function verifyCaptcha(captcha: string): Promise<boolean> {
+  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      secret: process.env.TURNSTILE_SECRET_KEY ?? "1x0000000000000000000000000000000AA",
+      response: captcha,
+    }),
+  })
+  const data = await res.json()
+  return data.success === true
+}
+
+export { verifyCaptcha };

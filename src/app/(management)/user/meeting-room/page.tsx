@@ -1,6 +1,6 @@
 "use client";
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
-import { ResourceType } from "@prisma/client";
+import { ResourceType } from "@/types/prisma";
 import { Users } from "lucide-react";
 
 const EVENT_TYPES = [
