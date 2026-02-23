@@ -335,7 +335,7 @@ export default function LandingPage() {
                           onBeforeInteractive={() => setRequireCaptcha(true)}
                           onSuccess={(token) => field.onChange(token)}
                           onExpire={() => field.onChange("")}
-                          onError={() => field.onChange("")}
+                          onError={() => { field.onChange(""); setRequireCaptcha(true) }}
                         />
                       </FormControl>
                       <FormMessage className="text-red-600" />
@@ -402,7 +402,6 @@ export default function LandingPage() {
                           scriptOptions={{
                             appendTo: 'body'
                           }}
-                          onBeforeInteractive={() => setRequireCaptcha(true)}
                           onSuccess={(token) => field.onChange(token)}
                           onExpire={() => field.onChange("")}
                           onError={() => field.onChange("")}
