@@ -141,8 +141,9 @@ export async function POST(
     }
 
     if (
-      startHour < 9 ||
-      endHour > 18 ||
+      // Estos horarios estan en UTC. 12 UTC = 9AM UTC-3. 21 UTC = 6PM UTC-3.
+      startHour < 12 ||
+      endHour > 21 ||
       (endHour === 18 && endDateTime.getMinutes() > 0)
     ) {
       return NextResponse.json(
