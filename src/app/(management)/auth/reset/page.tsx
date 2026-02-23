@@ -22,13 +22,6 @@ import { Input } from "@/components/ui/input";
 export default function ResetPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const token = searchParams.get("token");
-    if (!token) {
-        return redirect("/auth/signin");
-    }
-
-    const decodedToken = decodeURIComponent(token);
-
     const form = useForm<z.infer<typeof newPasswordSchema>>({
         resolver: standardSchemaResolver(newPasswordSchema),
         defaultValues: {
@@ -37,6 +30,12 @@ export default function ResetPage() {
         },
         mode: "onChange",
     });
+    const token = searchParams.get("token");
+    if (!token) {
+        return redirect("/auth/signin");
+    }
+
+    const decodedToken = decodeURIComponent(token);
 
     const onSubmit = async (data: z.infer<typeof newPasswordSchema>) => {
         const res = await fetch("/api/auth/reset", {

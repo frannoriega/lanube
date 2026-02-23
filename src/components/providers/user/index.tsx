@@ -1,5 +1,5 @@
 "use client";
-import { RegisteredUser } from "@prisma/client";
+import { RegisteredUser } from "@/types/prisma";
 import { createContext, useEffect, useState } from "react";
 
 export const UserContext = createContext<RegisteredUser | null>(null);

@@ -2,7 +2,7 @@
 
 import { DayReservationCard } from "@/components/organisms/admin/day-reservation-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResourceType } from "@/types/prisma";
+import { ResourceType } from "@/generated/prisma/enums";
 import { Calendar } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 

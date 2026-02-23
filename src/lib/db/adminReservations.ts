@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { ReservationStatus, ResourceType, UserRole } from "@/generated/prisma/client";
+import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -25,48 +26,7 @@ export async function isAdminUser(id: string): Promise<boolean> {
 /**
  * Lists reservations for a given resource type, including related user and resource data.
  */
-/**
- * Lists reservations filtered by resource type, including basic user and resource info.
- */
-export interface AdminReservationListResult {
-  id: string;
-  startTime: Date;
-  endTime: Date;
-  reason: string;
-  status: string;
-  createdAt: Date;
-  deniedReason?: string | null;
-  resource: {
-    id: string;
-    name: string;
-    type: ResourceType;
-  };
-  registeredUser: {
-    name: string;
-    lastName: string;
-    dni: string;
-    institution: string | null;
-    user: {
-      email: string;
-    }
-  };
-}
 
-/**
- * Parses API response (where dates come as ISO strings) into AdminReservationListResult
- * with proper Date objects. Use this when receiving reservations from fetch/JSON.
- */
-export function parseAdminReservationListFromApi(
-  raw: unknown
-): AdminReservationListResult[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map((item: Record<string, unknown>) => ({
-    ...item,
-    startTime: new Date(item.startTime as string | number | Date),
-    endTime: new Date(item.endTime as string | number | Date),
-    createdAt: new Date(item.createdAt as string | number | Date),
-  })) as AdminReservationListResult[];
-}
 
 export interface ListAdminReservationsOptions {
   date?: string; // YYYY-MM-DD

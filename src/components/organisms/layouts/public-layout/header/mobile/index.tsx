@@ -5,7 +5,6 @@ import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import LogoLaNube from "@/components/atoms/logos/lanube";
 import { ThemeToggle } from "@/components/molecules/theme";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import SignIn from "../signin";
 

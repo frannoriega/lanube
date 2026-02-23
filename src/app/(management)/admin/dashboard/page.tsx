@@ -12,7 +12,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
 import { getServiceIcon } from "@/lib/constants/services";
-import { ResourceType } from "@/types/prisma";
+import { ResourceType } from "@/generated/prisma/enums";
 import {
   Calendar,
   Clock,
