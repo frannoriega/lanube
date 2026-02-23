@@ -171,7 +171,7 @@ export async function createReservation(
         ${data.reason}::text,
         ${data.startTime.toISOString()}::timestamptz,
         ${data.endTime.toISOString()}::timestamptz,
-        ${Boolean(data.isRecurring)}::boolean,
+        ${Boolean(data.isRecurring ?? false)}::boolean,
         ${data.rrule || null}::text,
         ${data.recurrenceEnd?.toISOString() || null}::timestamptz
       )
