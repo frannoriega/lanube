@@ -41,12 +41,13 @@ DECLARE
   bucket_start timestamptz;
 BEGIN
   FOR bucket_start IN 
-    SELECT generate_series(
+    SELECT *
+    FROM generate_series(
       _occurrence_start_time,
       _occurrence_end_time,
       interval '15 minutes'
-    ) AS bucket_start
-    WHERE bucket_start < _occurrence_end_time
+    ) AS bs
+    WHERE bs::timestamptz < _occurrence_end_time
   LOOP
     INSERT INTO reservation_ledger (
       id, reservation_id, occurrence_start_time, occurrence_end_time,
