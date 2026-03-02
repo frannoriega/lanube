@@ -79,17 +79,22 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
 ### 5. Configurar la base de datos
 
-1. Crea una base de datos PostgreSQL
+1. Crea una base de datos PostgreSQL. Se recomienda utilizar Docker con el siguiente comando:
+```bash
+docker run --name lanube -e POSTGRES_PASSWORD=lanube -p 5432:5432 -d postgres
+```
 2. Actualiza la `DATABASE_URL` en tu archivo `.env.local`
 3. Ejecuta las migraciones:
 
 ```bash
 npx prisma migrate dev
 npx prisma generate
+npx prisma db seed
 ```
 
 ### 6. Ejecutar en desarrollo
 
+Para ejecutar la aplicación, correr:
 ```bash
 npm run dev
 ```
@@ -101,11 +106,18 @@ Visita [http://localhost:3000](http://localhost:3000) para ver la aplicación.
 ### 1. Preparar para producción
 
 1. Configura las variables de entorno en Vercel:
-   - `DATABASE_URL`
-   - `NEXTAUTH_URL`
-   - `NEXTAUTH_SECRET`
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
+
+| Variable | Función |
+|----------|---------|
+| `DATABASE_URL` | URL de Postgres |
+| `NEXTAUTH_URL` | URL de la aplicación |
+| `NEXTAUTH_SECRET` | Para encriptación de cookies* |
+| `SMTP_SERVER_HOST` | URL del servidor SMPT |
+| `SMTP_SERVER_PORT` | Puerto del servidor SMPT |
+| `SMTP_SERVER_USERNAME` | Usuario del servidor SMPT |
+| `SMTP_SERVER_PASSWORD` | Contraseña del servidor SMPT |
+| `TURNSTILE_SECRET_KEY` | Secreto de Cloudflare Turnstile |
+| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Clourflare Turnstile|
 
 2. Actualiza la configuración de Google OAuth para incluir tu dominio de Vercel:
    - Agrega `https://tu-dominio.vercel.app/api/auth/callback/google`
