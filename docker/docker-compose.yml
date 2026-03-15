@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:17.2
+    container_name: lanube-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: lanube
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: node:18-alpine
+    container_name: lanube-migrate
+    restart: "no"
+    working_dir: /app
+    volumes:
+      - ../:/app
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed"
+    environment:
+      DATABASE_URL: postgresql://postgres:lanube@postgres:5432/postgres?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: lanube-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI → http://localhost:8025
+
+volumes:
+  postgres_data:
