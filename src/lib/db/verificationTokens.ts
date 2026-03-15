@@ -51,8 +51,6 @@ export async function consumeEmailVerificationToken(
 export async function createResetToken(userId: string): Promise<string> {
   const token = createToken(32);
   const hashedToken = hash(token);
-  console.log(token);
-  console.log(hashedToken);
   const data = await prisma.passwordResetToken.create({
     data: {
       userId,
@@ -65,8 +63,6 @@ export async function createResetToken(userId: string): Promise<string> {
 
 export async function consumeResetToken(token: string, password: string): Promise<string | null> {
   const hashedToken = hash(token);
-  console.log(token);
-  console.log(hashedToken);
   const record = await prisma.passwordResetToken.delete({
     where: { token: hashedToken },
   });
