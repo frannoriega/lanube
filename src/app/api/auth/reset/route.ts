@@ -13,7 +13,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ message: "El captcha no es válido" }, { status: 400 });
     }
     const headersList = await headers();
-    const ip = headersList.get("cf-connecting-ip") ?? headersList.get("x-real-ip");
+    const ip =
+        headersList.get("cf-connecting-ip") ??
+        headersList.get("x-real-ip") ??
+        (process.env.NODE_ENV === "development"
+            ? (headersList.get("x-forwarded-for")?.split(",")[0].trim() ?? "127.0.0.1")
+            : null);
     if (!ip) {
         return NextResponse.json({ message: "IP no encontrada" }, { status: 400 });
     }
