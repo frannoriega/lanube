@@ -6,7 +6,6 @@ Sistema completo de gestión para el espacio de coworking La Nube, desarrollado 
 
 ### Para Usuarios
 
-- ✅ Autenticación con Google OAuth
 - ✅ Registro con información personal (nombre, apellido, DNI, institución, motivo)
 - ✅ Dashboard con estadísticas personales
 - ✅ Reservas para Coworking, Laboratorio y Auditorio
@@ -27,7 +26,7 @@ Sistema completo de gestión para el espacio de coworking La Nube, desarrollado 
 - **Frontend**: Next.js 15, TypeScript, TailwindCSS, Radix UI/Shadcn UI
 - **Backend**: Next.js API Routes
 - **Base de datos**: PostgreSQL con Prisma ORM
-- **Autenticación**: NextAuth.js con Google OAuth
+- **Autenticación**: NextAuth.js con Credentials
 - **Deploy**: Vercel (configurado)
 
 ## Instalación y Configuración
@@ -47,54 +46,69 @@ npm install
 
 ### 3. Configurar variables de entorno
 
-Copia el archivo `env.example` a `.env.local` y configura las variables:
+Copia el archivo `env.example` a `.env` y completá los valores:
 
 ```bash
-cp env.example .env.local
+cp env.example .env
 ```
 
-Edita `.env.local` con tus valores:
+El archivo `env.example` ya incluye los valores por defecto para desarrollo local, por lo que en la mayoría de los casos no hace falta modificar nada.
 
-```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/la_nube_coworking?schema=public"
+### 4. Levantar los servicios locales con Docker
 
-# NextAuth.js
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key-here"
+El proyecto incluye una configuración de Docker Compose en la carpeta `docker/` con todos los servicios necesarios para el desarrollo local:
 
-# Google OAuth
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-```
+| Servicio | Descripción |
+|----------|-------------|
+| **postgres** | Base de datos PostgreSQL 17.2 (igual que producción en Vercel) |
+| **migrate** | Contenedor que aplica las migraciones y ejecuta el seed automáticamente al iniciar |
+| **mailpit** | Servidor SMTP local para capturar emails enviados por la aplicación |
 
-### 4. Configurar Google OAuth
+#### Prerrequisitos
 
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
-2. Crea un nuevo proyecto o selecciona uno existente
-3. Habilita la API de Google+
-4. Ve a "Credenciales" y crea un ID de cliente OAuth 2.0
-5. Agrega `http://localhost:3000/api/auth/callback/google` como URI de redirección
-6. Copia el Client ID y Client Secret a tu archivo `.env.local`
+Tener [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y corriendo.
 
-### 5. Configurar la base de datos
+#### Iniciar los servicios
 
-1. Crea una base de datos PostgreSQL. Se recomienda utilizar Docker con el siguiente comando:
-```bash
-docker run --name lanube -e POSTGRES_PASSWORD=lanube -p 5432:5432 -d postgres
-```
-2. Actualiza la `DATABASE_URL` en tu archivo `.env.local`
-3. Ejecuta las migraciones:
+Desde la carpeta `docker/`:
 
 ```bash
-npx prisma migrate dev
-npx prisma generate
-npx prisma db seed
+cd docker
+docker compose up
 ```
+
+O en segundo plano:
+
+```bash
+docker compose up -d
+```
+
+Al iniciar, Docker levanta PostgreSQL y espera a que esté listo. Una vez saludable, el servicio `migrate` aplica automáticamente todas las migraciones pendientes y ejecuta el seed de la base de datos. No hace falta correr ningún comando de Prisma manualmente.
+
+#### Detener los servicios
+
+```bash
+docker compose down
+```
+
+Para detener y eliminar también los volúmenes (borra todos los datos):
+
+```bash
+docker compose down -v
+```
+
+### 5. Servidor SMTP local (Mailpit)
+
+Durante el desarrollo, todos los emails que envía la aplicación (confirmación de cuenta, recuperación de contraseña, etc.) son interceptados por **Mailpit** y nunca salen a internet.
+
+Para ver los emails recibidos, abrí el panel web en:
+
+**[http://localhost:8025](http://localhost:8025)**
+
+Ahí vas a encontrar la bandeja de entrada con todos los mensajes enviados durante la sesión. Los emails se limpian al reiniciar el contenedor.
 
 ### 6. Ejecutar en desarrollo
 
-Para ejecutar la aplicación, correr:
 ```bash
 npm run dev
 ```
@@ -105,22 +119,20 @@ Visita [http://localhost:3000](http://localhost:3000) para ver la aplicación.
 
 ### 1. Preparar para producción
 
-1. Configura las variables de entorno en Vercel:
+Configura las siguientes variables de entorno en Vercel:
 
 | Variable | Función |
 |----------|---------|
-| `DATABASE_URL` | URL de Postgres |
-| `NEXTAUTH_URL` | URL de la aplicación |
-| `NEXTAUTH_SECRET` | Para encriptación de cookies* |
-| `SMTP_SERVER_HOST` | URL del servidor SMPT |
-| `SMTP_SERVER_PORT` | Puerto del servidor SMPT |
-| `SMTP_SERVER_USERNAME` | Usuario del servidor SMPT |
-| `SMTP_SERVER_PASSWORD` | Contraseña del servidor SMPT |
+| `DATABASE_URL` | URL de conexión a PostgreSQL |
+| `NEXTAUTH_URL` | URL pública de la aplicación |
+| `NEXTAUTH_SECRET` | Secreto para encriptación de cookies |
+| `SMTP_SERVER_HOST` | Host del servidor SMTP |
+| `SMTP_SERVER_PORT` | Puerto del servidor SMTP |
+| `SMTP_SERVER_USERNAME` | Usuario del servidor SMTP |
+| `SMTP_SERVER_PASSWORD` | Contraseña del servidor SMTP |
+| `SMTP_SERVER_SECURE` | `true` en producción para habilitar TLS |
 | `TURNSTILE_SECRET_KEY` | Secreto de Cloudflare Turnstile |
-| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Clourflare Turnstile|
-
-2. Actualiza la configuración de Google OAuth para incluir tu dominio de Vercel:
-   - Agrega `https://tu-dominio.vercel.app/api/auth/callback/google`
+| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Cloudflare Turnstile |
 
 ### 2. Deploy
 
