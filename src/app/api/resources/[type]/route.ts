@@ -1,6 +1,6 @@
 import { ResourceType } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
-import { now, nowMs } from "@/lib/clock";
+import { nowMs } from "@/lib/clock";
 import { createReservation } from "@/lib/db/reservations";
 import { getCalendarDataByType } from "@/lib/db/resourceCalendar";
 import { getRegisteredUserById } from "@/lib/db/users";
