@@ -66,7 +66,7 @@ export function ReservationTimeline({
   const [denyReason, setDenyReason] = useState("");
   const [reasonModalReservation, setReasonModalReservation] =
     useState<AdminReservationListResult | null>(null);
-  const { now, alignRevision } = useServerTime();
+  const { now } = useServerTime();
   const { timelineStart, slots, displaySlots } = useMemo(() => {
     const baseDate =
       reservations.length > 0 ? new Date(reservations[0].startTime) : now();
@@ -77,7 +77,7 @@ export function ReservationTimeline({
     const slots = getSlotsBetween(start, end);
     const displaySlots = [...slots, new Date(end)];
     return { timelineStart: start, slots, displaySlots };
-  }, [reservations, alignRevision, now]);
+  }, [reservations, now]);
 
   const gridCols = showActions && onAction
     ? "128px 1fr 140px"

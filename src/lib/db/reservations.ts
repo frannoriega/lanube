@@ -1,6 +1,6 @@
 import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
-import { dateToUnixMs, unixMsToDate } from "@/lib/unix-ms";
+import { dateToUnixMs } from "@/lib/unix-ms";
 import { createId } from '@paralleldrive/cuid2';
 import {
   EventType,
