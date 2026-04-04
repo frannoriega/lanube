@@ -206,6 +206,27 @@ npm run dev
 
 Abrí [http://localhost:3000](http://localhost:3000). Si la app corre en Docker, la misma URL sirve; no hace falta este paso.
 
+### 7. Usuarios de desarrollo (seed)
+
+Tras las migraciones, el **seed** de Prisma (`prisma/seed.ts`, arreglo `EXAMPLE_USERS`) crea cuentas listas para entrar por **correo y contraseña** en [`/auth/signin`](http://localhost:3000/auth/signin): incluyen `User` con **email verificado** y **`RegisteredUser`** enlazado, igual que el flujo real (registro → confirmación → alta de perfil), pero sin pasar por Mailpit.
+
+**Contraseña compartida en local (todas las cuentas de ejemplo):** `123123123`
+
+| Correo | Rol |
+|--------|-----|
+| `u1v@lanube.local` | Usuario |
+| `u2@lanube.local` | Usuario |
+| `a1@lanube.local` | Administrador |
+| `a2@lanube.local` | Administrador |
+
+Son datos **solo para desarrollo**; no uses estas claves ni copies este patrón en producción. Si agregás o cambiás cuentas, actualizá la tabla anterior o remití a `EXAMPLE_USERS` en el código como fuente de verdad.
+
+Para volver a ejecutar solo el seed (con la base ya migrada):
+
+```bash
+npm run db:seed
+```
+
 ## Deploy en Vercel
 
 ### 1. Preparar para producción
