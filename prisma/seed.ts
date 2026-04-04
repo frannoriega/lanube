@@ -16,9 +16,8 @@ const prisma = new PrismaClient({ adapter })
  */
 const BCRYPT_ROUNDS = 12
 
-const EXAMPLE_USERS: Array<{
+function generateUsers(): Array<{
   email: string
-  /** Plaintext dev password — never use in production data. */
   password: string
   name: string
   lastName: string
@@ -26,51 +25,50 @@ const EXAMPLE_USERS: Array<{
   institution: string | null
   reasonToJoin: string
   role: UserRole
-}> = [
-    {
-      email: "u1v@lanube.local",
+}> {
+  let users: Array<{
+    email: string
+    password: string
+    name: string
+    lastName: string
+    dni: string
+    institution: string | null
+    reasonToJoin: string
+    role: UserRole
+  }> = [];
+
+  for (let i = 1; i <= 30; i++) {
+    users.push({
+      email: `u${i}@lanube.local`,
       password: "123123123",
-      name: "Usuario 1",
+      name: `Usuario ${i}`,
       lastName: "Ejemplo",
-      dni: "20000001",
+      dni: `2000000${i}`,
       institution: "La Nube (desarrollo)",
       reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
       role: UserRole.USER,
-    },
-    {
-      email: "u2@lanube.local",
+    });
+  }
+
+  for (let i = 1; i <= 10; i++) {
+    users.push({
+      email: `a${i}@lanube.local`,
       password: "123123123",
-      name: "Usuario 2",
+      name: `Admin ${i}`,
       lastName: "Ejemplo",
-      dni: "20000002",
-      institution: "La Nube (desarrollo)",
-      reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
-      role: UserRole.USER,
-    },
-    {
-      email: "a1@lanube.local",
-      password: "123123123",
-      name: "Admin 1",
-      lastName: "Ejemplo",
-      dni: "20000003",
+      dni: `3000000${i}`,
       institution: "La Nube (desarrollo)",
       reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
       role: UserRole.ADMIN,
-    },
-    {
-      email: "a2@lanube.local",
-      password: "123123123",
-      name: "Admin 2",
-      lastName: "Ejemplo",
-      dni: "20000004",
-      institution: "La Nube (desarrollo)",
-      reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
-      role: UserRole.ADMIN,
-    }
-  ]
+    });
+  }
+
+  return users;
+}
 
 async function seedExampleUsers() {
-  for (const u of EXAMPLE_USERS) {
+  const users = generateUsers();
+  for (const u of users) {
     const passwordHash = await bcrypt.hash(u.password, BCRYPT_ROUNDS)
 
     const user = await prisma.user.upsert({
@@ -85,7 +83,7 @@ async function seedExampleUsers() {
         passwordHash,
         emailVerified: BigInt(Date.now()),
         name: `${u.name} ${u.lastName}`,
-      },
+      }
     })
 
     await prisma.registeredUser.upsert({
