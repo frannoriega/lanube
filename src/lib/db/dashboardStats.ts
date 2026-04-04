@@ -1,3 +1,4 @@
+import { now } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 
 export interface DashboardStats {
@@ -27,11 +28,11 @@ function toHours(reservations: Array<{ startTime: Date; endTime: Date }>): numbe
 }
 
 export async function getDashboardStatsByUserId(userId: string): Promise<DashboardStats> {
-  const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
+  const at = now();
+  const startOfWeek = new Date(at);
+  startOfWeek.setDate(at.getDate() - at.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfMonth = new Date(at.getFullYear(), at.getMonth(), 1);
 
   const [upcomingReservations, reservationsThisWeek, reservationsThisMonth, recentReservations] =
     await Promise.all([
@@ -39,7 +40,7 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
         where: {
           reservableId: userId,
           startTime: {
-            gte: now,
+            gte: at,
           },
           status: "APPROVED",
         },

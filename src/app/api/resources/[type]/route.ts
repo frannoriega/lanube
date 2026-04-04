@@ -1,5 +1,6 @@
 import { ResourceType } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
+import { now } from "@/lib/clock";
 import { createReservation } from "@/lib/db/reservations";
 import { getCalendarDataByType } from "@/lib/db/resourceCalendar";
 import { getRegisteredUserById } from "@/lib/db/users";
@@ -121,7 +122,7 @@ export async function POST(
       );
     }
 
-    if (startDateTime < new Date()) {
+    if (startDateTime < now()) {
       return NextResponse.json(
         { error: "No se pueden hacer reservas en el pasado" },
         { status: 400 },

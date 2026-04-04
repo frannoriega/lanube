@@ -1,0 +1,15 @@
+# Optional overlay: fake wall clock for Postgres + app (libfaketime).
+# Example: docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up
+#
+# FAKETIME syntax: see https://github.com/wolfcw/libfaketime/wiki/Specification
+# Examples:
+#   @2025-12-31 23:59:59   — frozen at that instant
+#   +0                      — start at real time, then follow offset rules
+#   -1d                     — always 1 day behind real time
+services:
+  postgres:
+    environment:
+      FAKETIME: "${FAKETIME:-@2025-12-31 23:59:59}"
+  app:
+    environment:
+      FAKETIME: "${FAKETIME:-@2025-12-31 23:59:59}"

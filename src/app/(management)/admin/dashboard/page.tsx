@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
 import { getServiceIcon } from "@/lib/constants/services";
 import { ResourceType } from "@/generated/prisma/enums";
@@ -55,6 +56,7 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
+  const { now } = useServerTime();
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -204,16 +206,16 @@ export default function AdminDashboard() {
   };
 
   const isReservationEndingSoon = (endTime: string) => {
-    const now = new Date();
+    const t = now();
     const end = new Date(endTime);
-    const diffMinutes = (end.getTime() - now.getTime()) / (1000 * 60);
+    const diffMinutes = (end.getTime() - t.getTime()) / (1000 * 60);
     return diffMinutes <= 30 && diffMinutes > 0; // Ending in next 30 minutes
   };
 
   const isReservationOverdue = (endTime: string) => {
-    const now = new Date();
+    const t = now();
     const end = new Date(endTime);
-    return end.getTime() < now.getTime();
+    return end.getTime() < t.getTime();
   };
 
   if (status === "loading" || loading) {
