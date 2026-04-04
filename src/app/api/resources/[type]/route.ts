@@ -129,9 +129,9 @@ export async function POST(
     }
 
     // Validate business hours (9am - 6pm, weekdays only)
-    const dayOfWeek = startDateTime.getDay();
-    const startHour = startDateTime.getHours();
-    const endHour = endDateTime.getHours();
+    const dayOfWeek = startDateTime.getUTCDay();
+    const startHour = startDateTime.getUTCHours();
+    const endHour = endDateTime.getUTCHours();
 
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return NextResponse.json(
