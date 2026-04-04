@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getRegisteredUserById } from "@/lib/db/users";
+import { serializeJson } from "@/lib/json-bigint";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -18,7 +19,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(serializeJson(user));
   } catch {
     return NextResponse.json(
       { message: "Error interno del servidor" },

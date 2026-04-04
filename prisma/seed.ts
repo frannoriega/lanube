@@ -1,7 +1,6 @@
 import { PrismaClient, ResourceType, UserRole } from "@/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
-
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter })
 
@@ -79,12 +78,12 @@ async function seedExampleUsers() {
       create: {
         email: u.email,
         passwordHash,
-        emailVerified: new Date(),
+        emailVerified: BigInt(Date.now()),
         name: `${u.name} ${u.lastName}`,
       },
       update: {
         passwordHash,
-        emailVerified: new Date(),
+        emailVerified: BigInt(Date.now()),
         name: `${u.name} ${u.lastName}`,
       },
     })

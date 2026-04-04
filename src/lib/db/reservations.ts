@@ -1,5 +1,6 @@
-import { now } from "@/lib/clock";
+import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
+import { dateToUnixMs, unixMsToDate } from "@/lib/unix-ms";
 import { createId } from '@paralleldrive/cuid2';
 import {
   EventType,
@@ -31,8 +32,8 @@ export interface ReservationWithRelations extends Reservation {
   } | null;
   checkIns?: Array<{
     id: string;
-    checkInTime: Date;
-    checkOutTime: Date | null;
+    checkInTime: bigint;
+    checkOutTime: bigint | null;
   }>;
   exceptions?: ReservationException[];
 }
@@ -78,9 +79,9 @@ export interface ReservationFilters {
 
 export interface ExpandedReservationOccurrence {
   reservationId: string;
-  occurrenceDate: Date;
-  occurrenceStartTime: Date;
-  occurrenceEndTime: Date;
+  occurrenceDate: bigint;
+  occurrenceStartTime: bigint;
+  occurrenceEndTime: bigint;
   reservableType: ReservableType;
   reservableId: string;
   resourceId: string | null;
@@ -92,17 +93,17 @@ export interface ExpandedReservationOccurrence {
   isException: boolean;
   exceptionCancelled: boolean;
   rrule: string | null;
-  recurrenceEnd: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  recurrenceEnd: bigint | null;
+  createdAt: bigint;
+  updatedAt: bigint;
 }
 
 // Ledger row type
 export interface ReservationLedgerRow {
   id: string;
   reservationId: string;
-  occurrenceStartTime: Date;
-  occurrenceEndTime: Date;
+  occurrenceStartTime: bigint;
+  occurrenceEndTime: bigint;
   reservableType: ReservableType;
   reservableId: string;
   resourceId: string;
@@ -110,19 +111,19 @@ export interface ReservationLedgerRow {
   reason: string | null;
   actorSize: number;
   status: ReservationStatus;
-  createdAt: Date;
+  createdAt: bigint;
 }
 
 // Unavailable slot type
 export interface UnavailableSlot {
   resourceId: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: bigint;
+  endTime: bigint;
 }
 export interface ReservationOccurrence {
   reservationId: string;
-  occurrenceStartTime: string;
-  occurrenceEndTime: string;
+  occurrenceStartTime: number;
+  occurrenceEndTime: number;
   reason: string;
   status: string;
   reservableType: string;
@@ -162,6 +163,11 @@ export async function createReservation(
 
   // Call SQL function to create reservation with automatic resource selection
   try {
+    const startMs = dateToUnixMs(data.startTime);
+    const endMs = dateToUnixMs(data.endTime);
+    const recurrenceEndMs = data.recurrenceEnd
+      ? dateToUnixMs(data.recurrenceEnd)
+      : null;
     await prisma.$executeRaw`
       SELECT create_reservation(
         ${reservationId}::text,
@@ -170,11 +176,11 @@ export async function createReservation(
         ${data.resourceType}::resource_types,
         ${data.eventType}::event_types,
         ${data.reason}::text,
-        ${data.startTime.toISOString()}::timestamptz,
-        ${data.endTime.toISOString()}::timestamptz,
+        ${startMs}::bigint,
+        ${endMs}::bigint,
         ${Boolean(data.isRecurring ?? false)}::boolean,
         ${data.rrule || null}::text,
-        ${data.recurrenceEnd?.toISOString() || null}::timestamptz
+        ${recurrenceEndMs}::bigint
       )
     `;
   } catch (error) {
@@ -241,10 +247,16 @@ export async function createReservationException(
   return await prisma.reservationException.create({
     data: {
       reservationId,
-      exceptionDate,
+      exceptionDate: dateToUnixMs(exceptionDate),
       isCancelled: data.isCancelled || false,
-      newStartTime: data.newStartTime,
-      newEndTime: data.newEndTime,
+      newStartTime:
+        data.newStartTime !== undefined
+          ? dateToUnixMs(data.newStartTime)
+          : undefined,
+      newEndTime:
+        data.newEndTime !== undefined
+          ? dateToUnixMs(data.newEndTime)
+          : undefined,
       reason: data.reason,
     },
   });
@@ -326,16 +338,24 @@ export async function listReservations(
     // Date range filters
     const dateFilters: Prisma.ReservationWhereInput[] = [];
     if (filters.startTimeFrom) {
-      dateFilters.push({ startTime: { gte: filters.startTimeFrom } });
+      dateFilters.push({
+        startTime: { gte: dateToUnixMs(filters.startTimeFrom) },
+      });
     }
     if (filters.startTimeTo) {
-      dateFilters.push({ startTime: { lte: filters.startTimeTo } });
+      dateFilters.push({
+        startTime: { lte: dateToUnixMs(filters.startTimeTo) },
+      });
     }
     if (filters.endTimeFrom) {
-      dateFilters.push({ endTime: { gte: filters.endTimeFrom } });
+      dateFilters.push({
+        endTime: { gte: dateToUnixMs(filters.endTimeFrom) },
+      });
     }
     if (filters.endTimeTo) {
-      dateFilters.push({ endTime: { lte: filters.endTimeTo } });
+      dateFilters.push({
+        endTime: { lte: dateToUnixMs(filters.endTimeTo) },
+      });
     }
     if (dateFilters.length > 0) {
       where.AND = dateFilters;
@@ -402,7 +422,7 @@ export async function getUserReservations(
   }
 
   if (!options?.includeExpired) {
-    filters.endTimeFrom = now();
+    filters.endTimeFrom = new Date(nowMs());
   }
 
   return await listReservations(filters, {
@@ -449,7 +469,7 @@ export async function getUpcomingReservations(
       reservableType,
       reservableId,
       status: ["PENDING", "APPROVED"],
-      startTimeFrom: now(),
+      startTimeFrom: new Date(nowMs()),
     },
     {
       limit,
@@ -509,11 +529,18 @@ export async function updateReservation(
       reason: data.reason,
       deniedReason: data.deniedReason,
       status: data.status,
-      startTime: data.startTime,
-      endTime: data.endTime,
+      startTime:
+        data.startTime !== undefined ? dateToUnixMs(data.startTime) : undefined,
+      endTime:
+        data.endTime !== undefined ? dateToUnixMs(data.endTime) : undefined,
       isRecurring: data.isRecurring,
       rrule: data.rrule,
-      recurrenceEnd: data.recurrenceEnd,
+      recurrenceEnd:
+        data.recurrenceEnd !== undefined
+          ? data.recurrenceEnd === null
+            ? null
+            : dateToUnixMs(data.recurrenceEnd)
+          : undefined,
     },
     include: {
       resource: {
@@ -613,7 +640,7 @@ export async function deleteReservation(id: string): Promise<void> {
   }
 
   // Check if reservation has started
-  if (reservation.startTime < now()) {
+  if (reservation.startTime < BigInt(nowMs())) {
     throw new Error("Cannot delete reservations that have already started");
   }
 
@@ -655,8 +682,8 @@ export async function getReservationStats(
 }> {
   const where: Prisma.ReservationWhereInput = {
     createdAt: {
-      gte: startDate,
-      lte: endDate,
+      gte: dateToUnixMs(startDate),
+      lte: dateToUnixMs(endDate),
     },
   };
 
@@ -715,7 +742,7 @@ export async function hasActiveReservations(userId: string): Promise<boolean> {
         in: ["PENDING", "APPROVED"],
       },
       endTime: {
-        gte: now(),
+        gte: BigInt(nowMs()),
       },
     },
   });
@@ -738,10 +765,10 @@ export async function getConflictingReservations(
       in: ["APPROVED", "PENDING"],
     },
     startTime: {
-      lt: endTime,
+      lt: dateToUnixMs(endTime),
     },
     endTime: {
-      gt: startTime,
+      gt: dateToUnixMs(startTime),
     },
   };
 
@@ -797,8 +824,8 @@ export async function getUserNextReservations(
   const rows = await prisma.$queryRaw<{
     id: string;
     reservation_id: string;
-    occurrence_start_time: Date;
-    occurrence_end_time: Date;
+    occurrence_start_time: bigint;
+    occurrence_end_time: bigint;
     reservable_type: ReservableType;
     reservable_id: string;
     resource_id: string;
@@ -806,7 +833,7 @@ export async function getUserNextReservations(
     reason: string | null;
     actor_size: number;
     status: ReservationStatus;
-    created_at: Date;
+    created_at: bigint;
   }[]>`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
@@ -819,8 +846,8 @@ export async function getUserNextReservations(
   return rows.map((row) => ({
     id: row.id,
     reservationId: row.reservation_id,
-    occurrenceStartTime: new Date(row.occurrence_start_time),
-    occurrenceEndTime: new Date(row.occurrence_end_time),
+    occurrenceStartTime: row.occurrence_start_time,
+    occurrenceEndTime: row.occurrence_end_time,
     reservableType: row.reservable_type as ReservableType,
     reservableId: row.reservable_id,
     resourceId: row.resource_id,
@@ -828,7 +855,7 @@ export async function getUserNextReservations(
     reason: row.reason ?? null,
     actorSize: Number(row.actor_size),
     status: row.status as ReservationStatus,
-    createdAt: new Date(row.created_at),
+    createdAt: row.created_at,
   }));
 }
 
@@ -842,22 +869,24 @@ export async function getUnavailableSlots(
   endTime: Date,
   excludeUserId?: string
 ): Promise<UnavailableSlot[]> {
+  const fromMs = dateToUnixMs(startTime);
+  const toMs = dateToUnixMs(endTime);
   const rows = await prisma.$queryRaw<{
-    r_id: string;
-    start_time: Date;
-    end_time: Date;
+    resource_id: string;
+    start_time: bigint;
+    end_time: bigint;
   }[]>`
     SELECT * FROM get_unavailable_slots(
       ${resourceType}::resource_types,
-      ${startTime.toISOString()}::timestamptz,
-      ${endTime.toISOString()}::timestamptz,
+      ${fromMs}::bigint,
+      ${toMs}::bigint,
       ${excludeUserId || null}::text
     )
   `;
 
   return rows.map((row) => ({
-    resourceId: row.r_id,
-    startTime: new Date(row.start_time),
-    endTime: new Date(row.end_time),
+    resourceId: row.resource_id,
+    startTime: row.start_time,
+    endTime: row.end_time,
   }));
 }

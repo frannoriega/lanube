@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { checkoutActiveCheckinByUserId, isAdminByEmail } from "@/lib/db/adminStats"
+import { serializeJson } from "@/lib/json-bigint"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
@@ -30,7 +31,7 @@ export async function PATCH(
     if (!updated) {
       return NextResponse.json({ message: "Check-in no encontrado o ya cerrado" }, { status: 404 })
     }
-    return NextResponse.json(updated)
+    return NextResponse.json(serializeJson(updated))
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }

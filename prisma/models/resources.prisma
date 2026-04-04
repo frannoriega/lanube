@@ -3,8 +3,8 @@ model FungibleResource {
   name        String
   capacity    Int
   isExclusive Boolean    @default(false) @map("is_exclusive")
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   resources   Resource[]
 
   @@map("fungible_resources")
@@ -17,8 +17,8 @@ model Resource {
   fungibleResourceId String           @map("fungible_resource_id")
   serialNumber       String?          @unique @map("serial_number")
   metadata           Json?
-  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt          BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt          BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   reservations       Reservation[]
   fungibleResource   FungibleResource @relation(fields: [fungibleResourceId], references: [id], onDelete: Cascade)
 

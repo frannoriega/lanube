@@ -1,9 +1,11 @@
 import { ResourceType } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
-import { now } from "@/lib/clock";
+import { now, nowMs } from "@/lib/clock";
 import { createReservation } from "@/lib/db/reservations";
 import { getCalendarDataByType } from "@/lib/db/resourceCalendar";
 import { getRegisteredUserById } from "@/lib/db/users";
+import { serializeJson } from "@/lib/json-bigint";
+import { unixMsToDate } from "@/lib/unix-ms";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -47,19 +49,25 @@ export async function GET(
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    if (!startDate || !endDate) {
+    const startMs = Number(startDate);
+    const endMs = Number(endDate);
+    if (
+      !startDate ||
+      !endDate ||
+      !Number.isFinite(startMs) ||
+      !Number.isFinite(endMs)
+    ) {
       return NextResponse.json(
-        { error: "Se requieren fechas de inicio y fin" },
+        { error: "Se requieren startDate y endDate en milisegundos UTC" },
         { status: 400 },
       );
     }
 
-    // Get both unavailable slots and user's own reservations
     const data = await getCalendarDataByType(
       resourceType,
       user.id,
-      new Date(startDate),
-      new Date(endDate),
+      unixMsToDate(startMs),
+      unixMsToDate(endMs),
     );
 
     return NextResponse.json(data);
@@ -111,10 +119,18 @@ export async function POST(
       );
     }
 
-    const startDateTime = new Date(startTime);
-    const endDateTime = new Date(endTime);
+    const startMs =
+      typeof startTime === "number" ? startTime : Number(startTime);
+    const endMs = typeof endTime === "number" ? endTime : Number(endTime);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+      return NextResponse.json(
+        { error: "startTime y endTime deben ser milisegundos UTC válidos" },
+        { status: 400 },
+      );
+    }
+    const startDateTime = unixMsToDate(startMs);
+    const endDateTime = unixMsToDate(endMs);
 
-    // Validate dates
     if (startDateTime >= endDateTime) {
       return NextResponse.json(
         { error: "La hora de inicio debe ser anterior a la hora de fin" },
@@ -122,7 +138,7 @@ export async function POST(
       );
     }
 
-    if (startDateTime < now()) {
+    if (startMs < nowMs()) {
       return NextResponse.json(
         { error: "No se pueden hacer reservas en el pasado" },
         { status: 400 },
@@ -163,7 +179,7 @@ export async function POST(
       endTime: endDateTime,
     });
 
-    return NextResponse.json(reservation, { status: 201 });
+    return NextResponse.json(serializeJson(reservation), { status: 201 });
   } catch (error) {
     console.error(error);
     const knownError = error as Error;
@@ -216,8 +232,8 @@ export async function DELETE(
       );
     }
 
-    const existing = await prisma.reservation.findUnique({
-      where: { id: reservationId, reservableId: user?.id },
+    const existing = await prisma.reservation.findFirst({
+      where: { id: reservationId, reservableId: user.id },
     });
     if (!existing) {
       return NextResponse.json(

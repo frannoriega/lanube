@@ -4,8 +4,8 @@ model Proposal {
   description String
   authorId    String            @map("author_id")
   status      ProposalStatus    @default(PENDING)
-  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   comments    ProposalComment[]
   likes       ProposalLike[]
   author      RegisteredUser    @relation(fields: [authorId], references: [id])
@@ -19,8 +19,8 @@ model ProposalComment {
   proposalId String                @map("proposal_id")
   authorId   String                @map("author_id")
   content    String
-  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt  BigInt                @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt  BigInt                @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   likes      ProposalCommentLike[]
   author     RegisteredUser        @relation(fields: [authorId], references: [id])
   proposal   Proposal              @relation(fields: [proposalId], references: [id], onDelete: Cascade)
