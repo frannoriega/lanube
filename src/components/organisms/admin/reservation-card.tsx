@@ -50,9 +50,9 @@ export function ReservationCard({
                   dni: reservation.registeredUser.dni,
                   institution: reservation.registeredUser.institution,
                 }}
-                startTime={reservation.startTime.toISOString()}
-                endTime={reservation.endTime.toISOString()}
-                createdAt={reservation.createdAt.toISOString()}
+                startTime={reservation.startTime}
+                endTime={reservation.endTime}
+                createdAt={reservation.createdAt}
                 reason={reservation.reason}
               />
             </div>

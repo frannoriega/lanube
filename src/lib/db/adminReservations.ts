@@ -1,9 +1,45 @@
 import { prisma } from "@/lib/prisma";
+import { dateToUnixMs } from "@/lib/unix-ms";
 import { Prisma } from "@/generated/prisma/client";
 import { ReservationStatus, ResourceType, UserRole } from "@/generated/prisma/client";
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 
 const MAX_PAGE_SIZE = 100;
+
+type ReservationAdminRow = Prisma.ReservationGetPayload<{
+  include: {
+    resource: true;
+    registeredUser: {
+      select: {
+        name: true;
+        lastName: true;
+        dni: true;
+        institution: true;
+        user: { select: { email: true } };
+      };
+    };
+  };
+}>;
+
+function toAdminReservationListResult(
+  row: ReservationAdminRow,
+): AdminReservationListResult {
+  return {
+    id: row.id,
+    startTime: Number(row.startTime),
+    endTime: Number(row.endTime),
+    reason: row.reason,
+    status: row.status,
+    createdAt: Number(row.createdAt),
+    deniedReason: row.deniedReason,
+    resource: {
+      id: row.resource.id,
+      name: row.resource.name,
+      type: row.resource.type,
+    },
+    registeredUser: row.registeredUser,
+  };
+}
 
 /**
  * Admin Reservations DB helpers
@@ -55,7 +91,10 @@ export async function listAdminReservationsByType(
     const [y, m, d] = options.date.split("-").map(Number);
     const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
     const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
-    where.startTime = { gte: startOfDay, lte: endOfDay };
+    where.startTime = {
+      gte: dateToUnixMs(startOfDay),
+      lte: dateToUnixMs(endOfDay),
+    };
   }
 
   if (options?.status) {
@@ -84,7 +123,10 @@ export async function listAdminReservationsByType(
     prisma.reservation.count({ where }),
   ]);
 
-  return { items, total };
+  return {
+    items: items.map(toAdminReservationListResult),
+    total,
+  };
 }
 
 export interface DayWithReservations {
@@ -122,7 +164,7 @@ export async function listDaysWithReservations(
   });
 
   const byDay = rows.reduce<Record<string, number>>((acc, r) => {
-    const key = r.startTime.toISOString().slice(0, 10);
+    const key = new Date(Number(r.startTime)).toISOString().slice(0, 10);
     acc[key] = (acc[key] ?? 0) + 1;
     return acc;
   }, {});
@@ -150,7 +192,7 @@ export async function listDaysWithPendingReservationsAllServices(
   });
 
   const byDay = rows.reduce<Record<string, number>>((acc, r) => {
-    const key = r.startTime.toISOString().slice(0, 10);
+    const key = new Date(Number(r.startTime)).toISOString().slice(0, 10);
     acc[key] = (acc[key] ?? 0) + 1;
     return acc;
   }, {});
@@ -178,7 +220,10 @@ export async function listAdminReservationsByDate(
 
   const where = {
     status: "PENDING" as const,
-    startTime: { gte: startOfDay, lte: endOfDay },
+    startTime: {
+      gte: dateToUnixMs(startOfDay),
+      lte: dateToUnixMs(endOfDay),
+    },
   };
 
   const [items, total] = await Promise.all([
@@ -203,7 +248,10 @@ export async function listAdminReservationsByDate(
     prisma.reservation.count({ where }),
   ]);
 
-  return { items, total };
+  return {
+    items: items.map(toAdminReservationListResult),
+    total,
+  };
 }
 
 /**

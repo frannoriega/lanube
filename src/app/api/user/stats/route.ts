@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getDashboardStatsByUserId } from "@/lib/db/dashboardStats";
+import { serializeJson } from "@/lib/json-bigint";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
 
     const stats = await getDashboardStatsByUserId(session.userId);
 
-    return NextResponse.json(stats);
+    return NextResponse.json(serializeJson(stats));
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
   }

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { getCurrentCheckinsForToday, isAdminByEmail } from "@/lib/db/adminStats"
+import { serializeJson } from "@/lib/json-bigint"
 import { NextResponse } from "next/server"
 
 export async function GET() {
@@ -15,7 +16,7 @@ export async function GET() {
       return NextResponse.json({ message: "Acceso denegado" }, { status: 403 })
     }
     const rows = await getCurrentCheckinsForToday()
-    return NextResponse.json(rows)
+    return NextResponse.json(serializeJson(rows))
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }

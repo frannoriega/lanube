@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { serializeJson } from "@/lib/json-bigint"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
@@ -38,7 +39,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ user }, { status: 201 })
+    const body = JSON.stringify(serializeJson({ user }));
+    return new NextResponse(body, {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }
