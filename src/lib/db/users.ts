@@ -1,4 +1,5 @@
 /** User profile helpers */
+import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
@@ -137,7 +138,7 @@ export async function getRegisteredUsers({
         },
         bans: {
           where: {
-            OR: [{ endTime: null }, { endTime: { gt: new Date() } }],
+            OR: [{ endTime: null }, { endTime: { gt: now() } }],
           },
           orderBy: {
             endTime: "desc",
@@ -180,13 +181,13 @@ export async function getRegisteredUsers({
     }),
   ]);
 
-  const now = Date.now();
+  const atMs = nowMs();
   const payload: GetUsersResult["users"] = rows.map(
     (user: RegisteredUserListRow) => {
       const activeBan = user.bans[0] ?? null;
       const isBanned =
         !!activeBan &&
-        (!activeBan.endTime || activeBan.endTime.getTime() > now);
+        (!activeBan.endTime || activeBan.endTime.getTime() > atMs);
 
       return {
         id: user.id,
@@ -210,8 +211,8 @@ export async function getRegisteredUsers({
 }
 
 export async function getRegisteredUsersSummary(): Promise<UsersSummary> {
-  const now = new Date();
-  const monthStart = startOfMonth(now);
+  const at = now();
+  const monthStart = startOfMonth(at);
 
   const [totalUsers, bannedUsers, monthUsers] = await Promise.all([
     prisma.registeredUser.count(),
@@ -219,7 +220,7 @@ export async function getRegisteredUsersSummary(): Promise<UsersSummary> {
       where: {
         bans: {
           some: {
-            OR: [{ endTime: null }, { endTime: { gt: now } }],
+            OR: [{ endTime: null }, { endTime: { gt: at } }],
           },
         },
       },
@@ -358,7 +359,7 @@ async function getRegisteredUserByEmailAndPassword(
       user: true,
       bans: {
         where: {
-          OR: [{ endTime: null }, { endTime: { gt: new Date() } }],
+          OR: [{ endTime: null }, { endTime: { gt: now() } }],
         },
         orderBy: {
           endTime: "desc",
@@ -382,7 +383,7 @@ async function getRegisteredUserByEmail(
       user: true,
       bans: {
         where: {
-          OR: [{ endTime: null }, { endTime: { gt: new Date() } }],
+          OR: [{ endTime: null }, { endTime: { gt: now() } }],
         },
         orderBy: {
           endTime: "desc",
@@ -439,7 +440,7 @@ async function hashPassword(password: string) {
 export async function markUserEmailVerified(email: string): Promise<boolean> {
   const result = await prisma.user.updateMany({
     where: { email },
-    data: { emailVerified: new Date() },
+    data: { emailVerified: now() },
   });
   return result.count > 0;
 }

@@ -2,14 +2,16 @@
 
 import LogoLaNube from "@/components/atoms/logos/lanube"
 import LoadingLogo from "@/components/molecules/loading/loading-logo"
+import { useServerTime } from "@/components/providers/server-time"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatDate } from "@/lib/utils/date"
 import { useSession } from "next-auth/react"
 
 
 export default function BannedPage() {
+    const { now } = useServerTime()
     const { data: session, status } = useSession()
-    const formattedDate = formatDate(session?.bannedUntil ?? new Date())
+    const formattedDate = formatDate(session?.bannedUntil ?? now())
 
     if (status === "loading") {
         return <LoadingLogo />

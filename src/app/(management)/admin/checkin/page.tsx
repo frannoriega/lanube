@@ -1,5 +1,6 @@
 "use client"
 
+import { useServerTime } from "@/components/providers/server-time"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
@@ -32,6 +33,7 @@ interface CurrentUser {
 }
 
 export default function AdminCheckInPage() {
+  const { now } = useServerTime()
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -120,22 +122,22 @@ export default function AdminCheckInPage() {
   }
 
   const isReservationEndingSoon = (endTime: string) => {
-    const now = new Date()
+    const t = now()
     const end = new Date(endTime)
-    const diffMinutes = (end.getTime() - now.getTime()) / (1000 * 60)
+    const diffMinutes = (end.getTime() - t.getTime()) / (1000 * 60)
     return diffMinutes <= 30 && diffMinutes > 0 // Ending in next 30 minutes
   }
 
   const isReservationOverdue = (endTime: string) => {
-    const now = new Date()
+    const t = now()
     const end = new Date(endTime)
-    return end.getTime() < now.getTime()
+    return end.getTime() < t.getTime()
   }
 
   const getTimeInCoworking = (checkInTime: string) => {
-    const now = new Date()
+    const t = now()
     const checkIn = new Date(checkInTime)
-    const diffMinutes = Math.floor((now.getTime() - checkIn.getTime()) / (1000 * 60))
+    const diffMinutes = Math.floor((t.getTime() - checkIn.getTime()) / (1000 * 60))
 
     if (diffMinutes < 60) {
       return `${diffMinutes} min`
@@ -222,7 +224,7 @@ export default function AdminCheckInPage() {
           </CardHeader>
           <CardContent>
             <div className="text-sm font-medium text-green-600">
-              {new Date().toLocaleTimeString()}
+              {now().toLocaleTimeString()}
             </div>
           </CardContent>
         </Card>
