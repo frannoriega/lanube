@@ -26,8 +26,8 @@ interface CurrentUser {
   lastName: string
   email: string
   dni: string
-  checkInTime: string
-  reservationEndTime: string
+  checkInTime: number
+  reservationEndTime: number | null
   service: string
   reservationId: string
 }
@@ -121,20 +121,22 @@ export default function AdminCheckInPage() {
     }
   }
 
-  const isReservationEndingSoon = (endTime: string) => {
+  const isReservationEndingSoon = (endTime: number | null) => {
+    if (endTime == null || endTime <= 0) return false
     const t = now()
     const end = new Date(endTime)
     const diffMinutes = (end.getTime() - t.getTime()) / (1000 * 60)
     return diffMinutes <= 30 && diffMinutes > 0 // Ending in next 30 minutes
   }
 
-  const isReservationOverdue = (endTime: string) => {
+  const isReservationOverdue = (endTime: number | null) => {
+    if (endTime == null || endTime <= 0) return false
     const t = now()
     const end = new Date(endTime)
     return end.getTime() < t.getTime()
   }
 
-  const getTimeInCoworking = (checkInTime: string) => {
+  const getTimeInCoworking = (checkInTime: number) => {
     const t = now()
     const checkIn = new Date(checkInTime)
     const diffMinutes = Math.floor((t.getTime() - checkIn.getTime()) / (1000 * 60))
@@ -282,7 +284,12 @@ export default function AdminCheckInPage() {
                         <p>Servicio: {getServiceName(user.service)}</p>
                         <p>Check-in: {new Date(user.checkInTime).toLocaleTimeString()}</p>
                         <p>Tiempo en La Nube: {getTimeInCoworking(user.checkInTime)}</p>
-                        <p>Reserva termina: {new Date(user.reservationEndTime).toLocaleTimeString()}</p>
+                        <p>
+                          Reserva termina:{" "}
+                          {user.reservationEndTime != null && user.reservationEndTime > 0
+                            ? new Date(user.reservationEndTime).toLocaleTimeString()
+                            : "—"}
+                        </p>
                       </div>
                     </div>
                   </div>

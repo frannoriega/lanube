@@ -1,5 +1,6 @@
-import { now } from "@/lib/clock";
+import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
+import { dateToUnixMs } from "@/lib/unix-ms";
 
 export async function isAdminByEmail(email: string): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { email } });
@@ -15,16 +16,16 @@ export async function getAdminAggregateStats() {
   const startOfMonth = new Date(at.getFullYear(), at.getMonth(), 1);
 
   const [todayUsers, weekUsers, monthUsers, pendingReservations, approvedReservations, rejectedReservations] = await Promise.all([
-    prisma.checkIn.count({ where: { checkInTime: { gte: startOfDay } } }),
-    prisma.checkIn.count({ where: { checkInTime: { gte: startOfWeek } } }),
-    prisma.checkIn.count({ where: { checkInTime: { gte: startOfMonth } } }),
+    prisma.checkIn.count({ where: { checkInTime: { gte: dateToUnixMs(startOfDay) } } }),
+    prisma.checkIn.count({ where: { checkInTime: { gte: dateToUnixMs(startOfWeek) } } }),
+    prisma.checkIn.count({ where: { checkInTime: { gte: dateToUnixMs(startOfMonth) } } }),
     prisma.reservation.count({ where: { status: 'PENDING' } }),
-    prisma.reservation.count({ where: { status: 'APPROVED', startTime: { gte: at } } }),
+    prisma.reservation.count({ where: { status: 'APPROVED', startTime: { gte: dateToUnixMs(at) } } }),
     prisma.reservation.count({ where: { status: 'REJECTED' } }),
   ]);
 
   const currentUsersRaw = await prisma.checkIn.findMany({
-    where: { checkOutTime: null, checkInTime: { gte: startOfDay } },
+    where: { checkOutTime: null, checkInTime: { gte: dateToUnixMs(startOfDay) } },
     include: {
       registeredUser: { select: { id: true, name: true, lastName: true } },
       reservation: { select: { resource: { select: { type: true } }, endTime: true } },
@@ -50,16 +51,17 @@ export async function getAdminAggregateStats() {
       id: ci.registeredUser.id,
       name: ci.registeredUser.name,
       lastName: ci.registeredUser.lastName,
-      checkInTime: ci.checkInTime,
-      reservationEndTime: ci.reservation?.endTime || '',
+      checkInTime: Number(ci.checkInTime),
+      reservationEndTime:
+        ci.reservation?.endTime != null ? Number(ci.reservation.endTime) : null,
       service: ci.reservation?.resource?.type || 'UNKNOWN',
     })),
     recentReservations: recentReservationsRaw.map(r => ({
       id: r.id,
       user: { name: r.registeredUser.name, lastName: r.registeredUser.lastName },
       service: r.resource?.type || 'UNKNOWN',
-      startTime: r.startTime,
-      endTime: r.endTime,
+      startTime: Number(r.startTime),
+      endTime: Number(r.endTime),
       status: r.status,
       reason: r.reason,
     })),
@@ -70,7 +72,7 @@ export async function getCurrentCheckinsForToday() {
   const at = now();
   const startOfDay = new Date(at); startOfDay.setHours(0, 0, 0, 0);
   const rows = await prisma.checkIn.findMany({
-    where: { checkOutTime: null, checkInTime: { gte: startOfDay } },
+    where: { checkOutTime: null, checkInTime: { gte: dateToUnixMs(startOfDay) } },
     include: {
       registeredUser: { select: { id: true, name: true, lastName: true, user: { select: { email: true } }, dni: true } },
       reservation: { select: { resource: { select: { type: true } }, endTime: true } },
@@ -83,8 +85,9 @@ export async function getCurrentCheckinsForToday() {
     lastName: ci.registeredUser.lastName,
     email: ci.registeredUser.user.email,
     dni: ci.registeredUser.dni,
-    checkInTime: ci.checkInTime,
-    reservationEndTime: ci.reservation?.endTime || '',
+    checkInTime: Number(ci.checkInTime),
+    reservationEndTime:
+      ci.reservation?.endTime != null ? Number(ci.reservation.endTime) : null,
     service: ci.reservation?.resource?.type || 'UNKNOWN',
     reservationId: ci.reservationId || '',
   }));
@@ -97,7 +100,7 @@ export async function checkoutActiveCheckinByUserId(userId: string) {
   if (!checkIn) return null;
   return prisma.checkIn.update({
     where: { id: checkIn.id },
-    data: { checkOutTime: now(), updatedAt: now() },
+    data: { checkOutTime: BigInt(nowMs()) },
     include: {
       registeredUser: { select: { name: true, lastName: true, user: { select: { email: true } } } },
       reservation: { select: { resource: { select: { type: true } }, startTime: true, endTime: true } },

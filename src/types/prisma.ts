@@ -14,8 +14,8 @@ export type RegisteredUser = {
   institution: string | null
   reasonToJoin: string
   role: UserRole
-  createdAt: Date
-  updatedAt: Date
+  createdAt: number
+  updatedAt: number
 }
 
 export enum UserRole {

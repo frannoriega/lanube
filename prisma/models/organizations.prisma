@@ -2,8 +2,8 @@ model Organization {
   id          String          @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   memberships OrgMembership[]
   teams       Team[]
 
@@ -24,8 +24,8 @@ model Team {
   id             String       @id @default(cuid())
   name           String
   organizationId String       @map("organization_id")
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt      BigInt       @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt      BigInt       @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   members        TeamMember[]
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 

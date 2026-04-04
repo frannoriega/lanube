@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { isAdminUser, listAdminReservationsByDate } from "@/lib/db/adminReservations"
+import { serializeJson } from "@/lib/json-bigint"
 import { NextRequest, NextResponse } from "next/server"
 
 const MAX_PAGE_SIZE = 100
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     const { items, total } = await listAdminReservationsByDate(date, { page, pageSize })
 
-    return NextResponse.json({ items, total })
+    return NextResponse.json(serializeJson({ items, total }))
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }

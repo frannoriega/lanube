@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 
 interface RateLimitConfig {
   maxAttempts: number;
-  windowMs: number;       // duración de la ventana en ms
-  blockDurationMs?: number; // cuánto bloquear si se excede
+  windowMs: number;
+  blockDurationMs?: number;
 }
 
 interface RateLimitResult {
@@ -17,55 +17,59 @@ interface RateLimitResult {
 export async function checkRateLimit(
   ip: string,
   endpoint: string,
-  config: RateLimitConfig
+  config: RateLimitConfig,
 ): Promise<RateLimitResult> {
   const { maxAttempts, windowMs, blockDurationMs = windowMs } = config;
   const at = now();
-  const windowStart = new Date(at.getTime() - windowMs);
+  const atMs = BigInt(at.getTime());
+  const windowStartMs = BigInt(at.getTime() - windowMs);
+  const blockUntilMs = BigInt(at.getTime() + blockDurationMs);
 
-  // Upsert atómico: si el registro existe y está en la ventana actual,
-  // incrementa. Si venció la ventana, resetea.
-  const result = await prisma.$queryRaw<Array<{
-    attempts: number;
-    windowStart: Date;
-    blockedUntil: Date | null;
-  }>>`
-    INSERT INTO rate_limits (id, key, endpoint, attempts, "windowStart", "updatedAt")
-    VALUES (gen_random_uuid(), ${ip}, ${endpoint}, 1, ${at}, ${at})
+  const result = await prisma.$queryRaw<
+    Array<{
+      attempts: number;
+      windowStart: bigint;
+      blockedUntil: bigint | null;
+    }>
+  >`
+    INSERT INTO rate_limits (id, key, endpoint, attempts, "windowStart", "createdAt", "updatedAt")
+    VALUES (gen_random_uuid(), ${ip}, ${endpoint}, 1, ${atMs}, ${atMs}, ${atMs})
     ON CONFLICT (key, endpoint) DO UPDATE SET
       attempts = CASE
-        WHEN rate_limits."windowStart" < ${windowStart}
-          THEN 1                          -- venció la ventana, resetear
-          ELSE rate_limits.attempts + 1   -- misma ventana, incrementar
+        WHEN rate_limits."windowStart" < ${windowStartMs}
+          THEN 1
+          ELSE rate_limits.attempts + 1
         END,
       "windowStart" = CASE
-        WHEN rate_limits."windowStart" < ${windowStart}
-          THEN ${at}
+        WHEN rate_limits."windowStart" < ${windowStartMs}
+          THEN ${atMs}
           ELSE rate_limits."windowStart"
         END,
       "blockedUntil" = CASE
         WHEN rate_limits.attempts + 1 > ${maxAttempts} AND rate_limits."blockedUntil" IS NULL
-          THEN ${new Date(at.getTime() + blockDurationMs)}
+          THEN ${blockUntilMs}
           ELSE rate_limits."blockedUntil"
         END,
-      "updatedAt" = ${at}
+      "updatedAt" = ${atMs}
     RETURNING attempts, "windowStart", "blockedUntil"
   `;
 
   const record = result[0];
+  const blockedUntil =
+    record.blockedUntil != null
+      ? new Date(Number(record.blockedUntil))
+      : null;
 
-  // Verificar bloqueo activo
-  if (record.blockedUntil && record.blockedUntil > at) {
+  if (blockedUntil && blockedUntil > at) {
     return {
       allowed: false,
       remaining: 0,
-      resetAt: record.blockedUntil,
+      resetAt: blockedUntil,
     };
   }
 
   const allowed = record.attempts <= maxAttempts;
-  console.log(record);
-  const resetAt = new Date(record.windowStart.getTime() + windowMs);
+  const resetAt = new Date(Number(record.windowStart) + windowMs);
 
   return {
     allowed,

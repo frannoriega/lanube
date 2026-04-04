@@ -3,11 +3,11 @@ model Event {
   name        String
   description String?
   location    String?
-  startTime   DateTime    @map("start_time") @db.Timestamptz(3)
-  endTime     DateTime    @map("end_time") @db.Timestamptz(3)
+  startTime   BigInt      @map("start_time")
+  endTime     BigInt      @map("end_time")
   imageUrl    String?     @map("image_url")
-  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   userEvents  UserEvent[]
 
   @@index([startTime, endTime])

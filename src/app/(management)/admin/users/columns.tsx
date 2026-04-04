@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 
 import { type AdminUser } from "./types"
 
-const formatDate = (value: string | Date) => {
+const formatDate = (value: string | Date | number) => {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) {
     return "—"

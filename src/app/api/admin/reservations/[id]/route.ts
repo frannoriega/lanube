@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { approveReservationAndRejectConflicts, isAdminUser, previewConflictingPending, setReservationStatus } from "@/lib/db/adminReservations"
 import { ReservationStatus } from "@/generated/prisma/client"
+import { serializeJson } from "@/lib/json-bigint"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function PATCH(
@@ -38,7 +39,7 @@ export async function PATCH(
       }
     } else {
       const reservation = await setReservationStatus(resolvedParams.id, status as ReservationStatus, deniedReason)
-      return NextResponse.json(reservation)
+      return NextResponse.json(serializeJson(reservation))
     }
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })

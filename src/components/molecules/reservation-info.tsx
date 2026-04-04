@@ -6,9 +6,9 @@ export function ReservationInfo({
   reason,
 }: {
   user: { email: string; dni: string; institution: string | null };
-  startTime: string;
-  endTime: string;
-  createdAt: string;
+  startTime: number | string;
+  endTime: number | string;
+  createdAt: number | string;
   reason: string;
 }) {
   return (

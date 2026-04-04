@@ -29,6 +29,8 @@ declare module "next-auth" {
     bannedUntil: Date;
     role: UserRole;
     userId: string;
+    /** True when a `RegisteredUser` row exists (JWT-safe; never store Prisma rows here — BigInt breaks `JSON.stringify`). */
+    signedUp: boolean;
   }
 }
 
@@ -61,7 +63,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             err.code = "email_not_verified";
             throw err;
           }
-          return user;
+          // Only JWT-serializable fields (no BigInt, no passwordHash).
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? undefined,
+            image: user.image ?? undefined,
+          };
         } catch (error) {
           if (error instanceof CredentialsSignin) throw error;
           return null;
@@ -90,22 +98,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const atMs = nowMs();
           const defaultExp = atMs + SESSION_EXPIRATION_TIME_MS;
           const activeBan = registeredUser.bans[0] ?? null;
-          token.signedUp = registeredUser;
+          token.signedUp = true;
           token.role = registeredUser.role;
           token.userId = registeredUser.id;
           if (activeBan) {
-            const minExp = Math.min(
-              activeBan.endTime?.getTime() ?? Infinity,
-              defaultExp,
-            );
+            const banEndMs =
+              activeBan.endTime != null
+                ? Number(activeBan.endTime)
+                : Infinity;
+            const minExp = Math.min(banEndMs, defaultExp);
             token.banned = true;
-            token.bannedUntil = activeBan.endTime;
+            token.bannedUntil =
+              activeBan.endTime != null
+                ? new Date(Number(activeBan.endTime))
+                : new Date(defaultExp);
             token.bannedReason = activeBan.reason;
 
             token.exp = Math.floor(minExp / 1000);
           } else {
+            token.banned = false;
             token.exp = Math.floor(defaultExp / 1000);
           }
+        } else {
+          token.signedUp = false;
         }
       }
       return token;

@@ -229,13 +229,17 @@ npm run db:seed
 
 ## Deploy en Vercel
 
+En cada deploy, el comando de build (`npm run build`, definido en `vercel.json`) ejecuta **`prisma migrate deploy`** y luego **`next build`**. La base tiene que ser alcanzable desde los runners de build de Vercel: configurá **`DATABASE_URL`** al menos en el entorno donde corre ese build (producción y, si usás previews contra una DB real, también en *Preview*).
+
+Si necesitás compilar sin tocar la base (poco habitual), podés usar `npm run build:next` en un comando de build personalizado de Vercel.
+
 ### 1. Preparar para producción
 
 Configura las siguientes variables de entorno en Vercel:
 
 | Variable | Función |
 |----------|---------|
-| `DATABASE_URL` | URL de conexión a PostgreSQL |
+| `DATABASE_URL` | URL de conexión a PostgreSQL (**requerida en build** para `prisma migrate deploy`) |
 | `NEXTAUTH_URL` | URL pública de la aplicación |
 | `NEXTAUTH_SECRET` | Secreto para encriptación de cookies |
 | `SMTP_SERVER_HOST` | Host del servidor SMTP |
@@ -248,8 +252,9 @@ Configura las siguientes variables de entorno en Vercel:
 
 ### 2. Deploy
 
+Con el proyecto enlazado en Vercel (Git), cada push dispara el build en la nube (migraciones + `next build`). Para desplegar desde la CLI:
+
 ```bash
-npm run build
 npx vercel --prod
 ```
 

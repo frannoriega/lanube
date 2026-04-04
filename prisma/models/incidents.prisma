@@ -3,8 +3,8 @@ model Incident {
   title         String
   description   String?
   status        IncidentStatus @default(OPEN)
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt     BigInt         @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt     BigInt         @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   incidentUsers IncidentUser[]
 
   @@index([status])

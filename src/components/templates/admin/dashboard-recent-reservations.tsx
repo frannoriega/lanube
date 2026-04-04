@@ -11,11 +11,11 @@ import { useCallback, useEffect, useState } from "react";
  */
 export interface AdminReservationListResult {
   id: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: number;
+  endTime: number;
   reason: string;
   status: string;
-  createdAt: Date;
+  createdAt: number;
   deniedReason?: string | null;
   resource: {
     id: string;
@@ -159,18 +159,15 @@ export function DashboardRecentReservations({
   );
 }
 
-/**
- * Parses API response (where dates come as ISO strings) into AdminReservationListResult
- * with proper Date objects. Use this when receiving reservations from fetch/JSON.
- */
+/** Normalizes API JSON (ms UTC or legacy ISO strings) into AdminReservationListResult. */
 export function parseAdminReservationListFromApi(
   raw: unknown
 ): AdminReservationListResult[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((item: Record<string, unknown>) => ({
     ...item,
-    startTime: new Date(item.startTime as string | number | Date),
-    endTime: new Date(item.endTime as string | number | Date),
-    createdAt: new Date(item.createdAt as string | number | Date),
+    startTime: new Date(item.startTime as string | number | Date).getTime(),
+    endTime: new Date(item.endTime as string | number | Date).getTime(),
+    createdAt: new Date(item.createdAt as string | number | Date).getTime(),
   })) as AdminReservationListResult[];
 }

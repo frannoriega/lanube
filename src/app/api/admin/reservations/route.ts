@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { isAdminUser, listAdminReservationsByType } from "@/lib/db/adminReservations"
 import { ResourceType } from "@/generated/prisma/client"
+import { serializeJson } from "@/lib/json-bigint"
 import { NextRequest, NextResponse } from "next/server"
 
 const MAX_PAGE_SIZE = 100
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    return NextResponse.json({ items, total })
+    return NextResponse.json(serializeJson({ items, total }))
   } catch {
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
   }

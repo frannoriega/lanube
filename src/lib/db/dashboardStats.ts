@@ -1,5 +1,6 @@
 import { now } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
+import { dateToUnixMs } from "@/lib/unix-ms";
 
 export interface DashboardStats {
   upcomingReservations: number;
@@ -9,8 +10,8 @@ export interface DashboardStats {
     id: string;
     service: string;
     serviceType: string;
-    startTime: Date;
-    endTime: Date;
+    startTime: number;
+    endTime: number;
     status: string;
     reason: string | null;
   }>;
@@ -18,9 +19,12 @@ export interface DashboardStats {
 
 const HOURS_IN_MS = 1000 * 60 * 60;
 
-function toHours(reservations: Array<{ startTime: Date; endTime: Date }>): number {
+function toHours(
+  reservations: Array<{ startTime: bigint; endTime: bigint }>,
+): number {
   const total = reservations.reduce((acc, reservation) => {
-    const duration = reservation.endTime.getTime() - reservation.startTime.getTime();
+    const duration =
+      Number(reservation.endTime) - Number(reservation.startTime);
     return acc + Math.max(duration, 0);
   }, 0);
 
@@ -29,6 +33,7 @@ function toHours(reservations: Array<{ startTime: Date; endTime: Date }>): numbe
 
 export async function getDashboardStatsByUserId(userId: string): Promise<DashboardStats> {
   const at = now();
+  const atMs = dateToUnixMs(at);
   const startOfWeek = new Date(at);
   startOfWeek.setDate(at.getDate() - at.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
@@ -40,7 +45,7 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
         where: {
           reservableId: userId,
           startTime: {
-            gte: at,
+            gte: atMs,
           },
           status: "APPROVED",
         },
@@ -53,7 +58,7 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
         where: {
           reservableId: userId,
           startTime: {
-            gte: startOfWeek,
+            gte: dateToUnixMs(startOfWeek),
           },
           status: "APPROVED",
         },
@@ -66,7 +71,7 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
         where: {
           reservableId: userId,
           startTime: {
-            gte: startOfMonth,
+            gte: dateToUnixMs(startOfMonth),
           },
           status: "APPROVED",
         },
@@ -103,8 +108,8 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
       id: reservation.id,
       service: reservation.resource?.name ?? reservation.resource?.type ?? "Servicio",
       serviceType: reservation.resource?.type ?? "UNKNOWN",
-      startTime: reservation.startTime,
-      endTime: reservation.endTime,
+      startTime: Number(reservation.startTime),
+      endTime: Number(reservation.endTime),
       status: reservation.status,
       reason: reservation.reason ?? null,
     })),

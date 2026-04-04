@@ -3,6 +3,7 @@ import {
   getRegisteredUserById,
   updateRegisteredUserProfileByEmail,
 } from "@/lib/db/users";
+import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -21,7 +22,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(serializeJson(user));
   } catch {
     return NextResponse.json(
       { message: "Error interno del servidor" },
@@ -45,7 +46,7 @@ export async function PUT(request: NextRequest) {
         session.user.email,
         { name, lastName, dni, institution, reasonToJoin },
       );
-      return NextResponse.json(updatedUser);
+      return NextResponse.json(serializeJson(updatedUser));
     } catch (error) {
       const knownError = error as Error;
       return NextResponse.json(

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useServerTime } from "@/components/providers/server-time";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { toCapitalCase } from "@/lib/utils/string";
-import { addDays, addWeeks, format, getDay, isSameDay, parseISO, startOfWeek } from "date-fns";
+import { addDays, addWeeks, format, getDay, isSameDay, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -22,9 +22,14 @@ const BUSINESS_HOURS = {
 
 const TIME_INTERVAL_MINUTES = 15;
 
+function fromUtcMs(ms: number): Date {
+  return new Date(ms);
+}
+
 export interface UnavailableSlot {
-  startTime: string;
-  endTime: string;
+  resourceId?: string;
+  startTime: number;
+  endTime: number;
 }
 
 export interface DragSelection {
@@ -136,13 +141,13 @@ export function WeekCalendar({
       return time.getHours() * 60 + time.getMinutes();
     }
     return unavailableSlots.some((slot) =>
-      isSameDay(parseISO(slot.startTime), day) &&
-      ((startMinutes > getMinutes(parseISO(slot.startTime)) && endMinutes < getMinutes(parseISO(slot.endTime))) ||
-        (startMinutes < getMinutes(parseISO(slot.startTime)) && endMinutes > getMinutes(parseISO(slot.startTime))))) ||
+      isSameDay(fromUtcMs(slot.startTime), day) &&
+      ((startMinutes > getMinutes(fromUtcMs(slot.startTime)) && endMinutes < getMinutes(fromUtcMs(slot.endTime))) ||
+        (startMinutes < getMinutes(fromUtcMs(slot.startTime)) && endMinutes > getMinutes(fromUtcMs(slot.startTime))))) ||
       occurrences.some((occ) =>
-        isSameDay(parseISO(occ.occurrenceStartTime), day) &&
-        ((startMinutes > getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes < getMinutes(parseISO(occ.occurrenceEndTime))) ||
-          (startMinutes < getMinutes(parseISO(occ.occurrenceStartTime)) && endMinutes > getMinutes(parseISO(occ.occurrenceStartTime))))
+        isSameDay(fromUtcMs(occ.occurrenceStartTime), day) &&
+        ((startMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime)) && endMinutes < getMinutes(fromUtcMs(occ.occurrenceEndTime))) ||
+          (startMinutes < getMinutes(fromUtcMs(occ.occurrenceStartTime)) && endMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime))))
       )
   }, [unavailableSlots, occurrences]);
 
@@ -153,14 +158,14 @@ export function WeekCalendar({
       weekEnd.setHours(23, 59, 59, 999);
 
       const response = await fetch(
-        `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`
+        `${apiEndpoint}?startDate=${currentWeekStart.getTime()}&endDate=${weekEnd.getTime()}`
       );
 
       if (response.ok) {
         const data = await response.json();
         const unavailableSlots = data.unavailableSlots || [];
         unavailableSlots.sort((a: UnavailableSlot, b: UnavailableSlot) => {
-          return parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime();
+          return a.startTime - b.startTime;
         });
         const processedUnavailableSlots: UnavailableSlot[] = [];
         if (unavailableSlots.length > 0) {
@@ -316,8 +321,8 @@ export function WeekCalendar({
 
     const overlapsOwn = occurrences.some((occ) => {
       if (!(userId && occ.reservableType === 'USER' && occ.reservableId === userId)) return false;
-      const occStart = parseISO(occ.occurrenceStartTime);
-      const occEnd = parseISO(occ.occurrenceEndTime);
+      const occStart = fromUtcMs(occ.occurrenceStartTime);
+      const occEnd = fromUtcMs(occ.occurrenceEndTime);
       return occStart < selEnd && occEnd > selStart;
     });
 
@@ -375,7 +380,7 @@ export function WeekCalendar({
   const getReservationsForDay = (day: Date) => {
     console.log("occurrences", occurrences);
     return occurrences.filter((occ) => {
-      const occStart = parseISO(occ.occurrenceStartTime);
+      const occStart = fromUtcMs(occ.occurrenceStartTime);
       return isSameDay(occStart, day);
     });
   };
@@ -383,15 +388,15 @@ export function WeekCalendar({
   // Get unavailable slots for a specific day
   const getUnavailableSlotsForDay = (day: Date) => {
     return unavailableSlots.filter((slot) => {
-      const slotStart = parseISO(slot.startTime);
+      const slotStart = fromUtcMs(slot.startTime);
       return isSameDay(slotStart, day);
     });
   };
 
   // Calculate reservation position
-  const getReservationStyle = (occ: { startTime: string; endTime: string }) => {
-    const occStart = parseISO(occ.startTime);
-    const occEnd = parseISO(occ.endTime);
+  const getReservationStyle = (occ: { startTime: number; endTime: number }) => {
+    const occStart = fromUtcMs(occ.startTime);
+    const occEnd = fromUtcMs(occ.endTime);
 
     const startMinutes = occStart.getHours() * 60 + occStart.getMinutes();
     const endMinutes = occEnd.getHours() * 60 + occEnd.getMinutes();
@@ -450,8 +455,8 @@ export function WeekCalendar({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
+          startTime: startDateTime.getTime(),
+          endTime: endDateTime.getTime(),
           reason,
           eventType,
         }),
@@ -641,8 +646,8 @@ export function WeekCalendar({
                               {isOwnReservation && <span className="ml-1">✓</span>}
                             </div>
                             <div className="text-[10px] opacity-90">
-                              {format(parseISO(occ.occurrenceStartTime), "HH:mm")} -{" "}
-                              {format(parseISO(occ.occurrenceEndTime), "HH:mm")}
+                              {format(fromUtcMs(occ.occurrenceStartTime), "HH:mm")} -{" "}
+                              {format(fromUtcMs(occ.occurrenceEndTime), "HH:mm")}
                               {isPending && isOwnReservation && <span className="ml-1">⏳</span>}
                             </div>
                           </div>
@@ -772,7 +777,7 @@ export function WeekCalendar({
             <DialogTitle>Detalle de la reserva</DialogTitle>
             {selectedOccurrence && (
               <DialogDescription>
-                {toCapitalCase(format(parseISO(selectedOccurrence.occurrenceStartTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}
+                {toCapitalCase(format(fromUtcMs(selectedOccurrence.occurrenceStartTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}
               </DialogDescription>
             )}
           </DialogHeader>
@@ -780,7 +785,7 @@ export function WeekCalendar({
             <div className="space-y-3">
               <div className="text-sm">
                 <span className="font-medium">Horario:</span>{" "}
-                {format(parseISO(selectedOccurrence.occurrenceStartTime), "HH:mm")} - {format(parseISO(selectedOccurrence.occurrenceEndTime), "HH:mm")}
+                {format(fromUtcMs(selectedOccurrence.occurrenceStartTime), "HH:mm")} - {format(fromUtcMs(selectedOccurrence.occurrenceEndTime), "HH:mm")}
               </div>
               <div className="text-sm">
                 <span className="font-medium">Motivo:</span>{" "}

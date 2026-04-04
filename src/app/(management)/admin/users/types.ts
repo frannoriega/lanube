@@ -6,7 +6,7 @@ export type AdminUser = {
   dni?: string | null
   institution?: string | null
   role: string
-  createdAt: string
+  createdAt: number
   status?: "ACTIVE" | "INACTIVE" | string | null
 }
 
