@@ -5,12 +5,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useServerTime } from "@/components/providers/server-time";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { toCapitalCase } from "@/lib/utils/string";
 import { addDays, addWeeks, format, getDay, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Configuration constants
@@ -49,8 +50,7 @@ interface WeekCalendarProps {
 }
 
 // Helper function to get the current work week start
-function getCurrentWorkWeekStart(): Date {
-  const now = new Date();
+function getCurrentWorkWeekStart(now: Date): Date {
   const dayOfWeek = getDay(now); // 0 = Sunday, 6 = Saturday
 
   // If it's weekend (Saturday or Sunday), get next Monday
@@ -87,8 +87,16 @@ export function WeekCalendar({
   description,
   userId,
 }: WeekCalendarProps) {
+  const { now, alignRevision } = useServerTime();
+
   // Week navigation state
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => getCurrentWorkWeekStart());
+  const [currentWeekStart, setCurrentWeekStart] = useState(() =>
+    getCurrentWorkWeekStart(new Date()),
+  );
+
+  useLayoutEffect(() => {
+    setCurrentWeekStart(getCurrentWorkWeekStart(now()));
+  }, [alignRevision, now]);
 
   // Data state
   const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
@@ -118,7 +126,7 @@ export function WeekCalendar({
 
   // Calculate navigation bounds
   const nextWeekStart = addWeeks(currentWeekStart, 1);
-  const todayWeekStart = getCurrentWorkWeekStart();
+  const todayWeekStart = getCurrentWorkWeekStart(now());
   const maxWeekStart = addWeeks(todayWeekStart, 1);
   const canGoNext = nextWeekStart <= maxWeekStart;
   const canGoPrev = currentWeekStart > todayWeekStart;
@@ -238,11 +246,11 @@ export function WeekCalendar({
         return;
       }
 
-      const now = new Date();
+      const clock = now();
       const selectedDateTime = new Date(posInfo.day);
       selectedDateTime.setHours(0, posInfo.minutes, 0, 0);
 
-      if (selectedDateTime < now) {
+      if (selectedDateTime < clock) {
         return;
       }
 
@@ -250,7 +258,7 @@ export function WeekCalendar({
       setDragStart(posInfo);
       setDragCurrent(posInfo);
     },
-    [getPositionInfo, overlapsUnavailableOrReservation]
+    [getPositionInfo, overlapsUnavailableOrReservation, now]
   );
 
   // Handle mouse move - update drag
@@ -517,7 +525,7 @@ export function WeekCalendar({
               {weekDays.map((day, idx) => (
                 <div
                   key={idx}
-                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${isSameDay(day, new Date())
+                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${isSameDay(day, now())
                     ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
                     : "text-gray-700 dark:text-gray-300"
                     }`}
@@ -543,7 +551,14 @@ export function WeekCalendar({
                       transform: "translateY(-50%)",
                     }}
                   >
-                    {format(new Date().setHours(hour, 0, 0, 0), "HH:mm")}
+                    {format(
+                      (() => {
+                        const t = now();
+                        t.setHours(hour, 0, 0, 0);
+                        return t;
+                      })(),
+                      "HH:mm",
+                    )}
                   </div>
                 )
               )}
@@ -570,7 +585,7 @@ export function WeekCalendar({
               }}
             >
               {weekDays.map((day, dayIdx) => {
-                const isPastOrUnavailableDay = day < addDays(new Date(), 1);
+                const isPastOrUnavailableDay = day < addDays(now(), 1);
                 const dayReservations = getReservationsForDay(day);
                 const unavailableSlots = getUnavailableSlotsForDay(day);
 

@@ -54,48 +54,137 @@ cp env.example .env
 
 El archivo `env.example` ya incluye los valores por defecto para desarrollo local, por lo que en la mayoría de los casos no hace falta modificar nada.
 
-### 4. Levantar los servicios locales con Docker
+### 4. Levantar el stack con Docker Compose
 
-El proyecto incluye una configuración de Docker Compose en la carpeta `docker/` con todos los servicios necesarios para el desarrollo local:
+El proyecto incluye `docker/docker-compose.yml` con todo lo necesario para desarrollo local: base de datos, migraciones, correo de prueba y (opcionalmente) la aplicación Next.js dentro de un contenedor.
 
 | Servicio | Descripción |
 |----------|-------------|
-| **postgres** | Base de datos PostgreSQL 17.2 (igual que producción en Vercel) |
-| **migrate** | Contenedor que aplica las migraciones y ejecuta el seed automáticamente al iniciar |
-| **mailpit** | Servidor SMTP local para capturar emails enviados por la aplicación |
+| **postgres** | PostgreSQL 17.2; imagen basada en la oficial con soporte opcional de **libfaketime** (reloj simulado) |
+| **migrate** | Una sola ejecución al subir el stack: aplica migraciones Prisma y seed |
+| **mailpit** | SMTP de prueba y UI web para ver los emails |
+| **app** | Next.js en modo `next dev`, escuchando en `0.0.0.0:3000` y con inspector Node en el puerto **9229** |
 
 #### Prerrequisitos
 
-Tener [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y corriendo.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (o Docker Engine + Compose v2) en ejecución.
+- Archivo `.env` en la raíz del repo (por ejemplo copiando `env.example`), porque el servicio `app` lo monta con `env_file`.
 
-#### Iniciar los servicios
+#### Dependencias de Node en el volumen del `app`
 
-Desde la carpeta `docker/`:
+El código se monta desde el host, pero `node_modules` vive en un volumen nombrado (`app_node_modules`). Ese volumen arranca vacío: si no hay `node_modules/.bin/next`, el **entrypoint del contenedor** ejecuta `npm ci` antes de `next dev` (la primera subida puede tardar unos minutos).
 
-```bash
-cd docker
-docker compose up
-```
-
-O en segundo plano:
+Si preferís instalar antes y evitar la espera al primer `up`:
 
 ```bash
-docker compose up -d
+docker compose -f docker/docker-compose.yml run --rm app npm ci
 ```
 
-Al iniciar, Docker levanta PostgreSQL y espera a que esté listo. Una vez saludable, el servicio `migrate` aplica automáticamente todas las migraciones pendientes y ejecuta el seed de la base de datos. No hace falta correr ningún comando de Prisma manualmente.
+(Equivalente desde `docker/`: `docker compose run --rm app npm ci`.)
+
+#### Iniciar todo el stack (Postgres + migrate + Mailpit + app)
+
+Desde la **raíz del repositorio**:
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+En segundo plano:
+
+```bash
+docker compose -f docker/docker-compose.yml up --build -d
+```
+
+Flujo al arrancar:
+
+1. **postgres** espera a estar saludable (`pg_isready`).
+2. **migrate** corre `docker/migrate-entry.sh` (migraciones + seed). No hace falta ejecutar Prisma a mano en un flujo normal.
+3. **mailpit** queda listo para SMTP (`mailpit:1025` desde la red interna) y la UI en [http://localhost:8025](http://localhost:8025).
+4. **app** asegura dependencias (`npm ci` si hace falta), luego `npm run dev -- -H 0.0.0.0`, y publica **http://localhost:3000** en el host.
+
+Compose fuerza `DATABASE_URL` hacia el servicio `postgres` y `SMTP_SERVER_HOST=mailpit` para que el contenedor de la app no use `localhost` del host al enviar correo.
+
+#### Solo infraestructura (sin app en Docker)
+
+Si preferís correr Next en la máquina con `npm run dev` y usar Docker solo para DB y correo, podés comentar o no usar el servicio `app` (por ejemplo levantando servicios concretos):
+
+```bash
+docker compose -f docker/docker-compose.yml up postgres mailpit migrate
+```
+
+En `.env`, `DATABASE_URL` debe apuntar a `localhost:5432` y `SMTP_SERVER_HOST` a `localhost` (puerto 1025), como en desarrollo clásico.
 
 #### Detener los servicios
 
 ```bash
-docker compose down
+docker compose -f docker/docker-compose.yml down
 ```
 
-Para detener y eliminar también los volúmenes (borra todos los datos):
+Borrar también volúmenes (incluye datos de Postgres y los `node_modules` en volumen):
 
 ```bash
-docker compose down -v
+docker compose -f docker/docker-compose.yml down -v
 ```
+
+### Reloj simulado (fines de mes / año y pruebas de fecha)
+
+Para probar reglas que dependen de “hoy” o de `now()` en SQL sin cambiar la hora del sistema, el stack puede arrancar con **libfaketime** en **postgres** y **app**. Eso hace que `SELECT now()` en Postgres y `Date` / `Date.now()` en Node vean el mismo tiempo ficticio.
+
+Se usa un segundo archivo Compose que solo añade la variable de entorno `FAKETIME`:
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up --build
+```
+
+Por defecto el overlay define algo equivalente a `@2025-12-31 23:59:59` (instante fijo). Podés cambiarlo al vuelo:
+
+```bash
+FAKETIME='@2026-01-01 00:00:00' docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up --build
+```
+
+Más sintaxis y opciones: [especificación de libfaketime](https://github.com/wolfcw/libfaketime/wiki/Specification).
+
+**Cómo encaja con el código del repo**
+
+- **Servidor (API, Prisma, auth, etc.)**: el tiempo de pared pasa por `@/lib/clock` (`now()` / `nowMs()`), que en el proceso Node ya está bajo faketime cuando usás el overlay.
+- **Navegador**: el reloj del cliente sigue siendo el real; para alinear la UI con el servidor, el layout envía un `serverNowMs` y el cliente usa `ServerTimeProvider` + `useServerTime()` (por ejemplo el calendario de reservas).
+
+Comprobación rápida del tiempo que ve el servidor (solo en desarrollo):
+
+```bash
+curl -s http://localhost:3000/api/dev/server-time | jq
+```
+
+### Depuración con VS Code / Cursor (`.vscode/launch.json`)
+
+El contenedor **app** arranca Node con `NODE_OPTIONS=--inspect=0.0.0.0:9229` y el puerto **9229** está publicado en el host, así podés **adjuntar** el depurador al proceso de Next dentro de Docker.
+
+1. Levantá el stack con Compose (como arriba) y esperá a que Next muestre que escucha en el puerto 3000.
+2. En VS Code o Cursor: **Run and Debug**, elegí la configuración **“Next.js: attach (Docker, port 9229)”** y pulsá **Start Debugging** (F5).
+
+Esa entrada en `.vscode/launch.json` es esencialmente:
+
+```json
+{
+  "name": "Next.js: attach (Docker, port 9229)",
+  "type": "node",
+  "request": "attach",
+  "address": "localhost",
+  "port": 9229,
+  "localRoot": "${workspaceFolder}",
+  "remoteRoot": "/app",
+  "skipFiles": ["<node_internals>/**"]
+}
+```
+
+- **`localRoot` / `remoteRoot`**: el código en el contenedor está en `/app` y coincide con la raíz del workspace por el volumen montado; así los breakpoints en el editor se mapean bien.
+- Si cambiás el `WORKDIR` en la imagen, actualizá `remoteRoot` para que coincida.
+
+**Depurar sin Docker** seguís pudiendo usar las otras configuraciones del mismo archivo, por ejemplo **“Next.js: dev (npx next dev)”** o **“Next.js: full stack (dev + Chrome)”**, que lanzan Next en la máquina local.
+
+**Cliente (React en el navegador)**  
+Para el front podés usar **“Next.js: Chrome (client)”** o **“Next.js: Firefox (client)”** contra `http://localhost:3000`, con la app ya corriendo (en Docker o no).
 
 ### 5. Servidor SMTP local (Mailpit)
 
@@ -107,13 +196,15 @@ Para ver los emails recibidos, abrí el panel web en:
 
 Ahí vas a encontrar la bandeja de entrada con todos los mensajes enviados durante la sesión. Los emails se limpian al reiniciar el contenedor.
 
-### 6. Ejecutar en desarrollo
+### 6. Ejecutar la app en la máquina (sin contenedor `app`)
+
+Si levantaste solo Postgres y Mailpit con Compose, o no usás el servicio `app`:
 
 ```bash
 npm run dev
 ```
 
-Visita [http://localhost:3000](http://localhost:3000) para ver la aplicación.
+Abrí [http://localhost:3000](http://localhost:3000). Si la app corre en Docker, la misma URL sirve; no hace falta este paso.
 
 ## Deploy en Vercel
 
@@ -163,6 +254,7 @@ src/
 │   └── session-provider.tsx
 └── lib/                   # Utilidades y configuración
     ├── auth.ts           # Configuración de NextAuth
+    ├── clock.ts          # Reloj de pared en servidor (alineado con faketime en Docker)
     ├── prisma.ts         # Cliente de Prisma
     └── utils.ts          # Utilidades generales
 ```

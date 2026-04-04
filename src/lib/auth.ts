@@ -1,4 +1,5 @@
 import "server-only";
+import { nowMs } from "@/lib/clock";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { UserRole } from "@/types/prisma";
 import NextAuth from "next-auth";
@@ -86,8 +87,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && token.email) {
         const registeredUser = await getRegisteredUserByEmail(token.email);
         if (registeredUser) {
-          const now = Date.now();
-          const defaultExp = now + SESSION_EXPIRATION_TIME_MS;
+          const atMs = nowMs();
+          const defaultExp = atMs + SESSION_EXPIRATION_TIME_MS;
           const activeBan = registeredUser.bans[0] ?? null;
           token.signedUp = registeredUser;
           token.role = registeredUser.role;

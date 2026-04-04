@@ -1,5 +1,6 @@
 "use client";
 
+import { useServerTime } from "@/components/providers/server-time";
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
@@ -65,8 +66,10 @@ export function ReservationTimeline({
   const [denyReason, setDenyReason] = useState("");
   const [reasonModalReservation, setReasonModalReservation] =
     useState<AdminReservationListResult | null>(null);
+  const { now, alignRevision } = useServerTime();
   const { timelineStart, slots, displaySlots } = useMemo(() => {
-    const baseDate = reservations.length > 0 ? new Date(reservations[0].startTime) : new Date();
+    const baseDate =
+      reservations.length > 0 ? new Date(reservations[0].startTime) : now();
     const start = new Date(baseDate);
     start.setHours(9, 0, 0, 0);
     const end = new Date(baseDate);
@@ -74,7 +77,7 @@ export function ReservationTimeline({
     const slots = getSlotsBetween(start, end);
     const displaySlots = [...slots, new Date(end)];
     return { timelineStart: start, slots, displaySlots };
-  }, [reservations]);
+  }, [reservations, alignRevision, now]);
 
   const gridCols = showActions && onAction
     ? "128px 1fr 140px"

@@ -1,0 +1,12 @@
+FROM postgres:17.2
+USER root
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends faketime \
+  && rm -rf /var/lib/apt/lists/* \
+  && FAKETIME_SO="$(dpkg -L libfaketime | grep -E 'libfaketime\.so\.1$' | head -n1)" \
+  && printf '%s' "$FAKETIME_SO" > /etc/faketime-ldpreload.path \
+  && test -s /etc/faketime-ldpreload.path
+RUN cp /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-original.sh
+COPY docker/postgres-entrypoint-faketime.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+USER postgres
