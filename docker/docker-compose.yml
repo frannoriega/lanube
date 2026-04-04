@@ -14,15 +14,20 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      default:
+        aliases:
+          - lanube-postgres
 
   migrate:
-    image: node:18-alpine
+    image: node:24-bookworm
     container_name: lanube-migrate
     restart: "no"
     working_dir: /app
     volumes:
       - ../:/app
-    command: sh -c "npx prisma migrate deploy && npx prisma db seed"
+      - migrate_node_modules:/app/node_modules
+    command: sh /app/docker/migrate-entry.sh
     environment:
       DATABASE_URL: postgresql://postgres:lanube@postgres:5432/postgres?schema=public
     depends_on:
@@ -39,3 +44,4 @@ services:
 
 volumes:
   postgres_data:
+  migrate_node_modules:
