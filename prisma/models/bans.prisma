@@ -2,9 +2,9 @@ model Ban {
   id             String         @id @default(cuid())
   userId         String         @map("user_id")
   reason         String
-  startTime      DateTime       @map("start_time") @db.Timestamptz(3)
-  endTime        DateTime?      @map("end_time") @db.Timestamptz(3)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  startTime      BigInt         @map("start_time")
+  endTime        BigInt?        @map("end_time")
+  createdAt      BigInt         @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

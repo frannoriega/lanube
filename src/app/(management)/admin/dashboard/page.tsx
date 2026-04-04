@@ -37,8 +37,8 @@ interface AdminStats {
     id: string;
     name: string;
     lastName: string;
-    checkInTime: string;
-    reservationEndTime: string;
+    checkInTime: number;
+    reservationEndTime: number | null;
     service: string;
   }[];
   recentReservations: {
@@ -48,8 +48,8 @@ interface AdminStats {
       lastName: string;
     };
     service: string;
-    startTime: string;
-    endTime: string;
+    startTime: number;
+    endTime: number;
     status: string;
     reason: string;
   }[];
@@ -205,14 +205,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const isReservationEndingSoon = (endTime: string) => {
+  const isReservationEndingSoon = (endTime: number | null) => {
+    if (endTime == null || endTime <= 0) return false;
     const t = now();
     const end = new Date(endTime);
     const diffMinutes = (end.getTime() - t.getTime()) / (1000 * 60);
     return diffMinutes <= 30 && diffMinutes > 0; // Ending in next 30 minutes
   };
 
-  const isReservationOverdue = (endTime: string) => {
+  const isReservationOverdue = (endTime: number | null) => {
+    if (endTime == null || endTime <= 0) return false;
     const t = now();
     const end = new Date(endTime);
     return end.getTime() < t.getTime();

@@ -16,8 +16,8 @@ interface DashboardStats {
     id: string;
     service: string;
     serviceType: string;
-    startTime: string;
-    endTime: string;
+    startTime: number;
+    endTime: number;
     status: string;
     reason: string | null;
   }[];

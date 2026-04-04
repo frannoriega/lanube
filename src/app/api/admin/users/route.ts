@@ -8,6 +8,7 @@ import {
   getRegisteredUsers,
   getRegisteredUsersSummary,
 } from "@/lib/db/users";
+import { serializeJson } from "@/lib/json-bigint";
 
 const ORDERABLE_FIELDS: UsersOrderableField[] = [
   "name",
@@ -72,19 +73,21 @@ export async function GET(request: NextRequest) {
 
     const totalPages = list.total > 0 ? Math.ceil(list.total / pageSize) : 0;
 
-    return NextResponse.json({
-      data: list.users,
-      pagination: {
-        page,
-        pageSize,
-        totalPages,
-        totalUsers: list.total,
-        orderBy: options.orderBy ?? "createdAt",
-        orderDirection: options.orderDirection ?? "asc",
-        search: search ?? "",
-      },
-      summary,
-    });
+    return NextResponse.json(
+      serializeJson({
+        data: list.users,
+        pagination: {
+          page,
+          pageSize,
+          totalPages,
+          totalUsers: list.total,
+          orderBy: options.orderBy ?? "createdAt",
+          orderDirection: options.orderDirection ?? "asc",
+          search: search ?? "",
+        },
+        summary,
+      }),
+    );
   } catch {
     return NextResponse.json(
       { message: "Error interno del servidor" },

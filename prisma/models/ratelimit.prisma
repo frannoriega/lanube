@@ -1,12 +1,12 @@
 model RateLimit {
-   id           String    @id @default(cuid())
-   key          String // IP, userId, o combinación "ip:endpoint"
-   endpoint     String // ej: "/api/login"
-   attempts     Int       @default(1)
-   windowStart  DateTime  @default(now())
-   blockedUntil DateTime?
-   createdAt    DateTime  @default(now())
-   updatedAt    DateTime  @updatedAt
+   id           String  @id @default(cuid())
+   key          String
+   endpoint     String
+   attempts     Int     @default(1)
+   windowStart  BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)"))
+   blockedUntil BigInt?
+   createdAt    BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)"))
+   updatedAt    BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)"))
 
    @@unique([key, endpoint])
    @@index([key, endpoint, windowStart])

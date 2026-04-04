@@ -1,5 +1,6 @@
 import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
+import { dateToUnixMs } from "@/lib/unix-ms";
 import crypto from "node:crypto";
 import { bcryptHash, hash } from "../utils";
 
@@ -14,6 +15,7 @@ export async function createEmailVerificationToken(email: string): Promise<strin
   const hashedToken = hash(token);
   const expires = now();
   expires.setHours(expires.getHours() + TOKEN_EXPIRY_HOURS);
+  const expiresMs = dateToUnixMs(expires);
 
   await prisma.verificationToken.deleteMany({
     where: { identifier: email },
@@ -23,7 +25,7 @@ export async function createEmailVerificationToken(email: string): Promise<strin
     data: {
       identifier: email,
       token: hashedToken,
-      expires,
+      expires: expiresMs,
     },
   });
 
@@ -38,7 +40,11 @@ export async function consumeEmailVerificationToken(
     where: { token: hashedToken },
   });
 
-  if (!record || record.expires < now()) {
+  if (!record) {
+    return null;
+  }
+  const expMs = Number(record.expires);
+  if (expMs < nowMs()) {
     return null;
   }
 
@@ -56,7 +62,7 @@ export async function createResetToken(userId: string): Promise<string> {
     data: {
       userId,
       token: hashedToken,
-      expiresAt: new Date(nowMs() + 1000 * 60 * 60 * 24),
+      expiresAt: BigInt(nowMs() + 1000 * 60 * 60 * 24),
     },
   });
   return data.token;
@@ -67,7 +73,7 @@ export async function consumeResetToken(token: string, password: string): Promis
   const record = await prisma.passwordResetToken.delete({
     where: { token: hashedToken },
   });
-  if (!record || record.expiresAt < now()) {
+  if (!record || record.expiresAt < BigInt(nowMs())) {
     return null;
   }
   const hashedPassword = await bcryptHash(password);
