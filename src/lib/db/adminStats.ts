@@ -1,3 +1,4 @@
+import { now } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 
 export async function isAdminByEmail(email: string): Promise<boolean> {
@@ -8,17 +9,17 @@ export async function isAdminByEmail(email: string): Promise<boolean> {
 }
 
 export async function getAdminAggregateStats() {
-  const now = new Date();
-  const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
-  const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const at = now();
+  const startOfDay = new Date(at); startOfDay.setHours(0, 0, 0, 0);
+  const startOfWeek = new Date(at); startOfWeek.setDate(at.getDate() - at.getDay()); startOfWeek.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date(at.getFullYear(), at.getMonth(), 1);
 
   const [todayUsers, weekUsers, monthUsers, pendingReservations, approvedReservations, rejectedReservations] = await Promise.all([
     prisma.checkIn.count({ where: { checkInTime: { gte: startOfDay } } }),
     prisma.checkIn.count({ where: { checkInTime: { gte: startOfWeek } } }),
     prisma.checkIn.count({ where: { checkInTime: { gte: startOfMonth } } }),
     prisma.reservation.count({ where: { status: 'PENDING' } }),
-    prisma.reservation.count({ where: { status: 'APPROVED', startTime: { gte: now } } }),
+    prisma.reservation.count({ where: { status: 'APPROVED', startTime: { gte: at } } }),
     prisma.reservation.count({ where: { status: 'REJECTED' } }),
   ]);
 
@@ -66,8 +67,8 @@ export async function getAdminAggregateStats() {
 }
 
 export async function getCurrentCheckinsForToday() {
-  const now = new Date();
-  const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
+  const at = now();
+  const startOfDay = new Date(at); startOfDay.setHours(0, 0, 0, 0);
   const rows = await prisma.checkIn.findMany({
     where: { checkOutTime: null, checkInTime: { gte: startOfDay } },
     include: {
@@ -96,7 +97,7 @@ export async function checkoutActiveCheckinByUserId(userId: string) {
   if (!checkIn) return null;
   return prisma.checkIn.update({
     where: { id: checkIn.id },
-    data: { checkOutTime: new Date(), updatedAt: new Date() },
+    data: { checkOutTime: now(), updatedAt: now() },
     include: {
       registeredUser: { select: { name: true, lastName: true, user: { select: { email: true } } } },
       reservation: { select: { resource: { select: { type: true } }, startTime: true, endTime: true } },

@@ -1,4 +1,5 @@
 import { verifyCaptcha } from "@/lib/auth";
+import { nowMs } from "@/lib/clock";
 import { getRegisteredUserByEmail } from "@/lib/db/users";
 import { consumeResetToken, createResetToken } from "@/lib/db/verificationTokens";
 import { sendResetEmail } from "@/lib/email/reset";
@@ -29,11 +30,11 @@ export async function POST(request: NextRequest) {
     );
     if (!allowed) {
         return Response.json(
-            { message: "Demasiadas solicitudes. Intenta nuevamente en " + Math.ceil((resetAt.getTime() - Date.now()) / 1000).toString() + " segundos" },
+            { message: "Demasiadas solicitudes. Intenta nuevamente en " + Math.ceil((resetAt.getTime() - nowMs()) / 1000).toString() + " segundos" },
             {
                 status: 429,
                 headers: {
-                    "Retry-After": Math.ceil((resetAt.getTime() - Date.now()) / 1000).toString(),
+                    "Retry-After": Math.ceil((resetAt.getTime() - nowMs()) / 1000).toString(),
                     "X-RateLimit-Remaining": "0",
                 },
             }

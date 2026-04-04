@@ -1,5 +1,6 @@
 "use client"
 
+import { useServerTime } from "@/components/providers/server-time"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -7,6 +8,7 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export default function MagicLinkPage() {
+  const { now } = useServerTime()
   const [isValidating, setIsValidating] = useState(true)
   const [error, setError] = useState("")
   const router = useRouter()
@@ -28,10 +30,10 @@ export default function MagicLinkPage() {
         
         // Check if token is not expired (24 hours)
         const tokenTime = parseInt(timestamp)
-        const now = Date.now()
+        const atMs = now().getTime()
         const maxAge = 24 * 60 * 60 * 1000 // 24 hours
         
-        if (now - tokenTime > maxAge) {
+        if (atMs - tokenTime > maxAge) {
           setError("El enlace ha expirado. Por favor solicita uno nuevo.")
           setIsValidating(false)
           return
@@ -66,7 +68,7 @@ export default function MagicLinkPage() {
     }
 
     validateToken()
-  }, [token, router])
+  }, [token, router, now])
 
   if (isValidating) {
     return (

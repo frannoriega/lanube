@@ -1,3 +1,4 @@
+import { now } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { createId } from '@paralleldrive/cuid2';
 import {
@@ -143,7 +144,7 @@ export async function createReservation(
     throw new Error("Start time must be before end time");
   }
 
-  if (data.startTime < new Date()) {
+  if (data.startTime < now()) {
     throw new Error("Cannot create reservations in the past");
   }
 
@@ -401,7 +402,7 @@ export async function getUserReservations(
   }
 
   if (!options?.includeExpired) {
-    filters.endTimeFrom = new Date();
+    filters.endTimeFrom = now();
   }
 
   return await listReservations(filters, {
@@ -448,7 +449,7 @@ export async function getUpcomingReservations(
       reservableType,
       reservableId,
       status: ["PENDING", "APPROVED"],
-      startTimeFrom: new Date(),
+      startTimeFrom: now(),
     },
     {
       limit,
@@ -612,7 +613,7 @@ export async function deleteReservation(id: string): Promise<void> {
   }
 
   // Check if reservation has started
-  if (reservation.startTime < new Date()) {
+  if (reservation.startTime < now()) {
     throw new Error("Cannot delete reservations that have already started");
   }
 
@@ -714,7 +715,7 @@ export async function hasActiveReservations(userId: string): Promise<boolean> {
         in: ["PENDING", "APPROVED"],
       },
       endTime: {
-        gte: new Date(),
+        gte: now(),
       },
     },
   });
