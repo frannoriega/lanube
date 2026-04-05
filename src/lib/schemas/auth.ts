@@ -1,7 +1,27 @@
+import {
+  MSG_INVALID_EMAIL,
+  tryNormalizeEmailForIdentity,
+} from "@/lib/email/identity";
 import z from "zod";
 
+/** Client-safe: format + trim/lowercase/+lanube + Gmail dot rules (no MX / Workspace env). */
+export const authEmailSchema = z
+  .email({ message: MSG_INVALID_EMAIL })
+  .transform((email, ctx) => {
+    const r = tryNormalizeEmailForIdentity(email);
+    if (r.ok) {
+      return r.value;
+    }
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: r.message,
+      input: email,
+    });
+    return z.NEVER;
+  });
+
 export const signInSchema = z.object({
-  email: z.email({ message: "Por favor ingresa un email válido" }),
+  email: authEmailSchema,
   password: z
     .string()
     .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
@@ -9,7 +29,7 @@ export const signInSchema = z.object({
 
 export const registerSchema = z
   .object({
-    email: z.email({ message: "Por favor ingresa un email válido" }),
+    email: authEmailSchema,
     password: z
       .string()
       .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
@@ -24,7 +44,7 @@ export const registerSchema = z
   });
 
 export const resetSchema = z.object({
-  email: z.email({ message: "Por favor ingresa un email válido" }),
+  email: authEmailSchema,
   captcha: z.string().min(1, { message: "Por favor completá la verificación de seguridad" }),
 });
 

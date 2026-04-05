@@ -8,6 +8,7 @@ import {
   getRegisteredUserByEmail,
   getUserByEmailAndPassword,
 } from "./db/users";
+import { normalizeEmailForIdentityServer } from "./email/identity-server";
 import { prisma } from "./prisma";
 import { CredentialsSignin } from "next-auth";
 import { signInSchema } from "./schemas/auth";
@@ -54,7 +55,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const { email, password } =
             await signInSchema.parseAsync(credentials);
-          const user = await getUserByEmailAndPassword(email, password);
+          const normalizedEmail = await normalizeEmailForIdentityServer(email);
+          const user = await getUserByEmailAndPassword(
+            normalizedEmail,
+            password,
+          );
           if (!user) return null;
           if (!user.emailVerified) {
             const err = new CredentialsSignin(

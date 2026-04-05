@@ -1,5 +1,6 @@
 /** User profile helpers */
 import { now, nowMs } from "@/lib/clock";
+import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
 import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
 import { dateToUnixMs } from "@/lib/unix-ms";
@@ -253,6 +254,7 @@ export async function updateRegisteredUserProfileByEmail(
     reasonToJoin?: string;
   },
 ) {
+  email = await normalizeEmailForIdentityServer(email);
   const currentUser = await prisma.registeredUser.findFirst({
     where: { user: { email } },
     select: { id: true },
@@ -320,6 +322,7 @@ interface RegisteredUserWithBans extends RegisteredUser {
 }
 
 async function createUser(email: string, password: string): Promise<User> {
+  email = await normalizeEmailForIdentityServer(email);
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({
     data: {
@@ -334,6 +337,7 @@ async function getUserByEmailAndPassword(
   email: string,
   password: string,
 ): Promise<User | null> {
+  email = await normalizeEmailForIdentityServer(email);
   const user = await prisma.user.findFirst({
     where: { email },
   });
@@ -353,6 +357,7 @@ async function getRegisteredUserByEmailAndPassword(
   email: string,
   password: string,
 ): Promise<RegisteredUserWithBans | null> {
+  email = await normalizeEmailForIdentityServer(email);
   const passwordHash = await hashPassword(password);
   const user = await prisma.registeredUser.findFirst({
     relationLoadStrategy: "join",
@@ -376,6 +381,7 @@ async function getRegisteredUserByEmailAndPassword(
 async function getRegisteredUserByEmail(
   email: string,
 ): Promise<RegisteredUserWithBans | null> {
+  email = await normalizeEmailForIdentityServer(email);
   // Even though this is a find first, there's only one user with the given
   // email, so it'll be correct
   const user = await prisma.registeredUser.findFirst({
@@ -439,6 +445,7 @@ async function hashPassword(password: string) {
 }
 
 export async function markUserEmailVerified(email: string): Promise<boolean> {
+  email = await normalizeEmailForIdentityServer(email);
   const result = await prisma.user.updateMany({
     where: { email },
     data: { emailVerified: BigInt(nowMs()) },
