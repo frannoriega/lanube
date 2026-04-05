@@ -8,10 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { useServerTime } from "@/components/providers/server-time";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { toCapitalCase } from "@/lib/utils/string";
-import { addDays, addWeeks, format, getDay, isSameDay, startOfWeek } from "date-fns";
+import {
+  addDays,
+  addWeeks,
+  format,
+  getDay,
+  isAfter,
+  isBefore,
+  isSameDay,
+  startOfDay,
+  startOfWeek,
+} from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Configuration constants
@@ -24,6 +34,11 @@ const TIME_INTERVAL_MINUTES = 15;
 
 function fromUtcMs(ms: number): Date {
   return new Date(ms);
+}
+
+/** New reservations only from tomorrow onward (local calendar day vs `clock`). */
+function isBookableReservationDay(day: Date, clock: Date): boolean {
+  return isAfter(startOfDay(day), startOfDay(clock));
 }
 
 export interface UnavailableSlot {
@@ -64,6 +79,12 @@ function getCurrentWorkWeekStart(now: Date): Date {
     return addWeeks(monday, 1); // Next week's Monday
   }
 
+  // Friday: skip the current work week (show next Monday onward)
+  if (dayOfWeek === 5) {
+    const monday = startOfWeek(now, { weekStartsOn: 1 });
+    return addWeeks(monday, 1);
+  }
+
   // Otherwise, get this week's Monday
   return startOfWeek(now, { weekStartsOn: 1 });
 }
@@ -82,6 +103,17 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
   }
 
   return options;
+}
+
+function minutesToTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+}
+
+function timeToMinutes(time: string): number {
+  const [hours, mins] = time.split(":").map(Number);
+  return hours * 60 + mins;
 }
 
 export function WeekCalendar({
@@ -196,20 +228,6 @@ export function WeekCalendar({
     fetchReservations();
   }, [fetchReservations]);
 
-  // Convert minutes from midnight to time string (HH:mm)
-  const minutesToTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-  };
-
-  // Convert time string (HH:mm) to minutes from midnight
-  const timeToMinutes = (time: string): number => {
-    const [hours, mins] = time.split(":").map(Number);
-    return hours * 60 + mins;
-  };
-
-
   // Get position info from mouse event
   const getPositionInfo = useCallback(
     (e: React.MouseEvent, dayIndex: number) => {
@@ -252,6 +270,10 @@ export function WeekCalendar({
       }
 
       const clock = now();
+      if (!isBookableReservationDay(posInfo.day, clock)) {
+        return;
+      }
+
       const selectedDateTime = new Date(posInfo.day);
       selectedDateTime.setHours(0, posInfo.minutes, 0, 0);
 
@@ -274,7 +296,9 @@ export function WeekCalendar({
       const posInfo = getPositionInfo(e, dayIndex);
       if (!posInfo) return;
 
-      if (overlapsUnavailableOrReservation(posInfo.day, dragStart.minutes, posInfo.minutes)) {
+      const rangeLo = Math.min(dragStart.minutes, posInfo.minutes);
+      const rangeHi = Math.max(dragStart.minutes, posInfo.minutes);
+      if (overlapsUnavailableOrReservation(posInfo.day, rangeLo, rangeHi)) {
         return;
       }
 
@@ -378,7 +402,6 @@ export function WeekCalendar({
 
   // Get reservations for a specific day
   const getReservationsForDay = (day: Date) => {
-    console.log("occurrences", occurrences);
     return occurrences.filter((occ) => {
       const occStart = fromUtcMs(occ.occurrenceStartTime);
       return isSameDay(occStart, day);
@@ -451,6 +474,19 @@ export function WeekCalendar({
         endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
       }
 
+      const clock = now();
+      if (startDateTime < clock) {
+        toast.error("No se pueden hacer reservas en el pasado");
+        setSubmitting(false);
+        return;
+      }
+
+      if (!isBookableReservationDay(selection.day, clock)) {
+        toast.error("Las reservas solo están disponibles a partir de mañana");
+        setSubmitting(false);
+        return;
+      }
+
       const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -481,7 +517,24 @@ export function WeekCalendar({
   };
 
   const dragSelection = getDragSelectionStyle();
-  const timeOptions = generateTimeOptions();
+
+  const bookingEndOptions = useMemo(() => {
+    const all = generateTimeOptions();
+    const startM = timeToMinutes(startTime);
+    return all.filter((o) => timeToMinutes(o.value) > startM);
+  }, [startTime]);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const sm = timeToMinutes(startTime);
+    const em = timeToMinutes(endTime);
+    if (em <= sm) {
+      const bumped = sm + TIME_INTERVAL_MINUTES;
+      if (bumped <= BUSINESS_HOURS.END * 60) {
+        setEndTime(minutesToTime(bumped));
+      }
+    }
+  }, [dialogOpen, startTime, endTime]);
 
   return (
     <>
@@ -590,7 +643,9 @@ export function WeekCalendar({
               }}
             >
               {weekDays.map((day, dayIdx) => {
-                const isPastOrUnavailableDay = day < addDays(now(), 1);
+                const clock = now();
+                const earliestBookableDayStart = startOfDay(addDays(clock, 1));
+                const isPastOrUnavailableDay = isBefore(startOfDay(day), earliestBookableDayStart);
                 const dayReservations = getReservationsForDay(day);
                 const unavailableSlots = getUnavailableSlotsForDay(day);
 
@@ -692,7 +747,7 @@ export function WeekCalendar({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeOptions.map((option) => (
+                    {generateTimeOptions().map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -707,13 +762,11 @@ export function WeekCalendar({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeOptions
-                      .filter((option) => timeToMinutes(option.value) > timeToMinutes(startTime))
-                      .map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                    {bookingEndOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
