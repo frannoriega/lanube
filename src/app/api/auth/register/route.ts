@@ -2,17 +2,36 @@ import { Prisma } from "@/generated/prisma/client";
 import { nowMs } from "@/lib/clock";
 import { verifyCaptcha } from "@/lib/auth";
 import { createUser } from "@/lib/db/users";
+import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { createEmailVerificationToken } from "@/lib/db/verificationTokens";
 import { sendEmailConfirmation } from "@/lib/email/confirmation";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { registerSchema } from "@/lib/schemas/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+function firstZodMessage(error: { issues: { message?: string }[] }): string {
+  return error.issues[0]?.message ?? "Datos inválidos";
+}
+
 export async function POST(request: NextRequest) {
-  const { email, password, passwordConfirmation, captcha } = await request.json();
-  const isHuman = await verifyCaptcha(captcha)
+  const json = await request.json().catch(() => null);
+  const parsed = registerSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: firstZodMessage(parsed.error) },
+      { status: 400 },
+    );
+  }
+
+  const { email: clientNormalizedEmail, password, captcha } = parsed.data;
+
+  const isHuman = await verifyCaptcha(captcha);
   if (!isHuman) {
-    return NextResponse.json({ message: "El captcha no es válido" }, { status: 400 })
+    return NextResponse.json(
+      { message: "El captcha no es válido" },
+      { status: 400 },
+    );
   }
   const headersList = await headers();
   const ip =
@@ -27,26 +46,28 @@ export async function POST(request: NextRequest) {
   const { allowed, resetAt } = await checkRateLimit(
     ip,
     "/api/auth/register",
-    { maxAttempts: 5, windowMs: 60_000, blockDurationMs: 300_000 } // 5 req/min, bloqueo 5 min
+    { maxAttempts: 5, windowMs: 60_000, blockDurationMs: 300_000 }, // 5 req/min, bloqueo 5 min
   );
   if (!allowed) {
     return Response.json(
-      { message: "Demasiadas solicitudes. Intenta nuevamente en " + Math.ceil((resetAt.getTime() - nowMs()) / 1000).toString() + " segundos" },
+      {
+        message:
+          "Demasiadas solicitudes. Intenta nuevamente en " +
+          Math.ceil((resetAt.getTime() - nowMs()) / 1000).toString() +
+          " segundos",
+      },
       {
         status: 429,
         headers: {
           "Retry-After": Math.ceil((resetAt.getTime() - nowMs()) / 1000).toString(),
           "X-RateLimit-Remaining": "0",
         },
-      }
+      },
     );
   }
-  if (password !== passwordConfirmation) {
-    return NextResponse.json(
-      { message: "Las contraseñas no coinciden" },
-      { status: 400 },
-    );
-  }
+
+  const email = await normalizeEmailForIdentityServer(clientNormalizedEmail);
+
   try {
     await createUser(email, password);
     const token = await createEmailVerificationToken(email);
@@ -56,7 +77,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           message:
-            error ?? "Cuenta creada pero no pudimos enviar el email de confirmación. Intenta iniciar sesión más tarde.",
+            error ??
+            "Cuenta creada pero no pudimos enviar el email de confirmación. Intenta iniciar sesión más tarde.",
         },
         { status: 503 },
       );
