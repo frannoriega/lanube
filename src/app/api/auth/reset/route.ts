@@ -1,14 +1,28 @@
 import { verifyCaptcha } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
 import { getRegisteredUserByEmail } from "@/lib/db/users";
+import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { consumeResetToken, createResetToken } from "@/lib/db/verificationTokens";
 import { sendResetEmail } from "@/lib/email/reset";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { resetSchema } from "@/lib/schemas/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+function firstZodMessage(error: { issues: { message?: string }[] }): string {
+    return error.issues[0]?.message ?? "Datos inválidos";
+}
+
 export async function POST(request: NextRequest) {
-    const { email, captcha } = await request.json();
+    const json = await request.json().catch(() => null);
+    const parsed = resetSchema.safeParse(json);
+    if (!parsed.success) {
+        return NextResponse.json(
+            { message: firstZodMessage(parsed.error) },
+            { status: 400 },
+        );
+    }
+    const { email: clientNormalizedEmail, captcha } = parsed.data;
     const isHuman = await verifyCaptcha(captcha);
     if (!isHuman) {
         return NextResponse.json({ message: "El captcha no es válido" }, { status: 400 });
@@ -40,10 +54,11 @@ export async function POST(request: NextRequest) {
             }
         );
     }
+    const email = await normalizeEmailForIdentityServer(clientNormalizedEmail);
     const user = await getRegisteredUserByEmail(email);
     if (user) {
         const token = await createResetToken(user.user.id);
-        const { success, error } = await sendResetEmail(email, token);
+        const { success, error } = await sendResetEmail(user.user.email, token);
         if (!success) {
             return NextResponse.json({ message: error }, { status: 500 });
         }

@@ -45,6 +45,7 @@ services:
       # Reach Mailpit from the app container (localhost in .env is only valid on the host)
       SMTP_SERVER_HOST: mailpit
       WATCHPACK_POLLING: "true"
+      ENABLE_MX_GOOGLE_HOSTED_DETECTION: "true"
     command: ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
     depends_on:
       postgres:
