@@ -2,6 +2,7 @@ import {
   getUnavailableSlots,
   getUserNextReservations,
 } from "@/lib/db/reservations";
+import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import { ReservableType, ResourceType } from "@/generated/prisma/client";
@@ -26,6 +27,7 @@ export interface CalendarUnavailableSlot {
 export async function getRegisteredUserIdByEmail(
   email: string,
 ): Promise<string | null> {
+  email = await normalizeEmailForIdentityServer(email);
   const user = await prisma.user.findUnique({
     where: { email },
     include: { registeredUser: true },
