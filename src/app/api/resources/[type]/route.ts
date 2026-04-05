@@ -7,6 +7,7 @@ import { getRegisteredUserById } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
 import { unixMsToDate } from "@/lib/unix-ms";
 import { prisma } from "@/lib/prisma";
+import { isAfter, startOfDay } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 
 const RESOURCE_TYPE_MAP: Record<string, ResourceType> = {
@@ -141,6 +142,14 @@ export async function POST(
     if (startMs < nowMs()) {
       return NextResponse.json(
         { error: "No se pueden hacer reservas en el pasado" },
+        { status: 400 },
+      );
+    }
+
+    const serverNow = unixMsToDate(nowMs());
+    if (!isAfter(startOfDay(startDateTime), startOfDay(serverNow))) {
+      return NextResponse.json(
+        { error: "Las reservas solo están disponibles a partir de mañana" },
         { status: 400 },
       );
     }
