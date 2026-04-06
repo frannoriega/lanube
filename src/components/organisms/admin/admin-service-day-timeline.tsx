@@ -16,8 +16,27 @@ import {
 } from "@/lib/admin/admin-timeline";
 import { useMemo } from "react";
 
-const LABEL_W = 120;
+const LABEL_W = 132;
 const HEADER_H = 44;
+const RESOURCE_HEADER_H = 40;
+
+/** Normalize API/status casing so styling branches stay correct. */
+function reservationStatusKey(
+  r: AdminReservationListResult,
+): "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "OTHER" {
+  const s = String(r.status ?? "")
+    .trim()
+    .toUpperCase();
+  if (
+    s === "PENDING" ||
+    s === "APPROVED" ||
+    s === "REJECTED" ||
+    s === "CANCELLED"
+  ) {
+    return s;
+  }
+  return "OTHER";
+}
 const TRACK_H = 32;
 const BLOCK_H = 24;
 const BLOCK_TOP = 4;
@@ -66,16 +85,42 @@ function uniqueResources(items: AdminReservationListResult[]) {
   });
 }
 
+function registeredUserBucketKey(res: AdminReservationListResult): string {
+  const dni = res.registeredUser.dni?.trim();
+  if (dni.length > 0) return `dni:${dni}`;
+  return `email:${res.registeredUser.user.email}`;
+}
+
+function actorSizeLabelForBucket(
+  reservations: AdminReservationListResult[],
+): string {
+  const sizes = [...new Set(reservations.map((r) => r.actorSize))].sort(
+    (a, b) => a - b,
+  );
+  if (sizes.length === 0) return "";
+  if (sizes.length === 1) return `${sizes[0]}p`;
+  const lo = sizes[0]!;
+  const hi = sizes[sizes.length - 1]!;
+  return lo === hi ? `${lo}p` : `${lo}–${hi} p`;
+}
+
+type ClippedItem = {
+  id: string;
+  res: AdminReservationListResult;
+  start: number;
+  end: number;
+};
+
 function heatmapCellClass(L: LoadLevel): string {
   switch (L) {
     case "none":
       return "bg-transparent";
     case "safe":
-      return "bg-green-500/15 dark:bg-green-600/20";
+      return "bg-green-300 dark:bg-green-900";
     case "caution":
-      return "bg-amber-500/20 dark:bg-amber-600/25";
+      return "bg-amber-300 dark:bg-amber-900";
     case "overload":
-      return "bg-red-500/25 dark:bg-red-600/30";
+      return "bg-red-300 dark:bg-red-900";
   }
 }
 
@@ -84,36 +129,35 @@ function blockVisualClass(
   pendingLoad: LoadLevel,
   showAll: boolean,
 ): string {
-  if (r.status === "APPROVED") {
+  const st = reservationStatusKey(r);
+  if (st === "APPROVED") {
     return cn(
-      "border border-blue-400 bg-blue-50 text-blue-900 shadow-sm",
-      "dark:bg-blue-950/55 dark:text-blue-100 dark:border-blue-600",
-      "border-solid",
+      // !border-solid: avoid tailwind-merge / other utilities collapsing to dashed
+      "!border-solid border-2 border-blue-700 bg-blue-300 text-neutral-950 shadow-sm",
+      "dark:border-blue-400 dark:bg-blue-800 dark:text-blue-50",
     );
   }
-  if (r.status === "REJECTED" && showAll) {
+  if ((st === "REJECTED" || st === "CANCELLED") && showAll) {
     return cn(
-      "border border-neutral-300 bg-neutral-100 text-neutral-700",
-      "dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-300",
-      "border-dashed",
+      "!border-solid border-2 border-neutral-600 bg-neutral-200 text-neutral-900",
+      "dark:border-neutral-500 dark:bg-neutral-900 dark:text-neutral-100",
     );
   }
-  const dashed = "border-dashed";
   if (pendingLoad === "overload") {
     return cn(
-      dashed,
-      "border-red-400 bg-red-50 text-red-900 dark:bg-red-950/45 dark:text-red-100 dark:border-red-500",
+      "border-2 border-dashed border-red-800 bg-red-300 text-neutral-950",
+      "dark:border-red-400 dark:bg-red-900 dark:text-red-50",
     );
   }
   if (pendingLoad === "caution") {
     return cn(
-      dashed,
-      "border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/45 dark:text-amber-100 dark:border-amber-500",
+      "border-2 border-dashed border-amber-800 bg-amber-300 text-neutral-950",
+      "dark:border-amber-400 dark:bg-amber-900 dark:text-amber-50",
     );
   }
   return cn(
-    dashed,
-    "border-green-400 bg-green-50 text-green-900 dark:bg-green-950/45 dark:text-green-100 dark:border-green-500",
+    "border-2 border-dashed border-green-800 bg-green-300 text-neutral-950",
+    "dark:border-green-400 dark:bg-green-900 dark:text-green-50",
   );
 }
 
@@ -141,6 +185,30 @@ function assignTracks(
   return map;
 }
 
+function timelineGridBackground(metaId: string, slotCount: number) {
+  return (
+    <div
+      className="absolute inset-0 flex pointer-events-none"
+      aria-hidden
+    >
+      {Array.from({ length: slotCount }, (_, i) => (
+        <div
+          key={`g-${metaId}-${i}`}
+          className={cn(
+            "border-r border-neutral-300 h-full bg-muted/5 dark:border-border/50",
+            i % 4 === 0 &&
+              "border-l border-l-neutral-400 dark:border-l-border",
+          )}
+          style={{
+            width: SLOT_WIDTH_PX,
+            minWidth: SLOT_WIDTH_PX,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function AdminServiceDayTimeline({
   dateKey,
   reservationsForCapacity,
@@ -151,7 +219,7 @@ export function AdminServiceDayTimeline({
   dateKey: string;
   reservationsForCapacity: AdminReservationListResult[];
   pendingOnly: boolean;
-  /** When true, show service type under each space name (all-services dashboard). */
+  /** When true, show service type under each space name (hall header). */
   showResourceTypeLabels?: boolean;
   onSelectReservation: (r: AdminReservationListResult) => void;
 }) {
@@ -177,6 +245,10 @@ export function AdminServiceDayTimeline({
     () => heatmapRowLevels(reservationsForCapacity, capacityMeta, dateKey),
     [reservationsForCapacity, capacityMeta, dateKey],
   );
+
+  const showPerResourceStrip = resourcesMeta.length > 1;
+  const singleHeaderMeta =
+    resourcesMeta.length === 1 ? resourcesMeta[0]! : null;
 
   const t0 = adminDayTimelineStartMs(dateKey);
   const t1End = t0 + slotCount * 15 * 60 * 1000;
@@ -205,18 +277,32 @@ export function AdminServiceDayTimeline({
   }
 
   return (
-    <div className="w-full min-w-0 rounded-md border border-border overflow-hidden bg-background">
-      {/* Header + heatmap + space rows */}
+    <div className="w-full min-w-0 rounded-md border border-neutral-300 overflow-hidden bg-background dark:border-border">
       <div className="flex flex-col">
-        {/* Time header */}
-        <div className="flex min-h-0 border-b border-border">
+        <div className="flex min-h-0 border-b border-neutral-300 dark:border-border">
           <div
-            className="shrink-0 border-r border-border bg-muted/30"
+            className="shrink-0 border-r border-neutral-300 bg-muted/30 px-1.5 py-0.5 dark:border-border flex flex-col justify-center gap-0.5"
             style={{ width: LABEL_W, minHeight: HEADER_H }}
-          />
+          >
+            {singleHeaderMeta ? (
+              <>
+                <p className="text-[11px] font-semibold leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
+                  {singleHeaderMeta.name}
+                </p>
+                {showResourceTypeLabels ? (
+                  <p className="text-[9px] text-neutral-700 uppercase tracking-wide leading-tight dark:text-muted-foreground">
+                    {resourceTypeLabel(singleHeaderMeta.type)}
+                  </p>
+                ) : null}
+                <p className="text-[10px] text-neutral-800 tabular-nums leading-tight dark:text-muted-foreground">
+                  Cap: {singleHeaderMeta.capacity}
+                </p>
+              </>
+            ) : null}
+          </div>
           <div className="min-w-0 flex-1 overflow-x-auto">
             <div
-              className="relative flex border-b border-border"
+              className="relative flex border-b border-neutral-300 dark:border-border"
               style={{ width: gridWidth, minHeight: HEADER_H }}
             >
               {Array.from({ length: slotCount }, (_, i) => {
@@ -225,8 +311,9 @@ export function AdminServiceDayTimeline({
                   <div
                     key={`h-${i}`}
                     className={cn(
-                      "flex flex-col justify-end border-r border-border/60 text-[11px] text-muted-foreground",
-                      i % 4 === 0 && "border-l border-l-border",
+                      "flex flex-col justify-end border-r border-neutral-300 text-[11px] text-neutral-800 dark:border-border/60 dark:text-muted-foreground",
+                      i % 4 === 0 &&
+                        "border-l border-l-neutral-400 dark:border-l-border",
                     )}
                     style={{
                       width: SLOT_WIDTH_PX,
@@ -244,10 +331,9 @@ export function AdminServiceDayTimeline({
           </div>
         </div>
 
-        {/* Ocupación heatmap */}
-        <div className="flex border-b border-border">
+        <div className="flex border-b border-neutral-300 dark:border-border">
           <div
-            className="flex shrink-0 items-center border-r border-border bg-muted/20 px-2 text-[13px] font-medium"
+            className="flex shrink-0 items-center border-r border-neutral-300 bg-muted/20 px-2 text-[13px] font-medium text-neutral-900 dark:border-border dark:text-foreground"
             style={{ width: LABEL_W }}
           >
             <span className="leading-tight">Ocupación</span>
@@ -258,8 +344,9 @@ export function AdminServiceDayTimeline({
                 <div
                   key={`hm-${i}`}
                   className={cn(
-                    "border-r border-border/40 h-8",
-                    i % 4 === 0 && "border-l border-l-border",
+                    "border-r border-neutral-300 h-8 dark:border-border/40",
+                    i % 4 === 0 &&
+                      "border-l border-l-neutral-400 dark:border-l-border",
                     heatmapCellClass(L),
                   )}
                   style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
@@ -269,9 +356,8 @@ export function AdminServiceDayTimeline({
           </div>
         </div>
 
-        {/* Space rows */}
         {resourcesMeta.length === 0 ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">
+          <div className="p-6 text-center text-sm text-neutral-700 dark:text-muted-foreground">
             No hay espacios con reservas en este rango.
           </div>
         ) : (
@@ -282,7 +368,7 @@ export function AdminServiceDayTimeline({
               return r.status === "PENDING";
             });
 
-            const clippedItems = visible
+            const clippedItems: ClippedItem[] = visible
               .map((r) => {
                 const c = clipToTimeline(r, dateKey);
                 if (!c && process.env.NODE_ENV === "development") {
@@ -300,9 +386,7 @@ export function AdminServiceDayTimeline({
                 if (!c) return null;
                 return { id: r.id, res: r, start: c.start, end: c.end };
               })
-              .filter(
-                (x): x is NonNullable<typeof x> => x !== null,
-              );
+              .filter((x): x is ClippedItem => x !== null);
 
             if (process.env.NODE_ENV === "development") {
               console.info(
@@ -315,112 +399,192 @@ export function AdminServiceDayTimeline({
               );
             }
 
-            const tracks = assignTracks(
-              clippedItems.map((x) => ({
-                id: x.id,
-                start: x.start,
-                end: x.end,
-              })),
-            );
-            const nTracks =
-              clippedItems.length === 0
-                ? 1
-                : Math.max(1, Math.max(...tracks.values()) + 1);
-            const rowBodyH = Math.max(TRACK_H, nTracks * TRACK_H + 8);
+            const byUser = new Map<string, ClippedItem[]>();
+            for (const item of clippedItems) {
+              const k = registeredUserBucketKey(item.res);
+              const arr = byUser.get(k) ?? [];
+              arr.push(item);
+              byUser.set(k, arr);
+            }
+
+            const userBuckets = Array.from(byUser.entries())
+              .map(([bucketKey, items]) => {
+                const first = items[0]!.res;
+                const displayName =
+                  `${first.registeredUser.name} ${first.registeredUser.lastName}`.trim();
+                const sortKey =
+                  `${first.registeredUser.name}\0${first.registeredUser.lastName}`.toLowerCase();
+                const actorLabel = actorSizeLabelForBucket(
+                  items.map((i) => i.res),
+                );
+                return {
+                  bucketKey,
+                  items,
+                  displayName,
+                  sortKey,
+                  actorLabel,
+                };
+              })
+              .sort((a, b) => a.sortKey.localeCompare(b.sortKey, "es"));
 
             return (
-              <div key={meta.id} className="flex border-b border-border last:border-b-0">
-                <div
-                  className="shrink-0 border-r border-border py-2 pl-2 pr-1"
-                  style={{ width: LABEL_W }}
-                >
-                  <p className="text-[13px] font-medium leading-tight line-clamp-2">
-                    {meta.name}
-                  </p>
-                  {showResourceTypeLabels ? (
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">
-                      {resourceTypeLabel(meta.type)}
-                    </p>
-                  ) : null}
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Cap: {meta.capacity}
-                  </p>
-                </div>
-                <div className="min-w-0 flex-1 overflow-x-auto">
-                  <div
-                    className="relative"
-                    style={{ width: gridWidth, minHeight: rowBodyH }}
-                  >
-                    {/* Grid background */}
+              <div
+                key={meta.id}
+                className="flex flex-col border-b border-neutral-300 last:border-b-0 dark:border-border"
+              >
+                {showPerResourceStrip ? (
+                  <div className="flex min-h-0 border-b border-neutral-300 bg-muted/10 dark:border-border">
                     <div
-                      className="absolute inset-0 flex pointer-events-none"
-                      aria-hidden
+                      className="shrink-0 border-r border-neutral-300 py-1.5 pl-2 pr-1 dark:border-border"
+                      style={{ width: LABEL_W, minHeight: RESOURCE_HEADER_H }}
                     >
-                      {Array.from({ length: slotCount }, (_, i) => (
-                        <div
-                          key={`g-${meta.id}-${i}`}
-                          className={cn(
-                            "border-r border-border/50 h-full bg-muted/5",
-                            i % 4 === 0 && "border-l border-l-border",
-                          )}
-                          style={{
-                            width: SLOT_WIDTH_PX,
-                            minWidth: SLOT_WIDTH_PX,
-                          }}
-                        />
-                      ))}
+                      <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
+                        {meta.name}
+                      </p>
+                      {showResourceTypeLabels ? (
+                        <p className="text-[10px] text-neutral-700 uppercase tracking-wide mt-0.5 dark:text-muted-foreground">
+                          {resourceTypeLabel(meta.type)}
+                        </p>
+                      ) : null}
+                      <p className="text-[11px] text-neutral-800 mt-0.5 dark:text-muted-foreground">
+                        Cap: {meta.capacity}
+                      </p>
                     </div>
-
-                    {clippedItems.map(({ res, start, end }) => {
-                      const { startBlock, spanBlocks } = blockGridPosition(
-                        start,
-                        end,
-                        dateKey,
-                      );
-                      const leftPct = (startBlock / slotCount) * 100;
-                      const widthPct = (spanBlocks / slotCount) * 100;
-                      const track = tracks.get(res.id) ?? 0;
-                      const top = BLOCK_TOP + track * TRACK_H;
-
-                      const pendingLoad =
-                        res.status === "PENDING"
-                          ? worstLoadForPendingReservation(
-                              res,
-                              reservationsForCapacity,
-                              dateKey,
-                            )
-                          : "safe";
-
-                      const label = `${res.registeredUser.name} · ${res.actorSize}p`;
-                      const aria = `${res.registeredUser.name} ${res.registeredUser.lastName}, ${formatTime(new Date(res.startTime))} a ${formatTime(new Date(res.endTime))}, ${res.actorSize} personas, ${res.status === "PENDING" ? "pendiente" : res.status === "APPROVED" ? "aprobada" : "rechazada"}, ${res.reason || "sin descripción"}`;
-
-                      return (
-                        <button
-                          key={res.id}
-                          type="button"
-                          className={cn(
-                            "absolute z-[1] flex items-center overflow-hidden rounded px-1 text-left text-[11px] font-normal leading-tight",
-                            blockVisualClass(res, pendingLoad, !pendingOnly),
-                          )}
-                          style={{
-                            left: `${leftPct}%`,
-                            width: `${widthPct}%`,
-                            minWidth: widthPct < 8 ? 24 : undefined,
-                            top,
-                            height: BLOCK_H,
-                          }}
-                          aria-label={aria}
-                          title={res.reason}
-                          onClick={() => onSelectReservation(res)}
-                        >
-                          {widthPct > 12 ? (
-                            <span className="block truncate">{label}</span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
+                    <div className="min-w-0 flex-1 overflow-x-auto">
+                      <div
+                        style={{
+                          width: gridWidth,
+                          minHeight: RESOURCE_HEADER_H,
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : null}
+
+                {userBuckets.length === 0 ? (
+                  <div className="flex border-b border-neutral-300 last:border-b-0 dark:border-border">
+                    <div
+                      className="shrink-0 border-r border-neutral-300 py-2 pl-2 pr-1 text-[11px] text-neutral-700 dark:border-border dark:text-muted-foreground"
+                      style={{ width: LABEL_W }}
+                    >
+                      —
+                    </div>
+                    <div className="min-w-0 flex-1 overflow-x-auto">
+                      <div
+                        className="relative"
+                        style={{
+                          width: gridWidth,
+                          minHeight: TRACK_H + 8,
+                        }}
+                      >
+                        {timelineGridBackground(meta.id, slotCount)}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  userBuckets.map((bucket) => {
+                    const tracks = assignTracks(
+                      bucket.items.map((x) => ({
+                        id: x.id,
+                        start: x.start,
+                        end: x.end,
+                      })),
+                    );
+                    const nTracks =
+                      bucket.items.length === 0
+                        ? 1
+                        : Math.max(1, Math.max(...tracks.values()) + 1);
+                    const rowBodyH = Math.max(TRACK_H, nTracks * TRACK_H + 8);
+
+                    return (
+                      <div
+                        key={bucket.bucketKey}
+                        className="flex border-b border-neutral-300 last:border-b-0 dark:border-border"
+                      >
+                        <div
+                          className="shrink-0 border-r border-neutral-300 py-2 pl-2 pr-1 dark:border-border"
+                          style={{ width: LABEL_W }}
+                        >
+                          <p className="text-[13px] font-medium leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
+                            {bucket.displayName}
+                          </p>
+                          <p className="text-[11px] text-neutral-800 mt-0.5 tabular-nums dark:text-muted-foreground">
+                            {bucket.actorLabel}
+                          </p>
+                        </div>
+                        <div className="min-w-0 flex-1 overflow-x-auto">
+                          <div
+                            className="relative"
+                            style={{
+                              width: gridWidth,
+                              minHeight: rowBodyH,
+                            }}
+                          >
+                            {timelineGridBackground(meta.id, slotCount)}
+
+                            {bucket.items.map(({ res, start, end }) => {
+                              const { startBlock, spanBlocks } =
+                                blockGridPosition(start, end, dateKey);
+                              const leftPct = (startBlock / slotCount) * 100;
+                              const widthPct = (spanBlocks / slotCount) * 100;
+                              const track = tracks.get(res.id) ?? 0;
+                              const top = BLOCK_TOP + track * TRACK_H;
+
+                              const pendingLoad =
+                                reservationStatusKey(res) === "PENDING"
+                                  ? worstLoadForPendingReservation(
+                                      res,
+                                      reservationsForCapacity,
+                                      dateKey,
+                                    )
+                                  : "safe";
+
+                              const st = reservationStatusKey(res);
+                              const statusEs =
+                                st === "PENDING"
+                                  ? "pendiente"
+                                  : st === "APPROVED"
+                                    ? "aprobada"
+                                    : st === "REJECTED"
+                                      ? "rechazada"
+                                      : st === "CANCELLED"
+                                        ? "cancelada"
+                                        : res.status;
+                              const aria = `${res.registeredUser.name} ${res.registeredUser.lastName}, ${formatTime(new Date(res.startTime))} a ${formatTime(new Date(res.endTime))}, ${res.actorSize} personas, ${statusEs}`;
+                              const titleShort = `${formatTime(new Date(res.startTime))} – ${formatTime(new Date(res.endTime))}`;
+
+                              return (
+                                <button
+                                  key={res.id}
+                                  type="button"
+                                  className={cn(
+                                    "absolute z-[1] overflow-hidden rounded px-0 text-left",
+                                    blockVisualClass(res, pendingLoad, !pendingOnly),
+                                  )}
+                                  style={{
+                                    left: `${leftPct}%`,
+                                    width: `${widthPct}%`,
+                                    minWidth: widthPct < 8 ? 24 : undefined,
+                                    top,
+                                    height: BLOCK_H,
+                                    ...(st === "APPROVED" ||
+                                    ((st === "REJECTED" || st === "CANCELLED") &&
+                                      !pendingOnly)
+                                      ? { borderStyle: "solid" as const }
+                                      : {}),
+                                  }}
+                                  aria-label={aria}
+                                  title={titleShort}
+                                  onClick={() => onSelectReservation(res)}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             );
           })
@@ -432,25 +596,29 @@ export function AdminServiceDayTimeline({
 
 export function AdminServiceTimelineLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-800 dark:text-muted-foreground">
       <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm bg-green-500/30 border border-green-500/50" />
+        <span className="inline-block size-3 rounded-sm border border-green-700 bg-green-300 dark:border-green-400 dark:bg-green-900" />
         Seguro
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm bg-amber-500/30 border border-amber-500/50" />
+        <span className="inline-block size-3 rounded-sm border border-amber-700 bg-amber-300 dark:border-amber-400 dark:bg-amber-900" />
         Precaución (&gt;80%)
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm bg-red-500/30 border border-red-500/50" />
+        <span className="inline-block size-3 rounded-sm border border-red-800 bg-red-300 dark:border-red-400 dark:bg-red-900" />
         Sobrecarga
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm bg-blue-500/30 border border-blue-500/50" />
+        <span className="inline-block size-3 rounded-sm !border-solid border-2 border-blue-700 bg-blue-300 dark:border-blue-400 dark:bg-blue-800" />
         Aprobada
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded border-2 border-dashed border-muted-foreground/60 bg-transparent" />
+        <span className="inline-block size-3 rounded-sm !border-solid border-2 border-neutral-600 bg-neutral-200 dark:border-neutral-500 dark:bg-neutral-900" />
+        Rechazada / cancelada
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="inline-block size-3 rounded border-2 border-dashed border-green-800 bg-green-300 dark:border-green-400 dark:bg-green-900" />
         Pendiente (borde discontinuo)
       </span>
     </div>
