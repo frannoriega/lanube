@@ -61,7 +61,7 @@ export function AdminReservationDetailSheet({
   if (!reservation) return null;
 
   const userName = `${reservation.registeredUser.name} ${reservation.registeredUser.lastName}`;
-  const title = reservation.reason?.trim() ? reservation.reason : "Reserva";
+  const reasonTrimmed = reservation.reason?.trim() ?? "";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -71,15 +71,38 @@ export function AdminReservationDetailSheet({
         aria-describedby={undefined}
       >
         <SheetHeader className="border-b border-border p-4 pr-12 text-left">
-          <SheetTitle className="text-base font-medium leading-snug line-clamp-3">
-            {title}
+          <SheetTitle className="text-base font-medium leading-snug">
+            Detalle de reserva
           </SheetTitle>
+          <p className="mt-1 text-xs font-normal text-muted-foreground leading-snug">
+            {reservation.resource.name} ·{" "}
+            {formatTime(new Date(reservation.startTime))} –{" "}
+            {formatTime(new Date(reservation.endTime))}
+          </p>
         </SheetHeader>
 
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">Solicitante</p>
             <p className="font-medium">{userName}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Correo</p>
+            <p className="font-medium break-all">
+              {reservation.registeredUser.user.email}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Motivo</p>
+            {reasonTrimmed.length > 0 ? (
+              <div
+                className="mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 px-2 py-1.5 text-sm break-words whitespace-pre-wrap"
+              >
+                {reasonTrimmed}
+              </div>
+            ) : (
+              <p className="mt-1 text-muted-foreground">Sin motivo</p>
+            )}
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Espacio</p>
@@ -113,7 +136,7 @@ export function AdminReservationDetailSheet({
               <p className="mb-2 text-xs font-medium text-muted-foreground">
                 Reservas superpuestas
               </p>
-              <ul className="space-y-3">
+              <ul className="max-h-48 space-y-3 overflow-y-auto pr-1">
                 {overlaps.map((r) => (
                   <li
                     key={r.id}
@@ -126,10 +149,10 @@ export function AdminReservationDetailSheet({
                       {formatTime(new Date(r.startTime))} –{" "}
                       {formatTime(new Date(r.endTime))} · {r.actorSize} pers.
                     </p>
-                    {r.reason ? (
-                      <p className="mt-1 text-xs text-foreground/90 line-clamp-2">
-                        {r.reason}
-                      </p>
+                    {r.reason?.trim() ? (
+                      <div className="mt-1 max-h-20 overflow-y-auto rounded border border-border/60 bg-background/80 px-1.5 py-1 text-xs break-words whitespace-pre-wrap text-foreground">
+                        {r.reason.trim()}
+                      </div>
                     ) : null}
                     <div className="mt-1">
                       <StatusBadge status={r.status} />
