@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email: clientNormalizedEmail, password, captcha } = parsed.data;
+  const { email: displayRaw, password, captcha } = parsed.data;
 
   const isHuman = await verifyCaptcha(captcha);
   if (!isHuman) {
@@ -66,10 +66,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const email = await normalizeEmailForIdentityServer(clientNormalizedEmail);
+  const email = await normalizeEmailForIdentityServer(displayRaw);
 
   try {
-    await createUser(email, password);
+    await createUser(email, password, displayRaw);
     const token = await createEmailVerificationToken(email);
     const { success, error } = await sendEmailConfirmation(email, token);
 
