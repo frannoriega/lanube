@@ -230,9 +230,7 @@ export async function DELETE(
     }
 
     // Validate ownership
-    const user = await prisma.registeredUser.findUnique({
-      where: { userId: session.userId },
-    });
+    const user = await getRegisteredUserById(session.userId);
 
     if (!user) {
       return NextResponse.json(
