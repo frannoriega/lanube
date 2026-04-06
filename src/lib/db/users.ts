@@ -297,7 +297,7 @@ export async function updateRegisteredUserProfileByEmail(
     },
     include: {
       user: {
-        select: { email: true },
+        select: { email: true, displayEmail: true },
       },
     },
   });
@@ -307,6 +307,7 @@ export async function updateRegisteredUserProfileByEmail(
     name: updated.name,
     lastName: updated.lastName,
     email: updated.user.email,
+    displayEmail: updated.user.displayEmail,
     dni: updated.dni,
     institution: updated.institution ?? null,
     reasonToJoin: updated.reasonToJoin,
@@ -321,12 +322,17 @@ interface RegisteredUserWithBans extends RegisteredUser {
   bans: Ban[];
 }
 
-async function createUser(email: string, password: string): Promise<User> {
-  email = await normalizeEmailForIdentityServer(email);
+async function createUser(
+  email: string,
+  password: string,
+  displayEmail: string,
+): Promise<User> {
+  const canonical = await normalizeEmailForIdentityServer(email);
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({
     data: {
-      email,
+      email: canonical,
+      displayEmail,
       passwordHash,
     },
   });

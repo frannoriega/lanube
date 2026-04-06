@@ -74,7 +74,15 @@ export async function getCurrentCheckinsForToday() {
   const rows = await prisma.checkIn.findMany({
     where: { checkOutTime: null, checkInTime: { gte: dateToUnixMs(startOfDay) } },
     include: {
-      registeredUser: { select: { id: true, name: true, lastName: true, user: { select: { email: true } }, dni: true } },
+      registeredUser: {
+        select: {
+          id: true,
+          name: true,
+          lastName: true,
+          user: { select: { email: true, displayEmail: true } },
+          dni: true,
+        },
+      },
       reservation: { select: { resource: { select: { type: true } }, endTime: true } },
     },
     orderBy: { checkInTime: 'desc' },
@@ -83,7 +91,8 @@ export async function getCurrentCheckinsForToday() {
     id: ci.registeredUser.id,
     name: ci.registeredUser.name,
     lastName: ci.registeredUser.lastName,
-    email: ci.registeredUser.user.email,
+    email:
+      ci.registeredUser.user.displayEmail ?? ci.registeredUser.user.email,
     dni: ci.registeredUser.dni,
     checkInTime: Number(ci.checkInTime),
     reservationEndTime:

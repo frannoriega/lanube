@@ -14,7 +14,6 @@ export default function UserProfile() {
         await signOut({ callbackUrl: "/" })
     }
 
-    console.log(session);
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -34,7 +33,7 @@ export default function UserProfile() {
                             {session?.user?.name}
                         </p>
                         <p className="text-xs leading-none text-muted-foreground">
-                            {session?.user?.email}
+                            {session?.user?.displayEmail ?? session?.user?.email}
                         </p>
                     </div>
                 </DropdownMenuLabel>

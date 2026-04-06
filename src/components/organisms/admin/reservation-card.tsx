@@ -44,7 +44,9 @@ export function ReservationCard({
             <div className="flex-1">
               <ReservationInfo
                 user={{
-                  email: reservation.registeredUser.user.email,
+                  email:
+                    reservation.registeredUser.user.displayEmail ??
+                    reservation.registeredUser.user.email,
                   dni: reservation.registeredUser.dni,
                   institution: reservation.registeredUser.institution,
                 }}

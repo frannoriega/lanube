@@ -38,7 +38,8 @@ export interface AdminReservationListResult {
     institution: string | null;
     user: {
       email: string;
-    }
+      displayEmail: string | null;
+    };
   };
 }
 export interface DayWithReservations {
@@ -98,12 +99,37 @@ export function parseAdminReservationListFromApi(
   if (!Array.isArray(raw)) return [];
   return raw.map((item: Record<string, unknown>) => {
     const resource = item.resource as Record<string, unknown> | undefined;
+    const reg = item.registeredUser as Record<string, unknown> | undefined;
+    const regUser = reg?.user as Record<string, unknown> | undefined;
+    const displayRaw = regUser?.displayEmail;
+    const registeredUser = reg
+      ? {
+          name: String(reg.name ?? ""),
+          lastName: String(reg.lastName ?? ""),
+          dni: String(reg.dni ?? ""),
+          institution: (reg.institution as string | null | undefined) ?? null,
+          user: {
+            email: String(regUser?.email ?? ""),
+            displayEmail:
+              displayRaw != null && String(displayRaw).length > 0
+                ? String(displayRaw)
+                : null,
+          },
+        }
+      : {
+          name: "",
+          lastName: "",
+          dni: "",
+          institution: null,
+          user: { email: "", displayEmail: null },
+        };
     return {
       ...item,
       startTime: new Date(item.startTime as string | number | Date).getTime(),
       endTime: new Date(item.endTime as string | number | Date).getTime(),
       createdAt: new Date(item.createdAt as string | number | Date).getTime(),
       actorSize: typeof item.actorSize === "number" ? item.actorSize : 1,
+      registeredUser,
       resource: resource
         ? {
             id: String(resource.id),
