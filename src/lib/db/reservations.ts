@@ -218,6 +218,16 @@ export async function createReservation(
   return reservation;
 }
 
+async function rebuildReservationLedgerForward(
+  reservationId: string,
+  tx: Prisma.TransactionClient = prisma,
+): Promise<void> {
+  await tx.$executeRawUnsafe(
+    "SELECT rebuild_reservation_ledger_forward($1::text)",
+    reservationId,
+  );
+}
+
 /**
  * Creates a reservation exception (for recurring reservations)
  */
@@ -229,9 +239,8 @@ export async function createReservationException(
     newStartTime?: Date;
     newEndTime?: Date;
     reason?: string;
-  }
+  },
 ): Promise<ReservationException> {
-  // Verify the reservation exists and is recurring
   const reservation = await prisma.reservation.findUnique({
     where: { id: reservationId },
   });
@@ -244,21 +253,25 @@ export async function createReservationException(
     throw new Error("Cannot create exceptions for non-recurring reservations");
   }
 
-  return await prisma.reservationException.create({
-    data: {
-      reservationId,
-      exceptionDate: dateToUnixMs(exceptionDate),
-      isCancelled: data.isCancelled || false,
-      newStartTime:
-        data.newStartTime !== undefined
-          ? dateToUnixMs(data.newStartTime)
-          : undefined,
-      newEndTime:
-        data.newEndTime !== undefined
-          ? dateToUnixMs(data.newEndTime)
-          : undefined,
-      reason: data.reason,
-    },
+  return await prisma.$transaction(async (tx) => {
+    const created = await tx.reservationException.create({
+      data: {
+        reservationId,
+        exceptionDate: dateToUnixMs(exceptionDate),
+        isCancelled: data.isCancelled || false,
+        newStartTime:
+          data.newStartTime !== undefined
+            ? dateToUnixMs(data.newStartTime)
+            : undefined,
+        newEndTime:
+          data.newEndTime !== undefined
+            ? dateToUnixMs(data.newEndTime)
+            : undefined,
+        reason: data.reason,
+      },
+    });
+    await rebuildReservationLedgerForward(reservationId, tx);
+    return created;
   });
 }
 
@@ -653,8 +666,18 @@ export async function deleteReservation(id: string): Promise<void> {
  * Deletes a reservation exception
  */
 export async function deleteReservationException(id: string): Promise<void> {
-  await prisma.reservationException.delete({
-    where: { id },
+  await prisma.$transaction(async (tx) => {
+    const row = await tx.reservationException.findUnique({
+      where: { id },
+      select: { reservationId: true },
+    });
+    if (!row) {
+      throw new Error("Reservation exception not found");
+    }
+    await tx.reservationException.delete({
+      where: { id },
+    });
+    await rebuildReservationLedgerForward(row.reservationId, tx);
   });
 }
 
