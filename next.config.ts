@@ -4,6 +4,30 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  async redirects() {
+    return [
+      {
+        source: "/admin/reservations/coworking",
+        destination: "/admin/reservations?service=coworking",
+        permanent: false,
+      },
+      {
+        source: "/admin/reservations/lab",
+        destination: "/admin/reservations?service=lab",
+        permanent: false,
+      },
+      {
+        source: "/admin/reservations/auditorium",
+        destination: "/admin/reservations?service=auditorium",
+        permanent: false,
+      },
+      {
+        source: "/admin/reservations/meeting",
+        destination: "/admin/reservations?service=meeting",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

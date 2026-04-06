@@ -1,5 +1,5 @@
-# app_node_modules volume: entrypoint runs `npm ci` if node_modules/.bin/next is missing.
-# Optional pre-install: docker compose -f docker/docker-compose.yml run --rm app npm ci
+# app_node_modules volume: entrypoint runs `npm ci` when package-lock.json changes (see
+# docker/app-entrypoint.sh) or .bin/next is missing. Optional: docker compose ... run --rm app npm ci
 services:
   postgres:
     build:
