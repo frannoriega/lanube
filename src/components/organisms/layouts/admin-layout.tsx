@@ -15,21 +15,18 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Building2, 
-  Microscope, 
-  Users, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
   AlertTriangle,
-  Settings, 
+  Settings,
   LogOut,
   Menu,
   X,
   Sun,
   Moon,
-  ChevronDown,
-  CheckCircle
+  CheckCircle,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -40,18 +37,17 @@ interface AdminLayoutProps {
 const navigation = [
   { name: "Panel", href: "/admin", icon: LayoutDashboard },
   { name: "Usuarios", href: "/admin/users", icon: Users },
-  { 
-    name: "Reservas", 
-    icon: Calendar,
-    children: [
-      { name: "Coworking", href: "/admin/reservations/coworking", icon: Building2 },
-      { name: "Laboratorio", href: "/admin/reservations/lab", icon: Microscope },
-      { name: "Auditorio", href: "/admin/reservations/auditorium", icon: Users },
-    ]
-  },
+  { name: "Reservas", href: "/admin/reservations", icon: Calendar },
   { name: "Ingreso/Salida", href: "/admin/checkin", icon: CheckCircle },
   { name: "Incidentes", href: "/admin/incidents", icon: AlertTriangle },
 ]
+
+function navItemActive(href: string, pathname: string): boolean {
+  if (pathname === href) return true;
+  if (href === "/admin/reservations" && pathname.startsWith("/admin/reservations"))
+    return true;
+  return false;
+}
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session } = useSession()
@@ -59,8 +55,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { theme, setTheme } = useTheme()
-  const [expandedItems, setExpandedItems] = useState<string[]>([])
-
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" })
   }
@@ -70,21 +64,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     // TODO: Implement theme switching logic
   }
 
-  const toggleExpanded = (itemName: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemName) 
-        ? prev.filter(item => item !== itemName)
-        : [...prev, itemName]
-    )
-  }
-
-  const isActive = (href: string) => {
-    return pathname === href
-  }
-
-              const hasActiveChild = (children: { href: string }[]) => {
-    return children.some(child => isActive(child.href))
-  }
+  const isActive = (href: string) => navItemActive(href, pathname)
 
   return (
     <div className={`min-h-screen bg-slate-100 dark:bg-slate-800`}>
@@ -105,67 +85,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
-              if (item.children) {
-                const Icon = item.icon
-                const isExpanded = expandedItems.includes(item.name)
-                const hasActive = hasActiveChild(item.children)
-                
-                return (
-                  <div key={item.name}>
-                    <button
-                      onClick={() => toggleExpanded(item.name)}
-                      className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${
-                        hasActive
-                          ? 'bg-la-nube-primary text-white'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Icon className="mr-3 h-5 w-5" />
-                      {item.name}
-                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isExpanded && (
-                      <div className="ml-6 space-y-1">
-                        {item.children.map((child) => {
-                          const ChildIcon = child.icon
-                          return (
-                            <Link
-                              key={child.name}
-                              href={child.href}
-                              className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                                isActive(child.href)
-                                  ? 'bg-la-nube-primary text-white'
-                                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                              }`}
-                              onClick={() => setSidebarOpen(false)}
-                            >
-                              <ChildIcon className="mr-3 h-5 w-5" />
-                              {child.name}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              } else {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                      isActive(item.href)
-                        ? 'bg-la-nube-primary text-white'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </Link>
-                )
-              }
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
+                    isActive(item.href)
+                      ? "bg-la-nube-primary text-white"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Link>
+              )
             })}
           </nav>
         </div>
@@ -184,65 +119,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
-              if (item.children) {
-                const Icon = item.icon
-                const isExpanded = expandedItems.includes(item.name)
-                const hasActive = hasActiveChild(item.children)
-                
-                return (
-                  <div key={item.name}>
-                    <button
-                      onClick={() => toggleExpanded(item.name)}
-                      className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${
-                        hasActive
-                          ? 'bg-la-nube-primary text-white'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Icon className="mr-3 h-5 w-5" />
-                      {item.name}
-                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isExpanded && (
-                      <div className="ml-6 space-y-1">
-                        {item.children.map((child) => {
-                          const ChildIcon = child.icon
-                          return (
-                            <Link
-                              key={child.name}
-                              href={child.href}
-                              className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                                isActive(child.href)
-                                  ? 'bg-la-nube-primary text-white'
-                                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                              }`}
-                            >
-                              <ChildIcon className="mr-3 h-5 w-5" />
-                              {child.name}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              } else {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                      isActive(item.href)
-                        ? 'bg-la-nube-primary text-white'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </Link>
-                )
-              }
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
+                    isActive(item.href)
+                      ? "bg-la-nube-primary text-white"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Link>
+              )
             })}
           </nav>
         </div>

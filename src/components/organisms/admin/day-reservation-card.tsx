@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
-import { ReservationTimeline } from "./reservation-timeline";
+import { ReservationTimeline } from "./reservation-timeline-legacy";
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import { formatDate, parseDateStringLocal } from "@/lib/utils/date";
 
