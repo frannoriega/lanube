@@ -2,6 +2,7 @@ import { ServerTimeProvider } from "@/components/providers/server-time";
 import { nowMs } from "@/lib/clock";
 import { SessionProvider } from "@/components/providers/session";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await connection();
   const serverNowMs = nowMs();
 
   return (
