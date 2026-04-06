@@ -1,9 +1,14 @@
 import { auth } from "@/lib/auth"
-import { isAdminUser, listAdminReservationsByDate } from "@/lib/db/adminReservations"
+import { isAdminUser, listAdminReservationsByRange } from "@/lib/db/adminReservations"
 import { serializeJson } from "@/lib/json-bigint"
 import { NextRequest, NextResponse } from "next/server"
 
-const MAX_PAGE_SIZE = 100
+function parseTimestamp(raw: string | null): number | null {
+  if (!raw) return null
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0) return null
+  return n
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,18 +24,22 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const date = searchParams.get("date")
+    const startDate = parseTimestamp(searchParams.get("startDate"))
+    const endDate = parseTimestamp(searchParams.get("endDate"))
     const pageRaw = searchParams.get("page")
     const pageSizeRaw = searchParams.get("pageSize")
 
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return NextResponse.json({ message: "Fecha inválida (use YYYY-MM-DD)" }, { status: 400 })
+    if (startDate == null || endDate == null) {
+      return NextResponse.json(
+        { message: "Se requiere startDate y endDate (Unix ms)" },
+        { status: 400 },
+      )
     }
 
     const page = Math.max(1, parseInt(pageRaw ?? "1", 10) || 1)
-    const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(pageSizeRaw ?? "50", 10) || 50))
+    const pageSize = Math.min(100, Math.max(1, parseInt(pageSizeRaw ?? "50", 10) || 50))
 
-    const { items, total } = await listAdminReservationsByDate(date, { page, pageSize })
+    const { items, total } = await listAdminReservationsByRange(startDate, endDate, { page, pageSize })
 
     return NextResponse.json(serializeJson({ items, total }))
   } catch {

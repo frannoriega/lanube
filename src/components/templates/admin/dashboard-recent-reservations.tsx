@@ -1,10 +1,15 @@
 "use client";
 
-import { DayReservationCard } from "@/components/organisms/admin/day-reservation-card";
+import { AdminResourceTypeCombobox } from "@/components/molecules/admin-resource-type-combobox";
+import { AdminReservationsCardsPanel } from "@/components/templates/admin/admin-reservations-cards-panel";
+import {
+  defaultAdminResourceServiceSlug,
+  type AdminResourceServiceSlug,
+} from "@/lib/admin/admin-resource-service-slug";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResourceType } from "@/generated/prisma/enums";
 import { Calendar } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 /**
  * Lists reservations filtered by resource type, including basic user and resource info.
@@ -17,10 +22,14 @@ export interface AdminReservationListResult {
   status: string;
   createdAt: number;
   deniedReason?: string | null;
+  /** Headcount for capacity (from reservation ledger; defaults to 1 if missing). */
+  actorSize: number;
   resource: {
     id: string;
     name: string;
     type: ResourceType;
+    capacity: number;
+    isExclusive: boolean;
   };
   registeredUser: {
     name: string;
@@ -46,67 +55,9 @@ export function DashboardRecentReservations({
   processing: string | null;
   refetchKey?: number;
 }) {
-  const [days, setDays] = useState<DayWithReservations[]>([]);
-  const [daysTotal, setDaysTotal] = useState(0);
-  const [loadingDays, setLoadingDays] = useState(true);
-  const [dayReservations, setDayReservations] = useState<
-    Record<string, { items: AdminReservationListResult[]; total: number }>
-  >({});
-  const [loadingDay, setLoadingDay] = useState<string | null>(null);
-  const [loadingMoreDay, setLoadingMoreDay] = useState<string | null>(null);
-
-  const fetchDays = useCallback(async (page = 1, append = false) => {
-    if (!append) setLoadingDays(true);
-    try {
-      const res = await fetch(`/api/admin/reservations/days?page=${page}&pageSize=50`);
-      if (res.ok) {
-        const { items, total } = await res.json();
-        setDays((prev) => (append ? [...prev, ...items] : items));
-        setDaysTotal(total);
-      }
-    } finally {
-      setLoadingDays(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    setDayReservations({});
-    fetchDays();
-  }, [fetchDays, refetchKey]);
-
-  const fetchReservationsForDay = useCallback(
-    async (date: string, page = 1, append = false) => {
-      const cached = dayReservations[date];
-      if (!append && cached) return;
-      if (append) setLoadingMoreDay(date);
-      else setLoadingDay(date);
-      try {
-        const res = await fetch(
-          `/api/admin/reservations/by-date?date=${date}&page=${page}&pageSize=50`
-        );
-        if (res.ok) {
-          const { items, total } = await res.json();
-          const parsed = parseAdminReservationListFromApi(items);
-          setDayReservations((prev) => {
-            const existing = prev[date];
-            const newItems = append && existing ? [...existing.items, ...parsed] : parsed;
-            return { ...prev, [date]: { items: newItems, total } };
-          });
-        }
-      } finally {
-        if (append) setLoadingMoreDay(null);
-        else setLoadingDay(null);
-      }
-    },
-    [dayReservations]
+  const [service, setService] = useState<AdminResourceServiceSlug>(
+    defaultAdminResourceServiceSlug(),
   );
-
-  const handleActionSuccess = useCallback(() => {
-    fetchDays(1, false);
-    setDayReservations({});
-  }, [fetchDays]);
-
-  if (days.length === 0 && !loadingDays) return null;
 
   return (
     <Card className="glass-card dark:glass-card-dark">
@@ -115,45 +66,26 @@ export function DashboardRecentReservations({
           <Calendar className="h-5 w-5" />
           Reservas recientes
         </CardTitle>
-        <CardDescription>Reservas pendientes por día</CardDescription>
+        <CardDescription>
+          Esta semana y la próxima (Argentina). Elegí el tipo de recurso y expandí un
+          día con reservas para ver la grilla y el detalle lateral.
+        </CardDescription>
+        <div className="pt-2">
+          <p className="mb-1.5 text-sm font-medium text-muted-foreground">
+            Tipo de recurso
+          </p>
+          <AdminResourceTypeCombobox value={service} onChange={setService} />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {days.map((day) => (
-            <DayReservationCard
-              key={day.date}
-              day={day}
-              reservations={dayReservations[day.date]?.items ?? []}
-              totalReservations={dayReservations[day.date]?.total}
-              onAction={(id, action, reason) => {
-                onAction(id, action, reason);
-                handleActionSuccess();
-              }}
-              processing={processing}
-              onFetchReservations={fetchReservationsForDay}
-              onLoadMore={(date) => {
-                const cached = dayReservations[date];
-                if (!cached) return;
-                const currentPage = Math.ceil(cached.items.length / 50);
-                fetchReservationsForDay(date, currentPage + 1, true);
-              }}
-              isLoading={loadingDay === day.date}
-              isLoadingMore={loadingMoreDay === day.date}
-            />
-          ))}
-        </div>
-        {daysTotal > days.length && (
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              className="text-sm text-la-nube-primary hover:underline disabled:opacity-50"
-              onClick={() => fetchDays(Math.floor(days.length / 50) + 1, true)}
-              disabled={loadingDays}
-            >
-              {loadingDays ? "Cargando…" : `Cargar más días (${days.length} de ${daysTotal})`}
-            </button>
-          </div>
-        )}
+        <AdminReservationsCardsPanel
+          variant="dashboard"
+          serviceSlug={service}
+          showHeading={false}
+          onAction={onAction}
+          processing={processing}
+          refetchKey={refetchKey}
+        />
       </CardContent>
     </Card>
   );
@@ -164,10 +96,54 @@ export function parseAdminReservationListFromApi(
   raw: unknown
 ): AdminReservationListResult[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((item: Record<string, unknown>) => ({
-    ...item,
-    startTime: new Date(item.startTime as string | number | Date).getTime(),
-    endTime: new Date(item.endTime as string | number | Date).getTime(),
-    createdAt: new Date(item.createdAt as string | number | Date).getTime(),
-  })) as AdminReservationListResult[];
+  return raw.map((item: Record<string, unknown>) => {
+    const resource = item.resource as Record<string, unknown> | undefined;
+    return {
+      ...item,
+      startTime: new Date(item.startTime as string | number | Date).getTime(),
+      endTime: new Date(item.endTime as string | number | Date).getTime(),
+      createdAt: new Date(item.createdAt as string | number | Date).getTime(),
+      actorSize: typeof item.actorSize === "number" ? item.actorSize : 1,
+      resource: resource
+        ? {
+            id: String(resource.id),
+            name: String(resource.name),
+            type: resource.type as ResourceType,
+            capacity:
+              typeof resource.capacity === "number" ? resource.capacity : 1,
+            isExclusive: Boolean(resource.isExclusive),
+          }
+        : {
+            id: "",
+            name: "",
+            type: "COWORKING" as ResourceType,
+            capacity: 1,
+            isExclusive: false,
+          },
+    } as AdminReservationListResult;
+  });
+}
+
+/** Parses grouped range response from GET /api/admin/reservations?service=&forwardWindow= */
+export function parseItemsByDateFromApi(raw: unknown): {
+  itemsByDate: Record<string, AdminReservationListResult[]>;
+  fromKey: string;
+  toKey: string;
+} {
+  if (!raw || typeof raw !== "object") {
+    return { itemsByDate: {}, fromKey: "", toKey: "" };
+  }
+  const o = raw as Record<string, unknown>;
+  const fromKey = String(o.fromKey ?? "");
+  const toKey = String(o.toKey ?? "");
+  const itemsByDate: Record<string, AdminReservationListResult[]> = {};
+  const ibd = o.itemsByDate;
+  if (ibd && typeof ibd === "object" && !Array.isArray(ibd)) {
+    for (const k of Object.keys(ibd as Record<string, unknown>)) {
+      itemsByDate[k] = parseAdminReservationListFromApi(
+        (ibd as Record<string, unknown>)[k],
+      );
+    }
+  }
+  return { itemsByDate, fromKey, toKey };
 }

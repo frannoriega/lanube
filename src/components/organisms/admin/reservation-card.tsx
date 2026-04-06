@@ -21,8 +21,6 @@ export function ReservationCard({
   const [rejecting, setRejecting] = React.useState(false);
   const [denyReason, setDenyReason] = React.useState("");
 
-  console.log("reservation", reservation);
-
   return (
     <Card>
       <CardContent className="p-4">
