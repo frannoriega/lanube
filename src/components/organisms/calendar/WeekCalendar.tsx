@@ -126,13 +126,16 @@ export function WeekCalendar({
 }: WeekCalendarProps) {
   const { now, alignRevision } = useServerTime();
 
-  // Week navigation state
-  const [currentWeekStart, setCurrentWeekStart] = useState(() =>
-    getCurrentWorkWeekStart(new Date()),
-  );
+  // Week navigation — initialised from the server-aligned clock only once
+  // (avoids a double-fetch when the client clock differs from the server).
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date | null>(null);
 
   useLayoutEffect(() => {
-    setCurrentWeekStart(getCurrentWorkWeekStart(now()));
+    setCurrentWeekStart((prev) => {
+      const correct = getCurrentWorkWeekStart(now());
+      if (prev && prev.getTime() === correct.getTime()) return prev;
+      return correct;
+    });
   }, [alignRevision, now]);
 
   // Data state
@@ -159,14 +162,17 @@ export function WeekCalendar({
   const [deleting, setDeleting] = useState(false);
 
   const calendarRef = useRef<HTMLDivElement>(null);
-  const weekDays = Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i));
 
-  // Calculate navigation bounds
-  const nextWeekStart = addWeeks(currentWeekStart, 1);
-  const todayWeekStart = getCurrentWorkWeekStart(now());
+  // Derived values — guarded against null currentWeekStart
+  const weekDays = useMemo(
+    () => currentWeekStart ? Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i)) : [],
+    [currentWeekStart],
+  );
+
+  const todayWeekStart = useMemo(() => getCurrentWorkWeekStart(now()), [alignRevision]); // eslint-disable-line react-hooks/exhaustive-deps
   const maxWeekStart = addWeeks(todayWeekStart, 1);
-  const canGoNext = nextWeekStart <= maxWeekStart;
-  const canGoPrev = currentWeekStart > todayWeekStart;
+  const canGoNext = !!(currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart);
+  const canGoPrev = !!(currentWeekStart && currentWeekStart > todayWeekStart);
 
   const overlapsUnavailableOrReservation = useCallback((day: Date, startMinutes: number, endMinutes: number) => {
     const getMinutes = (time: Date) => {
@@ -184,9 +190,9 @@ export function WeekCalendar({
   }, [unavailableSlots, occurrences]);
 
   const fetchReservations = useCallback(async () => {
+    if (!currentWeekStart) return;
     try {
-      // Get Friday (last work day) at end of day
-      const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1); // Monday + 4 = Friday, + 1 week = next week's Friday
+      const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1);
       weekEnd.setHours(23, 59, 59, 999);
 
       const response = await fetch(
@@ -195,35 +201,32 @@ export function WeekCalendar({
 
       if (response.ok) {
         const data = await response.json();
-        const unavailableSlots = data.unavailableSlots || [];
-        unavailableSlots.sort((a: UnavailableSlot, b: UnavailableSlot) => {
-          return a.startTime - b.startTime;
-        });
+        const rawSlots: UnavailableSlot[] = (data.unavailableSlots || []);
+        rawSlots.sort((a, b) => a.startTime - b.startTime);
         const processedUnavailableSlots: UnavailableSlot[] = [];
-        if (unavailableSlots.length > 0) {
-          let currentUnavailableSlot = unavailableSlots[0];
-          for (let i = 1; i < unavailableSlots.length; i++) {
-            const slot = unavailableSlots[i];
-            if (currentUnavailableSlot.endTime === slot.startTime) {
-              currentUnavailableSlot.endTime = slot.endTime;
+        if (rawSlots.length > 0) {
+          let current = rawSlots[0];
+          for (let i = 1; i < rawSlots.length; i++) {
+            const slot = rawSlots[i];
+            if (current.endTime === slot.startTime) {
+              current.endTime = slot.endTime;
             } else {
-              processedUnavailableSlots.push(currentUnavailableSlot);
-              currentUnavailableSlot = slot;
+              processedUnavailableSlots.push(current);
+              current = slot;
             }
           }
-          processedUnavailableSlots.push(currentUnavailableSlot);
+          processedUnavailableSlots.push(current);
         }
         setOccurrences(data.userReservations || []);
-        setUnavailableSlots(processedUnavailableSlots || []);
+        setUnavailableSlots(processedUnavailableSlots);
       } else {
         toast.error("Error al cargar las reservas");
       }
-    } catch (ignored) {
+    } catch {
       toast.error("Error al cargar las reservas");
     }
   }, [currentWeekStart, apiEndpoint]);
 
-  // Fetch reservations when week changes
   useEffect(() => {
     fetchReservations();
   }, [fetchReservations]);
@@ -536,6 +539,14 @@ export function WeekCalendar({
     }
   }, [dialogOpen, startTime, endTime]);
 
+  if (!currentWeekStart) {
+    return (
+      <div className="flex h-[500px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-la-nube-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="overflow-hidden">
@@ -567,7 +578,7 @@ export function WeekCalendar({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentWeekStart(nextWeekStart)}
+                onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
                 disabled={!canGoNext}
               >
                 Siguiente

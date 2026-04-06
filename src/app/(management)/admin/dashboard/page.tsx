@@ -401,7 +401,10 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => router.push('/admin/reservations/coworking')}>
+              <Button
+                className="w-full"
+                onClick={() => router.push("/admin/reservations")}
+              >
                 Ver Reservas
               </Button>
             </CardContent>

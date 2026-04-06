@@ -50,32 +50,7 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Usuarios", href: "/admin/users", icon: Users },
-    {
-      name: "Reservas",
-      icon: Calendar,
-      children: [
-        {
-          name: "Coworking",
-          href: "/admin/reservations/coworking",
-          icon: getServiceIcon(ResourceType.COWORKING),
-        },
-        {
-          name: "Laboratorio",
-          href: "/admin/reservations/lab",
-          icon: getServiceIcon(ResourceType.LAB),
-        },
-        {
-          name: "Auditorio",
-          href: "/admin/reservations/auditorium",
-          icon: getServiceIcon(ResourceType.AUDITORIUM),
-        },
-        {
-          name: "Sala de reuniones",
-          href: "/admin/reservations/meeting",
-          icon: getServiceIcon(ResourceType.MEETING),
-        },
-      ],
-    },
+    { name: "Reservas", href: "/admin/reservations", icon: Calendar },
   ],
 };
 
@@ -95,7 +70,11 @@ export default function ManagementLayout({
     );
   };
   const isActive = (href?: string) => {
-    return pathname === href;
+    if (!href) return false;
+    if (pathname === href) return true;
+    if (href === "/admin/reservations" && pathname.startsWith("/admin/reservations"))
+      return true;
+    return false;
   };
 
   const hasActiveChild = (children: NavigationItem[]) => {

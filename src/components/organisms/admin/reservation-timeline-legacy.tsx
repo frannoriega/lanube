@@ -51,6 +51,7 @@ function positionOnTimeline(
 
 const HEADER_HEIGHT = 44;
 
+/** Per-reservation rows (dashboard / legacy admin day card). */
 export function ReservationTimeline({
   reservations,
   onAction,
@@ -92,7 +93,6 @@ export function ReservationTimeline({
           gridTemplateRows: `${HEADER_HEIGHT}px repeat(${reservations.length}, auto)`,
         }}
       >
-        {/* Row 0: Header - empty | calendar header | empty */}
         <div className="border-b border-r border-gray-200 dark:border-gray-700" style={{ gridRow: 1, gridColumn: 1 }} />
         <div
           className="border-b border-gray-200 dark:border-gray-800 overflow-x-auto overflow-y-hidden min-w-0"
@@ -107,7 +107,6 @@ export function ReservationTimeline({
           }}
         >
           <>
-            {/* Calendar header row - times at division lines, no background */}
             {displaySlots.map((slot, i) => (
               <div
                 key={`h-${i}`}
@@ -139,7 +138,6 @@ export function ReservationTimeline({
               </div>
             ))}
 
-            {/* Calendar content rows - 15-min blocks with background */}
             {reservations.map((r, rowIdx) => {
               const { startBlock, spanBlocks } = positionOnTimeline(r, timelineStart);
               const blockColumns = displaySlots.length;
@@ -166,7 +164,6 @@ export function ReservationTimeline({
                       }}
                     />
                   ))}
-                  {/* Event overlay - positioned by block index for exact alignment */}
                   <div
                     className="relative py-1.5 px-0 col-start-1 col-end-[-1]"
                     style={{ gridRow: rowIdx + 2, gridColumn: "1 / -1", minHeight: 0 }}
@@ -206,7 +203,6 @@ export function ReservationTimeline({
           <div className="border-b border-l border-gray-200 dark:border-gray-700" style={{ gridRow: 1, gridColumn: 3 }} />
         )}
 
-        {/* Content rows: name | (calendar spans) | actions */}
         {reservations.map((r, idx) => {
           const userName = `${r.registeredUser.name} ${r.registeredUser.lastName}`;
 
