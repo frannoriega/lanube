@@ -17,7 +17,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const users = await prisma.user.findMany({
-    select: { id: true, email: true },
+    select: { id: true, email: true, displayEmail: true },
   });
 
   const idToNew = new Map<string, string>();
@@ -68,7 +68,10 @@ async function main() {
       });
       await tx.user.update({
         where: { id: u.id },
-        data: { email: next },
+        data: {
+          email: next,
+          displayEmail: u.displayEmail ?? oldEmail,
+        },
       });
     }
   });

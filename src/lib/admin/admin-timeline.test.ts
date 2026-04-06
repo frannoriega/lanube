@@ -14,7 +14,7 @@ const registeredUserStub = {
   lastName: "B",
   dni: "1",
   institution: null as string | null,
-  user: { email: "a@b.c" },
+  user: { email: "a@b.c", displayEmail: null },
 };
 
 function baseReservation(

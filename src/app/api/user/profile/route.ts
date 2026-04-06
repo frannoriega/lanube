@@ -1,9 +1,7 @@
 import { auth } from "@/lib/auth";
-import {
-  getRegisteredUserById,
-  updateRegisteredUserProfileByEmail,
-} from "@/lib/db/users";
+import { updateRegisteredUserProfileByEmail } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -14,15 +12,27 @@ export async function GET() {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const user = await getRegisteredUserById(session.userId);
-    if (!user) {
+    const row = await prisma.registeredUser.findUnique({
+      where: { id: session.userId },
+      include: {
+        user: { select: { email: true, displayEmail: true } },
+      },
+    });
+    if (!row) {
       return NextResponse.json(
         { message: "Usuario no encontrado" },
         { status: 401 },
       );
     }
 
-    return NextResponse.json(serializeJson(user));
+    const { user, ...registered } = row;
+    return NextResponse.json(
+      serializeJson({
+        ...registered,
+        email: user.email,
+        displayEmail: user.displayEmail,
+      }),
+    );
   } catch {
     return NextResponse.json(
       { message: "Error interno del servidor" },

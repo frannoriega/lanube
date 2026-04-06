@@ -27,9 +27,24 @@ export const signInSchema = z.object({
     .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
 });
 
+/** Registration: validate like sign-in but keep the trimmed raw string for `display_email` (no dot-strip transform). */
+export const registerEmailSchema = z
+  .string()
+  .trim()
+  .pipe(z.email({ message: MSG_INVALID_EMAIL }))
+  .superRefine((val, ctx) => {
+    const r = tryNormalizeEmailForIdentity(val);
+    if (!r.ok) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: r.message,
+      });
+    }
+  });
+
 export const registerSchema = z
   .object({
-    email: authEmailSchema,
+    email: registerEmailSchema,
     password: z
       .string()
       .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
