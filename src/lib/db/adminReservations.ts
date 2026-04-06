@@ -24,7 +24,7 @@ type ReservationAdminRow = Prisma.ReservationGetPayload<{
         lastName: true;
         dni: true;
         institution: true;
-        user: { select: { email: true } };
+        user: { select: { email: true, displayEmail: true } };
       };
     };
   };
@@ -126,7 +126,7 @@ const reservationAdminInclude = {
       lastName: true,
       dni: true,
       institution: true,
-      user: { select: { email: true } },
+      user: { select: { email: true, displayEmail: true } },
     },
   },
 } as const;

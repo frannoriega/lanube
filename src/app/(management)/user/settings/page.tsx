@@ -41,6 +41,7 @@ export default function SettingsPage() {
     name: string
     lastName: string
     email: string
+    displayEmail: string | null
     dni: string
     institution: string | null
     reasonToJoin: string
@@ -257,7 +258,13 @@ export default function SettingsPage() {
               <div>
                 <Label>Email</Label>
                 <Input
-                  value={session.user?.email || ""}
+                  value={
+                    user?.displayEmail ??
+                    user?.email ??
+                    session.user?.displayEmail ??
+                    session.user?.email ??
+                    ""
+                  }
                   disabled
                   className="bg-gray-50"
                 />

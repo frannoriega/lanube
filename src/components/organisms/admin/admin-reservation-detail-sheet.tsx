@@ -89,7 +89,8 @@ export function AdminReservationDetailSheet({
           <div>
             <p className="text-xs text-muted-foreground">Correo</p>
             <p className="font-medium break-all">
-              {reservation.registeredUser.user.email}
+              {reservation.registeredUser.user.displayEmail ??
+                reservation.registeredUser.user.email}
             </p>
           </div>
           <div>

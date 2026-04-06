@@ -3,6 +3,7 @@ import { nowMs } from "@/lib/clock";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { UserRole } from "@/types/prisma";
 import NextAuth from "next-auth";
+import type { DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import {
   getRegisteredUserByEmail,
@@ -22,6 +23,10 @@ declare module "next-auth" {
     bannedUntil: Date;
     role: UserRole;
     userId: string;
+    user: DefaultSession["user"] & {
+      /** Original signup / display form; fall back to `email` in UI when null. */
+      displayEmail?: string | null;
+    };
   }
 
   interface JWT {
@@ -32,6 +37,7 @@ declare module "next-auth" {
     userId: string;
     /** True when a `RegisteredUser` row exists (JWT-safe; never store Prisma rows here — BigInt breaks `JSON.stringify`). */
     signedUp: boolean;
+    displayEmail?: string | null;
   }
 }
 
@@ -90,6 +96,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.bannedUntil = token.bannedUntil as Date;
         session.role = token.role as UserRole;
         session.userId = token.userId as string;
+        if (session.user) {
+          session.user.displayEmail = (token.displayEmail as string | null | undefined) ?? null;
+        }
         if (token.exp) {
           session.expires = new Date(token.exp * 1000) as Date & string;
         }
@@ -106,6 +115,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.signedUp = true;
           token.role = registeredUser.role;
           token.userId = registeredUser.id;
+          token.displayEmail =
+            registeredUser.user.displayEmail ?? registeredUser.user.email;
           if (activeBan) {
             const banEndMs =
               activeBan.endTime != null
@@ -126,6 +137,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         } else {
           token.signedUp = false;
+          token.displayEmail = undefined;
         }
       }
       return token;
