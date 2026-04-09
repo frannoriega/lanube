@@ -58,14 +58,15 @@ export async function consumeEmailVerificationToken(
 export async function createResetToken(userId: string): Promise<string> {
   const token = createToken(32);
   const hashedToken = hash(token);
-  const data = await prisma.passwordResetToken.create({
+  await prisma.passwordResetToken.create({
     data: {
       userId,
       token: hashedToken,
       expiresAt: BigInt(nowMs() + 1000 * 60 * 60 * 24),
     },
   });
-  return data.token;
+
+  return token;
 }
 
 export async function consumeResetToken(token: string, password: string): Promise<string | null> {
@@ -77,9 +78,15 @@ export async function consumeResetToken(token: string, password: string): Promis
     return null;
   }
   const hashedPassword = await bcryptHash(password);
-  await prisma.user.update({
+  await prisma.registeredUser.update({
     where: { id: record.userId },
-    data: { passwordHash: hashedPassword },
+    data: {
+      user: {
+        update: {
+          passwordHash: hashedPassword,
+        },
+      },
+    },
   });
   return record.userId;
 }
