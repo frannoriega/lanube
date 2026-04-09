@@ -1,15 +1,22 @@
 # Optional overlay: fake wall clock for Postgres + app (libfaketime).
 # Example: docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up
 #
+# Default is empty: real wall clock (needed for outbound HTTPS e.g. Cloudflare Turnstile).
+# A frozen past date (e.g. @2025-12-31) can cause CERT_NOT_YET_VALID when Node validates TLS
+# against servers whose certs are valid only from a later date.
+#
+# To freeze time for date-sensitive tests, set FAKETIME explicitly to a date inside cert validity:
+#   FAKETIME='@2026-04-08 12:00:00' docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up
+#
 # FAKETIME syntax: see https://github.com/wolfcw/libfaketime/wiki/Specification
 # Examples:
-#   @2025-12-31 23:59:59   — frozen at that instant
+#   @2026-04-08 12:00:00  — frozen at that instant
 #   +0                      — start at real time, then follow offset rules
 #   -1d                     — always 1 day behind real time
 services:
   postgres:
     environment:
-      FAKETIME: "${FAKETIME:-@2025-12-31 23:59:59}"
+      FAKETIME: "${FAKETIME:-}"
   app:
     environment:
-      FAKETIME: "${FAKETIME:-@2025-12-31 23:59:59}"
+      FAKETIME: "${FAKETIME:-}"

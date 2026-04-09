@@ -59,7 +59,15 @@
       "port": 9229,
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "/app",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMapPathOverrides": {
+        "webpack://_N_E/*": "${workspaceFolder}/*",
+        "/app/*": "${workspaceFolder}/*"
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
     }
   ]
 }

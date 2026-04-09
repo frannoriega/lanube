@@ -137,7 +137,7 @@ Se usa un segundo archivo Compose que solo añade la variable de entorno `FAKETI
 docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up --build
 ```
 
-Por defecto el overlay define algo equivalente a `@2025-12-31 23:59:59` (instante fijo). Podés cambiarlo al vuelo:
+Por defecto el overlay **no** fija la hora (`FAKETIME` vacío): el reloj es el real, para que HTTPS saliente (p. ej. Turnstile) no falle con `CERT_NOT_YET_VALID`. Para congelar el tiempo en una fecha concreta, pasala al arrancar:
 
 ```bash
 FAKETIME='@2026-01-01 00:00:00' docker compose -f docker/docker-compose.yml -f docker/docker-compose.timemock.yml up --build
