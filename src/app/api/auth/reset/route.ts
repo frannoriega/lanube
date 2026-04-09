@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
     const email = await normalizeEmailForIdentityServer(clientNormalizedEmail);
     const user = await getRegisteredUserByEmail(email);
     if (user) {
-        const token = await createResetToken(user.user.id);
-        const { success, error } = await sendResetEmail(user.user.email, token);
-        if (!success) {
-            return NextResponse.json({ message: error }, { status: 500 });
+        const token = await createResetToken(user.id);
+        const { error } = await sendResetEmail(user.user.email, token);
+        if (error) {
+            console.error(error);
         }
     }
     return NextResponse.json({ message: "Enlace de acceso enviado" }, { status: 200 });
