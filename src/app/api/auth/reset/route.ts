@@ -78,4 +78,6 @@ export async function PATCH(request: NextRequest) {
     if (!userId) {
         return NextResponse.json({ message: "Token inválido o expirado" }, { status: 400 });
     }
+
+    return NextResponse.json({ message: "Contraseña reestablecida correctamente" }, { status: 200 });
 }
