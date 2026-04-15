@@ -1,12 +1,9 @@
 "use client";
 
 import { AdminReservationDetailSheet } from "@/components/organisms/admin/admin-reservation-detail-sheet";
-import {
-  AdminServiceDayTimeline,
-  AdminServiceTimelineLegend,
-} from "@/components/organisms/admin/admin-service-day-timeline";
+import { DayReservationCard } from "@/components/organisms/admin/day-reservation-card";
+import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   AdminReservationListResult,
   parseItemsByDateFromApi,
@@ -24,33 +21,11 @@ import {
 } from "@/lib/admin/admin-timezone";
 import type { AdminResourceServiceSlug } from "@/lib/admin/admin-resource-service-slug";
 import { ADMIN_RESOURCE_SERVICE_OPTIONS } from "@/lib/admin/admin-resource-service-slug";
-import {
-  peakOccupancyRatio,
-  spacesInConflictCount,
-  type ResourceCapacityMeta,
-} from "@/lib/admin/admin-timeline";
 import { useServerTime } from "@/components/providers/server-time";
 import { cn } from "@/lib/utils";
 import { formatDate, formateWeekday, parseDateStringLocal } from "@/lib/utils/date";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown, ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-
-function uniqueResourcesMeta(
-  items: AdminReservationListResult[],
-): ResourceCapacityMeta[] {
-  const m = new Map<string, ResourceCapacityMeta>();
-  for (const r of items) {
-    if (!m.has(r.resource.id)) {
-      m.set(r.resource.id, {
-        id: r.resource.id,
-        capacity: r.resource.capacity,
-        isExclusive: r.resource.isExclusive,
-      });
-    }
-  }
-  return Array.from(m.values());
-}
 
 function serviceTitle(slug: AdminResourceServiceSlug): string {
   return (
@@ -64,6 +39,7 @@ function weekRangeLabel(weekStartKey: string): string {
   const d1 = parseDateStringLocal(end);
   return `${formatDate(d0)} — ${formatDate(d1)}`;
 }
+const CLOSED_ACCORDION_VALUE = "__none__";
 
 export function AdminReservationsCardsPanel({
   variant,
@@ -215,39 +191,6 @@ export function AdminReservationsCardsPanel({
     [orderedDays, itemsByDate],
   );
 
-  const expandedReservations = useMemo(() => {
-    if (!expandedDateKey) return [];
-    return itemsByDate[expandedDateKey] ?? [];
-  }, [expandedDateKey, itemsByDate]);
-
-  const resourcesMeta = useMemo(
-    () => uniqueResourcesMeta(expandedReservations),
-    [expandedReservations],
-  );
-
-  const metrics = useMemo(() => {
-    if (!expandedDateKey) {
-      return { pending: 0, approved: 0, conflictSpaces: 0, peak: 0 };
-    }
-    const pending = expandedReservations.filter(
-      (r) => r.status === "PENDING",
-    ).length;
-    const approved = expandedReservations.filter(
-      (r) => r.status === "APPROVED",
-    ).length;
-    const conflictSpaces = spacesInConflictCount(
-      expandedReservations,
-      resourcesMeta,
-      expandedDateKey,
-    );
-    const peak = peakOccupancyRatio(
-      expandedReservations,
-      resourcesMeta,
-      expandedDateKey,
-    );
-    return { pending, approved, conflictSpaces, peak };
-  }, [expandedReservations, resourcesMeta, expandedDateKey]);
-
   const wrappedOnAction = useCallback(
     (id: string, action: "APPROVED" | "REJECTED", reason?: string) => {
       onAction(id, action, reason);
@@ -326,140 +269,37 @@ export function AdminReservationsCardsPanel({
           No hay reservas en este período.
         </p>
       ) : (
-        <ul className={cn("space-y-2", loading && "opacity-60 pointer-events-none")}>
+        <Accordion
+          type="single"
+          collapsible
+          value={expandedDateKey ?? CLOSED_ACCORDION_VALUE}
+          onValueChange={(value) =>
+            setExpandedDateKey(value && value !== CLOSED_ACCORDION_VALUE ? value : null)
+          }
+          className={cn("space-y-2", loading && "opacity-60 pointer-events-none")}
+        >
           {daysWithReservations.map((d) => {
             const list = itemsByDate[d] ?? [];
             const open = expandedDateKey === d;
             const dayDate = parseDateStringLocal(d);
             const title = `${formateWeekday(dayDate)} ${formatDate(dayDate)}`;
             return (
-              <li key={d}>
-                <Card
-                  className={cn(
-                    "glass-card dark:glass-card-dark overflow-hidden transition-all duration-150",
-                    open
-                      ? "ring-1 ring-la-nube-primary/40 shadow-lg"
-                      : "hover:shadow-md hover:bg-slate-300/60 dark:hover:bg-slate-600/60 hover:-translate-y-px",
-                  )}
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                    onClick={() =>
-                      setExpandedDateKey((cur) => (cur === d ? null : d))
-                    }
-                    aria-expanded={open}
-                  >
-                    <span className="font-medium">{title}</span>
-                    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {list.length} reserva{list.length === 1 ? "" : "s"}
-                      <ChevronDown
-                        className={cn(
-                          "size-4 shrink-0 transition-transform",
-                          open && "rotate-180",
-                        )}
-                      />
-                    </span>
-                  </button>
-                  {open ? (
-                    <CardContent className="border-t border-border pt-4 pb-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <Card className="glass-card dark:glass-card-dark">
-                          <CardContent className="pt-5 pb-4">
-                            <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                              Pendientes
-                            </p>
-                            <p className="text-[22px] font-semibold tabular-nums mt-1">
-                              {loading ? "…" : metrics.pending}
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card className="glass-card dark:glass-card-dark">
-                          <CardContent className="pt-5 pb-4">
-                            <p className="text-xs text-muted-foreground">
-                              Aprobadas (día)
-                            </p>
-                            <p className="text-[22px] font-semibold tabular-nums mt-1">
-                              {loading ? "…" : metrics.approved}
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card className="glass-card dark:glass-card-dark">
-                          <CardContent className="pt-5 pb-4">
-                            <p className="text-xs text-red-700 dark:text-red-300 font-medium">
-                              Espacios con conflicto
-                            </p>
-                            <p className="text-[22px] font-semibold tabular-nums mt-1">
-                              {loading ? "…" : metrics.conflictSpaces}
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card className="glass-card dark:glass-card-dark">
-                          <CardContent className="pt-5 pb-4">
-                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                              Pico de ocupación
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <HelpCircle className="size-3.5 shrink-0 cursor-help text-muted-foreground/60" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-56">
-                                  Máxima proporción de capacidad utilizada en un
-                                  slot de 15 min del día. Valores &gt;100%
-                                  indican sobrecarga.
-                                </TooltipContent>
-                              </Tooltip>
-                            </p>
-                            <p
-                              className={cn(
-                                "text-[22px] font-semibold tabular-nums mt-1",
-                                metrics.peak > 1 &&
-                                  "text-red-600 dark:text-red-400",
-                              )}
-                            >
-                              {loading
-                                ? "…"
-                                : `${Math.round(metrics.peak * 1000) / 10}%`}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                      <div className="flex justify-end">
-                        <div className="flex rounded-md border border-border p-0.5 w-fit">
-                          <Button
-                            type="button"
-                            variant={pendingOnly ? "secondary" : "ghost"}
-                            size="sm"
-                            className="rounded-sm"
-                            onClick={() => setPendingOnly(true)}
-                          >
-                            Solo pendientes
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={!pendingOnly ? "secondary" : "ghost"}
-                            size="sm"
-                            className="rounded-sm"
-                            onClick={() => setPendingOnly(false)}
-                          >
-                            Todas
-                          </Button>
-                        </div>
-                      </div>
-                      <AdminServiceTimelineLegend />
-                      <AdminServiceDayTimeline
-                        dateKey={d}
-                        reservationsForCapacity={list}
-                        pendingOnly={pendingOnly}
-                        showResourceTypeLabels={false}
-                        onSelectReservation={setPanelReservation}
-                      />
-                    </CardContent>
-                  ) : null}
-                </Card>
-              </li>
+              <DayReservationCard
+                key={d}
+                value={d}
+                dateKey={d}
+                title={title}
+                count={list.length}
+                open={open}
+                reservationsForDay={list}
+                pendingOnly={pendingOnly}
+                onPendingOnlyChange={setPendingOnly}
+                onSelectReservation={setPanelReservation}
+                disabled={loading}
+              />
             );
           })}
-        </ul>
+        </Accordion>
       )}
 
       <AdminReservationDetailSheet
