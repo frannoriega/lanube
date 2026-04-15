@@ -15,6 +15,7 @@ import {
   worstLoadForPendingReservation,
 } from "@/lib/admin/admin-timeline";
 import { useMemo } from "react";
+import { Separator } from "@/components/ui/separator";
 
 const LABEL_W = 132;
 const HEADER_H = 44;
@@ -197,7 +198,7 @@ function timelineGridBackground(metaId: string, slotCount: number) {
           className={cn(
             "border-r border-neutral-300 h-full bg-muted/5 dark:border-border/50",
             i % 4 === 0 &&
-              "border-l border-l-neutral-400 dark:border-l-border",
+            "border-l border-l-neutral-400 dark:border-l-border",
           )}
           style={{
             width: SLOT_WIDTH_PX,
@@ -313,7 +314,7 @@ export function AdminServiceDayTimeline({
                     className={cn(
                       "flex flex-col justify-end border-r border-neutral-300 text-[11px] text-neutral-800 dark:border-border/60 dark:text-muted-foreground",
                       i % 4 === 0 &&
-                        "border-l border-l-neutral-400 dark:border-l-border",
+                      "border-l border-l-neutral-400 dark:border-l-border",
                     )}
                     style={{
                       width: SLOT_WIDTH_PX,
@@ -346,7 +347,7 @@ export function AdminServiceDayTimeline({
                   className={cn(
                     "border-r border-neutral-300 h-8 dark:border-border/40",
                     i % 4 === 0 &&
-                      "border-l border-l-neutral-400 dark:border-l-border",
+                    "border-l border-l-neutral-400 dark:border-l-border",
                     heatmapCellClass(L),
                   )}
                   style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
@@ -533,10 +534,10 @@ export function AdminServiceDayTimeline({
                               const pendingLoad =
                                 reservationStatusKey(res) === "PENDING"
                                   ? worstLoadForPendingReservation(
-                                      res,
-                                      reservationsForCapacity,
-                                      dateKey,
-                                    )
+                                    res,
+                                    reservationsForCapacity,
+                                    dateKey,
+                                  )
                                   : "safe";
 
                               const st = reservationStatusKey(res);
@@ -568,8 +569,8 @@ export function AdminServiceDayTimeline({
                                     top,
                                     height: BLOCK_H,
                                     ...(st === "APPROVED" ||
-                                    ((st === "REJECTED" || st === "CANCELLED") &&
-                                      !pendingOnly)
+                                      ((st === "REJECTED" || st === "CANCELLED") &&
+                                        !pendingOnly)
                                       ? { borderStyle: "solid" as const }
                                       : {}),
                                   }}
@@ -596,31 +597,46 @@ export function AdminServiceDayTimeline({
 
 export function AdminServiceTimelineLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-800 dark:text-muted-foreground">
-      <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm border border-green-700 bg-green-300 dark:border-green-400 dark:bg-green-900" />
-        Seguro
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm border border-amber-700 bg-amber-300 dark:border-amber-400 dark:bg-amber-900" />
-        Precaución (&gt;80%)
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm border border-red-800 bg-red-300 dark:border-red-400 dark:bg-red-900" />
-        Sobrecarga
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm !border-solid border-2 border-blue-700 bg-blue-300 dark:border-blue-400 dark:bg-blue-800" />
-        Aprobada
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded-sm !border-solid border-2 border-neutral-600 bg-neutral-200 dark:border-neutral-500 dark:bg-neutral-900" />
-        Rechazada / cancelada
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="inline-block size-3 rounded border-2 border-dashed border-green-800 bg-green-300 dark:border-green-400 dark:bg-green-900" />
-        Pendiente (borde discontinuo)
-      </span>
+    <div className="flex flex-row items-stretch gap-4 rounded-md border p-2 text-xs text-neutral-800 dark:text-muted-foreground">
+      <div className="flex flex-col gap-2">
+        <span>Ocupación</span>
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-3 rounded-sm border border-green-700 bg-green-300 dark:border-green-400 dark:bg-green-900" />
+            Seguro
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-3 rounded-sm border border-amber-700 bg-amber-300 dark:border-amber-400 dark:bg-amber-900" />
+            Precaución (&gt;80%)
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-3 rounded-sm border border-red-800 bg-red-300 dark:border-red-400 dark:bg-red-900" />
+            Sobrecarga
+          </span>
+        </div>
+      </div>
+      <Separator
+        orientation="vertical"
+        className="self-stretch data-[orientation=vertical]:h-auto"
+        decorative
+      />
+      <div className="flex flex-col gap-2">
+        <span className="text-xs text-neutral-800 dark:text-muted-foreground">Reservas</span>
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-3 rounded-sm !border-solid border-2 border-blue-700 bg-blue-300 dark:border-blue-400 dark:bg-blue-800" />
+            Aprobada
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-3 rounded-sm !border-solid border-2 border-neutral-600 bg-neutral-200 dark:border-neutral-500 dark:bg-neutral-900" />
+            Rechazada / cancelada
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-3 rounded border-2 border-dashed border-green-800 bg-green-300 dark:border-green-400 dark:bg-green-900" />
+            Pendiente (borde discontinuo)
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

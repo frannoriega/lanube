@@ -83,18 +83,18 @@ export function AdminReservationDetailSheet({
 
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">Solicitante</p>
+            <p className="text-xs dark:text-muted-foreground">Solicitante</p>
             <p className="font-medium">{userName}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Correo</p>
+            <p className="text-xs dark:text-muted-foreground">Correo</p>
             <p className="font-medium break-all">
               {reservation.registeredUser.user.displayEmail ??
                 reservation.registeredUser.user.email}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Motivo</p>
+            <p className="text-xs dark:text-muted-foreground">Motivo</p>
             {reasonTrimmed.length > 0 ? (
               <div
                 className="mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 px-2 py-1.5 text-sm break-words whitespace-pre-wrap"
@@ -106,7 +106,7 @@ export function AdminReservationDetailSheet({
             )}
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Espacio</p>
+            <p className="text-xs dark:text-muted-foreground">Espacio</p>
             <p className="font-medium">
               {reservation.resource.name}{" "}
               <span className="text-muted-foreground font-normal">
@@ -115,18 +115,18 @@ export function AdminReservationDetailSheet({
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Horario</p>
+            <p className="text-xs dark:text-muted-foreground">Horario</p>
             <p className="font-medium">
               {formatTime(new Date(reservation.startTime))} –{" "}
               {formatTime(new Date(reservation.endTime))}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Personas</p>
+            <p className="text-xs dark:text-muted-foreground">Personas</p>
             <p className="font-medium">{reservation.actorSize}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Estado</p>
+            <p className="text-xs dark:text-muted-foreground">Estado</p>
             <div className="mt-1">
               <StatusBadge status={reservation.status} />
             </div>
@@ -134,7 +134,7 @@ export function AdminReservationDetailSheet({
 
           {overlaps.length > 0 ? (
             <div className="rounded-md border border-border bg-muted/40 p-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
+              <p className="mb-2 text-xs font-medium dark:text-muted-foreground">
                 Reservas superpuestas
               </p>
               <ul className="max-h-48 space-y-3 overflow-y-auto pr-1">
@@ -170,15 +170,14 @@ export function AdminReservationDetailSheet({
             {!rejectMode ? (
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 text-slate-100 bg-la-nube-primary hover:bg-la-nube-primary/90"
                   disabled={processing === reservation.id}
                   onClick={() => onAction(reservation.id, "APPROVED")}
                 >
                   Aprobar
                 </Button>
                 <Button
-                  variant="destructive"
-                  className="flex-1"
+                  className="flex-1 text-slate-800 dark:text-slate-100 bg-transparent border-red-400 border-2 hover:bg-red-400"
                   disabled={processing === reservation.id}
                   onClick={() => setRejectMode(true)}
                 >
