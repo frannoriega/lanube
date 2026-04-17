@@ -390,8 +390,14 @@ export function WeekCalendar({
       return;
     }
 
-    const startMinutes = Math.min(dragStart.minutes, dragCurrent.minutes);
-    const endMinutes = Math.max(dragStart.minutes, dragCurrent.minutes);
+    let startMinutes = Math.min(dragStart.minutes, dragCurrent.minutes);
+    let endMinutes = Math.max(dragStart.minutes, dragCurrent.minutes);
+
+    // If it's a click or a very short drag, default to 4 hours duration
+    if (endMinutes - startMinutes < TIME_INTERVAL_MINUTES) {
+      startMinutes = dragStart.minutes;
+      endMinutes = Math.min(startMinutes + 240, BUSINESS_HOURS.END * 60);
+    }
 
     if (endMinutes - startMinutes < TIME_INTERVAL_MINUTES) {
       setIsDragging(false);
