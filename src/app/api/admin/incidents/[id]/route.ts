@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 // import { auth } from "@/lib/auth"
 // import { prisma } from "@/lib/prisma"
 // import { IncidentStatus } from "@prisma/client"
 
-
 export async function GET(/*request: NextRequest, { params }: { params: Promise<{ id: string }> }*/) {
-    return NextResponse.json({ message: "Servicio no implementado" }, { status: 501 })
+  return NextResponse.json(
+    { message: "Servicio no implementado" },
+    { status: 501 },
+  );
 }
 
 // export async function PATCH(
@@ -14,7 +16,7 @@ export async function GET(/*request: NextRequest, { params }: { params: Promise<
 // ) {
 //   try {
 //     const session = await auth()
-    
+
 //     if (!session?.user?.email) {
 //       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 //     }
@@ -31,7 +33,7 @@ export async function GET(/*request: NextRequest, { params }: { params: Promise<
 //     }
 
 //     const resolvedParams = await params
-    
+
 //     const incident = await prisma.incident.findUnique({
 //       where: { id: resolvedParams.id }
 //     })
@@ -40,7 +42,7 @@ export async function GET(/*request: NextRequest, { params }: { params: Promise<
 //       return NextResponse.json({ message: "Incidente no encontrado" }, { status: 404 })
 //     }
 
-//     const updateData: { status: IncidentStatus; updatedAt: Date; resolvedAt?: Date } = { 
+//     const updateData: { status: IncidentStatus; updatedAt: Date; resolvedAt?: Date } = {
 //       status: status as IncidentStatus,
 //       updatedAt: new Date()
 //     }

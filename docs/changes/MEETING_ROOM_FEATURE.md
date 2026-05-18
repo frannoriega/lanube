@@ -122,10 +122,12 @@ The feature uses the advanced reservation system with:
 Fetches expanded reservations for a date range.
 
 **Query Parameters:**
+
 - `startDate` (required): ISO 8601 date string
 - `endDate` (required): ISO 8601 date string
 
 **Response:**
+
 ```json
 {
   "occurrences": [
@@ -148,6 +150,7 @@ Fetches expanded reservations for a date range.
 Creates a new meeting room reservation.
 
 **Request Body:**
+
 ```json
 {
   "startTime": "2025-10-15T10:00:00Z",
@@ -158,6 +161,7 @@ Creates a new meeting room reservation.
 ```
 
 **Response:**
+
 ```json
 {
   "id": "...",
@@ -187,7 +191,7 @@ const navigation = [
   { name: "Laboratorio", href: "/user/lab", icon: FlaskConical },
   { name: "Auditorio", href: "/user/auditorium", icon: Presentation },
   { name: "Sala de reuniones", href: "/user/meeting-room", icon: Users }, // 👈 New
-]
+];
 ```
 
 ### Middleware
@@ -197,8 +201,8 @@ Routes are protected by authentication middleware:
 ```typescript
 // src/middleware.ts
 export const config = {
-  matcher: ["/", "/user/:path*", "/admin/:path*", "/auth/:path*"]
-}
+  matcher: ["/", "/user/:path*", "/admin/:path*", "/auth/:path*"],
+};
 ```
 
 ## Database Setup
@@ -209,11 +213,11 @@ The feature requires meeting room resources to be seeded in the database:
 
 ```sql
 -- Fungible resource for meeting rooms
-INSERT INTO fungible_resources (id, name, type, capacity) 
+INSERT INTO fungible_resources (id, name, type, capacity)
 VALUES ('meeting_room_group', 'Meeting Rooms', 'MEETING', 1);
 
 -- Physical meeting room resource
-INSERT INTO resources (id, name, fungible_resource_id, serial_number) 
+INSERT INTO resources (id, name, fungible_resource_id, serial_number)
 VALUES ('meeting_room_1', 'Main Meeting Room', 'meeting_room_group', 'MR-001');
 ```
 
@@ -245,6 +249,7 @@ Potential improvements for the feature:
 ### Issue: No meeting rooms available
 
 **Solution**: Ensure meeting room resources are seeded in the database. Run:
+
 ```bash
 npx prisma db seed
 ```
@@ -252,6 +257,7 @@ npx prisma db seed
 ### Issue: Cannot create reservation
 
 **Possible causes**:
+
 1. Time slot is in the past
 2. Weekend or outside business hours (9 AM - 6 PM)
 3. Slot already occupied
@@ -262,11 +268,13 @@ npx prisma db seed
 ### Issue: Reservations not showing
 
 **Possible causes**:
+
 1. Database migration not applied
 2. API endpoint returning errors
 3. Date range issue
 
-**Solution**: 
+**Solution**:
+
 - Check migration status: `npx prisma migrate status`
 - Check browser console for API errors
 - Verify date parameters in the request
@@ -276,4 +284,3 @@ npx prisma db seed
 - [Reservations CRUD Guide](./RESERVATIONS_CRUD_GUIDE.md)
 - [Database Functions](./prisma/migrations/20251012163357_expand_recurring_reservations/migration.sql)
 - [Schema Structure](./prisma/SCHEMA_STRUCTURE.md)
-

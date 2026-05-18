@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 // import { auth } from "@/lib/auth"
 // import { prisma } from "@/lib/prisma"
 
-
 export async function GET() {
-    return NextResponse.json({ message: "Servicio no implementado" }, { status: 501 })
+  return NextResponse.json(
+    { message: "Servicio no implementado" },
+    { status: 501 },
+  );
 }
 // export async function GET() {
 //   try {
 //     const session = await auth()
-    
+
 //     if (!session?.user?.email) {
 //       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 //     }
@@ -48,7 +50,7 @@ export async function GET() {
 // export async function POST(request: NextRequest) {
 //   try {
 //     const session = await auth()
-    
+
 //     if (!session?.user?.email) {
 //       return NextResponse.json({ message: "No autorizado" }, { status: 401 })
 //     }

@@ -19,12 +19,30 @@ export type ResourceCapacityMeta = {
 
 export function adminDayTimelineStartMs(dateKey: string): number {
   const [y, m, d] = dateKey.split("-").map(Number);
-  return new TZDate(y, m - 1, d, TIMELINE_FIRST_HOUR, 0, 0, 0, ADMIN_TIMEZONE).getTime();
+  return new TZDate(
+    y,
+    m - 1,
+    d,
+    TIMELINE_FIRST_HOUR,
+    0,
+    0,
+    0,
+    ADMIN_TIMEZONE,
+  ).getTime();
 }
 
 export function adminDayTimelineEndMs(dateKey: string): number {
   const [y, m, d] = dateKey.split("-").map(Number);
-  return new TZDate(y, m - 1, d, TIMELINE_LAST_HOUR, 0, 0, 0, ADMIN_TIMEZONE).getTime();
+  return new TZDate(
+    y,
+    m - 1,
+    d,
+    TIMELINE_LAST_HOUR,
+    0,
+    0,
+    0,
+    ADMIN_TIMEZONE,
+  ).getTime();
 }
 
 export function timelineSlotCount(): number {

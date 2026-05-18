@@ -51,7 +51,9 @@ export const registerSchema = z
     passwordConfirmation: z
       .string()
       .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-    captcha: z.string().min(1, { message: "Por favor completá la verificación de seguridad" }),
+    captcha: z
+      .string()
+      .min(1, { message: "Por favor completá la verificación de seguridad" }),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: "Las contraseñas no coinciden",
@@ -60,13 +62,21 @@ export const registerSchema = z
 
 export const resetSchema = z.object({
   email: authEmailSchema,
-  captcha: z.string().min(1, { message: "Por favor completá la verificación de seguridad" }),
+  captcha: z
+    .string()
+    .min(1, { message: "Por favor completá la verificación de seguridad" }),
 });
 
-export const newPasswordSchema = z.object({
-  password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-  passwordConfirmation: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-}).refine((data) => data.password === data.passwordConfirmation, {
-  message: "Las contraseñas no coinciden",
-  path: ["passwordConfirmation"],
-});
+export const newPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    passwordConfirmation: z
+      .string()
+      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirmation"],
+  });

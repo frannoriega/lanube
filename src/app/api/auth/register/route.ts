@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
     headersList.get("cf-connecting-ip") ??
     headersList.get("x-real-ip") ??
     (process.env.NODE_ENV === "development"
-      ? (headersList.get("x-forwarded-for")?.split(",")[0].trim() ?? "127.0.0.1")
+      ? (headersList.get("x-forwarded-for")?.split(",")[0].trim() ??
+        "127.0.0.1")
       : null);
   if (!ip) {
     return NextResponse.json({ message: "IP no encontrada" }, { status: 400 });
@@ -59,7 +60,9 @@ export async function POST(request: NextRequest) {
       {
         status: 429,
         headers: {
-          "Retry-After": Math.ceil((resetAt.getTime() - nowMs()) / 1000).toString(),
+          "Retry-After": Math.ceil(
+            (resetAt.getTime() - nowMs()) / 1000,
+          ).toString(),
           "X-RateLimit-Remaining": "0",
         },
       },

@@ -9,11 +9,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem forcedTheme="light">
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      forcedTheme="light"
+    >
       <ParticlesLayout backgroundClass="bg-la-nube-primary" forceTheme="dark">
-        <Suspense>
-          {children}
-        </Suspense>
+        <Suspense>{children}</Suspense>
         <Toaster />
       </ParticlesLayout>
     </ThemeProvider>

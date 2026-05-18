@@ -7,6 +7,7 @@ OAuthAccountNotLinked: Another account already exists with the same e-mail addre
 ```
 
 Este error ocurría porque:
+
 1. El usuario admin se creaba directamente en la base de datos mediante el seed
 2. NextAuth intentaba crear una nueva cuenta durante el flujo OAuth
 3. Esto causaba un conflicto porque ya existía una cuenta con ese email
@@ -14,11 +15,14 @@ Este error ocurría porque:
 ## ✅ **Solución Implementada**
 
 ### **1. Eliminación del Usuario Admin del Seed**
+
 - Removido la creación automática del usuario admin en `prisma/seed.ts`
 - El admin ahora se crea a través del flujo OAuth normal
 
 ### **2. Configuración de Auto-Asignación de Rol ADMIN**
+
 En `src/lib/auth.ts`, agregado callback `signIn` que:
+
 - Detecta cuando el email `frannoriega.92@gmail.com` inicia sesión
 - Automáticamente asigna el rol `ADMIN` al usuario
 - Crea el usuario si no existe, o actualiza el rol si ya existe
@@ -50,6 +54,7 @@ async signIn({ user, account, profile }) {
 ```
 
 ### **3. Actualización de Documentación**
+
 - Actualizado `SEED_README.md` para explicar que el admin se crea automáticamente
 - Documentado el proceso de creación de cuenta admin
 
@@ -62,7 +67,7 @@ Ahora el flujo de login funciona correctamente:
    - Se asigna el rol `ADMIN`
    - El usuario puede acceder al panel de administración
 
-2. **Siguientes veces**: 
+2. **Siguientes veces**:
    - Login normal sin conflictos
    - Mantiene el rol `ADMIN`
 

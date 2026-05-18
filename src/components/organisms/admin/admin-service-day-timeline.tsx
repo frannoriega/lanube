@@ -188,17 +188,13 @@ function assignTracks(
 
 function timelineGridBackground(metaId: string, slotCount: number) {
   return (
-    <div
-      className="absolute inset-0 flex pointer-events-none"
-      aria-hidden
-    >
+    <div className="absolute inset-0 flex pointer-events-none" aria-hidden>
       {Array.from({ length: slotCount }, (_, i) => (
         <div
           key={`g-${metaId}-${i}`}
           className={cn(
             "border-r border-neutral-300 h-full bg-muted/5 dark:border-border/50",
-            i % 4 === 0 &&
-            "border-l border-l-neutral-400 dark:border-l-border",
+            i % 4 === 0 && "border-l border-l-neutral-400 dark:border-l-border",
           )}
           style={{
             width: SLOT_WIDTH_PX,
@@ -255,7 +251,10 @@ export function AdminServiceDayTimeline({
   const t1End = t0 + slotCount * 15 * 60 * 1000;
   const SLOT_MS = 15 * 60 * 1000;
 
-  if (process.env.NODE_ENV === "development" && reservationsForCapacity.length > 0) {
+  if (
+    process.env.NODE_ENV === "development" &&
+    reservationsForCapacity.length > 0
+  ) {
     const sample = reservationsForCapacity[0];
     console.info(
       "[AdminTimeline] dateKey=%s, timelineRange=[%s, %s], resources=%d, total=%d, sample: id=%s start=%d end=%d status=%s resource=%s",
@@ -314,7 +313,7 @@ export function AdminServiceDayTimeline({
                     className={cn(
                       "flex flex-col justify-end border-r border-neutral-300 text-[11px] text-neutral-800 dark:border-border/60 dark:text-muted-foreground",
                       i % 4 === 0 &&
-                      "border-l border-l-neutral-400 dark:border-l-border",
+                        "border-l border-l-neutral-400 dark:border-l-border",
                     )}
                     style={{
                       width: SLOT_WIDTH_PX,
@@ -347,7 +346,7 @@ export function AdminServiceDayTimeline({
                   className={cn(
                     "border-r border-neutral-300 h-8 dark:border-border/40",
                     i % 4 === 0 &&
-                    "border-l border-l-neutral-400 dark:border-l-border",
+                      "border-l border-l-neutral-400 dark:border-l-border",
                     heatmapCellClass(L),
                   )}
                   style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
@@ -534,10 +533,10 @@ export function AdminServiceDayTimeline({
                               const pendingLoad =
                                 reservationStatusKey(res) === "PENDING"
                                   ? worstLoadForPendingReservation(
-                                    res,
-                                    reservationsForCapacity,
-                                    dateKey,
-                                  )
+                                      res,
+                                      reservationsForCapacity,
+                                      dateKey,
+                                    )
                                   : "safe";
 
                               const st = reservationStatusKey(res);
@@ -560,7 +559,11 @@ export function AdminServiceDayTimeline({
                                   type="button"
                                   className={cn(
                                     "absolute z-[1] overflow-hidden rounded px-0 text-left",
-                                    blockVisualClass(res, pendingLoad, !pendingOnly),
+                                    blockVisualClass(
+                                      res,
+                                      pendingLoad,
+                                      !pendingOnly,
+                                    ),
                                   )}
                                   style={{
                                     left: `${leftPct}%`,
@@ -569,8 +572,9 @@ export function AdminServiceDayTimeline({
                                     top,
                                     height: BLOCK_H,
                                     ...(st === "APPROVED" ||
-                                      ((st === "REJECTED" || st === "CANCELLED") &&
-                                        !pendingOnly)
+                                    ((st === "REJECTED" ||
+                                      st === "CANCELLED") &&
+                                      !pendingOnly)
                                       ? { borderStyle: "solid" as const }
                                       : {}),
                                   }}
@@ -621,7 +625,9 @@ export function AdminServiceTimelineLegend() {
         decorative
       />
       <div className="flex flex-col gap-2">
-        <span className="text-xs text-neutral-800 dark:text-muted-foreground">Reservas</span>
+        <span className="text-xs text-neutral-800 dark:text-muted-foreground">
+          Reservas
+        </span>
         <div className="flex flex-wrap items-center gap-4">
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block size-3 rounded-sm !border-solid border-2 border-blue-700 bg-blue-300 dark:border-blue-400 dark:bg-blue-800" />

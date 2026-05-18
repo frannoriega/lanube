@@ -21,6 +21,7 @@ WeekCalendar Component:
 ```
 
 **Issues**:
+
 - ❌ **Duplicate state**: Two components managing week start independently
 - ❌ **Out of sync**: When WeekCalendar changes week, Page doesn't know
 - ❌ **No refetch**: Clicking "Siguiente" changes WeekCalendar's week but doesn't fetch new data
@@ -44,6 +45,7 @@ WeekCalendar Component:
 ```
 
 **Benefits**:
+
 - ✅ **Single state**: WeekCalendar owns all calendar state
 - ✅ **Always in sync**: Week changes trigger automatic refetch
 - ✅ **Correct initialization**: Uses `getCurrentWorkWeekStart()` which handles weekends
@@ -55,6 +57,7 @@ WeekCalendar Component:
 ### WeekCalendar Component Changes
 
 #### New Props
+
 ```typescript
 interface WeekCalendarProps {
   resourceType: string;      // "MEETING", "COWORKING", etc.
@@ -65,6 +68,7 @@ interface WeekCalendarProps {
 ```
 
 #### Removed Props
+
 ```typescript
 // No longer needed from parent:
 - occurrences: ReservationOccurrence[]
@@ -74,12 +78,14 @@ interface WeekCalendarProps {
 ```
 
 #### Added Internal State
+
 ```typescript
 const [occurrences, setOccurrences] = useState<ReservationOccurrence[]>([]);
 const [loading, setLoading] = useState(true);
 ```
 
 #### Added Fetch Logic
+
 ```typescript
 useEffect(() => {
   const fetchReservations = async () => {
@@ -87,11 +93,11 @@ useEffect(() => {
     try {
       const weekEnd = addDays(currentWeekStart, 4); // Friday
       weekEnd.setHours(23, 59, 59, 999);
-      
+
       const response = await fetch(
-        `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`
+        `${apiEndpoint}?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`,
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         setOccurrences(data.occurrences || []);
@@ -102,12 +108,13 @@ useEffect(() => {
   };
 
   fetchReservations();
-}, [currentWeekStart, apiEndpoint]);  // ← Refetches when week changes!
+}, [currentWeekStart, apiEndpoint]); // ← Refetches when week changes!
 ```
 
 ### Page Component Simplification
 
 #### Before (Meeting Room Example - 150 lines)
+
 ```typescript
 export default function MeetingRoomPage() {
   const [occurrences, setOccurrences] = useState<ReservationOccurrence[]>([]);
@@ -150,6 +157,7 @@ export default function MeetingRoomPage() {
 ```
 
 #### After (Meeting Room - 115 lines)
+
 ```typescript
 export default function MeetingRoomPage() {
   const [userId, setUserId] = useState<string | undefined>(undefined);
@@ -179,18 +187,22 @@ export default function MeetingRoomPage() {
 ## ✅ What This Fixes
 
 ### Issue 1: Weekend Detection
+
 **Before**: Pages used `startOfWeek()` which shows past week on weekends
 **After**: WeekCalendar uses `getCurrentWorkWeekStart()` which shows next week on weekends
 
 ### Issue 2: Week Navigation
+
 **Before**: Clicking "Siguiente" changed WeekCalendar's week but didn't refetch data
 **After**: Week changes trigger automatic refetch via useEffect
 
 ### Issue 3: Duplicate State
+
 **Before**: Page and WeekCalendar both managed week state (out of sync)
 **After**: WeekCalendar is the single source of truth
 
 ### Issue 4: Complex Pages
+
 **Before**: Pages had 40+ lines of state management and API logic
 **After**: Pages are simple configuration wrappers
 
@@ -199,6 +211,7 @@ export default function MeetingRoomPage() {
 ### Scenario: User Clicks "Siguiente"
 
 **Before**:
+
 ```
 1. User clicks "Siguiente" button
 2. WeekCalendar updates currentWeekStart internally
@@ -209,6 +222,7 @@ export default function MeetingRoomPage() {
 ```
 
 **After**:
+
 ```
 1. User clicks "Siguiente" button
 2. WeekCalendar updates currentWeekStart internally
@@ -221,6 +235,7 @@ export default function MeetingRoomPage() {
 ### Scenario: Page Loads on Weekend
 
 **Before**:
+
 ```
 Page: weekStart = startOfWeek(now)  // e.g., Mon Oct 6
 WeekCalendar: currentWeekStart = getCurrentWorkWeekStart()  // e.g., Mon Oct 13
@@ -228,6 +243,7 @@ Result: ❌ Out of sync
 ```
 
 **After**:
+
 ```
 WeekCalendar: currentWeekStart = getCurrentWorkWeekStart()  // Mon Oct 13
 fetchReservations() called automatically
@@ -237,6 +253,7 @@ Result: ✅ Correct week shown
 ## 🎯 Files Changed
 
 ### Updated
+
 1. `src/components/organisms/calendar/WeekCalendar.tsx`
    - Added `resourceType` and `apiEndpoint` props
    - Removed `occurrences`, `loading`, `currentWeekStart`, `onWeekChange` props
@@ -262,23 +279,27 @@ Result: ✅ Correct week shown
 ## ✅ Benefits Summary
 
 ### Correctness
+
 - ✅ Week navigation works correctly
 - ✅ Data refetches when week changes
 - ✅ Weekend detection works properly
 - ✅ No state synchronization issues
 
 ### Performance
+
 - ✅ Fetches data only when needed (week changes)
 - ✅ No duplicate API calls
 - ✅ Efficient re-renders
 
 ### Code Quality
+
 - ✅ 23% less code per page
 - ✅ Clearer separation of concerns
 - ✅ Easier to maintain
 - ✅ Easier to test
 
 ### User Experience
+
 - ✅ Navigation buttons work correctly
 - ✅ Correct week shown on weekends
 - ✅ Reservations appear immediately after creation
@@ -289,6 +310,7 @@ Result: ✅ Correct week shown
 **The calendar is now a truly self-contained, reusable component!**
 
 Pages just need to:
+
 1. Pass `resourceType` and `apiEndpoint`
 2. Pass `userId` for visual differentiation
 3. Provide event types configuration
@@ -311,5 +333,3 @@ That's it! WeekCalendar handles everything else. 🎉
 ```
 
 **Clean, simple, and it works!** ✨
-
-

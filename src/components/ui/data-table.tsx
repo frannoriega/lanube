@@ -1,26 +1,23 @@
-"use client"
+"use client";
 
-import {
-    type Table as ReactTable,
-    flexRender,
-} from "@tanstack/react-table"
-import * as React from "react"
+import { type Table as ReactTable, flexRender } from "@tanstack/react-table";
+import * as React from "react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-    Table as UiTable,
-} from "@/components/ui/table"
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Table as UiTable,
+} from "@/components/ui/table";
 
 interface DataTableProps<TData> {
-  table: ReactTable<TData>
-  isLoading?: boolean
-  emptyMessage?: React.ReactNode
-  loadingMessage?: React.ReactNode
+  table: ReactTable<TData>;
+  isLoading?: boolean;
+  emptyMessage?: React.ReactNode;
+  loadingMessage?: React.ReactNode;
 }
 
 export function DataTable<TData>({
@@ -29,7 +26,7 @@ export function DataTable<TData>({
   emptyMessage = "No se encontraron resultados.",
   loadingMessage = "Cargando…",
 }: DataTableProps<TData>) {
-  const rows = table.getRowModel().rows
+  const rows = table.getRowModel().rows;
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -37,17 +34,14 @@ export function DataTable<TData>({
         <UiTable>
           <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="hover:bg-transparent"
-              >
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -78,12 +72,15 @@ export function DataTable<TData>({
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -94,14 +91,14 @@ export function DataTable<TData>({
         </UiTable>
       </div>
     </div>
-  )
+  );
 }
 
 interface DataTablePaginationProps<TData> {
-  table: ReactTable<TData>
-  totalItems: number
-  isLoading?: boolean
-  loadingLabel?: string
+  table: ReactTable<TData>;
+  totalItems: number;
+  isLoading?: boolean;
+  loadingLabel?: string;
 }
 
 export function DataTablePagination<TData>({
@@ -110,15 +107,12 @@ export function DataTablePagination<TData>({
   isLoading = false,
   loadingLabel = "Actualizando…",
 }: DataTablePaginationProps<TData>) {
-  const { pageIndex, pageSize } = table.getState().pagination
-  const pageCount = table.getPageCount()
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const pageCount = table.getPageCount();
 
-  const fromItem =
-    totalItems === 0 ? 0 : pageIndex * pageSize + 1
+  const fromItem = totalItems === 0 ? 0 : pageIndex * pageSize + 1;
   const toItem =
-    totalItems === 0
-      ? 0
-      : Math.min(totalItems, (pageIndex + 1) * pageSize)
+    totalItems === 0 ? 0 : Math.min(totalItems, (pageIndex + 1) * pageSize);
 
   return (
     <div className="flex flex-col gap-3 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
@@ -161,8 +155,5 @@ export function DataTablePagination<TData>({
         </div>
       )}
     </div>
-  )
+  );
 }
-
-
-

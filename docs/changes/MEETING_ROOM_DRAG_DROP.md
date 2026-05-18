@@ -30,6 +30,7 @@ Instead of clicking on fixed hourly slots, users can now:
 ### 🌅 Whole Day Events
 
 New toggle in the dialog:
+
 - Check **"Evento de día completo"** for full-day reservations
 - Automatically sets time to 9:00 AM - 6:00 PM
 - Start/end time inputs are hidden when enabled
@@ -38,16 +39,19 @@ New toggle in the dialog:
 ### 🎨 Visual Feedback
 
 #### During Drag:
+
 - **Blue semi-transparent overlay** shows your selection in real-time
 - Updates as you drag up or down
 - Visual confirmation of the time range being selected
 
 #### Existing Reservations:
+
 - Displayed as **solid colored blocks** on the calendar
 - Show reservation title and time range
 - Positioned exactly where they occur in the day
 
 #### Grid Lines:
+
 - **Hourly lines** (darker) for major time markers
 - **15-minute lines** (lighter) for precise positioning
 - Makes it easy to select exact times
@@ -130,14 +134,14 @@ For full-day reservations:
 
 ### Color Scheme
 
-| Element | Color | Description |
-|---------|-------|-------------|
-| Available space | White/Dark | Empty calendar space you can drag on |
-| Drag selection | Blue (50% opacity) | Your current selection while dragging |
-| Existing reservation | Primary color (solid) | Booked time slots |
-| Past time | Gray | Disabled, cannot select |
-| Hour lines | Gray (medium) | Major time markers |
-| 15-min lines | Gray (light) | Fine grid lines |
+| Element              | Color                 | Description                           |
+| -------------------- | --------------------- | ------------------------------------- |
+| Available space      | White/Dark            | Empty calendar space you can drag on  |
+| Drag selection       | Blue (50% opacity)    | Your current selection while dragging |
+| Existing reservation | Primary color (solid) | Booked time slots                     |
+| Past time            | Gray                  | Disabled, cannot select               |
+| Hour lines           | Gray (medium)         | Major time markers                    |
+| 15-min lines         | Gray (light)          | Fine grid lines                       |
 
 ## 🔧 Technical Implementation
 
@@ -184,10 +188,11 @@ onMouseUp() => {
 All times snap to 15-minute intervals:
 
 ```typescript
-roundedMinutes = Math.round(minutes / 15) * 15
+roundedMinutes = Math.round(minutes / 15) * 15;
 ```
 
 This ensures clean, predictable selections like:
+
 - 9:00, 9:15, 9:30, 9:45
 - 10:00, 10:15, 10:30, 10:45
 - etc.
@@ -196,16 +201,16 @@ This ensures clean, predictable selections like:
 
 ```typescript
 // Drag state
-isDragging: boolean          // Are we currently dragging?
-dragStart: Position | null   // Where did the drag start?
-dragCurrent: Position | null // Where is the cursor now?
-selection: DragSelection     // Final selected range
+isDragging: boolean; // Are we currently dragging?
+dragStart: Position | null; // Where did the drag start?
+dragCurrent: Position | null; // Where is the cursor now?
+selection: DragSelection; // Final selected range
 
 // Dialog state
-dialogOpen: boolean          // Is dialog visible?
-isWholeDay: boolean          // Full day event?
-startTime: string            // "HH:mm" format
-endTime: string              // "HH:mm" format
+dialogOpen: boolean; // Is dialog visible?
+isWholeDay: boolean; // Full day event?
+startTime: string; // "HH:mm" format
+endTime: string; // "HH:mm" format
 ```
 
 ## ✅ Validation Rules
@@ -213,43 +218,48 @@ endTime: string              // "HH:mm" format
 ### Client-Side Validation
 
 1. **Same Day**
+
    ```typescript
    if (!isSameDay(dragStart.day, dragCurrent.day)) {
-     error("Las reservas deben estar en el mismo día")
+     error("Las reservas deben estar en el mismo día");
    }
    ```
 
 2. **Minimum Duration**
+
    ```typescript
    if (endMinutes - startMinutes < 15) {
-     error("La reserva mínima es de 15 minutos")
+     error("La reserva mínima es de 15 minutos");
    }
    ```
 
 3. **Business Hours**
+
    ```typescript
    if (startMinutes < 540 || endMinutes > 1080) {
-     error("Solo entre 9:00 AM y 6:00 PM")
+     error("Solo entre 9:00 AM y 6:00 PM");
    }
    ```
 
 4. **No Past Reservations**
+
    ```typescript
    if (selectedDateTime < now) {
-     error("No puedes reservar en el pasado")
+     error("No puedes reservar en el pasado");
    }
    ```
 
 5. **Start Before End**
    ```typescript
    if (startTime >= endTime) {
-     error("La hora de inicio debe ser anterior")
+     error("La hora de inicio debe ser anterior");
    }
    ```
 
 ### Server-Side Validation
 
 All client validations are also enforced on the server:
+
 - Same validations in API route
 - Additional resource availability check
 - Database-level constraints
@@ -257,12 +267,14 @@ All client validations are also enforced on the server:
 ## 🎯 User Experience Improvements
 
 ### Before (Slot-based)
+
 - Click on predefined hourly slots
 - Limited to 1-4 hour durations
 - Fixed start times
 - Less flexible
 
 ### After (Drag-based)
+
 - ✅ Drag to select any time range
 - ✅ 15-minute precision
 - ✅ Any duration (minimum 15 min)
@@ -273,16 +285,19 @@ All client validations are also enforced on the server:
 ## 📱 Responsive Design
 
 ### Desktop
+
 - Full calendar width
 - Smooth drag interactions
 - Precise mouse positioning
 
 ### Tablet
+
 - Horizontal scroll if needed
 - Touch-friendly drag areas
 - Larger hit targets
 
 ### Mobile
+
 - Optimized touch interactions
 - Scrollable calendar
 - Adjusted grid size
@@ -297,6 +312,7 @@ All client validations are also enforced on the server:
 ## 🧪 Testing Scenarios
 
 ### Basic Drag Operations
+
 - [ ] Click and drag down (forward in time)
 - [ ] Click and drag up (backward in time)
 - [ ] Very short drag (< 15 min) - should error
@@ -304,26 +320,31 @@ All client validations are also enforced on the server:
 - [ ] Release outside calendar - should cancel
 
 ### Cross-Day Dragging
+
 - [ ] Start on Monday, drag to Tuesday - should error
 - [ ] Drag near day boundary - should constrain to same day
 
 ### Time Boundaries
+
 - [ ] Drag starting before 9 AM - should clamp to 9:00
 - [ ] Drag ending after 6 PM - should clamp to 18:00
 - [ ] Drag entirely outside business hours - should error
 
 ### Whole Day Events
+
 - [ ] Toggle whole day on - times disappear
 - [ ] Toggle whole day off - times reappear
 - [ ] Create whole day event - saves as 9 AM - 6 PM
 
 ### Dialog Adjustments
+
 - [ ] Change start time in dialog
 - [ ] Change end time in dialog
 - [ ] Enter invalid times (start > end) - should error
 - [ ] Enter times outside business hours - should error
 
 ### Existing Reservations
+
 - [ ] Reservations display correctly
 - [ ] Can drag over existing reservations (API will validate)
 - [ ] Hover shows reservation details
@@ -331,6 +352,7 @@ All client validations are also enforced on the server:
 ## 🐛 Known Edge Cases
 
 ### 1. Overlapping Reservations
+
 **Behavior**: You can drag over existing reservations  
 **Reason**: Client allows it, server validation will catch conflicts  
 **User Experience**: Error message after clicking "Create"
@@ -338,14 +360,17 @@ All client validations are also enforced on the server:
 **Potential Enhancement**: Visual warning if dragging over occupied space
 
 ### 2. Mouse Leaves Calendar While Dragging
+
 **Behavior**: Drag is cancelled  
 **Solution**: `onMouseLeave` handler resets drag state
 
 ### 3. Rapid Click-Release (No Drag)
+
 **Behavior**: Needs minimum 15-minute selection  
 **User Experience**: Error message "La reserva mínima es de 15 minutos"
 
 ### 4. Timezone Handling
+
 **Behavior**: All times are in user's local timezone  
 **Server**: Converts to UTC for storage  
 **Display**: Converts back to local for display
@@ -413,6 +438,7 @@ All client validations are also enforced on the server:
 - **Large Screens**: Very tall calendars need more calculations
 
 **Mitigations**:
+
 - Throttle mouse move events if needed
 - Virtual scrolling for very long time ranges
 - Limit visible time range (currently 9 AM - 6 PM is manageable)
@@ -420,14 +446,17 @@ All client validations are also enforced on the server:
 ## 🎓 Learning Resources
 
 ### Mouse Events
+
 - [MDN: MouseEvent](https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent)
 - [Drag and Drop API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
 
 ### Date Handling
+
 - [date-fns documentation](https://date-fns.org/)
 - Time zone considerations
 
 ### React Patterns
+
 - `useCallback` for event handlers
 - `useRef` for DOM measurements
 - Controlled components for forms
@@ -437,15 +466,17 @@ All client validations are also enforced on the server:
 ### Issue: Drag doesn't work
 
 **Possible causes**:
+
 1. JavaScript disabled
 2. Mouse events not firing
 3. Calendar ref not attached
 
 **Debug**:
+
 ```javascript
-console.log('isDragging:', isDragging)
-console.log('dragStart:', dragStart)
-console.log('dragCurrent:', dragCurrent)
+console.log("isDragging:", isDragging);
+console.log("dragStart:", dragStart);
+console.log("dragCurrent:", dragCurrent);
 ```
 
 ### Issue: Times are off by 15 minutes
@@ -453,6 +484,7 @@ console.log('dragCurrent:', dragCurrent)
 **Cause**: Rounding logic or timezone conversion
 
 **Check**:
+
 - Verify rounding: `Math.round(minutes / 15) * 15`
 - Check timezone settings
 - Inspect server response
@@ -460,11 +492,13 @@ console.log('dragCurrent:', dragCurrent)
 ### Issue: Can't select certain times
 
 **Possible causes**:
+
 1. Past time (disabled)
 2. Outside business hours (9 AM - 6 PM)
 3. Weekend (not supported)
 
 **Verify**:
+
 - Check current date/time
 - Verify business hours config
 - Ensure day is Monday-Friday
@@ -482,4 +516,3 @@ The new drag-and-drop interface provides:
 - 🔒 **Validated**: Comprehensive client and server validation
 
 **Result**: A modern, user-friendly meeting room booking experience! 🎉
-

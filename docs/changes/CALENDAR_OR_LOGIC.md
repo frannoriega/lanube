@@ -3,12 +3,14 @@
 ## 📋 Overview
 
 Implemented smart reservation filtering for calendar views using OR logic to show:
+
 - ✅ **APPROVED** reservations (occupied space - blocks everyone)
 - ✅ **User's own** reservations (PENDING or APPROVED - so users can see their bookings)
 
 ## 🎯 The Problem
 
 Users need to see on the calendar:
+
 1. **Occupied time slots** - Where space is already taken (APPROVED reservations)
 2. **Their own reservations** - Including PENDING ones awaiting approval
 
@@ -25,11 +27,12 @@ export async function getExpandedReservationsForCalendar(
   resourceId: string,
   userId: string,
   startTime: Date,
-  endTime: Date
-): Promise<ExpandedReservationOccurrence[]>
+  endTime: Date,
+): Promise<ExpandedReservationOccurrence[]>;
 ```
 
 **Query Logic**:
+
 ```typescript
 where: {
   resourceId,
@@ -50,11 +53,13 @@ where: {
 ### What This Returns
 
 For a given resource and time range:
+
 1. **All APPROVED reservations** (regardless of who made them)
 2. **User's PENDING reservations** (only theirs)
 3. **User's APPROVED reservations** (only theirs)
 
 **Example**:
+
 ```
 Calendar for Meeting Room on Monday:
 
@@ -70,25 +75,31 @@ Calendar for Meeting Room on Monday:
 The calendar now uses color coding:
 
 ### Blue (Default) - Other's Approved Reservations
+
 ```css
 bg-la-nube-primary
 ```
+
 - Someone else's approved reservation
 - Space is occupied
 - User cannot book here
 
 ### Green - User's Approved Reservations
+
 ```css
 bg-green-600 + ✓ checkmark
 ```
+
 - User's own approved reservation
 - Space is occupied (by them)
 - Shows with checkmark for recognition
 
 ### Yellow - User's Pending Reservations
+
 ```css
 bg-yellow-500 + ⏳ hourglass
 ```
+
 - User's own pending reservation (awaiting approval)
 - Not yet confirmed
 - Shows with hourglass icon
@@ -113,10 +124,12 @@ Only shown when `userId` is provided to the component.
 ### API Layer
 
 Updated both API endpoints:
+
 - `src/app/api/meeting-room/route.ts`
 - `src/app/api/resources/[type]/route.ts`
 
 **Changes**:
+
 ```typescript
 // Before: Only APPROVED reservations
 const { occurrences } = await listExpandedReservations({
@@ -139,6 +152,7 @@ const occurrences = await getExpandedReservationsForCalendar(
 Updated `WeekCalendar` component:
 
 **New Prop**:
+
 ```typescript
 interface WeekCalendarProps {
   // ... existing props
@@ -147,18 +161,19 @@ interface WeekCalendarProps {
 ```
 
 **Visual Rendering**:
+
 ```typescript
-const isOwnReservation = userId && 
-  occ.reservableType === "USER" && 
-  occ.reservableId === userId;
-  
+const isOwnReservation =
+  userId && occ.reservableType === "USER" && occ.reservableId === userId;
+
 const isPending = occ.status === "PENDING";
 
-const bgColor = isOwnReservation && isPending
-  ? "bg-yellow-500"        // User's pending
-  : isOwnReservation
-  ? "bg-green-600"          // User's approved
-  : "bg-la-nube-primary";   // Other's approved
+const bgColor =
+  isOwnReservation && isPending
+    ? "bg-yellow-500" // User's pending
+    : isOwnReservation
+      ? "bg-green-600" // User's approved
+      : "bg-la-nube-primary"; // Other's approved
 ```
 
 ### Page Layer
@@ -166,6 +181,7 @@ const bgColor = isOwnReservation && isPending
 All resource pages now fetch and pass `userId`:
 
 **Added to each page**:
+
 ```typescript
 const [userId, setUserId] = useState<string | null>(null);
 
@@ -227,30 +243,36 @@ const fetchUserId = async () => {
 ### Scenario 1: User with Pending Reservation
 
 **Setup**:
+
 - Monday 10:00-11:00: Your PENDING reservation
 - Monday 14:00-15:00: Someone's APPROVED reservation
 
 **Calendar Shows**:
+
 - 10:00-11:00: Yellow block with ⏳ (your pending)
 - 14:00-15:00: Blue block (occupied)
 
 ### Scenario 2: User with Approved Reservation
 
 **Setup**:
+
 - Tuesday 10:00-12:00: Your APPROVED reservation
 - Tuesday 14:00-15:00: Someone's APPROVED reservation
 
 **Calendar Shows**:
+
 - 10:00-12:00: Green block with ✓ (your approved)
 - 14:00-15:00: Blue block (occupied)
 
 ### Scenario 3: Overlapping Reservations
 
 **Setup**:
+
 - Wednesday 10:00-11:00: Your PENDING reservation
 - Wednesday 10:00-11:00: Someone's APPROVED reservation (conflict!)
 
 **Calendar Shows**:
+
 - Both blocks visible (stacked or overlapping)
 - Yellow (yours) + Blue (theirs)
 - Visual indication of conflict
@@ -258,6 +280,7 @@ const fetchUserId = async () => {
 ## 🎨 Visual Examples
 
 ### Before (Only APPROVED)
+
 ```
 Monday Calendar:
 09:00 ┌──────────────────┐
@@ -271,6 +294,7 @@ Monday Calendar:
 ```
 
 ### After (APPROVED OR Yours)
+
 ```
 Monday Calendar:
 09:00 ┌──────────────────┐
@@ -289,6 +313,7 @@ Monday Calendar:
 ### Server-Side Filtering
 
 The OR logic is applied on the server, ensuring:
+
 - Users can only see their OWN pending reservations
 - Cannot see other users' pending reservations
 - All approved reservations visible (public information)
@@ -304,14 +329,14 @@ The OR logic is applied on the server, ensuring:
 
 ```typescript
 // For general queries (admin, reports, etc.)
-listExpandedReservations(filters, options)
+listExpandedReservations(filters, options);
 
 // For calendar views (user-specific OR logic)
-getExpandedReservationsForCalendar(resourceId, userId, start, end)
+getExpandedReservationsForCalendar(resourceId, userId, start, end);
 
 // For user's own reservations only
-getUserReservations(userId, options)
-getExpandedUserReservations(userId, options)
+getUserReservations(userId, options);
+getExpandedUserReservations(userId, options);
 ```
 
 ## ✅ Summary
@@ -319,13 +344,14 @@ getExpandedUserReservations(userId, options)
 **Implemented**: Smart OR logic for calendar reservation display
 
 **Shows**:
+
 - 🔵 All approved reservations (occupied space)
 - 🟢 User's approved reservations (with visual indicator)
 - 🟡 User's pending reservations (awaiting approval)
 
 **Hides**:
+
 - ❌ Other users' pending reservations (privacy)
 - ❌ Rejected/cancelled reservations
 
 **Result**: Users can see accurate availability while tracking their own booking status! 🎉
-

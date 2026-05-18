@@ -3,36 +3,40 @@
 ## 📋 Problem Evolution
 
 ### Version 1: Individual Resource Queries (Inefficient)
+
 ```typescript
 // Query each resource separately
 for (const resourceId of resourceIds) {
   const occurrences = await getExpandedReservationsForCalendar(
-    resourceId,  // Individual resource
+    resourceId, // Individual resource
     userId,
     start,
-    end
+    end,
   );
   allOccurrences.push(...occurrences);
 }
 ```
 
 **Issues**:
+
 - ❌ N database queries (where N = number of resources)
 - ❌ For 5 meeting rooms → 5 separate queries
 - ❌ Slow and inefficient
 
 ### Version 2: Fungible Resource Group Query (Optimal)
+
 ```typescript
 // Single query for entire fungible group
 const occurrences = await getExpandedReservationsForCalendar(
-  fungibleResourceId,  // All resources in one query!
+  fungibleResourceId, // All resources in one query!
   userId,
   start,
-  end
+  end,
 );
 ```
 
 **Benefits**:
+
 - ✅ 1 database query regardless of resource count
 - ✅ For 5 meeting rooms → still 1 query
 - ✅ Fast and scalable
@@ -42,6 +46,7 @@ const occurrences = await getExpandedReservationsForCalendar(
 ### Concept
 
 **Fungible Resource Group**: A collection of interchangeable resources
+
 - Example: "Meeting Rooms" group contains Room A, Room B, Room C
 - Users book the "Meeting Room" resource type
 - System assigns a specific room from available ones
@@ -73,6 +78,7 @@ fungible_resources
 **Function**: `expand_reservations_for_calendar_by_fungible`
 
 **Parameters**:
+
 - `p_fungible_resource_id` - ID of the fungible resource group
 - `p_user_id` - Current user's registered user ID
 - `p_start_time` - Start of time range
@@ -81,10 +87,11 @@ fungible_resources
 **Returns**: All expanded reservation occurrences with OR logic applied
 
 **Key SQL**:
+
 ```sql
 WITH resource_ids AS (
   -- Get ALL resources in the fungible group
-  SELECT id FROM resources 
+  SELECT id FROM resources
   WHERE fungible_resource_id = p_fungible_resource_id
 ),
 filtered_reservations AS (
@@ -102,6 +109,7 @@ filtered_reservations AS (
 **Updated**: `getExpandedReservationsForCalendar`
 
 **Before**:
+
 ```typescript
 function getExpandedReservationsForCalendar(
   resourceId: string,  // Single resource
@@ -110,6 +118,7 @@ function getExpandedReservationsForCalendar(
 ```
 
 **After**:
+
 ```typescript
 function getExpandedReservationsForCalendar(
   fungibleResourceId: string,  // Entire group!
@@ -124,6 +133,7 @@ function getExpandedReservationsForCalendar(
 **Updated**: Both `/api/meeting-room` and `/api/resources/[type]`
 
 **Before**:
+
 ```typescript
 for (const resourceId of resourceIds) {
   const occurrences = await getExpandedReservationsForCalendar(
@@ -134,6 +144,7 @@ for (const resourceId of resourceIds) {
 ```
 
 **After**:
+
 ```typescript
 const occurrences = await getExpandedReservationsForCalendar(
   fungibleResource.id, ...  // Pass group ID once!
@@ -146,19 +157,19 @@ const occurrences = await getExpandedReservationsForCalendar(
 
 ### Scenario: 5 Meeting Rooms, Week View
 
-| Version | Queries | Execution Time | Data Transfer |
-|---------|---------|----------------|---------------|
-| V1 (Individual) | 5 queries | ~125ms | ~25KB |
-| V2 (Fungible) | 1 query | ~25ms | ~5KB |
-| **Improvement** | **80% fewer** | **80% faster** | **80% less** |
+| Version         | Queries       | Execution Time | Data Transfer |
+| --------------- | ------------- | -------------- | ------------- |
+| V1 (Individual) | 5 queries     | ~125ms         | ~25KB         |
+| V2 (Fungible)   | 1 query       | ~25ms          | ~5KB          |
+| **Improvement** | **80% fewer** | **80% faster** | **80% less**  |
 
 ### Scenario: 10 Coworking Spaces, Week View
 
-| Version | Queries | Execution Time | Data Transfer |
-|---------|---------|----------------|---------------|
-| V1 (Individual) | 10 queries | ~250ms | ~50KB |
-| V2 (Fungible) | 1 query | ~25ms | ~5KB |
-| **Improvement** | **90% fewer** | **90% faster** | **90% less** |
+| Version         | Queries       | Execution Time | Data Transfer |
+| --------------- | ------------- | -------------- | ------------- |
+| V1 (Individual) | 10 queries    | ~250ms         | ~50KB         |
+| V2 (Fungible)   | 1 query       | ~25ms          | ~5KB          |
+| **Improvement** | **90% fewer** | **90% faster** | **90% less**  |
 
 ### Benefits Scale with Resources
 
@@ -182,6 +193,7 @@ Result: 3 overlapping blocks displayed
 ```
 
 **Interpretation**:
+
 - If you see 3+ blocks → No capacity left
 - If you see < 3 blocks → Capacity available
 - Your blocks always visible (even if pending)
@@ -191,11 +203,13 @@ Result: 3 overlapping blocks displayed
 ### How Users Know if Space is Available
 
 **Visual Cues**:
+
 1. **Empty slot** = Definitely available
 2. **1-2 blocks** = Some rooms occupied, others free
 3. **3+ blocks** (where capacity = 3) = All rooms occupied, no capacity
 
 **Your Reservations**:
+
 - Always shown (blue/green/yellow)
 - Helps you track your bookings
 - Shows even if capacity is full
@@ -228,6 +242,7 @@ SELECT * FROM expand_reservations_for_calendar_by_fungible(
 ### API Endpoints
 
 **Before**:
+
 ```typescript
 // ~25 lines per endpoint
 const resourceIds = fungibleResource.resources.map(r => r.id);
@@ -241,6 +256,7 @@ return NextResponse.json({ occurrences: allOccurrences, ... });
 ```
 
 **After**:
+
 ```typescript
 // ~5 lines per endpoint
 const occurrences = await getExpandedReservationsForCalendar(
@@ -256,31 +272,34 @@ return NextResponse.json({ occurrences, ... });
 
 ### Database Queries
 
-| Resource Count | V1 Queries | V2 Queries | Improvement |
-|----------------|------------|------------|-------------|
-| 1 resource | 1 | 1 | Same |
-| 3 resources | 3 | 1 | **67% fewer** |
-| 5 resources | 5 | 1 | **80% fewer** |
-| 10 resources | 10 | 1 | **90% fewer** |
-| 100 resources | 100 | 1 | **99% fewer** |
+| Resource Count | V1 Queries | V2 Queries | Improvement   |
+| -------------- | ---------- | ---------- | ------------- |
+| 1 resource     | 1          | 1          | Same          |
+| 3 resources    | 3          | 1          | **67% fewer** |
+| 5 resources    | 5          | 1          | **80% fewer** |
+| 10 resources   | 10         | 1          | **90% fewer** |
+| 100 resources  | 100        | 1          | **99% fewer** |
 
 **Scales perfectly!**
 
 ## ✅ Benefits Summary
 
 ### Performance
+
 - 🚀 **1 query** instead of N queries
 - ⚡ **80-90% faster** execution
 - 📉 **80-90% less** data transfer
 - 📈 **Perfect scaling** with resource count
 
 ### Code Quality
+
 - 🧹 **80% less code** in API endpoints
 - 🎯 **Simpler logic** - no loops
 - 🔒 **Type-safe** - single function call
 - 📖 **Easier to understand** and maintain
 
 ### Scalability
+
 - ✅ Works with 1 or 1000 resources
 - ✅ Same query complexity regardless
 - ✅ Database handles optimization
@@ -307,4 +326,3 @@ The calendar reservation system now:
 - `CALENDAR_OR_LOGIC.md` - OR logic explanation
 
 **The system is now production-ready and highly optimized!** ✨
-

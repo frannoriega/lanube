@@ -57,7 +57,6 @@
   --animate-blink: blink 1s step-end infinite;
 
   @keyframes blink {
-
     0%,
     50% {
       visibility: visible;
@@ -160,7 +159,6 @@
 }
 
 @layer utilities {
-
   /* Accordion animations */
   @keyframes accordion-down {
     from {
@@ -251,7 +249,6 @@
       backdrop-filter: blur(16px);
     }
   }
-
 
   .glass-sidebar {
     background: rgba(255, 255, 255, 0.08);

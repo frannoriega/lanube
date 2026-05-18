@@ -5,6 +5,7 @@
 ### **🔑 JWT Sessions**
 
 #### **Ventajas:**
+
 - ✅ **Sin estado (Stateless)**: No requiere almacenamiento en servidor
 - ✅ **Escalabilidad**: Fácil escalado horizontal
 - ✅ **Rendimiento**: Sin consultas a base de datos en cada request
@@ -13,6 +14,7 @@
 - ✅ **Microservicios**: Ideal para arquitecturas distribuidas
 
 #### **Desventajas:**
+
 - ❌ **Tamaño del token**: Los tokens pueden volverse grandes
 - ❌ **Seguridad**: Los tokens están firmados pero no encriptados por defecto
 - ❌ **Revocación**: No se puede revocar tokens fácilmente
@@ -23,6 +25,7 @@
 ### **🗄️ Database Sessions**
 
 #### **Ventajas:**
+
 - ✅ **Seguridad**: Data de sesión almacenada de forma segura en servidor
 - ✅ **Revocación**: Puede revocar sesiones instantáneamente
 - ✅ **Privacidad**: Data de sesión no expuesta al cliente
@@ -31,6 +34,7 @@
 - ✅ **Auditoría**: Registro completo de sesiones activas
 
 #### **Desventajas:**
+
 - ❌ **Dependencia de BD**: Requiere consulta a BD en cada request
 - ❌ **Rendimiento**: Más lento debido a lookups de BD
 - ❌ **Complejidad de escalado**: Necesita manejar escalado de BD
@@ -44,6 +48,7 @@
 **Razones específicas para tu sistema de coworking:**
 
 #### **1. 🔐 Requerimientos de Seguridad**
+
 ```
 - Manejo de roles (ADMIN vs USER)
 - Data sensible (DNI, institución)
@@ -52,6 +57,7 @@
 ```
 
 #### **2. 🔄 Actualizaciones de Roles en Tiempo Real**
+
 ```
 - Admin puede cambiar roles de usuario
 - Cambios deben tomar efecto inmediatamente
@@ -59,6 +65,7 @@
 ```
 
 #### **3. 📊 Complejidad de Data de Sesión**
+
 ```
 - User ID, role, permisos
 - Información de institución
@@ -67,6 +74,7 @@
 ```
 
 #### **4. 🏢 Lógica de Negocio**
+
 ```
 - Sesiones de larga duración (horas de coworking)
 - Necesidad de trackear sesiones activas
@@ -75,6 +83,7 @@
 ```
 
 #### **5. 📈 Escalabilidad para tu Caso**
+
 ```
 - Sistema no crítico de alta concurrencia
 - Más importante: seguridad y control
@@ -97,12 +106,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async session({ session, user }) {
       // Acceso directo a user data desde BD
-      session.user.id = user.id
-      session.user.role = user.role
-      return session
+      session.user.id = user.id;
+      session.user.role = user.role;
+      return session;
     },
   },
-})
+});
 ```
 
 ### **Beneficios específicos para La Nube:**
@@ -116,6 +125,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 ## 📋 **Cuándo Considerar JWT**
 
 **Considera JWT si:**
+
 - Necesitas microservicios distribuidos
 - Tienes millones de usuarios concurrentes
 - No necesitas revocación de sesiones
@@ -123,6 +133,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 - Performance es crítico
 
 **Para La Nube:**
+
 - ❌ No necesitas microservicios
 - ❌ No tienes millones de usuarios
 - ✅ Necesitas revocación de sesiones

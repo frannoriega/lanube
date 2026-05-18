@@ -56,9 +56,7 @@ export async function checkRateLimit(
 
   const record = result[0];
   const blockedUntil =
-    record.blockedUntil != null
-      ? new Date(Number(record.blockedUntil))
-      : null;
+    record.blockedUntil != null ? new Date(Number(record.blockedUntil)) : null;
 
   if (blockedUntil && blockedUntil > at) {
     return {

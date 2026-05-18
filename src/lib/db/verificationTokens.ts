@@ -10,7 +10,9 @@ function createToken(length: number) {
   return crypto.randomBytes(length).toString("hex");
 }
 
-export async function createEmailVerificationToken(email: string): Promise<string> {
+export async function createEmailVerificationToken(
+  email: string,
+): Promise<string> {
   const token = createToken(32);
   const hashedToken = hash(token);
   const expires = now();
@@ -33,7 +35,7 @@ export async function createEmailVerificationToken(email: string): Promise<strin
 }
 
 export async function consumeEmailVerificationToken(
-  token: string
+  token: string,
 ): Promise<string | null> {
   const hashedToken = hash(token);
   const record = await prisma.verificationToken.findUnique({
@@ -69,7 +71,10 @@ export async function createResetToken(userId: string): Promise<string> {
   return token;
 }
 
-export async function consumeResetToken(token: string, password: string): Promise<string | null> {
+export async function consumeResetToken(
+  token: string,
+  password: string,
+): Promise<string | null> {
   const hashedToken = hash(token);
   const record = await prisma.passwordResetToken.delete({
     where: { token: hashedToken },

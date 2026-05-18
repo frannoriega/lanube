@@ -14,5 +14,3 @@ export function StatusBadge({ status }: { status: string }) {
       return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
   }
 }
-
-

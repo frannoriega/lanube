@@ -22,10 +22,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer({ className }: { className?: string }) {
-  const cns = cn(
-    `w-full h-fit bg-slate-950 dark:bg-slate-950/80`,
-    className,
-  );
+  const cns = cn(`w-full h-fit bg-slate-950 dark:bg-slate-950/80`, className);
   return (
     <footer className={cns}>
       <Container>
@@ -97,7 +94,9 @@ export default function Footer({ className }: { className?: string }) {
                   <div className="flex items-center justify-center w-[16px] h-[16px] mt-[4px]">
                     <MapPin size={16} />
                   </div>
-                  <span>{address.street}, {address.city}, {address.state}</span>
+                  <span>
+                    {address.street}, {address.city}, {address.state}
+                  </span>
                 </li>
                 <li className="flex flex-row gap-2 items-start justify-start">
                   <a

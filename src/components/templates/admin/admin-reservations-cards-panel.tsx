@@ -23,9 +23,20 @@ import type { AdminResourceServiceSlug } from "@/lib/admin/admin-resource-servic
 import { ADMIN_RESOURCE_SERVICE_OPTIONS } from "@/lib/admin/admin-resource-service-slug";
 import { useServerTime } from "@/components/providers/server-time";
 import { cn } from "@/lib/utils";
-import { formatDate, formateWeekday, parseDateStringLocal } from "@/lib/utils/date";
+import {
+  formatDate,
+  formateWeekday,
+  parseDateStringLocal,
+} from "@/lib/utils/date";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 function serviceTitle(slug: AdminResourceServiceSlug): string {
   return (
@@ -120,7 +131,11 @@ export function AdminReservationsCardsPanel({
         const res = await fetch(`/api/admin/reservations?${qs.toString()}`);
         if (!res.ok) {
           if (process.env.NODE_ENV === "development") {
-            console.warn("[AdminCardsPanel] API returned %d for %s", res.status, qs.toString());
+            console.warn(
+              "[AdminCardsPanel] API returned %d for %s",
+              res.status,
+              qs.toString(),
+            );
           }
           return;
         }
@@ -235,7 +250,7 @@ export function AdminReservationsCardsPanel({
               size="icon"
               disabled={!canPrevWeek || loading}
               onClick={() =>
-                setWeekStartKey((w) => w ? addDaysToDateKey(w, -7) : w)
+                setWeekStartKey((w) => (w ? addDaysToDateKey(w, -7) : w))
               }
               aria-label="Semana anterior"
             >
@@ -250,7 +265,7 @@ export function AdminReservationsCardsPanel({
               size="icon"
               disabled={loading}
               onClick={() =>
-                setWeekStartKey((w) => w ? addDaysToDateKey(w, 7) : w)
+                setWeekStartKey((w) => (w ? addDaysToDateKey(w, 7) : w))
               }
               aria-label="Semana siguiente"
             >
@@ -274,9 +289,14 @@ export function AdminReservationsCardsPanel({
           collapsible
           value={expandedDateKey ?? CLOSED_ACCORDION_VALUE}
           onValueChange={(value) =>
-            setExpandedDateKey(value && value !== CLOSED_ACCORDION_VALUE ? value : null)
+            setExpandedDateKey(
+              value && value !== CLOSED_ACCORDION_VALUE ? value : null,
+            )
           }
-          className={cn("space-y-2", loading && "opacity-60 pointer-events-none")}
+          className={cn(
+            "space-y-2",
+            loading && "opacity-60 pointer-events-none",
+          )}
         >
           {daysWithReservations.map((d) => {
             const list = itemsByDate[d] ?? [];

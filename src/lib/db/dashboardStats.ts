@@ -31,7 +31,9 @@ function toHours(
   return Math.round((total / HOURS_IN_MS) * 10) / 10;
 }
 
-export async function getDashboardStatsByUserId(userId: string): Promise<DashboardStats> {
+export async function getDashboardStatsByUserId(
+  userId: string,
+): Promise<DashboardStats> {
   const at = now();
   const atMs = dateToUnixMs(at);
   const startOfWeek = new Date(at);
@@ -39,66 +41,70 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
   startOfWeek.setHours(0, 0, 0, 0);
   const startOfMonth = new Date(at.getFullYear(), at.getMonth(), 1);
 
-  const [upcomingReservations, reservationsThisWeek, reservationsThisMonth, recentReservations] =
-    await Promise.all([
-      prisma.reservation.count({
-        where: {
-          reservableId: userId,
-          startTime: {
-            gte: atMs,
+  const [
+    upcomingReservations,
+    reservationsThisWeek,
+    reservationsThisMonth,
+    recentReservations,
+  ] = await Promise.all([
+    prisma.reservation.count({
+      where: {
+        reservableId: userId,
+        startTime: {
+          gte: atMs,
+        },
+        status: "APPROVED",
+      },
+    }),
+    prisma.reservation.findMany({
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+      where: {
+        reservableId: userId,
+        startTime: {
+          gte: dateToUnixMs(startOfWeek),
+        },
+        status: "APPROVED",
+      },
+    }),
+    prisma.reservation.findMany({
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+      where: {
+        reservableId: userId,
+        startTime: {
+          gte: dateToUnixMs(startOfMonth),
+        },
+        status: "APPROVED",
+      },
+    }),
+    prisma.reservation.findMany({
+      select: {
+        id: true,
+        resource: {
+          select: {
+            name: true,
+            type: true,
           },
-          status: "APPROVED",
         },
-      }),
-      prisma.reservation.findMany({
-        select: {
-          startTime: true,
-          endTime: true,
-        },
-        where: {
-          reservableId: userId,
-          startTime: {
-            gte: dateToUnixMs(startOfWeek),
-          },
-          status: "APPROVED",
-        },
-      }),
-      prisma.reservation.findMany({
-        select: {
-          startTime: true,
-          endTime: true,
-        },
-        where: {
-          reservableId: userId,
-          startTime: {
-            gte: dateToUnixMs(startOfMonth),
-          },
-          status: "APPROVED",
-        },
-      }),
-      prisma.reservation.findMany({
-        select: {
-          id: true,
-          resource: {
-            select: {
-              name: true,
-              type: true,
-            },
-          },
-          startTime: true,
-          endTime: true,
-          status: true,
-          reason: true,
-        },
-        where: {
-          reservableId: userId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 10,
-      }),
-    ]);
+        startTime: true,
+        endTime: true,
+        status: true,
+        reason: true,
+      },
+      where: {
+        reservableId: userId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
+    }),
+  ]);
 
   return {
     upcomingReservations,
@@ -106,7 +112,8 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
     totalTimeThisMonth: toHours(reservationsThisMonth),
     recentReservations: recentReservations.map((reservation) => ({
       id: reservation.id,
-      service: reservation.resource?.name ?? reservation.resource?.type ?? "Servicio",
+      service:
+        reservation.resource?.name ?? reservation.resource?.type ?? "Servicio",
       serviceType: reservation.resource?.type ?? "UNKNOWN",
       startTime: Number(reservation.startTime),
       endTime: Number(reservation.endTime),
@@ -116,7 +123,9 @@ export async function getDashboardStatsByUserId(userId: string): Promise<Dashboa
   };
 }
 
-export async function getDashboardStatsByEmail(email: string): Promise<DashboardStats | null> {
+export async function getDashboardStatsByEmail(
+  email: string,
+): Promise<DashboardStats | null> {
   const user = await prisma.registeredUser.findFirst({
     select: {
       id: true,

@@ -1,7 +1,7 @@
 import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
-import { createId } from '@paralleldrive/cuid2';
+import { createId } from "@paralleldrive/cuid2";
 import {
   EventType,
   Prisma,
@@ -138,7 +138,7 @@ export interface ReservationOccurrence {
  * Auto-selects an available resource of the given type
  */
 export async function createReservation(
-  data: CreateReservationInput
+  data: CreateReservationInput,
 ): Promise<ReservationWithRelations> {
   // Validate dates
   if (data.startTime >= data.endTime) {
@@ -187,13 +187,15 @@ export async function createReservation(
     if (error instanceof Error) {
       console.error(error);
       // Parse SQL errors for user-friendly messages
-      if (error.message?.includes('No available')) {
-        throw new Error("No hay recursos disponibles para el horario seleccionado");
+      if (error.message?.includes("No available")) {
+        throw new Error(
+          "No hay recursos disponibles para el horario seleccionado",
+        );
       }
-      if (error.message?.includes('Conflict on')) {
+      if (error.message?.includes("Conflict on")) {
         throw new Error("Conflicto en una de las fechas de la recurrencia");
       }
-      if (error.message?.includes('Capacity exceeded')) {
+      if (error.message?.includes("Capacity exceeded")) {
         throw new Error("Capacidad excedida en una de las fechas");
       }
     }
@@ -283,7 +285,7 @@ export async function createReservationException(
  * Gets a single reservation by ID with all relations
  */
 export async function getReservationById(
-  id: string
+  id: string,
 ): Promise<ReservationWithRelations | null> {
   return await prisma.reservation.findUnique({
     where: { id },
@@ -321,7 +323,7 @@ export async function listReservations(
     limit?: number;
     offset?: number;
     orderBy?: Prisma.ReservationOrderByWithRelationInput;
-  }
+  },
 ): Promise<{ reservations: ReservationWithRelations[]; total: number }> {
   const where: Prisma.ReservationWhereInput = {};
 
@@ -423,7 +425,7 @@ export async function getUserReservations(
     status?: ReservationStatus[];
     limit?: number;
     offset?: number;
-  }
+  },
 ): Promise<{ reservations: ReservationWithRelations[]; total: number }> {
   const filters: ReservationFilters = {
     reservableType: "USER",
@@ -452,7 +454,7 @@ export async function getResourceReservations(
   resourceId: string,
   startTime: Date,
   endTime: Date,
-  includeStatuses: ReservationStatus[] = ["PENDING", "APPROVED"]
+  includeStatuses: ReservationStatus[] = ["PENDING", "APPROVED"],
 ): Promise<ReservationWithRelations[]> {
   const { reservations } = await listReservations(
     {
@@ -463,7 +465,7 @@ export async function getResourceReservations(
     },
     {
       orderBy: { startTime: "asc" },
-    }
+    },
   );
 
   return reservations;
@@ -475,7 +477,7 @@ export async function getResourceReservations(
 export async function getUpcomingReservations(
   reservableType: ReservableType,
   reservableId: string,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<ReservationWithRelations[]> {
   const { reservations } = await listReservations(
     {
@@ -487,12 +489,11 @@ export async function getUpcomingReservations(
     {
       limit,
       orderBy: { startTime: "asc" },
-    }
+    },
   );
 
   return reservations;
 }
-
 
 // ============================================================================
 // UPDATE
@@ -504,7 +505,7 @@ export async function getUpcomingReservations(
  */
 export async function updateReservation(
   id: string,
-  data: UpdateReservationInput
+  data: UpdateReservationInput,
 ): Promise<ReservationWithRelations> {
   // Get existing reservation
   const existing = await prisma.reservation.findUnique({
@@ -584,16 +585,19 @@ export async function updateReservation(
  * Approves a reservation and auto-rejects conflicting pending reservations
  * Uses the ledger-based SQL function
  */
-export async function approveReservation(
-  id: string
-): Promise<{ reservation: ReservationWithRelations; autoRejectedIds: string[] }> {
+export async function approveReservation(id: string): Promise<{
+  reservation: ReservationWithRelations;
+  autoRejectedIds: string[];
+}> {
   // Call SQL function
-  const result = await prisma.$queryRaw<{ approved_id: string; auto_rejected_ids: string }[]>`
+  const result = await prisma.$queryRaw<
+    { approved_id: string; auto_rejected_ids: string }[]
+  >`
     SELECT * FROM approve_reservation(${id}::text)
   `;
 
   const autoRejectedIds = result[0]?.auto_rejected_ids
-    ? result[0].auto_rejected_ids.split(',').filter(Boolean)
+    ? result[0].auto_rejected_ids.split(",").filter(Boolean)
     : [];
 
   // Fetch updated reservation
@@ -619,7 +623,7 @@ export async function approveReservation(
  */
 export async function rejectReservation(
   id: string,
-  deniedReason: string
+  deniedReason: string,
 ): Promise<ReservationWithRelations> {
   return await updateReservation(id, {
     status: "REJECTED",
@@ -631,7 +635,7 @@ export async function rejectReservation(
  * Cancels a reservation
  */
 export async function cancelReservation(
-  id: string
+  id: string,
 ): Promise<ReservationWithRelations> {
   return await updateReservation(id, { status: "CANCELLED" });
 }
@@ -685,7 +689,6 @@ export async function deleteReservationException(id: string): Promise<void> {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-
 /**
  * Gets reservation statistics for a time period
  */
@@ -696,7 +699,7 @@ export async function getReservationStats(
     reservableType?: ReservableType;
     eventType?: EventType;
     resourceId?: string;
-  }
+  },
 ): Promise<{
   total: number;
   byStatus: Record<ReservationStatus, number>;
@@ -742,13 +745,13 @@ export async function getReservationStats(
   return {
     total,
     byStatus: Object.fromEntries(
-      byStatus.map((item) => [item.status, item._count])
+      byStatus.map((item) => [item.status, item._count]),
     ) as Record<ReservationStatus, number>,
     byEventType: Object.fromEntries(
-      byEventType.map((item) => [item.eventType, item._count])
+      byEventType.map((item) => [item.eventType, item._count]),
     ) as Record<EventType, number>,
     byReservableType: Object.fromEntries(
-      byReservableType.map((item) => [item.reservableType, item._count])
+      byReservableType.map((item) => [item.reservableType, item._count]),
     ) as Record<ReservableType, number>,
   };
 }
@@ -780,7 +783,7 @@ export async function getConflictingReservations(
   resourceId: string,
   startTime: Date,
   endTime: Date,
-  excludeReservationId?: string
+  excludeReservationId?: string,
 ): Promise<ReservationWithRelations[]> {
   const whereClause: Prisma.ReservationWhereInput = {
     resourceId,
@@ -842,22 +845,24 @@ export async function getUserNextReservations(
   userId: string,
   resourceType?: ResourceType,
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
 ): Promise<ReservationLedgerRow[]> {
-  const rows = await prisma.$queryRaw<{
-    id: string;
-    reservation_id: string;
-    occurrence_start_time: bigint;
-    occurrence_end_time: bigint;
-    reservable_type: ReservableType;
-    reservable_id: string;
-    resource_id: string;
-    event_type: EventType;
-    reason: string | null;
-    actor_size: number;
-    status: ReservationStatus;
-    created_at: bigint;
-  }[]>`
+  const rows = await prisma.$queryRaw<
+    {
+      id: string;
+      reservation_id: string;
+      occurrence_start_time: bigint;
+      occurrence_end_time: bigint;
+      reservable_type: ReservableType;
+      reservable_id: string;
+      resource_id: string;
+      event_type: EventType;
+      reason: string | null;
+      actor_size: number;
+      status: ReservationStatus;
+      created_at: bigint;
+    }[]
+  >`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
       ${resourceType}::resource_types,
@@ -890,15 +895,17 @@ export async function getUnavailableSlots(
   resourceType: ResourceType,
   startTime: Date,
   endTime: Date,
-  excludeUserId?: string
+  excludeUserId?: string,
 ): Promise<UnavailableSlot[]> {
   const fromMs = dateToUnixMs(startTime);
   const toMs = dateToUnixMs(endTime);
-  const rows = await prisma.$queryRaw<{
-    resource_id: string;
-    start_time: bigint;
-    end_time: bigint;
-  }[]>`
+  const rows = await prisma.$queryRaw<
+    {
+      resource_id: string;
+      start_time: bigint;
+      end_time: bigint;
+    }[]
+  >`
     SELECT * FROM get_unavailable_slots(
       ${resourceType}::resource_types,
       ${fromMs}::bigint,

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     return NextResponse.redirect(
-      new URL("/auth/signin?error=missing_token", request.url)
+      new URL("/auth/signin?error=missing_token", request.url),
     );
   }
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   if (!email) {
     return NextResponse.redirect(
-      new URL("/auth/signin?error=invalid_or_expired_token", request.url)
+      new URL("/auth/signin?error=invalid_or_expired_token", request.url),
     );
   }
 
@@ -23,11 +23,11 @@ export async function GET(request: NextRequest) {
 
   if (!updated) {
     return NextResponse.redirect(
-      new URL("/auth/signin?error=verification_failed", request.url)
+      new URL("/auth/signin?error=verification_failed", request.url),
     );
   }
 
   return NextResponse.redirect(
-    new URL("/auth/signin?confirmed=1", request.url)
+    new URL("/auth/signin?confirmed=1", request.url),
   );
 }

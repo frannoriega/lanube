@@ -17,6 +17,7 @@ calendar/
 ```
 
 **Features**:
+
 - ✅ Drag-and-drop time selection (15-minute intervals)
 - ✅ Week navigation (previous, today, next)
 - ✅ Visual reservation blocks
@@ -26,13 +27,14 @@ calendar/
 - ✅ Same-day constraint
 
 **Props**:
+
 ```typescript
 interface WeekCalendarProps {
-  occurrences: ReservationOccurrence[];      // Existing reservations
-  onSelectionComplete: (selection) => void;  // Callback on drag complete
-  loading?: boolean;                         // Loading state
-  currentWeekStart: Date;                    // Current week start date
-  onWeekChange: (weekStart) => void;         // Week change callback
+  occurrences: ReservationOccurrence[]; // Existing reservations
+  onSelectionComplete: (selection) => void; // Callback on drag complete
+  loading?: boolean; // Loading state
+  currentWeekStart: Date; // Current week start date
+  onWeekChange: (weekStart) => void; // Week change callback
 }
 ```
 
@@ -41,35 +43,41 @@ interface WeekCalendarProps {
 **Location**: `src/app/api/resources/[type]/route.ts`
 
 **Supported Types**:
+
 - `/api/resources/meeting-room` → MEETING resource type
 - `/api/resources/coworking` → COWORKING resource type
 - `/api/resources/lab` → LAB resource type
 - `/api/resources/auditorium` → AUDITORIUM resource type
 
 **Routes**:
+
 - `GET /api/resources/[type]` - Fetch expanded reservations
 - `POST /api/resources/[type]` - Create new reservation
 
 ## 📄 Updated Pages
 
 ### 1. Meeting Room (`/user/meeting-room`)
+
 - **Icon**: Users
 - **Event Types**: Meeting, Workshop, Conference, Other
 - **Default Event Type**: MEETING
 
 ### 2. Coworking (`/user/coworking`)
+
 - **Icon**: Building2
 - **Event Types**: Meeting, Workshop, Work
 - **Default Event Type**: OTHER
 - **Description**: "Espacio de trabajo colaborativo"
 
 ### 3. Lab (`/user/lab`)
+
 - **Icon**: FlaskConical
 - **Event Types**: Workshop, Meeting, Other
 - **Default Event Type**: WORKSHOP
 - **Description**: "Proyectos tecnológicos"
 
 ### 4. Auditorium (`/user/auditorium`)
+
 - **Icon**: Presentation
 - **Event Types**: Conference, Workshop, Meeting, Other
 - **Default Event Type**: CONFERENCE
@@ -80,18 +88,21 @@ interface WeekCalendarProps {
 All pages now share:
 
 ### 1. Same Calendar Interface
+
 - Identical drag-and-drop interaction
 - Same visual design and layout
 - Consistent week navigation
 - Uniform reservation display
 
 ### 2. Same Dialog Form
+
 - Whole day toggle
 - Time inputs (hidden when whole day)
 - Event type selector (customized per page)
 - Reason/description textarea
 
 ### 3. Same Validation Rules
+
 - Business hours: 9 AM - 6 PM
 - Weekdays only (Monday - Friday)
 - 15-minute minimum duration
@@ -129,6 +140,7 @@ All pages now share:
 ## 📊 Code Reduction
 
 ### Before Refactor
+
 ```
 meeting-room/page.tsx:  661 lines (with calendar logic)
 coworking/page.tsx:     335 lines (old form approach)
@@ -137,6 +149,7 @@ auditorium/page.tsx:    Similar to coworking
 ```
 
 ### After Refactor
+
 ```
 WeekCalendar.tsx:       456 lines (shared component)
 meeting-room/page.tsx:  286 lines (60% reduction!)
@@ -150,21 +163,25 @@ auditorium/page.tsx:    267 lines
 ## 🎯 Benefits
 
 ### 1. **Maintainability**
+
 - ✅ Single source of truth for calendar logic
 - ✅ Fix bugs once, benefits all pages
 - ✅ Add features once, benefits all pages
 
 ### 2. **Consistency**
+
 - ✅ Same UX across all resource types
 - ✅ Users learn once, use everywhere
 - ✅ Uniform visual design
 
 ### 3. **Extensibility**
+
 - ✅ Easy to add new resource types
 - ✅ Just create new page with WeekCalendar
 - ✅ API endpoint auto-handles new types
 
 ### 4. **Code Quality**
+
 - ✅ Separation of concerns
 - ✅ Reusable, testable components
 - ✅ Clean, DRY codebase
@@ -172,6 +189,7 @@ auditorium/page.tsx:    267 lines
 ## 🔧 How to Add New Resource Type
 
 ### Step 1: Add Resource Type to Database
+
 ```sql
 -- In prisma/models/resources.prisma
 enum ResourceType {
@@ -184,6 +202,7 @@ enum ResourceType {
 ```
 
 ### Step 2: Seed Resources
+
 ```typescript
 // In seed.ts
 await prisma.fungibleResource.create({
@@ -192,22 +211,24 @@ await prisma.fungibleResource.create({
     type: "NEW_TYPE",
     capacity: 10,
     resources: {
-      create: [{ name: "Resource 1", serialNumber: "NR-001" }]
-    }
-  }
+      create: [{ name: "Resource 1", serialNumber: "NR-001" }],
+    },
+  },
 });
 ```
 
 ### Step 3: Add API Route Mapping
+
 ```typescript
 // In src/app/api/resources/[type]/route.ts
 const RESOURCE_TYPE_MAP = {
   // ... existing mappings
-  "new-resource": "NEW_TYPE",  // Add here
+  "new-resource": "NEW_TYPE", // Add here
 };
 ```
 
 ### Step 4: Create Page
+
 ```typescript
 // src/app/(management)/user/new-resource/page.tsx
 import { WeekCalendar } from "@/components/organisms/calendar";
@@ -227,16 +248,22 @@ That's it! 🎉
 ### WeekCalendar
 
 **Import**:
+
 ```typescript
-import { WeekCalendar, type DragSelection, type ReservationOccurrence } from "@/components/organisms/calendar";
+import {
+  WeekCalendar,
+  type DragSelection,
+  type ReservationOccurrence,
+} from "@/components/organisms/calendar";
 ```
 
 **Types**:
+
 ```typescript
 interface ReservationOccurrence {
   reservationId: string;
-  occurrenceStartTime: string;  // ISO 8601
-  occurrenceEndTime: string;    // ISO 8601
+  occurrenceStartTime: string; // ISO 8601
+  occurrenceEndTime: string; // ISO 8601
   reason: string;
   status: string;
   reservableType: string;
@@ -244,12 +271,13 @@ interface ReservationOccurrence {
 
 interface DragSelection {
   day: Date;
-  startMinutes: number;  // Minutes from midnight (e.g., 540 = 9:00 AM)
-  endMinutes: number;    // Minutes from midnight (e.g., 600 = 10:00 AM)
+  startMinutes: number; // Minutes from midnight (e.g., 540 = 9:00 AM)
+  endMinutes: number; // Minutes from midnight (e.g., 600 = 10:00 AM)
 }
 ```
 
 **Usage Example**:
+
 ```typescript
 function MyPage() {
   const [occurrences, setOccurrences] = useState<ReservationOccurrence[]>([]);
@@ -297,12 +325,14 @@ For each page (meeting-room, coworking, lab, auditorium):
 ## 🚀 Performance
 
 ### Metrics
+
 - **Bundle Size**: ~18KB for WeekCalendar component (minified)
 - **Render Time**: < 100ms for calendar with 50 reservations
 - **Drag Performance**: Smooth 60fps interaction
 - **Memory**: Efficient re-renders with useCallback
 
 ### Optimizations
+
 - `useCallback` for all event handlers
 - `useRef` for DOM measurements
 - Minimal re-renders on drag
@@ -325,4 +355,3 @@ Successfully created a **reusable, maintainable, and extensible** calendar syste
 - ✨ **Provides excellent UX** with Google Calendar-style interface
 
 **All pages now use the same beautiful drag-and-drop calendar!** 🎉
-

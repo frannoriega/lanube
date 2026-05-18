@@ -1,8 +1,12 @@
-import { PrismaClient, ResourceType, UserRole } from "@/generated/prisma/client"
+import {
+  PrismaClient,
+  ResourceType,
+  UserRole,
+} from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter })
+const prisma = new PrismaClient({ adapter });
 
 /**
  * Dev-only accounts: same shape the app expects from register → email confirm → signup profile.
@@ -14,27 +18,27 @@ const prisma = new PrismaClient({ adapter })
  * To add more users: duplicate the object in EXAMPLE_USERS, use unique `email` + `dni`, and pick `role`:
  * `UserRole.USER` | `UserRole.ADMIN`.
  */
-const BCRYPT_ROUNDS = 12
+const BCRYPT_ROUNDS = 12;
 
 function generateUsers(): Array<{
-  email: string
-  password: string
-  name: string
-  lastName: string
-  dni: string
-  institution: string | null
-  reasonToJoin: string
-  role: UserRole
+  email: string;
+  password: string;
+  name: string;
+  lastName: string;
+  dni: string;
+  institution: string | null;
+  reasonToJoin: string;
+  role: UserRole;
 }> {
-  let users: Array<{
-    email: string
-    password: string
-    name: string
-    lastName: string
-    dni: string
-    institution: string | null
-    reasonToJoin: string
-    role: UserRole
+  const users: Array<{
+    email: string;
+    password: string;
+    name: string;
+    lastName: string;
+    dni: string;
+    institution: string | null;
+    reasonToJoin: string;
+    role: UserRole;
   }> = [];
 
   for (let i = 1; i <= 30; i++) {
@@ -69,7 +73,7 @@ function generateUsers(): Array<{
 async function seedExampleUsers() {
   const users = generateUsers();
   for (const u of users) {
-    const passwordHash = await bcrypt.hash(u.password, BCRYPT_ROUNDS)
+    const passwordHash = await bcrypt.hash(u.password, BCRYPT_ROUNDS);
 
     const user = await prisma.user.upsert({
       where: { email: u.email },
@@ -83,8 +87,8 @@ async function seedExampleUsers() {
         passwordHash,
         emailVerified: BigInt(Date.now()),
         name: `${u.name} ${u.lastName}`,
-      }
-    })
+      },
+    });
 
     await prisma.registeredUser.upsert({
       where: { userId: user.id },
@@ -105,9 +109,11 @@ async function seedExampleUsers() {
         reasonToJoin: u.reasonToJoin,
         role: u.role,
       },
-    })
+    });
 
-    console.log(`[seed] User ready: ${u.email} (password: ${u.password}) role=${u.role}`)
+    console.log(
+      `[seed] User ready: ${u.email} (password: ${u.password}) role=${u.role}`,
+    );
   }
 }
 
@@ -118,7 +124,7 @@ async function main() {
       capacity: 6,
       isExclusive: true,
     },
-  })
+  });
 
   const laboratoryResource = await prisma.fungibleResource.create({
     data: {
@@ -126,23 +132,23 @@ async function main() {
       capacity: 8,
       isExclusive: true,
     },
-  })
+  });
 
   const auditoriumResource = await prisma.fungibleResource.create({
     data: {
       name: "Auditorio",
       capacity: 40,
     },
-  })
+  });
 
   const coworkingResource = await prisma.fungibleResource.create({
     data: {
       name: "Coworking",
       capacity: 12,
     },
-  })
+  });
 
-  const resources = await prisma.resource.createMany({
+  await prisma.resource.createMany({
     data: [
       {
         name: "Sala de reuniones",
@@ -165,17 +171,17 @@ async function main() {
         fungibleResourceId: coworkingResource.id,
       },
     ],
-  })
+  });
 
-  await seedExampleUsers()
+  await seedExampleUsers();
 }
 
 main()
   .then(async () => {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

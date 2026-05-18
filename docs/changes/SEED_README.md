@@ -5,6 +5,7 @@ Este archivo de semilla crea datos de muestra para el sistema de gestión de cow
 ## Cuenta de Administrador
 
 **Nota**: La cuenta de administrador se creará automáticamente cuando inicies sesión por primera vez con:
+
 - **Email**: frannoriega.92@gmail.com
 - **Name**: Francisco Noriega (se obtiene de Google)
 - **Role**: Se asignará como ADMIN automáticamente
@@ -12,6 +13,7 @@ Este archivo de semilla crea datos de muestra para el sistema de gestión de cow
 ## Datos de Muestra Creados
 
 ### 👥 Usuarios (5 usuarios de muestra)
+
 - María González - Universidad Nacional (working on AI thesis)
 - Carlos Rodríguez - StartupTech (fintech development)
 - Ana Martínez - Freelancer (designer)
@@ -19,20 +21,24 @@ Este archivo de semilla crea datos de muestra para el sistema de gestión de cow
 - Lucía Fernández - Comunidad Tech (event organizer)
 
 ### 📅 Reservas (8 reservas)
+
 - **Coworking**: 3 reservations (approved, pending, approved)
 - **Laboratory**: 2 reservations (approved, pending)
 - **Auditorium**: 2 reservations (approved, rejected)
 
 ### 🚪 Ingresos (5 ingresos)
+
 - 3 completed check-ins with check-out times
 - 2 active check-ins (currently in La Nube)
 
 ### ⚠️ Incidentes (3 incidentes)
+
 - AC problem (OPEN status)
 - Lab equipment issue (RESOLVED)
 - Audio system problem (CLOSED)
 
 ### 🔗 Relaciones Incidente-Usuario
+
 - Automatic linking of users present during incidents
 - Based on check-in times and incident timestamps
 

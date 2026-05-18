@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Switch } from "@/components/ui/switch"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
   Calendar,
@@ -27,11 +27,11 @@ import {
   Sun,
   Moon,
   CheckCircle,
-} from "lucide-react"
-import { useTheme } from "next-themes"
+} from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface AdminLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 const navigation = [
@@ -40,52 +40,66 @@ const navigation = [
   { name: "Reservas", href: "/admin/reservations", icon: Calendar },
   { name: "Ingreso/Salida", href: "/admin/checkin", icon: CheckCircle },
   { name: "Incidentes", href: "/admin/incidents", icon: AlertTriangle },
-]
+];
 
 function navItemActive(href: string, pathname: string): boolean {
   if (pathname === href) return true;
-  if (href === "/admin/reservations" && pathname.startsWith("/admin/reservations"))
+  if (
+    href === "/admin/reservations" &&
+    pathname.startsWith("/admin/reservations")
+  )
     return true;
   return false;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { data: session } = useSession()
-  const router = useRouter()
-  const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const { data: session } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" })
-  }
+    await signOut({ callbackUrl: "/" });
+  };
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light')
+    setTheme(theme === "light" ? "dark" : "light");
     // TODO: Implement theme switching logic
-  }
+  };
 
-  const isActive = (href: string) => navItemActive(href, pathname)
+  const isActive = (href: string) => navItemActive(href, pathname);
 
   return (
     <div className={`min-h-screen bg-slate-100 dark:bg-slate-800`}>
       {/* Mobile sidebar */}
-      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+      <div
+        className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? "block" : "hidden"}`}
+      >
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          onClick={() => setSidebarOpen(false)}
+        />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col glass-sidebar dark:glass-sidebar-dark shadow-xl">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center space-x-2">
               <div className="h-8 w-8 rounded-full bg-la-nube-primary flex items-center justify-center">
                 <span className="text-sm">🌩️</span>
               </div>
-              <span className="text-xl font-bold text-la-nube-primary">La Nube Admin</span>
+              <span className="text-xl font-bold text-la-nube-primary">
+                La Nube Admin
+              </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
-              const Icon = item.icon
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
@@ -100,7 +114,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <Icon className="mr-3 h-5 w-5" />
                   {item.name}
                 </Link>
-              )
+              );
             })}
           </nav>
         </div>
@@ -114,12 +128,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="h-8 w-8 rounded-full bg-la-nube-primary flex items-center justify-center">
                 <span className="text-sm">🌩️</span>
               </div>
-              <span className="text-xl font-bold text-la-nube-primary">La Nube Admin</span>
+              <span className="text-xl font-bold text-la-nube-primary">
+                La Nube Admin
+              </span>
             </div>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
-              const Icon = item.icon
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
@@ -133,7 +149,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <Icon className="mr-3 h-5 w-5" />
                   {item.name}
                 </Link>
-              )
+              );
             })}
           </nav>
         </div>
@@ -158,16 +174,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {/* Theme toggle */}
               <div className="flex items-center gap-x-2">
                 <Sun className="h-4 w-4" />
-                <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+                <Switch
+                  checked={theme === "dark"}
+                  onCheckedChange={toggleTheme}
+                />
                 <Moon className="h-4 w-4" />
               </div>
 
               {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                  >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
+                      <AvatarImage
+                        src={session?.user?.image || ""}
+                        alt={session?.user?.name || ""}
+                      />
                       <AvatarFallback>
                         {session?.user?.name?.charAt(0) || "A"}
                       </AvatarFallback>
@@ -186,7 +211,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/admin/settings')}>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/admin/settings")}
+                  >
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Configuración</span>
                   </DropdownMenuItem>
@@ -209,5 +236,5 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </main>
       </div>
     </div>
-  )
+  );
 }

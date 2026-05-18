@@ -45,6 +45,7 @@ All 8 PostgreSQL functions are now installed:
 ### Seed Data
 
 The database has been seeded with:
+
 - Sample resources (meeting rooms, coworking spaces, lab, auditorium)
 - Fungible resource groups
 - Any other seed data from `prisma/seed.ts`
@@ -56,7 +57,7 @@ The database has been seeded with:
 All timestamp columns in the database store **UTC timestamps**:
 
 ```sql
--- Table columns use TIMESTAMP(3) 
+-- Table columns use TIMESTAMP(3)
 CREATE TABLE "reservations" (
   "start_time" TIMESTAMP(3) NOT NULL,
   "end_time" TIMESTAMP(3) NOT NULL,
@@ -98,33 +99,36 @@ FROM reservations r
 ### Client-Side Handling
 
 **API Layer**: Always sends/receives ISO 8601 strings in UTC
+
 ```typescript
 // Sending to server
 body: JSON.stringify({
   startTime: new Date().toISOString(), // UTC string
-  endTime: new Date().toISOString(),   // UTC string
-})
+  endTime: new Date().toISOString(), // UTC string
+});
 
 // Receiving from server
-const occurrences = data.occurrences.map(occ => ({
+const occurrences = data.occurrences.map((occ) => ({
   ...occ,
   occurrenceStartTime: parseISO(occ.occurrenceStartTime), // Parses as local
-}))
+}));
 ```
 
 **UI Layer**: Displays in user's local timezone
+
 ```typescript
 // Display uses local timezone automatically
-format(parseISO(occ.occurrenceStartTime), "HH:mm", { locale: es })
+format(parseISO(occ.occurrenceStartTime), "HH:mm", { locale: es });
 // Shows: "10:30" (in user's local timezone)
 
-format(parseISO(occ.occurrenceStartTime), "PPP", { locale: es })
+format(parseISO(occ.occurrenceStartTime), "PPP", { locale: es });
 // Shows: "15 de octubre de 2025" (in user's local timezone)
 ```
 
 ## 🎯 How It Works
 
 ### Storage Flow (UTC)
+
 ```
 User selects: "Oct 15, 2025 10:30 AM" (local time)
        ↓
@@ -136,6 +140,7 @@ Database stores: "2025-10-15 14:30:00.000" (UTC as TIMESTAMP(3))
 ```
 
 ### Retrieval Flow (Local Display)
+
 ```
 Database returns: "2025-10-15 14:30:00.000" (UTC)
        ↓
@@ -151,10 +156,11 @@ format(): "10:30 AM" (displayed in user's local timezone)
 ## ✅ Verification
 
 ### Check Functions Exist
+
 ```sql
-SELECT routine_name 
-FROM information_schema.routines 
-WHERE routine_schema = 'public' 
+SELECT routine_name
+FROM information_schema.routines
+WHERE routine_schema = 'public'
   AND routine_type = 'FUNCTION';
 
 -- Should return:
@@ -169,6 +175,7 @@ WHERE routine_schema = 'public'
 ```
 
 ### Check Seed Data
+
 ```sql
 SELECT * FROM fungible_resources;
 SELECT * FROM resources;
@@ -178,6 +185,7 @@ SELECT * FROM resources;
 ```
 
 ### Test Expand Function
+
 ```sql
 SELECT * FROM expand_recurring_reservations(
   NULL, NULL, NULL, NULL, NULL,
@@ -193,7 +201,7 @@ SELECT * FROM expand_recurring_reservations(
 The database is now fully bootstrapped and ready for use with:
 
 - ✅ All tables created
-- ✅ All functions installed  
+- ✅ All functions installed
 - ✅ All triggers active
 - ✅ All indexes created
 - ✅ Seed data loaded
@@ -210,6 +218,7 @@ All four calendar pages are now functional:
 - 🎤 **Auditorium** (`/user/auditorium`)
 
 Each with:
+
 - Google Calendar-style drag-and-drop interface
 - 15-minute interval selection
 - Week navigation (current + 1 week ahead)
@@ -222,11 +231,13 @@ Each with:
 ### For Development
 
 1. **Start the dev server**:
+
    ```bash
    npm run dev
    ```
 
 2. **Access the application**:
+
    ```
    http://localhost:3000
    ```
@@ -239,6 +250,7 @@ Each with:
 ### For Testing
 
 Test the calendar features:
+
 - Drag and drop to select times
 - Create reservations
 - Navigate between weeks
@@ -250,10 +262,11 @@ Test the calendar features:
 ### Change Business Hours
 
 Edit `src/components/organisms/calendar/WeekCalendar.tsx`:
+
 ```typescript
 const BUSINESS_HOURS = {
-  START: 9,   // Change this
-  END: 18,    // Change this
+  START: 9, // Change this
+  END: 18, // Change this
 } as const;
 ```
 
@@ -276,4 +289,3 @@ All UI elements and validations will automatically adjust!
 ## ✨ Success!
 
 Your database is bootstrapped and the calendar system is ready to use! 🎊
-

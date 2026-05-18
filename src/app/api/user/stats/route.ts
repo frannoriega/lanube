@@ -15,11 +15,9 @@ export async function GET() {
 
     return NextResponse.json(serializeJson(stats));
   } catch {
-    return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }
-
-
-
-
-

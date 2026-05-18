@@ -9,6 +9,7 @@ After the database reset and Prisma Client regeneration, you **must restart your
 ### 1. Stop the Current Server
 
 In your terminal where `npm run dev` is running:
+
 ```
 Press: Ctrl + C
 ```
@@ -24,6 +25,7 @@ npm run dev
 ### The Problem
 
 The error you saw:
+
 ```
 ERROR: cache lookup failed for type 35982
 ```
@@ -38,11 +40,13 @@ This happens because:
 ### The Solution
 
 **Regenerate Prisma Client** (✅ Already done)
+
 ```bash
 npx prisma generate
 ```
 
 **Restart Node Process** (⚠️ You need to do this)
+
 - Clears the old Prisma Client from memory
 - Loads the new Prisma Client with correct type OIDs
 - Fresh connection to database
@@ -82,4 +86,3 @@ This ensures Node's cached Prisma Client is refreshed with the latest schema inf
 ---
 
 **Please restart your dev server now and try accessing the calendar pages!** 🚀
-

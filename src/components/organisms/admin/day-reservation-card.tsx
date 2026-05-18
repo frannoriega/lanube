@@ -11,7 +11,11 @@ import {
 } from "@/components/organisms/admin/admin-service-day-timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import {
   peakOccupancyRatio,
@@ -63,8 +67,12 @@ export function DayReservationCard({
   className?: string;
 }) {
   const resourcesMeta = uniqueResourcesMeta(reservationsForDay);
-  const pending = reservationsForDay.filter((r) => r.status === "PENDING").length;
-  const approved = reservationsForDay.filter((r) => r.status === "APPROVED").length;
+  const pending = reservationsForDay.filter(
+    (r) => r.status === "PENDING",
+  ).length;
+  const approved = reservationsForDay.filter(
+    (r) => r.status === "APPROVED",
+  ).length;
   const conflictSpaces = spacesInConflictCount(
     reservationsForDay,
     resourcesMeta,
@@ -102,13 +110,19 @@ export function DayReservationCard({
                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                     Pendientes
                   </p>
-                  <p className="text-[22px] font-semibold tabular-nums mt-1">{pending}</p>
+                  <p className="text-[22px] font-semibold tabular-nums mt-1">
+                    {pending}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="glass-card dark:glass-card-dark">
                 <CardContent>
-                  <p className="text-xs text-muted-foreground">Aprobadas (dia)</p>
-                  <p className="text-[22px] font-semibold tabular-nums mt-1">{approved}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aprobadas (dia)
+                  </p>
+                  <p className="text-[22px] font-semibold tabular-nums mt-1">
+                    {approved}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="glass-card dark:glass-card-dark">
@@ -130,8 +144,8 @@ export function DayReservationCard({
                         <HelpCircle className="size-3.5 shrink-0 cursor-help text-muted-foreground/60" />
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-56">
-                        Maxima proporcion de capacidad utilizada en un slot de 15 min
-                        del dia. Valores &gt;100% indican sobrecarga.
+                        Maxima proporcion de capacidad utilizada en un slot de
+                        15 min del dia. Valores &gt;100% indican sobrecarga.
                       </TooltipContent>
                     </Tooltip>
                   </p>

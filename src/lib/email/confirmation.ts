@@ -1,12 +1,12 @@
-'use server';
-import nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
+"use server";
+import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 
 const SMTP_SERVER_HOST = process.env.SMTP_SERVER_HOST;
 const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
 const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD;
 const SMTP_SERVER_PORT = process.env.SMTP_SERVER_PORT;
-const SMTP_SERVER_SECURE = process.env.SMTP_SERVER_SECURE === 'true';
+const SMTP_SERVER_SECURE = process.env.SMTP_SERVER_SECURE === "true";
 const transporter = nodemailer.createTransport({
   host: SMTP_SERVER_HOST,
   port: SMTP_SERVER_PORT,
@@ -14,24 +14,36 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: SMTP_SERVER_USERNAME,
     pass: SMTP_SERVER_PASSWORD,
-  }
+  },
 } as SMTPTransport.Options);
 
 const FROM_EMAIL = "La Nube <no-responder@cdeluruguay.gob.ar>";
 
 export async function sendEmailConfirmation(
   email: string,
-  token: string
+  token: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await transporter.verify();
   } catch (error) {
-    console.error('Error al verificar el servidor de correo', SMTP_SERVER_USERNAME, SMTP_SERVER_PASSWORD, error);
-    return { success: false, error: 'Error al verificar el servidor de correo' };
+    console.error(
+      "Error al verificar el servidor de correo",
+      SMTP_SERVER_USERNAME,
+      SMTP_SERVER_PASSWORD,
+      error,
+    );
+    return {
+      success: false,
+      error: "Error al verificar el servidor de correo",
+    };
   }
-  const baseUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
+  const baseUrl =
+    process.env.NEXTAUTH_URL ??
+    process.env.VERCEL_URL ??
+    "http://localhost:3000";
   const confirmLink = `${baseUrl}/api/auth/confirm-email?token=${token}`;
-  const logoUrl = "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
+  const logoUrl =
+    "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
   const info = await transporter.sendMail({
     from: FROM_EMAIL,
@@ -72,7 +84,7 @@ export async function sendEmailConfirmation(
   });
 
   if (info.rejected.length > 0) {
-    return { success: false, error: 'Error al enviar el email' };
+    return { success: false, error: "Error al enviar el email" };
   }
   return { success: true };
 }

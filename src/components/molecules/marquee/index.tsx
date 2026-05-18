@@ -1,6 +1,13 @@
 "use client";
 
-import { Children, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Children,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@/lib/utils";
 
 export type MarqueeDirection = "left" | "right";
@@ -74,7 +81,7 @@ export function Marquee({
         maskImage: `linear-gradient(to right, transparent 0, black var(--marquee-gradient-width), black calc(100% - var(--marquee-gradient-width)), transparent 100%)`,
         WebkitMaskImage: `linear-gradient(to right, transparent 0, black var(--marquee-gradient-width), black calc(100% - var(--marquee-gradient-width)), transparent 100%)`,
       }) as React.CSSProperties,
-    [gradientWidthValue]
+    [gradientWidthValue],
   );
 
   const duration = contentWidth > 0 ? contentWidth / speed : 20;
@@ -84,7 +91,10 @@ export function Marquee({
   const renderContentUnit = (keyPrefix: string) => (
     <div key={keyPrefix} className="flex shrink-0 items-center">
       {childArray.map((child, i) => (
-        <div key={`${keyPrefix}-${i}`} className={cn("shrink-0", childClassName)}>
+        <div
+          key={`${keyPrefix}-${i}`}
+          className={cn("shrink-0", childClassName)}
+        >
           {child}
         </div>
       ))}
@@ -115,13 +125,16 @@ export function Marquee({
       >
         <div ref={contentRef} className="flex shrink-0 items-center">
           {childArray.map((child, i) => (
-            <div key={`initial-${i}`} className={cn("shrink-0", childClassName)}>
+            <div
+              key={`initial-${i}`}
+              className={cn("shrink-0", childClassName)}
+            >
               {child}
             </div>
           ))}
         </div>
         {Array.from({ length: multiplier - 1 }, (_, i) =>
-          renderContentUnit(`clone-${i}`)
+          renderContentUnit(`clone-${i}`),
         )}
       </div>
     </div>

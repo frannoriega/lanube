@@ -1,46 +1,46 @@
-"use client"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { type Column, type ColumnDef } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
+import { type Column, type ColumnDef } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
-import { type AdminUser } from "./types"
+import { type AdminUser } from "./types";
 
 const formatDate = (value: string | Date | number) => {
-  const date = value instanceof Date ? value : new Date(value)
+  const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "—"
+    return "—";
   }
 
   return date.toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  })
-}
+  });
+};
 
 const resolveRoleLabel = (role?: string | null) => {
   switch (role) {
     case "ADMIN":
-      return "Administrador"
+      return "Administrador";
     case "STAFF":
-      return "Equipo"
+      return "Equipo";
     case "USER":
-      return "Usuario"
+      return "Usuario";
     default:
-      return role ?? "Sin rol"
+      return role ?? "Sin rol";
   }
-}
+};
 
 const resolveStatusBadge = (status?: string | null) => {
   if (!status) {
-    return <Badge variant="outline">Sin estado</Badge>
+    return <Badge variant="outline">Sin estado</Badge>;
   }
 
-  const normalized = status.toUpperCase()
+  const normalized = status.toUpperCase();
 
   if (normalized === "ACTIVE") {
-    return <Badge className="bg-green-100 text-green-800">Activo</Badge>
+    return <Badge className="bg-green-100 text-green-800">Activo</Badge>;
   }
 
   if (normalized === "INACTIVE" || normalized === "BANNED") {
@@ -48,15 +48,15 @@ const resolveStatusBadge = (status?: string | null) => {
       <Badge className="bg-red-100 text-red-700">
         {normalized === "BANNED" ? "Bloqueado" : "Inactivo"}
       </Badge>
-    )
+    );
   }
 
-  return <Badge variant="outline">{status}</Badge>
-}
+  return <Badge variant="outline">{status}</Badge>;
+};
 
 interface DataTableColumnHeaderProps<TData> {
-  column: Column<TData, unknown>
-  title: string
+  column: Column<TData, unknown>;
+  title: string;
 }
 
 function DataTableColumnHeader<TData>({
@@ -68,10 +68,10 @@ function DataTableColumnHeader<TData>({
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
         {title}
       </span>
-    )
+    );
   }
 
-  const sorted = column.getIsSorted()
+  const sorted = column.getIsSorted();
 
   return (
     <button
@@ -88,7 +88,7 @@ function DataTableColumnHeader<TData>({
         <ArrowUpDown className="h-3 w-3 opacity-60" />
       )}
     </button>
-  )
+  );
 }
 
 export const adminUsersColumns: ColumnDef<AdminUser>[] = [
@@ -188,5 +188,4 @@ export const adminUsersColumns: ColumnDef<AdminUser>[] = [
       </span>
     ),
   },
-]
-
+];

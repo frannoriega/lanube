@@ -19,7 +19,11 @@ function roundToSlot(date: Date, roundDown: boolean): Date {
   const d = new Date(date);
   const mins = d.getMinutes();
   const remainder = mins % SLOT_MINUTES;
-  d.setMinutes(roundDown ? mins - remainder : mins + (remainder ? SLOT_MINUTES - remainder : 0));
+  d.setMinutes(
+    roundDown
+      ? mins - remainder
+      : mins + (remainder ? SLOT_MINUTES - remainder : 0),
+  );
   d.setSeconds(0, 0);
   return d;
 }
@@ -38,7 +42,7 @@ function getSlotsBetween(start: Date, end: Date): Date[] {
 
 function positionOnTimeline(
   reservation: AdminReservationListResult,
-  timelineStart: Date
+  timelineStart: Date,
 ): { startBlock: number; spanBlocks: number } {
   const start = new Date(reservation.startTime).getTime();
   const end = new Date(reservation.endTime).getTime();
@@ -59,7 +63,11 @@ export function ReservationTimeline({
   showActions = true,
 }: {
   reservations: AdminReservationListResult[];
-  onAction?: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
+  onAction?: (
+    id: string,
+    action: "APPROVED" | "REJECTED",
+    reason?: string,
+  ) => void;
   processing?: string | null;
   showActions?: boolean;
 }) {
@@ -80,9 +88,7 @@ export function ReservationTimeline({
     return { timelineStart: start, slots, displaySlots };
   }, [reservations, now]);
 
-  const gridCols = showActions && onAction
-    ? "128px 1fr 140px"
-    : "128px 1fr";
+  const gridCols = showActions && onAction ? "128px 1fr 140px" : "128px 1fr";
 
   return (
     <div className="w-full overflow-hidden">
@@ -93,7 +99,10 @@ export function ReservationTimeline({
           gridTemplateRows: `${HEADER_HEIGHT}px repeat(${reservations.length}, auto)`,
         }}
       >
-        <div className="border-b border-r border-gray-200 dark:border-gray-700" style={{ gridRow: 1, gridColumn: 1 }} />
+        <div
+          className="border-b border-r border-gray-200 dark:border-gray-700"
+          style={{ gridRow: 1, gridColumn: 1 }}
+        />
         <div
           className="border-b border-gray-200 dark:border-gray-800 overflow-x-auto overflow-y-hidden min-w-0"
           style={{
@@ -131,7 +140,8 @@ export function ReservationTimeline({
                 <div
                   className={cn(
                     "w-full border-t border-gray-200 dark:border-gray-700 shrink-0",
-                    i % 4 === 0 && "border-l-2 border-l-gray-300 dark:border-l-gray-600"
+                    i % 4 === 0 &&
+                      "border-l-2 border-l-gray-300 dark:border-l-gray-600",
                   )}
                   style={{ height: "25%" }}
                 />
@@ -139,7 +149,10 @@ export function ReservationTimeline({
             ))}
 
             {reservations.map((r, rowIdx) => {
-              const { startBlock, spanBlocks } = positionOnTimeline(r, timelineStart);
+              const { startBlock, spanBlocks } = positionOnTimeline(
+                r,
+                timelineStart,
+              );
               const blockColumns = displaySlots.length;
               const leftPct = (startBlock / blockColumns) * 100;
               const widthPct = (spanBlocks / blockColumns) * 100;
@@ -150,10 +163,11 @@ export function ReservationTimeline({
                     <div
                       key={`b-${r.id}-${i}`}
                       className={cn(
-                        i % 4 === 0 && "border-l-2 border-l-gray-300 dark:border-l-gray-600",
+                        i % 4 === 0 &&
+                          "border-l-2 border-l-gray-300 dark:border-l-gray-600",
                         i < slots.length
                           ? "border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50"
-                          : "bg-transparent"
+                          : "bg-transparent",
                       )}
                       style={{
                         width: SLOT_WIDTH_PX,
@@ -166,15 +180,22 @@ export function ReservationTimeline({
                   ))}
                   <div
                     className="relative py-1.5 px-0 col-start-1 col-end-[-1]"
-                    style={{ gridRow: rowIdx + 2, gridColumn: "1 / -1", minHeight: 0 }}
+                    style={{
+                      gridRow: rowIdx + 2,
+                      gridColumn: "1 / -1",
+                      minHeight: 0,
+                    }}
                   >
                     <button
                       type="button"
                       className={cn(
                         "absolute top-1 bottom-1 left-0 rounded px-1 flex items-center text-xs text-left cursor-pointer z-10",
-                        r.status === "PENDING" && "bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-100 hover:bg-amber-300 dark:hover:bg-amber-900/70",
-                        r.status === "APPROVED" && "bg-green-200 dark:bg-green-900/50 text-green-900 dark:text-green-100 hover:bg-green-300 dark:hover:bg-green-900/70",
-                        r.status === "REJECTED" && "bg-red-200 dark:bg-red-900/50 text-red-900 dark:text-red-100 hover:bg-red-300 dark:hover:bg-red-900/70"
+                        r.status === "PENDING" &&
+                          "bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-100 hover:bg-amber-300 dark:hover:bg-amber-900/70",
+                        r.status === "APPROVED" &&
+                          "bg-green-200 dark:bg-green-900/50 text-green-900 dark:text-green-100 hover:bg-green-300 dark:hover:bg-green-900/70",
+                        r.status === "REJECTED" &&
+                          "bg-red-200 dark:bg-red-900/50 text-red-900 dark:text-red-100 hover:bg-red-300 dark:hover:bg-red-900/70",
                       )}
                       style={{
                         left: `${leftPct}%`,
@@ -200,7 +221,10 @@ export function ReservationTimeline({
           </>
         </div>
         {showActions && onAction && (
-          <div className="border-b border-l border-gray-200 dark:border-gray-700" style={{ gridRow: 1, gridColumn: 3 }} />
+          <div
+            className="border-b border-l border-gray-200 dark:border-gray-700"
+            style={{ gridRow: 1, gridColumn: 3 }}
+          />
         )}
 
         {reservations.map((r, idx) => {
@@ -212,7 +236,10 @@ export function ReservationTimeline({
                 className="border-b border-r border-gray-100 dark:border-gray-800 py-1.5 pr-2 flex items-center"
                 style={{ gridRow: idx + 2, gridColumn: 1 }}
               >
-                <span className="text-sm font-medium truncate block" title={userName}>
+                <span
+                  className="text-sm font-medium truncate block"
+                  title={userName}
+                >
                   {userName}
                 </span>
               </div>

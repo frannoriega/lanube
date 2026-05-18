@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
  */
 export function useViewportWidth(): number | undefined {
   const [width, setWidth] = useState<number | undefined>(() =>
-    typeof window !== "undefined" ? window.innerWidth : undefined
+    typeof window !== "undefined" ? window.innerWidth : undefined,
   );
 
   useEffect(() => {

@@ -1,13 +1,19 @@
-"use client"
+"use client";
 
-import { useServerTime } from "@/components/providers/server-time"
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { useServerTime } from "@/components/providers/server-time";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Search,
   CheckCircle,
@@ -16,172 +22,179 @@ import {
   Building2,
   Microscope,
   Calendar,
-  AlertTriangle
-} from "lucide-react"
-import { toast } from "sonner"
+  AlertTriangle,
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface CurrentUser {
-  id: string
-  name: string
-  lastName: string
-  email: string
-  dni: string
-  checkInTime: number
-  reservationEndTime: number | null
-  service: string
-  reservationId: string
+  id: string;
+  name: string;
+  lastName: string;
+  email: string;
+  dni: string;
+  checkInTime: number;
+  reservationEndTime: number | null;
+  service: string;
+  reservationId: string;
 }
 
 export default function AdminCheckInPage() {
-  const { now } = useServerTime()
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [currentUsers, setCurrentUsers] = useState<CurrentUser[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [checkOutProcessing, setCheckOutProcessing] = useState<string | null>(null)
+  const { now } = useServerTime();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [currentUsers, setCurrentUsers] = useState<CurrentUser[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [checkOutProcessing, setCheckOutProcessing] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
-    if (status === "loading") return
+    if (status === "loading") return;
 
     if (!session) {
-      router.push("/")
-      return
+      router.push("/");
+      return;
     }
 
-    fetchCurrentUsers()
+    fetchCurrentUsers();
 
     // Refresh every 30 seconds
-    const interval = setInterval(fetchCurrentUsers, 30000)
-    return () => clearInterval(interval)
-  }, [session, status, router])
+    const interval = setInterval(fetchCurrentUsers, 30000);
+    return () => clearInterval(interval);
+  }, [session, status, router]);
 
   const fetchCurrentUsers = async () => {
     try {
-      const response = await fetch('/api/admin/checkin/current')
+      const response = await fetch("/api/admin/checkin/current");
       if (response.ok) {
-        const data = await response.json()
-        setCurrentUsers(data)
+        const data = await response.json();
+        setCurrentUsers(data);
       }
     } catch {
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCheckOut = async (userId: string) => {
-    setCheckOutProcessing(userId)
+    setCheckOutProcessing(userId);
 
     try {
       const response = await fetch(`/api/admin/checkin/${userId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ action: 'checkout' }),
-      })
+        body: JSON.stringify({ action: "checkout" }),
+      });
 
       if (response.ok) {
-        toast.success('Check-out realizado exitosamente')
-        fetchCurrentUsers()
+        toast.success("Check-out realizado exitosamente");
+        fetchCurrentUsers();
       } else {
-        const error = await response.json()
-        toast.error(error.message || 'Error al realizar check-out')
+        const error = await response.json();
+        toast.error(error.message || "Error al realizar check-out");
       }
     } catch {
-      toast.error('Error al realizar check-out')
+      toast.error("Error al realizar check-out");
     } finally {
-      setCheckOutProcessing(null)
+      setCheckOutProcessing(null);
     }
-  }
+  };
 
   const getServiceIcon = (service: string) => {
     switch (service) {
-      case 'COWORKING':
-        return <Building2 className="h-4 w-4 text-blue-500" />
-      case 'LAB':
-        return <Microscope className="h-4 w-4 text-green-500" />
-      case 'AUDITORIUM':
-        return <Calendar className="h-4 w-4 text-purple-500" />
+      case "COWORKING":
+        return <Building2 className="h-4 w-4 text-blue-500" />;
+      case "LAB":
+        return <Microscope className="h-4 w-4 text-green-500" />;
+      case "AUDITORIUM":
+        return <Calendar className="h-4 w-4 text-purple-500" />;
       default:
-        return <Users className="h-4 w-4 text-gray-500" />
+        return <Users className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
   const getServiceName = (service: string) => {
     switch (service) {
-      case 'COWORKING':
-        return 'Coworking'
-      case 'LAB':
-        return 'Laboratorio'
-      case 'AUDITORIUM':
-        return 'Auditorio'
+      case "COWORKING":
+        return "Coworking";
+      case "LAB":
+        return "Laboratorio";
+      case "AUDITORIUM":
+        return "Auditorio";
       default:
-        return service
+        return service;
     }
-  }
+  };
 
   const isReservationEndingSoon = (endTime: number | null) => {
-    if (endTime == null || endTime <= 0) return false
-    const t = now()
-    const end = new Date(endTime)
-    const diffMinutes = (end.getTime() - t.getTime()) / (1000 * 60)
-    return diffMinutes <= 30 && diffMinutes > 0 // Ending in next 30 minutes
-  }
+    if (endTime == null || endTime <= 0) return false;
+    const t = now();
+    const end = new Date(endTime);
+    const diffMinutes = (end.getTime() - t.getTime()) / (1000 * 60);
+    return diffMinutes <= 30 && diffMinutes > 0; // Ending in next 30 minutes
+  };
 
   const isReservationOverdue = (endTime: number | null) => {
-    if (endTime == null || endTime <= 0) return false
-    const t = now()
-    const end = new Date(endTime)
-    return end.getTime() < t.getTime()
-  }
+    if (endTime == null || endTime <= 0) return false;
+    const t = now();
+    const end = new Date(endTime);
+    return end.getTime() < t.getTime();
+  };
 
   const getTimeInCoworking = (checkInTime: number) => {
-    const t = now()
-    const checkIn = new Date(checkInTime)
-    const diffMinutes = Math.floor((t.getTime() - checkIn.getTime()) / (1000 * 60))
+    const t = now();
+    const checkIn = new Date(checkInTime);
+    const diffMinutes = Math.floor(
+      (t.getTime() - checkIn.getTime()) / (1000 * 60),
+    );
 
     if (diffMinutes < 60) {
-      return `${diffMinutes} min`
+      return `${diffMinutes} min`;
     } else {
-      const hours = Math.floor(diffMinutes / 60)
-      const minutes = diffMinutes % 60
-      return `${hours}h ${minutes}min`
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      return `${hours}h ${minutes}min`;
     }
-  }
+  };
 
-  const filteredUsers = currentUsers.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.dni.includes(searchTerm)
-  )
+  const filteredUsers = currentUsers.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.dni.includes(searchTerm),
+  );
 
-  const endingSoonUsers = filteredUsers.filter(user =>
-    isReservationEndingSoon(user.reservationEndTime)
-  )
+  const endingSoonUsers = filteredUsers.filter((user) =>
+    isReservationEndingSoon(user.reservationEndTime),
+  );
 
-  const overdueUsers = filteredUsers.filter(user =>
-    isReservationOverdue(user.reservationEndTime)
-  )
+  const overdueUsers = filteredUsers.filter((user) =>
+    isReservationOverdue(user.reservationEndTime),
+  );
 
   if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
       </div>
-    )
+    );
   }
 
   if (!session) {
-    return null
+    return null;
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Check-in / Check-out</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Check-in / Check-out
+        </h1>
         <p className="text-gray-600 dark:text-gray-300">
           Gestiona el acceso de usuarios a La Nube
         </p>
@@ -191,7 +204,9 @@ export default function AdminCheckInPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <Card className="glass-card dark:glass-card-dark">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Actuales</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Usuarios Actuales
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -201,21 +216,29 @@ export default function AdminCheckInPage() {
 
         <Card className="glass-card dark:glass-card-dark">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Terminan Pronto</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Terminan Pronto
+            </CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{endingSoonUsers.length}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {endingSoonUsers.length}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="glass-card dark:glass-card-dark">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tiempo Agotado</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Tiempo Agotado
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{overdueUsers.length}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {overdueUsers.length}
+            </div>
           </CardContent>
         </Card>
 
@@ -259,10 +282,14 @@ export default function AdminCheckInPage() {
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Users className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchTerm ? 'No se encontraron usuarios' : 'No hay usuarios en La Nube'}
+              {searchTerm
+                ? "No se encontraron usuarios"
+                : "No hay usuarios en La Nube"}
             </h3>
             <p className="text-gray-500">
-              {searchTerm ? 'Intenta con otros términos de búsqueda.' : 'Los usuarios aparecerán aquí cuando hagan check-in.'}
+              {searchTerm
+                ? "Intenta con otros términos de búsqueda."
+                : "Los usuarios aparecerán aquí cuando hagan check-in."}
             </p>
           </CardContent>
         </Card>
@@ -282,12 +309,21 @@ export default function AdminCheckInPage() {
                         <p>Email: {user.email}</p>
                         <p>DNI: {user.dni}</p>
                         <p>Servicio: {getServiceName(user.service)}</p>
-                        <p>Check-in: {new Date(user.checkInTime).toLocaleTimeString()}</p>
-                        <p>Tiempo en La Nube: {getTimeInCoworking(user.checkInTime)}</p>
+                        <p>
+                          Check-in:{" "}
+                          {new Date(user.checkInTime).toLocaleTimeString()}
+                        </p>
+                        <p>
+                          Tiempo en La Nube:{" "}
+                          {getTimeInCoworking(user.checkInTime)}
+                        </p>
                         <p>
                           Reserva termina:{" "}
-                          {user.reservationEndTime != null && user.reservationEndTime > 0
-                            ? new Date(user.reservationEndTime).toLocaleTimeString()
+                          {user.reservationEndTime != null &&
+                          user.reservationEndTime > 0
+                            ? new Date(
+                                user.reservationEndTime,
+                              ).toLocaleTimeString()
                             : "—"}
                         </p>
                       </div>
@@ -301,11 +337,12 @@ export default function AdminCheckInPage() {
                           Tiempo agotado
                         </Badge>
                       )}
-                      {isReservationEndingSoon(user.reservationEndTime) && !isReservationOverdue(user.reservationEndTime) && (
-                        <Badge className="bg-yellow-100 text-yellow-800">
-                          Termina pronto
-                        </Badge>
-                      )}
+                      {isReservationEndingSoon(user.reservationEndTime) &&
+                        !isReservationOverdue(user.reservationEndTime) && (
+                          <Badge className="bg-yellow-100 text-yellow-800">
+                            Termina pronto
+                          </Badge>
+                        )}
                     </div>
 
                     <Button
@@ -334,5 +371,5 @@ export default function AdminCheckInPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

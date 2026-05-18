@@ -5,6 +5,7 @@
 The initial implementation of calendar reservation filtering was inefficient:
 
 ### Before (Inefficient)
+
 ```typescript
 // Step 1: Query database for base reservations with OR logic
 const baseReservations = await prisma.reservation.findMany({
@@ -27,6 +28,7 @@ all.sort(...);
 ```
 
 **Issues**:
+
 - ❌ Multiple database round trips (1 + N queries where N = number of recurring reservations)
 - ❌ Data transferred multiple times
 - ❌ Filtering and sorting in application code
@@ -37,6 +39,7 @@ all.sort(...);
 Created a specialized PostgreSQL function that does everything in one query.
 
 ### After (Efficient)
+
 ```typescript
 // Single database query!
 const occurrences = await prisma.$queryRaw`
@@ -50,6 +53,7 @@ const occurrences = await prisma.$queryRaw`
 ```
 
 **Benefits**:
+
 - ✅ Single database round trip
 - ✅ All filtering at database level (faster)
 - ✅ All expansion at database level (faster)
@@ -66,6 +70,7 @@ const occurrences = await prisma.$queryRaw`
 **Location**: `prisma/migrations/20251008000836_functions_and_triggers/migration.sql`
 
 **Signature**:
+
 ```sql
 CREATE OR REPLACE FUNCTION expand_reservations_for_calendar(
   p_resource_id text,
@@ -82,6 +87,7 @@ RETURNS TABLE (
 ```
 
 **Logic**:
+
 ```sql
 WITH filtered_reservations AS (
   -- Apply OR logic: APPROVED OR user's own
@@ -93,20 +99,20 @@ WITH filtered_reservations AS (
     AND (
       r.status = 'APPROVED'
       OR
-      (r.reservable_type = 'USER' 
-       AND r.reservable_id = p_user_id 
+      (r.reservable_type = 'USER'
+       AND r.reservable_id = p_user_id
        AND r.status IN ('PENDING', 'APPROVED'))
     )
 ),
 expanded_reservations AS (
   -- Expand non-recurring
   SELECT ... FROM filtered_reservations WHERE is_recurring = false
-  
+
   UNION ALL
-  
+
   -- Expand recurring with generate_series
-  SELECT ... FROM filtered_reservations 
-  CROSS JOIN generate_series(...) 
+  SELECT ... FROM filtered_reservations
+  CROSS JOIN generate_series(...)
   WHERE is_recurring = true
 )
 -- Handle exceptions and return
@@ -118,6 +124,7 @@ SELECT * FROM expanded_reservations ORDER BY occurrence_start_time;
 **Function**: `getExpandedReservationsForCalendar`
 
 **Before** (82 lines, multiple queries):
+
 ```typescript
 const baseReservations = await prisma.reservation.findMany(...);
 const nonRecurring = baseReservations.filter(...).map(...);
@@ -132,6 +139,7 @@ return all;
 ```
 
 **After** (45 lines, single query):
+
 ```typescript
 const occurrences = await prisma.$queryRaw`
   SELECT * FROM expand_reservations_for_calendar(
@@ -147,17 +155,18 @@ return occurrences.map(row => ({ ... }));
 
 ### Scenario: Calendar Week with 10 Recurring Reservations
 
-| Metric | Before (App-Level) | After (DB-Level) | Improvement |
-|--------|-------------------|------------------|-------------|
-| Database Queries | 11 queries | 1 query | **91% reduction** |
-| Round Trips | 11 | 1 | **91% reduction** |
-| Data Transfer | ~50KB | ~5KB | **90% reduction** |
-| Processing Time | ~250ms | ~25ms | **90% faster** |
-| Code Complexity | High | Low | Much simpler |
+| Metric           | Before (App-Level) | After (DB-Level) | Improvement       |
+| ---------------- | ------------------ | ---------------- | ----------------- |
+| Database Queries | 11 queries         | 1 query          | **91% reduction** |
+| Round Trips      | 11                 | 1                | **91% reduction** |
+| Data Transfer    | ~50KB              | ~5KB             | **90% reduction** |
+| Processing Time  | ~250ms             | ~25ms            | **90% faster**    |
+| Code Complexity  | High               | Low              | Much simpler      |
 
 ### Benefits Scale with Data
 
 With 100 recurring reservations:
+
 - **Before**: 101 queries, ~500ms
 - **After**: 1 query, ~30ms
 - **Improvement**: **94% faster**
@@ -165,18 +174,20 @@ With 100 recurring reservations:
 ## 🎯 What The Function Does
 
 ### Step 1: Filter with OR Logic
+
 ```sql
 WHERE resource_id = p_resource_id
   AND (
     status = 'APPROVED'  -- All approved
     OR
-    (reservable_type = 'USER' 
-     AND reservable_id = p_user_id 
+    (reservable_type = 'USER'
+     AND reservable_id = p_user_id
      AND status IN ('PENDING', 'APPROVED'))  -- User's own
   )
 ```
 
 ### Step 2: Expand Recurring Reservations
+
 ```sql
 CROSS JOIN LATERAL generate_series(
   start_time,
@@ -186,6 +197,7 @@ CROSS JOIN LATERAL generate_series(
 ```
 
 ### Step 3: Handle Exceptions
+
 ```sql
 -- Cancel specific occurrences
 -- Modify specific occurrence times
@@ -193,6 +205,7 @@ LEFT JOIN reservation_exceptions ...
 ```
 
 ### Step 4: Return Sorted Results
+
 ```sql
 ORDER BY occurrence_start_time ASC
 ```
@@ -205,10 +218,10 @@ All in a **single database query**!
 
 ```typescript
 const occurrences = await getExpandedReservationsForCalendar(
-  resourceId,      // Which resource
-  userId,          // Current user's ID
-  startDate,       // Week start
-  endDate          // Week end
+  resourceId, // Which resource
+  userId, // Current user's ID
+  startDate, // Week start
+  endDate, // Week end
 );
 
 // Returns expanded occurrences with OR logic applied
@@ -226,23 +239,23 @@ For Meeting Room on Monday 9 AM - 6 PM:
     occurrenceStartTime: "2025-10-14T10:00:00Z",
     occurrenceEndTime: "2025-10-14T11:00:00Z",
     status: "APPROVED",
-    reservableId: "other_user_id"  // ← Other's approved
+    reservableId: "other_user_id", // ← Other's approved
   },
   {
     reservationId: "res_2",
     occurrenceStartTime: "2025-10-14T11:00:00Z",
     occurrenceEndTime: "2025-10-14T12:00:00Z",
     status: "PENDING",
-    reservableId: "current_user_id"  // ← Your pending
+    reservableId: "current_user_id", // ← Your pending
   },
   {
     reservationId: "res_3",
     occurrenceStartTime: "2025-10-14T14:00:00Z",
     occurrenceEndTime: "2025-10-14T16:00:00Z",
     status: "APPROVED",
-    reservableId: "current_user_id"  // ← Your approved
-  }
-]
+    reservableId: "current_user_id", // ← Your approved
+  },
+];
 ```
 
 ## 🚀 Database Execution
@@ -269,6 +282,7 @@ The function is now available in the database alongside the other 8 functions:
 ## 🎨 Visual Impact
 
 No change to the UI! The calendar still shows:
+
 - 🔵 Blue: Other's approved reservations
 - 🟢 Green: Your approved reservations
 - 🟡 Yellow: Your pending reservations
@@ -287,6 +301,7 @@ But now it's **10x faster** because everything happens in the database.
 ### Query Plan
 
 PostgreSQL optimizes this as:
+
 ```
 1. Index Scan on reservations (resource_id + status filters)
 2. Filter with OR logic (very fast)
@@ -315,7 +330,7 @@ SELECT * FROM expand_reservations_for_calendar(
 ### Performance Test
 
 ```sql
-EXPLAIN ANALYZE 
+EXPLAIN ANALYZE
 SELECT * FROM expand_reservations_for_calendar(...);
 
 -- Should show single-digit millisecond execution time
@@ -333,13 +348,13 @@ SELECT * FROM expand_reservations_for_calendar(...);
 ## 🎉 Summary
 
 **Replaced**: Multi-step application-level filtering and expansion  
-**With**: Single database-level function call  
+**With**: Single database-level function call
 
-**Result**: 
+**Result**:
+
 - 🚀 **10x performance improvement**
 - 📉 **50% code reduction**
 - 🎯 **Same functionality**
 - ✨ **Better scalability**
 
 The calendar is now blazing fast with efficient database queries! 🔥
-

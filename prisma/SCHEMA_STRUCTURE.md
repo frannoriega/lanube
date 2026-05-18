@@ -7,9 +7,11 @@ This project uses Prisma's modular schema feature (available from v6.7.0+) to or
 The schema is organized into the following model files:
 
 ### `auth.prisma`
+
 Authentication and user management models:
+
 - `Account` - OAuth account linking
-- `Session` - User sessions  
+- `Session` - User sessions
 - `User` - Core user model (minimal, for auth)
 - `RegisteredUser` - Extended user profile with full details
 - `VerificationToken` - Email verification tokens
@@ -18,30 +20,40 @@ Authentication and user management models:
 **Key Relationship:** `User` ↔ `RegisteredUser` (one-to-one). The `User` model handles authentication only, while `RegisteredUser` contains the full user profile and all app relationships.
 
 ### `bans.prisma`
+
 User ban management:
+
 - `Ban` - User ban records
 
 ### `resources.prisma`
+
 Resource management for bookable items:
+
 - `FungibleResource` - Resource types (meeting rooms, coworking spaces, etc.)
 - `Resource` - Individual resource instances
 - `ResourceType` enum
 
 ### `reservations.prisma`
+
 Reservation and check-in system:
+
 - `Reservation` - Resource reservations
 - `ReservationException` - Exceptions to recurring reservations
 - `CheckIn` - User check-ins
 - `ReservableType`, `EventType`, `ReservationStatus` enums
 
 ### `events.prisma`
+
 Event management:
+
 - `Event` - Events/activities
 - `UserEvent` - RegisteredUser-event relationships
 - `Participant` - External event participants
 
 ### `proposals.prisma`
+
 Community proposal system:
+
 - `Proposal` - Community proposals
 - `ProposalComment` - Comments on proposals
 - `ProposalLike` - Likes on proposals
@@ -49,21 +61,27 @@ Community proposal system:
 - `ProposalStatus` enum
 
 ### `incidents.prisma`
+
 Incident reporting and tracking:
+
 - `Incident` - Incident reports
 - `IncidentFollowup` - Follow-up messages on incidents
 - `IncidentUser` - RegisteredUsers involved in incidents
 - `IncidentStatus` enum
 
 ### `inventory.prisma`
+
 Inventory and purchase management:
+
 - `Inventory` - Inventory items
 - `PurchaseOrder` - Purchase orders
 - `OrderItem` - Items in purchase orders
 - `OrderStatus` enum
 
 ### `organizations.prisma`
+
 Organizations and teams:
+
 - `Organization` - Organizations (with hierarchy support)
 - `OrgMembership` - RegisteredUser-organization memberships
 - `Team` - Teams within organizations
@@ -74,6 +92,7 @@ Organizations and teams:
 Starting from **Prisma v6.7.0**, models are automatically imported from the `prisma/models/` folder. You don't need any build scripts or manual imports!
 
 The `schema.prisma` file only contains:
+
 - Generator configuration
 - Datasource configuration
 - A comment noting where models are located
@@ -149,7 +168,6 @@ This schema separates authentication from user profiles:
 - **`User`** - Minimal model for NextAuth.js authentication
   - Contains: `id`, `email`, `emailVerified`, `name`, `image`
   - Has: `accounts[]`, `sessions[]`, `registeredUser?`
-  
 - **`RegisteredUser`** - Full user profile for app features
   - Contains: `name`, `lastName`, `dni`, `institution`, `reasonToJoin`, `role`
   - Has all app relationships: `reservations[]`, `checkIns[]`, `proposals[]`, etc.
@@ -164,26 +182,26 @@ graph TD
     User --> Account
     User --> Session
     User --> RegisteredUser
-    
+
     RegisteredUser --> Reservation
     RegisteredUser --> CheckIn
     RegisteredUser --> Incident
     RegisteredUser --> Proposal
     RegisteredUser --> Organization
     RegisteredUser --> Team
-    
+
     Reservation --> Resource
     Resource --> FungibleResource
-    
+
     Incident --> IncidentFollowup
     Incident --> IncidentUser
-    
+
     Proposal --> ProposalComment
     Proposal --> ProposalLike
-    
+
     Organization --> Team
     Organization --> OrgMembership
-    
+
     PurchaseOrder --> OrderItem
     OrderItem --> Inventory
 ```

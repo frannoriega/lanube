@@ -1,9 +1,21 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useServerTime } from "@/components/providers/server-time";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
@@ -21,13 +33,20 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 // Configuration constants
 const BUSINESS_HOURS = {
-  START: 9,  // 9 AM
-  END: 18,   // 6 PM
+  START: 9, // 9 AM
+  END: 18, // 6 PM
 } as const;
 
 const TIME_INTERVAL_MINUTES = 15;
@@ -95,7 +114,11 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
   const startMinutes = BUSINESS_HOURS.START * 60;
   const endMinutes = BUSINESS_HOURS.END * 60;
 
-  for (let minutes = startMinutes; minutes <= endMinutes; minutes += TIME_INTERVAL_MINUTES) {
+  for (
+    let minutes = startMinutes;
+    minutes <= endMinutes;
+    minutes += TIME_INTERVAL_MINUTES
+  ) {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     const value = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
@@ -139,13 +162,21 @@ export function WeekCalendar({
   }, [alignRevision, now]);
 
   // Data state
-  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
+  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>(
+    [],
+  );
   const [occurrences, setOccurrences] = useState<ReservationOccurrence[]>([]);
 
   // Drag selection state
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ day: Date; minutes: number } | null>(null);
-  const [dragCurrent, setDragCurrent] = useState<{ day: Date; minutes: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{
+    day: Date;
+    minutes: number;
+  } | null>(null);
+  const [dragCurrent, setDragCurrent] = useState<{
+    day: Date;
+    minutes: number;
+  } | null>(null);
 
   // Dialog and form state
   const [selection, setSelection] = useState<DragSelection | null>(null);
@@ -158,36 +189,57 @@ export function WeekCalendar({
   const [submitting, setSubmitting] = useState(false);
 
   // View details / delete dialog state
-  const [selectedOccurrence, setSelectedOccurrence] = useState<ReservationOccurrence | null>(null);
+  const [selectedOccurrence, setSelectedOccurrence] =
+    useState<ReservationOccurrence | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
   // Derived values — guarded against null currentWeekStart
   const weekDays = useMemo(
-    () => currentWeekStart ? Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i)) : [],
+    () =>
+      currentWeekStart
+        ? Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i))
+        : [],
     [currentWeekStart],
   );
 
-  const todayWeekStart = useMemo(() => getCurrentWorkWeekStart(now()), [alignRevision]); // eslint-disable-line react-hooks/exhaustive-deps
+  const todayWeekStart = useMemo(
+    () => getCurrentWorkWeekStart(now()),
+    [alignRevision],
+  );
   const maxWeekStart = addWeeks(todayWeekStart, 1);
-  const canGoNext = !!(currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart);
+  const canGoNext = !!(
+    currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart
+  );
   const canGoPrev = !!(currentWeekStart && currentWeekStart > todayWeekStart);
 
-  const overlapsUnavailableOrReservation = useCallback((day: Date, startMinutes: number, endMinutes: number) => {
-    const getMinutes = (time: Date) => {
-      return time.getHours() * 60 + time.getMinutes();
-    }
-    return unavailableSlots.some((slot) =>
-      isSameDay(fromUtcMs(slot.startTime), day) &&
-      ((startMinutes > getMinutes(fromUtcMs(slot.startTime)) && endMinutes < getMinutes(fromUtcMs(slot.endTime))) ||
-        (startMinutes < getMinutes(fromUtcMs(slot.startTime)) && endMinutes > getMinutes(fromUtcMs(slot.startTime))))) ||
-      occurrences.some((occ) =>
-        isSameDay(fromUtcMs(occ.occurrenceStartTime), day) &&
-        ((startMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime)) && endMinutes < getMinutes(fromUtcMs(occ.occurrenceEndTime))) ||
-          (startMinutes < getMinutes(fromUtcMs(occ.occurrenceStartTime)) && endMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime))))
-      )
-  }, [unavailableSlots, occurrences]);
+  const overlapsUnavailableOrReservation = useCallback(
+    (day: Date, startMinutes: number, endMinutes: number) => {
+      const getMinutes = (time: Date) => {
+        return time.getHours() * 60 + time.getMinutes();
+      };
+      return (
+        unavailableSlots.some(
+          (slot) =>
+            isSameDay(fromUtcMs(slot.startTime), day) &&
+            ((startMinutes > getMinutes(fromUtcMs(slot.startTime)) &&
+              endMinutes < getMinutes(fromUtcMs(slot.endTime))) ||
+              (startMinutes < getMinutes(fromUtcMs(slot.startTime)) &&
+                endMinutes > getMinutes(fromUtcMs(slot.startTime)))),
+        ) ||
+        occurrences.some(
+          (occ) =>
+            isSameDay(fromUtcMs(occ.occurrenceStartTime), day) &&
+            ((startMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime)) &&
+              endMinutes < getMinutes(fromUtcMs(occ.occurrenceEndTime))) ||
+              (startMinutes < getMinutes(fromUtcMs(occ.occurrenceStartTime)) &&
+                endMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime)))),
+        )
+      );
+    },
+    [unavailableSlots, occurrences],
+  );
 
   const fetchReservations = useCallback(async () => {
     if (!currentWeekStart) return;
@@ -196,12 +248,12 @@ export function WeekCalendar({
       weekEnd.setHours(23, 59, 59, 999);
 
       const response = await fetch(
-        `${apiEndpoint}?startDate=${currentWeekStart.getTime()}&endDate=${weekEnd.getTime()}`
+        `${apiEndpoint}?startDate=${currentWeekStart.getTime()}&endDate=${weekEnd.getTime()}`,
       );
 
       if (response.ok) {
         const data = await response.json();
-        const rawSlots: UnavailableSlot[] = (data.unavailableSlots || []);
+        const rawSlots: UnavailableSlot[] = data.unavailableSlots || [];
         rawSlots.sort((a, b) => a.startTime - b.startTime);
         const processedUnavailableSlots: UnavailableSlot[] = [];
         if (rawSlots.length > 0) {
@@ -248,17 +300,22 @@ export function WeekCalendar({
       const totalMinutesFromMidnight = startMinutes + minutesFromStart;
 
       // Round to nearest interval
-      const roundedMinutes = Math.round(totalMinutesFromMidnight / TIME_INTERVAL_MINUTES) * TIME_INTERVAL_MINUTES;
+      const roundedMinutes =
+        Math.round(totalMinutesFromMidnight / TIME_INTERVAL_MINUTES) *
+        TIME_INTERVAL_MINUTES;
 
       // Clamp to business hours
-      const clampedMinutes = Math.max(startMinutes, Math.min(endMinutes, roundedMinutes));
+      const clampedMinutes = Math.max(
+        startMinutes,
+        Math.min(endMinutes, roundedMinutes),
+      );
 
       return {
         day: weekDays[dayIndex],
         minutes: clampedMinutes,
       };
     },
-    [weekDays]
+    [weekDays],
   );
 
   // Handle mouse down - start dragging
@@ -268,7 +325,13 @@ export function WeekCalendar({
       const posInfo = getPositionInfo(e, dayIndex);
       if (!posInfo) return;
 
-      if (overlapsUnavailableOrReservation(posInfo.day, posInfo.minutes, posInfo.minutes)) {
+      if (
+        overlapsUnavailableOrReservation(
+          posInfo.day,
+          posInfo.minutes,
+          posInfo.minutes,
+        )
+      ) {
         return;
       }
 
@@ -288,7 +351,7 @@ export function WeekCalendar({
       setDragStart(posInfo);
       setDragCurrent(posInfo);
     },
-    [getPositionInfo, overlapsUnavailableOrReservation, now]
+    [getPositionInfo, overlapsUnavailableOrReservation, now],
   );
 
   // Handle mouse move - update drag
@@ -309,7 +372,7 @@ export function WeekCalendar({
         setDragCurrent(posInfo);
       }
     },
-    [isDragging, dragStart, getPositionInfo, overlapsUnavailableOrReservation]
+    [isDragging, dragStart, getPositionInfo, overlapsUnavailableOrReservation],
   );
 
   // Handle mouse up - finish selection
@@ -347,7 +410,14 @@ export function WeekCalendar({
     selEnd.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
 
     const overlapsOwn = occurrences.some((occ) => {
-      if (!(userId && occ.reservableType === 'USER' && occ.reservableId === userId)) return false;
+      if (
+        !(
+          userId &&
+          occ.reservableType === "USER" &&
+          occ.reservableId === userId
+        )
+      )
+        return false;
       const occStart = fromUtcMs(occ.occurrenceStartTime);
       const occEnd = fromUtcMs(occ.occurrenceEndTime);
       return occStart < selEnd && occEnd > selStart;
@@ -357,7 +427,7 @@ export function WeekCalendar({
       setIsDragging(false);
       setDragStart(null);
       setDragCurrent(null);
-      toast.error('Ya tienes una reserva en ese horario');
+      toast.error("Ya tienes una reserva en ese horario");
       return;
     }
 
@@ -471,10 +541,20 @@ export function WeekCalendar({
         }
 
         startDateTime = new Date(selection.day);
-        startDateTime.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+        startDateTime.setHours(
+          Math.floor(startMinutes / 60),
+          startMinutes % 60,
+          0,
+          0,
+        );
 
         endDateTime = new Date(selection.day);
-        endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
+        endDateTime.setHours(
+          Math.floor(endMinutes / 60),
+          endMinutes % 60,
+          0,
+          0,
+        );
       }
 
       const clock = now();
@@ -555,13 +635,17 @@ export function WeekCalendar({
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-              {format(addDays(currentWeekStart, 4), "d 'de' MMMM 'de' yyyy", { locale: es })}
+              {format(addDays(currentWeekStart, 4), "d 'de' MMMM 'de' yyyy", {
+                locale: es,
+              })}
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, -1))}
+                onClick={() =>
+                  setCurrentWeekStart(addWeeks(currentWeekStart, -1))
+                }
                 disabled={!canGoPrev}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -578,7 +662,9 @@ export function WeekCalendar({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
+                onClick={() =>
+                  setCurrentWeekStart(addWeeks(currentWeekStart, 1))
+                }
                 disabled={!canGoNext}
               >
                 Siguiente
@@ -594,12 +680,15 @@ export function WeekCalendar({
               {weekDays.map((day, idx) => (
                 <div
                   key={idx}
-                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${isSameDay(day, now())
-                    ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
-                    : "text-gray-700 dark:text-gray-300"
-                    }`}
+                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
+                    isSameDay(day, now())
+                      ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
                 >
-                  <div className="text-xs font-medium">{format(day, "EEE", { locale: es }).toUpperCase()}</div>
+                  <div className="text-xs font-medium">
+                    {format(day, "EEE", { locale: es }).toUpperCase()}
+                  </div>
                   <div className="text-xl font-bold">{format(day, "d")}</div>
                 </div>
               ))}
@@ -609,28 +698,32 @@ export function WeekCalendar({
           {/* Calendar body */}
           <div className="flex gap-0 relative mb-8">
             {/* Time labels */}
-            <div className="relative w-14 flex-shrink-0" style={{ paddingBottom: "12px" }}>
-              {Array.from({ length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 }, (_, i) => i + BUSINESS_HOURS.START).map(
-                (hour) => (
-                  <div
-                    key={hour}
-                    className="absolute text-xs text-gray-500 dark:text-gray-400 text-right pr-2 w-full"
-                    style={{
-                      top: `${((hour - BUSINESS_HOURS.START) / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
-                      transform: "translateY(-50%)",
-                    }}
-                  >
-                    {format(
-                      (() => {
-                        const t = now();
-                        t.setHours(hour, 0, 0, 0);
-                        return t;
-                      })(),
-                      "HH:mm",
-                    )}
-                  </div>
-                )
-              )}
+            <div
+              className="relative w-14 flex-shrink-0"
+              style={{ paddingBottom: "12px" }}
+            >
+              {Array.from(
+                { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 },
+                (_, i) => i + BUSINESS_HOURS.START,
+              ).map((hour) => (
+                <div
+                  key={hour}
+                  className="absolute text-xs text-gray-500 dark:text-gray-400 text-right pr-2 w-full"
+                  style={{
+                    top: `${((hour - BUSINESS_HOURS.START) / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
+                    transform: "translateY(-50%)",
+                  }}
+                >
+                  {format(
+                    (() => {
+                      const t = now();
+                      t.setHours(hour, 0, 0, 0);
+                      return t;
+                    })(),
+                    "HH:mm",
+                  )}
+                </div>
+              ))}
             </div>
 
             {/* {loading && (
@@ -656,65 +749,110 @@ export function WeekCalendar({
               {weekDays.map((day, dayIdx) => {
                 const clock = now();
                 const earliestBookableDayStart = startOfDay(addDays(clock, 1));
-                const isPastOrUnavailableDay = isBefore(startOfDay(day), earliestBookableDayStart);
+                const isPastOrUnavailableDay = isBefore(
+                  startOfDay(day),
+                  earliestBookableDayStart,
+                );
                 const dayReservations = getReservationsForDay(day);
                 const unavailableSlots = getUnavailableSlotsForDay(day);
 
                 return (
                   <div
                     key={dayIdx}
-                    className={`relative z-40 border-l border-gray-200 dark:border-gray-700 ${isPastOrUnavailableDay ? "bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed" : "bg-white dark:bg-gray-950"
-                      }`}
-                    onMouseDown={(e) => !isPastOrUnavailableDay && handleMouseDown(e, dayIdx)}
-                    onMouseMove={(e) => !isPastOrUnavailableDay && handleMouseMove(e, dayIdx)}
+                    className={`relative z-40 border-l border-gray-200 dark:border-gray-700 ${
+                      isPastOrUnavailableDay
+                        ? "bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
+                        : "bg-white dark:bg-gray-950"
+                    }`}
+                    onMouseDown={(e) =>
+                      !isPastOrUnavailableDay && handleMouseDown(e, dayIdx)
+                    }
+                    onMouseMove={(e) =>
+                      !isPastOrUnavailableDay && handleMouseMove(e, dayIdx)
+                    }
                   >
                     {/* Hour lines */}
-                    {Array.from({ length: BUSINESS_HOURS.END - BUSINESS_HOURS.START }, (_, i) => i + 1).map((hour) => (
+                    {Array.from(
+                      { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START },
+                      (_, i) => i + 1,
+                    ).map((hour) => (
                       <div
                         key={hour}
                         className="absolute w-full border-t border-gray-200 dark:border-gray-700"
-                        style={{ top: `${(hour / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%` }}
+                        style={{
+                          top: `${(hour / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
+                        }}
                       />
                     ))}
 
                     {/* Unavailable slots */}
-                    {!isPastOrUnavailableDay && unavailableSlots.map((slot, idx) => {
-                      const style = getReservationStyle({ startTime: slot.startTime, endTime: slot.endTime });
-                      return (
-                        <div key={idx} className="absolute w-full bg-red z-50" style={{ top: style.top, height: style.height }}>
-                          <div className="h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed" />
-                        </div>
-                      )
-                    })}
+                    {!isPastOrUnavailableDay &&
+                      unavailableSlots.map((slot, idx) => {
+                        const style = getReservationStyle({
+                          startTime: slot.startTime,
+                          endTime: slot.endTime,
+                        });
+                        return (
+                          <div
+                            key={idx}
+                            className="absolute w-full bg-red z-50"
+                            style={{ top: style.top, height: style.height }}
+                          >
+                            <div className="h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed" />
+                          </div>
+                        );
+                      })}
 
                     {/* Existing reservations */}
                     {dayReservations.map((occ, idx) => {
-                      const style = getReservationStyle({ startTime: occ.occurrenceStartTime, endTime: occ.occurrenceEndTime });
-                      const isOwnReservation = userId && occ.reservableType === "USER" && occ.reservableId === userId;
+                      const style = getReservationStyle({
+                        startTime: occ.occurrenceStartTime,
+                        endTime: occ.occurrenceEndTime,
+                      });
+                      const isOwnReservation =
+                        userId &&
+                        occ.reservableType === "USER" &&
+                        occ.reservableId === userId;
                       const isPending = occ.status === "PENDING";
 
                       // Visual styling based on reservation ownership and status
-                      const bgColor = isOwnReservation && isPending
-                        ? "bg-yellow-500" // User's pending reservation (yellow)
-                        : isOwnReservation
-                          ? "bg-green-600"   // User's approved reservation (green)
-                          : "bg-la-nube-primary"; // Other's approved reservation (blue)
+                      const bgColor =
+                        isOwnReservation && isPending
+                          ? "bg-yellow-500" // User's pending reservation (yellow)
+                          : isOwnReservation
+                            ? "bg-green-600" // User's approved reservation (green)
+                            : "bg-la-nube-primary"; // Other's approved reservation (blue)
 
                       return (
-                        <div key={idx} className="absolute w-full px-1" style={{ top: style.top, height: style.height }}>
+                        <div
+                          key={idx}
+                          className="absolute w-full px-1"
+                          style={{ top: style.top, height: style.height }}
+                        >
                           <div
                             className={`h-full rounded ${bgColor} text-white text-xs p-1 overflow-hidden cursor-pointer shadow-sm`}
-                            title={`${occ.reason} ${isOwnReservation ? '(Tu reserva)' : ''} ${isPending ? '(Pendiente)' : ''}`}
+                            title={`${occ.reason} ${isOwnReservation ? "(Tu reserva)" : ""} ${isPending ? "(Pendiente)" : ""}`}
                             onClick={() => setSelectedOccurrence(occ)}
                           >
                             <div className="font-semibold truncate">
                               {occ.reason}
-                              {isOwnReservation && <span className="ml-1">✓</span>}
+                              {isOwnReservation && (
+                                <span className="ml-1">✓</span>
+                              )}
                             </div>
                             <div className="text-[10px] opacity-90">
-                              {format(fromUtcMs(occ.occurrenceStartTime), "HH:mm")} -{" "}
-                              {format(fromUtcMs(occ.occurrenceEndTime), "HH:mm")}
-                              {isPending && isOwnReservation && <span className="ml-1">⏳</span>}
+                              {format(
+                                fromUtcMs(occ.occurrenceStartTime),
+                                "HH:mm",
+                              )}{" "}
+                              -{" "}
+                              {format(
+                                fromUtcMs(occ.occurrenceEndTime),
+                                "HH:mm",
+                              )}
+                              {isPending && isOwnReservation && (
+                                <span className="ml-1">⏳</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -725,7 +863,10 @@ export function WeekCalendar({
                     {dragSelection && dragSelection.dayIndex === dayIdx && (
                       <div
                         className="absolute w-full px-1 pointer-events-none"
-                        style={{ top: dragSelection.top, height: dragSelection.height }}
+                        style={{
+                          top: dragSelection.top,
+                          height: dragSelection.height,
+                        }}
                       >
                         <div className="h-full rounded bg-blue-400/50 border-2 border-blue-500" />
                       </div>
@@ -735,7 +876,6 @@ export function WeekCalendar({
               })}
             </div>
           </div>
-
         </div>
       </div>
 
@@ -745,7 +885,8 @@ export function WeekCalendar({
           <DialogHeader>
             <DialogTitle>{title || "Nueva Reserva"}</DialogTitle>
             <DialogDescription>
-              {selection && `${toCapitalCase(format(selection.day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}`}
+              {selection &&
+                `${toCapitalCase(format(selection.day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}`}
             </DialogDescription>
           </DialogHeader>
 
@@ -800,7 +941,9 @@ export function WeekCalendar({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reason">{description || "Motivo de la reserva"}</Label>
+              <Label htmlFor="reason">
+                {description || "Motivo de la reserva"}
+              </Label>
               <Textarea
                 id="reason"
                 value={reason}
@@ -835,13 +978,22 @@ export function WeekCalendar({
       </Dialog>
 
       {/* View Reservation Details Dialog */}
-      <Dialog open={!!selectedOccurrence} onOpenChange={(open) => !open && setSelectedOccurrence(null)}>
+      <Dialog
+        open={!!selectedOccurrence}
+        onOpenChange={(open) => !open && setSelectedOccurrence(null)}
+      >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>Detalle de la reserva</DialogTitle>
             {selectedOccurrence && (
               <DialogDescription>
-                {toCapitalCase(format(fromUtcMs(selectedOccurrence.occurrenceStartTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}
+                {toCapitalCase(
+                  format(
+                    fromUtcMs(selectedOccurrence.occurrenceStartTime),
+                    "EEEE, d 'de' MMMM 'de' yyyy",
+                    { locale: es },
+                  ),
+                )}
               </DialogDescription>
             )}
           </DialogHeader>
@@ -849,41 +1001,70 @@ export function WeekCalendar({
             <div className="space-y-3">
               <div className="text-sm">
                 <span className="font-medium">Horario:</span>{" "}
-                {format(fromUtcMs(selectedOccurrence.occurrenceStartTime), "HH:mm")} - {format(fromUtcMs(selectedOccurrence.occurrenceEndTime), "HH:mm")}
+                {format(
+                  fromUtcMs(selectedOccurrence.occurrenceStartTime),
+                  "HH:mm",
+                )}{" "}
+                -{" "}
+                {format(
+                  fromUtcMs(selectedOccurrence.occurrenceEndTime),
+                  "HH:mm",
+                )}
               </div>
               <div className="text-sm">
                 <span className="font-medium">Motivo:</span>{" "}
-                <span className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">{selectedOccurrence.reason}</span>
+                <span className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
+                  {selectedOccurrence.reason}
+                </span>
               </div>
               <div className="text-sm">
-                <span className="font-medium">Estado:</span>{" "}{selectedOccurrence.status}
+                <span className="font-medium">Estado:</span>{" "}
+                {selectedOccurrence.status}
               </div>
-              {userId && selectedOccurrence.reservableType === 'USER' && selectedOccurrence.reservableId === userId && (
-                <div className="pt-2 flex justify-end">
-                  <Button variant="destructive" disabled={deleting} onClick={async () => {
-                    try {
-                      setDeleting(true);
-                      const res = await fetch(apiEndpoint, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reservationId: selectedOccurrence.reservationId }),
-                      });
-                      if (!res.ok) {
-                        const err = await res.json().catch(() => ({}));
-                        toast.error(err.error || 'No se pudo eliminar la reserva');
-                      } else {
-                        toast.success('Reserva eliminada');
-                        setOccurrences(occurrences => occurrences.filter((occ) => occ.reservationId !== selectedOccurrence.reservationId));
-                        setSelectedOccurrence(null);
-                      }
-                    } catch (ignored) {
-                      toast.error('Error al eliminar la reserva');
-                    } finally {
-                      setDeleting(false);
-                    }
-                  }}>Eliminar</Button>
-                </div>
-              )}
+              {userId &&
+                selectedOccurrence.reservableType === "USER" &&
+                selectedOccurrence.reservableId === userId && (
+                  <div className="pt-2 flex justify-end">
+                    <Button
+                      variant="destructive"
+                      disabled={deleting}
+                      onClick={async () => {
+                        try {
+                          setDeleting(true);
+                          const res = await fetch(apiEndpoint, {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              reservationId: selectedOccurrence.reservationId,
+                            }),
+                          });
+                          if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            toast.error(
+                              err.error || "No se pudo eliminar la reserva",
+                            );
+                          } else {
+                            toast.success("Reserva eliminada");
+                            setOccurrences((occurrences) =>
+                              occurrences.filter(
+                                (occ) =>
+                                  occ.reservationId !==
+                                  selectedOccurrence.reservationId,
+                              ),
+                            );
+                            setSelectedOccurrence(null);
+                          }
+                        } catch (ignored) {
+                          toast.error("Error al eliminar la reserva");
+                        } finally {
+                          setDeleting(false);
+                        }
+                      }}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                )}
             </div>
           )}
         </DialogContent>

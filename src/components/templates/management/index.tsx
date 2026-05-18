@@ -42,10 +42,26 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/user/dashboard",
       icon: LayoutDashboard,
     },
-    { name: "Coworking", href: "/user/coworking", icon: getServiceIcon(ResourceType.COWORKING) },
-    { name: "Laboratorio", href: "/user/lab", icon: getServiceIcon(ResourceType.LAB) },
-    { name: "Auditorio", href: "/user/auditorium", icon: getServiceIcon(ResourceType.AUDITORIUM) },
-    { name: "Sala de reuniones", href: "/user/meeting-room", icon: getServiceIcon(ResourceType.MEETING) },
+    {
+      name: "Coworking",
+      href: "/user/coworking",
+      icon: getServiceIcon(ResourceType.COWORKING),
+    },
+    {
+      name: "Laboratorio",
+      href: "/user/lab",
+      icon: getServiceIcon(ResourceType.LAB),
+    },
+    {
+      name: "Auditorio",
+      href: "/user/auditorium",
+      icon: getServiceIcon(ResourceType.AUDITORIUM),
+    },
+    {
+      name: "Sala de reuniones",
+      href: "/user/meeting-room",
+      icon: getServiceIcon(ResourceType.MEETING),
+    },
   ],
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -72,7 +88,10 @@ export default function ManagementLayout({
   const isActive = (href?: string) => {
     if (!href) return false;
     if (pathname === href) return true;
-    if (href === "/admin/reservations" && pathname.startsWith("/admin/reservations"))
+    if (
+      href === "/admin/reservations" &&
+      pathname.startsWith("/admin/reservations")
+    )
       return true;
     return false;
   };
@@ -91,10 +110,11 @@ export default function ManagementLayout({
         <div key={item.name}>
           <button
             onClick={() => toggleExpanded(item.name)}
-            className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${hasActive && !item.children
-              ? "bg-la-nube-primary text-white"
-              : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-              }`}
+            className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${
+              hasActive && !item.children
+                ? "bg-la-nube-primary text-white"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+            }`}
           >
             <Icon className="mr-3 h-5 w-5" />
             {item.name}
@@ -118,10 +138,11 @@ export default function ManagementLayout({
           <Link
             key={item.name}
             href={item.href}
-            className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${isActive(item.href)
-              ? "bg-la-nube-primary text-white"
-              : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-              }`}
+            className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
+              isActive(item.href)
+                ? "bg-la-nube-primary text-white"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+            }`}
             onClick={() => setSidebarOpen(false)}
           >
             <Icon className="mr-3 h-5 w-5" />
@@ -215,15 +236,17 @@ export default function ManagementLayout({
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1" />
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                {(userType === "user" && user.role === UserRole.ADMIN) ? (
+                {userType === "user" && user.role === UserRole.ADMIN ? (
                   <Link href="/admin/dashboard">
                     <Button>Panel de administrador</Button>
                   </Link>
-                ) : (userType === "admin" && (
-                  <Link href="/user/dashboard">
-                    <Button>Panel de usuario</Button>
-                  </Link>
-                ))}
+                ) : (
+                  userType === "admin" && (
+                    <Link href="/user/dashboard">
+                      <Button>Panel de usuario</Button>
+                    </Link>
+                  )
+                )}
                 {/* Theme toggle */}
                 <div className="flex items-center gap-x-2">
                   <ThemeToggle />

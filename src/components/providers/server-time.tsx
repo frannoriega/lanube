@@ -50,10 +50,7 @@ export function ServerTimeProvider({
 
   const now = useCallback(() => new Date(Date.now() + offsetRef.current), []);
 
-  const value = useMemo(
-    () => ({ now, alignRevision }),
-    [now, alignRevision],
-  );
+  const value = useMemo(() => ({ now, alignRevision }), [now, alignRevision]);
 
   return (
     <ServerTimeContext.Provider value={value}>

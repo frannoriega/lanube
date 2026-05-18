@@ -32,7 +32,11 @@ export function AdminReservationDetailSheet({
   onOpenChange: (open: boolean) => void;
   reservation: AdminReservationListResult | null;
   sameDayReservations: AdminReservationListResult[];
-  onAction: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
+  onAction: (
+    id: string,
+    action: "APPROVED" | "REJECTED",
+    reason?: string,
+  ) => void;
   processing: string | null;
   onRejected?: () => void;
 }) {
@@ -96,9 +100,7 @@ export function AdminReservationDetailSheet({
           <div>
             <p className="text-xs dark:text-muted-foreground">Motivo</p>
             {reasonTrimmed.length > 0 ? (
-              <div
-                className="mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 px-2 py-1.5 text-sm break-words whitespace-pre-wrap"
-              >
+              <div className="mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 px-2 py-1.5 text-sm break-words whitespace-pre-wrap">
                 {reasonTrimmed}
               </div>
             ) : (
