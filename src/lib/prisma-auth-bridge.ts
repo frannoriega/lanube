@@ -59,7 +59,10 @@ function mapMany(rows: unknown, fn: (r: Row) => void) {
   }
 }
 
-type QueryCtx = { args: { data?: unknown; create?: unknown; update?: unknown }; query: (a: unknown) => Promise<unknown> };
+type QueryCtx = {
+  args: { data?: unknown; create?: unknown; update?: unknown };
+  query: (a: unknown) => Promise<unknown>;
+};
 
 /** NextAuth PrismaAdapter uses Date; DB stores BIGINT ms. */
 export const authTimestampBridgeExtension = {
@@ -84,17 +87,35 @@ export const authTimestampBridgeExtension = {
         readUser(r as Row);
         return r;
       },
-      async findUnique({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findUnique({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readUser(r as Row);
         return r;
       },
-      async findFirst({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findFirst({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readUser(r as Row);
         return r;
       },
-      async findMany({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findMany({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const rows = await query(args);
         mapMany(rows, readUser);
         return rows;
@@ -120,17 +141,35 @@ export const authTimestampBridgeExtension = {
         readSession(r as Row);
         return r;
       },
-      async findUnique({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findUnique({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readSession(r as Row);
         return r;
       },
-      async findFirst({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findFirst({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readSession(r as Row);
         return r;
       },
-      async findMany({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findMany({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const rows = await query(args);
         mapMany(rows, readSession);
         return rows;
@@ -165,39 +204,81 @@ export const authTimestampBridgeExtension = {
         readVt(r as Row);
         return r;
       },
-      async findUnique({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findUnique({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readVt(r as Row);
         return r;
       },
-      async findFirst({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findFirst({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readVt(r as Row);
         return r;
       },
-      async findMany({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findMany({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const rows = await query(args);
         mapMany(rows, readVt);
         return rows;
       },
-      async delete({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async delete({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readVt(r as Row);
         return r;
       },
     },
     account: {
-      async findUnique({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findUnique({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readAccount(r as Row);
         return r;
       },
-      async findFirst({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findFirst({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const r = await query(args);
         readAccount(r as Row);
         return r;
       },
-      async findMany({ args, query }: { args: unknown; query: (a: unknown) => Promise<unknown> }) {
+      async findMany({
+        args,
+        query,
+      }: {
+        args: unknown;
+        query: (a: unknown) => Promise<unknown>;
+      }) {
         const rows = await query(args);
         mapMany(rows, readAccount);
         return rows;

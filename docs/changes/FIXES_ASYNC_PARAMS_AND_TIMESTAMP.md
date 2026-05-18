@@ -5,8 +5,9 @@
 ### 1. Next.js 15 Async Params Requirement
 
 **Error**:
+
 ```
-Error: Route "/api/resources/[type]" used `params.type`. 
+Error: Route "/api/resources/[type]" used `params.type`.
 `params` should be awaited before using its properties.
 ```
 
@@ -15,20 +16,22 @@ Error: Route "/api/resources/[type]" used `params.type`.
 **Fix**: Updated route handlers to await params before accessing properties.
 
 **Before**:
+
 ```typescript
 export async function GET(
   request: NextRequest,
-  { params }: { params: { type: string } }
+  { params }: { params: { type: string } },
 ) {
   const resourceType = RESOURCE_TYPE_MAP[params.type]; // ❌ Error!
 }
 ```
 
 **After**:
+
 ```typescript
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ type: string }> }
+  { params }: { params: Promise<{ type: string }> },
 ) {
   const { type } = await params; // ✅ Fixed!
   const resourceType = RESOURCE_TYPE_MAP[type];
@@ -36,16 +39,18 @@ export async function GET(
 ```
 
 **Locations Fixed**:
+
 - GET handler (3 occurrences)
 - POST handler (3 occurrences)
 
 ### 2. PostgreSQL Timestamp Type Mismatch
 
 **Error**:
+
 ```
-Raw query failed. Code: `42804`. 
+Raw query failed. Code: `42804`.
 Message: `ERROR: structure of query does not match function result type
-DETAIL: Returned type timestamp without time zone does not match 
+DETAIL: Returned type timestamp without time zone does not match
 expected type timestamp with time zone in column 2.`
 ```
 
@@ -54,6 +59,7 @@ expected type timestamp with time zone in column 2.`
 **Fix**: Explicitly cast `generate_series` result to `timestamptz`.
 
 **Before**:
+
 ```sql
 SELECT
   r.id as reservation_id,
@@ -66,6 +72,7 @@ CROSS JOIN LATERAL generate_series(...) AS occurrence
 ```
 
 **After**:
+
 ```sql
 SELECT
   r.id as reservation_id,
@@ -105,6 +112,7 @@ CROSS JOIN LATERAL generate_series(...) AS occurrence
 ### Verify Async Params Fix
 
 Test each resource type endpoint:
+
 ```bash
 # Should work without errors
 curl http://localhost:3000/api/resources/meeting-room?startDate=...&endDate=...
@@ -116,6 +124,7 @@ curl http://localhost:3000/api/resources/auditorium?startDate=...&endDate=...
 ### Verify Timestamp Fix
 
 Test expanded reservations query:
+
 ```typescript
 const { occurrences } = await listExpandedReservations({
   resourceId: "some_id",
@@ -132,6 +141,7 @@ const { occurrences } = await listExpandedReservations({
 **Why?**: Next.js 15 made dynamic route params async to support React Server Components and streaming better.
 
 **Pattern**: Always await params in dynamic routes:
+
 ```typescript
 // Any route with [...], [id], [slug], etc.
 export async function GET(
@@ -146,6 +156,7 @@ export async function GET(
 ### PostgreSQL Timestamp Types
 
 **Background**: PostgreSQL has two timestamp types:
+
 - `timestamp` - No timezone information
 - `timestamptz` - With timezone (recommended for most use cases)
 
@@ -178,7 +189,6 @@ export async function GET(
 ✅ Meeting Room  
 ✅ Coworking  
 ✅ Lab  
-✅ Auditorium  
+✅ Auditorium
 
 All using the same reusable `WeekCalendar` component with drag-and-drop functionality! 🚀
-

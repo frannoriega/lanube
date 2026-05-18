@@ -25,6 +25,7 @@ prisma/
 ## 📄 File Descriptions
 
 ### Main Config (`schema.prisma`)
+
 - Generator configuration
 - Datasource configuration
 - **Note**: No model definitions here - all in `models/` directory
@@ -32,7 +33,9 @@ prisma/
 ### Model Files
 
 #### `enums.prisma`
+
 All enum types used across the application:
+
 - `UserRole`
 - `IncidentStatus`
 - `OrderStatus`
@@ -43,7 +46,9 @@ All enum types used across the application:
 - `ResourceType`
 
 #### `auth.prisma`
+
 Authentication and user management:
+
 - `Account` - OAuth accounts
 - `Session` - User sessions
 - `User` - Base user (NextAuth)
@@ -51,46 +56,62 @@ Authentication and user management:
 - `VerificationToken` - Email verification
 
 #### `bans.prisma`
+
 User ban management:
+
 - `Ban` - User bans with time ranges
 
 #### `events.prisma`
+
 Event management:
+
 - `Event` - Events/activities
 - `UserEvent` - User-event relationships
 
 #### `incidents.prisma`
+
 Incident tracking:
+
 - `Incident` - Incident reports
 - `IncidentUser` - User-incident relationships
 
 #### `inventory.prisma`
+
 Inventory management:
+
 - `Inventory` - Inventory items
 - `PurchaseOrder` - Purchase requests
 
 #### `organizations.prisma`
+
 Organization and team structure:
+
 - `Organization` - Organizations
 - `OrgMembership` - Organization memberships
 - `Team` - Teams within organizations
 - `TeamMember` - Team memberships
 
 #### `proposals.prisma`
+
 Proposal system:
+
 - `Proposal` - Community proposals
 - `ProposalComment` - Comments on proposals
 - `ProposalLike` - Proposal likes
 - `ProposalCommentLike` - Comment likes
 
 #### `reservations.prisma`
+
 Reservation system (core functionality):
+
 - `Reservation` - Resource reservations
 - `ReservationException` - Recurring reservation exceptions
 - `CheckIn` - User check-ins
 
 #### `resources.prisma`
+
 Resource management:
+
 - `FungibleResource` - Resource types (Meeting, Coworking, etc.)
 - `Resource` - Individual resource instances
 
@@ -99,8 +120,9 @@ Resource management:
 ### Automatic Loading
 
 The `prisma.config.ts` has:
+
 ```typescript
-schema: "prisma"
+schema: "prisma";
 ```
 
 This tells Prisma to load **all `.prisma` files** from the `prisma/` directory, including subdirectories.
@@ -129,21 +151,25 @@ npx prisma studio
 ## ✅ Benefits
 
 ### 1. **Better Organization**
+
 - Related models grouped together
 - Easy to find specific models
 - Clear separation of concerns
 
 ### 2. **Easier Maintenance**
+
 - Smaller files are easier to read
 - Changes isolated to specific domains
 - Less merge conflicts in teams
 
 ### 3. **Better Navigation**
+
 - Jump to specific domain quickly
 - IDE/editor shows file structure
 - Logical grouping aids understanding
 
 ### 4. **Scalability**
+
 - Easy to add new domains
 - Can split large files further if needed
 - Clear pattern to follow
@@ -151,32 +177,36 @@ npx prisma studio
 ## 📝 Adding New Models
 
 ### 1. Choose the Right File
+
 - Authentication/users → `auth.prisma`
 - New business domain → Create new file
 
 ### 2. Create New File (if needed)
+
 ```prisma
 // prisma/models/your-domain.prisma
 
 model YourModel {
   id        String   @id @default(cuid())
   // ... fields
-  
+
   @@map("your_table")
 }
 ```
 
 ### 3. Enums Go in `enums.prisma`
+
 ```prisma
 enum YourEnum {
   VALUE1
   VALUE2
-  
+
   @@map("your_enum")
 }
 ```
 
 ### 4. Run Prisma Commands
+
 ```bash
 npx prisma format
 npx prisma generate
@@ -185,6 +215,7 @@ npx prisma generate
 ## 🔗 Relationships Across Files
 
 Models can reference each other across files:
+
 ```prisma
 // In reservations.prisma
 model Reservation {
@@ -220,10 +251,10 @@ Prisma automatically resolves references across all files.
 ## 🎯 Summary
 
 The schema is now organized into **logical domain files** instead of one monolithic file. This makes it:
+
 - ✅ Easier to find models
 - ✅ Easier to maintain
 - ✅ Better for collaboration
 - ✅ Scales with growth
 
 All Prisma commands work exactly the same - the organization is transparent to Prisma tools!
-

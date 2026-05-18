@@ -14,7 +14,11 @@ export function ReservationCard({
   processing,
 }: {
   reservation: AdminReservationListResult;
-  onAction: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
+  onAction: (
+    id: string,
+    action: "APPROVED" | "REJECTED",
+    reason?: string,
+  ) => void;
   processing: string | null;
 }) {
   const [expanded, setExpanded] = React.useState(false);
@@ -25,18 +29,26 @@ export function ReservationCard({
     <Card>
       <CardContent className="p-4">
         {/* Collapsed header row */}
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => setExpanded(!expanded)}
+        >
           <div className="flex items-center gap-3">
             <StatusIcon status={reservation.status} />
             <div className="font-medium">
-              {reservation.registeredUser.name} {reservation.registeredUser.lastName}
+              {reservation.registeredUser.name}{" "}
+              {reservation.registeredUser.lastName}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-300">
-              {new Date(reservation.startTime).toLocaleDateString()} {new Date(reservation.startTime).toLocaleTimeString()} - {new Date(reservation.endTime).toLocaleTimeString()}
+              {new Date(reservation.startTime).toLocaleDateString()}{" "}
+              {new Date(reservation.startTime).toLocaleTimeString()} -{" "}
+              {new Date(reservation.endTime).toLocaleTimeString()}
             </div>
             <StatusBadge status={reservation.status} />
           </div>
-          <div className="text-sm text-gray-500">{expanded ? "Ocultar" : "Ver"}</div>
+          <div className="text-sm text-gray-500">
+            {expanded ? "Ocultar" : "Ver"}
+          </div>
         </div>
 
         {expanded && (
@@ -86,8 +98,26 @@ export function ReservationCard({
                     onChange={(e) => setDenyReason(e.target.value)}
                   />
                   <div className="flex gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => { setRejecting(false); setDenyReason(""); }}>Cancelar</Button>
-                    <Button size="sm" variant="destructive" onClick={() => onAction(reservation.id, "REJECTED", denyReason)} disabled={processing === reservation.id || !denyReason.trim()}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setRejecting(false);
+                        setDenyReason("");
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        onAction(reservation.id, "REJECTED", denyReason)
+                      }
+                      disabled={
+                        processing === reservation.id || !denyReason.trim()
+                      }
+                    >
                       Confirmar rechazo
                     </Button>
                   </div>
@@ -100,5 +130,3 @@ export function ReservationCard({
     </Card>
   );
 }
-
-

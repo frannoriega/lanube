@@ -1,172 +1,172 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { DataTable, DataTablePagination } from "@/components/ui/data-table"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/card";
+import { DataTable, DataTablePagination } from "@/components/ui/data-table";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   getCoreRowModel,
   type PaginationState,
   type SortingState,
   useReactTable,
-} from "@tanstack/react-table"
-import { RefreshCw, Search, Users as UsersIcon } from "lucide-react"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+} from "@tanstack/react-table";
+import { RefreshCw, Search, Users as UsersIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
-import { adminUsersColumns } from "./columns"
-import { type AdminUser } from "./types"
+import { adminUsersColumns } from "./columns";
+import { type AdminUser } from "./types";
 
 type UsersResponse = {
-  users?: AdminUser[]
-  data?: AdminUser[]
+  users?: AdminUser[];
+  data?: AdminUser[];
   pagination?: {
-    page?: number
-    pageSize?: number
-    totalPages?: number
-    totalUsers?: number
-    orderBy?: string
-    orderDirection?: "asc" | "desc"
-    search?: string
-  }
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+    totalUsers?: number;
+    orderBy?: string;
+    orderDirection?: "asc" | "desc";
+    search?: string;
+  };
   meta?: {
-    page?: number
-    pageSize?: number
-    totalPages?: number
-    totalUsers?: number
-  }
-  page?: number
-  pageSize?: number
-  totalPages?: number
-  totalUsers?: number
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+    totalUsers?: number;
+  };
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
+  totalUsers?: number;
   summary?: {
-    totalUsers: number
-    activeUsers: number
-    bannedUsers: number
-    monthUsers: number
-  }
-}
+    totalUsers: number;
+    activeUsers: number;
+    bannedUsers: number;
+    monthUsers: number;
+  };
+};
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50]
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function AdminUsersPage() {
-  const router = useRouter()
-  const { data: session, status } = useSession()
+  const router = useRouter();
+  const { data: session, status } = useSession();
 
-  const [users, setUsers] = useState<AdminUser[]>([])
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: PAGE_SIZE_OPTIONS[0],
-  })
+  });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: false },
-  ])
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  ]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [searchInput, setSearchInput] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [summary, setSummary] = useState({
     totalUsers: 0,
     activeUsers: 0,
     bannedUsers: 0,
     monthUsers: 0,
-  })
+  });
 
-  const { pageIndex, pageSize } = pagination
-  const effectiveSorting = sorting[0]
+  const { pageIndex, pageSize } = pagination;
+  const effectiveSorting = sorting[0];
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      const trimmed = searchInput.trim()
+      const trimmed = searchInput.trim();
       setSearchQuery((prev) => {
         if (prev === trimmed) {
-          return prev
+          return prev;
         }
 
         setPagination((prevPagination) =>
           prevPagination.pageIndex === 0
             ? prevPagination
-            : { ...prevPagination, pageIndex: 0 }
-        )
+            : { ...prevPagination, pageIndex: 0 },
+        );
 
-        return trimmed
-      })
-    }, 400)
+        return trimmed;
+      });
+    }, 400);
 
-    return () => clearTimeout(handler)
-  }, [searchInput, setPagination])
+    return () => clearTimeout(handler);
+  }, [searchInput, setPagination]);
 
   const fetchUsers = useCallback(
     async ({ signal }: { signal?: AbortSignal } = {}) => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       try {
         const params = new URLSearchParams({
           page: String(pageIndex + 1),
           pageSize: String(pageSize),
-        })
+        });
 
         if (effectiveSorting?.id) {
-          params.append("orderBy", effectiveSorting.id)
+          params.append("orderBy", effectiveSorting.id);
           params.append(
             "orderDirection",
-            effectiveSorting.desc ? "desc" : "asc"
-          )
+            effectiveSorting.desc ? "desc" : "asc",
+          );
         }
 
         if (searchQuery.trim()) {
-          params.append("search", searchQuery.trim())
+          params.append("search", searchQuery.trim());
         }
 
         const response = await fetch(`/api/admin/users?${params.toString()}`, {
           signal,
           cache: "no-store",
-        })
+        });
 
         if (!response.ok) {
-          throw new Error("No se pudo obtener la lista de usuarios")
+          throw new Error("No se pudo obtener la lista de usuarios");
         }
 
-        const body: UsersResponse = await response.json()
-        const list = body.users ?? body.data ?? []
-        const paginationMeta = body.pagination ?? body.meta ?? {}
+        const body: UsersResponse = await response.json();
+        const list = body.users ?? body.data ?? [];
+        const paginationMeta = body.pagination ?? body.meta ?? {};
 
         const resolvedPage =
-          Number(paginationMeta.page ?? body.page ?? pageIndex + 1) || 1
+          Number(paginationMeta.page ?? body.page ?? pageIndex + 1) || 1;
         const resolvedPageSize =
           Number(paginationMeta.pageSize ?? body.pageSize ?? pageSize) ||
-          pageSize
+          pageSize;
         const resolvedTotalUsers =
           Number(paginationMeta.totalUsers ?? body.totalUsers ?? list.length) ||
-          list.length
+          list.length;
         const resolvedTotalPages =
           Number(paginationMeta.totalPages ?? body.totalPages) ||
           Math.max(
             1,
             resolvedPageSize > 0
               ? Math.ceil(resolvedTotalUsers / resolvedPageSize)
-              : 1
-          )
+              : 1,
+          );
 
-        setUsers(list)
-        setTotalPages(Math.max(resolvedTotalPages, 1))
+        setUsers(list);
+        setTotalPages(Math.max(resolvedTotalPages, 1));
         if (body.summary) {
           setSummary({
             totalUsers: body.summary.totalUsers ?? resolvedTotalUsers,
@@ -175,98 +175,98 @@ export default function AdminUsersPage() {
               Math.max(
                 (body.summary.totalUsers ?? resolvedTotalUsers) -
                   (body.summary.bannedUsers ?? 0),
-                0
+                0,
               ),
             bannedUsers: body.summary.bannedUsers ?? 0,
             monthUsers: body.summary.monthUsers ?? 0,
-          })
+          });
         } else {
           setSummary((prev) => ({
             ...prev,
             totalUsers: resolvedTotalUsers,
-          }))
+          }));
         }
 
-        const resolvedPageIndex = Math.max(0, resolvedPage - 1)
+        const resolvedPageIndex = Math.max(0, resolvedPage - 1);
 
         setPagination((prev: PaginationState) => {
           if (
             prev.pageIndex === resolvedPageIndex &&
             prev.pageSize === resolvedPageSize
           ) {
-            return prev
+            return prev;
           }
 
           return {
             pageIndex: resolvedPageIndex,
             pageSize: resolvedPageSize,
-          }
-        })
+          };
+        });
       } catch (err) {
         if ((err as Error).name === "AbortError") {
-          return
+          return;
         }
 
         setError(
           err instanceof Error
             ? err.message
-            : "Ocurrió un error inesperado al cargar los usuarios"
-        )
+            : "Ocurrió un error inesperado al cargar los usuarios",
+        );
       } finally {
         if (!signal?.aborted) {
-          setLoading(false)
+          setLoading(false);
         }
       }
     },
-    [pageIndex, pageSize, searchQuery, effectiveSorting]
-  )
+    [pageIndex, pageSize, searchQuery, effectiveSorting],
+  );
 
   useEffect(() => {
     if (status === "loading") {
-      return
+      return;
     }
 
     if (!session) {
-      router.push("/")
-      return
+      router.push("/");
+      return;
     }
 
-    const controller = new AbortController()
+    const controller = new AbortController();
 
-    void fetchUsers({ signal: controller.signal })
+    void fetchUsers({ signal: controller.signal });
 
-    return () => controller.abort()
-  }, [session, status, fetchUsers, router])
+    return () => controller.abort();
+  }, [session, status, fetchUsers, router]);
 
   const handleSortingChange = (
-    updater: SortingState | ((_: SortingState) => SortingState)
+    updater: SortingState | ((_: SortingState) => SortingState),
   ) => {
     setSorting((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater
+      const next = typeof updater === "function" ? updater(prev) : updater;
       if (!next.length) {
-        return [{ id: "createdAt", desc: false }]
+        return [{ id: "createdAt", desc: false }];
       }
-      return next
-    })
+      return next;
+    });
     setPagination((prev) => ({
       ...prev,
       pageIndex: 0,
-    }))
-  }
+    }));
+  };
 
   const handlePageSizeChange = (value: string) => {
-    const parsed = Number(value)
+    const parsed = Number(value);
     if (!Number.isNaN(parsed) && parsed > 0) {
       setPagination({
         pageIndex: 0,
         pageSize: parsed,
-      })
+      });
     }
-  }
+  };
 
   const handleRefresh = () => {
-    void fetchUsers()
-  }
+    void fetchUsers();
+  };
 
   const table = useReactTable<AdminUser>({
     data: users,
@@ -282,18 +282,18 @@ export default function AdminUsersPage() {
     manualSorting: true,
     autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
-  })
+  });
 
   if (status === "loading") {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-la-nube-primary" />
       </div>
-    )
+    );
   }
 
   if (!session) {
-    return null
+    return null;
   }
 
   return (
@@ -329,9 +329,7 @@ export default function AdminUsersPage() {
         <Card className="glass-card dark:glass-card-dark">
           <CardHeader className="space-y-1">
             <CardTitle>Usuarios activos</CardTitle>
-            <CardDescription>
-              Usuarios sin sanciones vigentes.
-            </CardDescription>
+            <CardDescription>Usuarios sin sanciones vigentes.</CardDescription>
           </CardHeader>
           <CardContent className="h-full flex flex-row items-end">
             <p className="text-3xl font-semibold text-green-600 dark:text-green-400">
@@ -342,9 +340,7 @@ export default function AdminUsersPage() {
         <Card className="glass-card dark:glass-card-dark">
           <CardHeader className="space-y-1">
             <CardTitle>Usuarios bloqueados</CardTitle>
-            <CardDescription>
-              Usuarios con una sanción activa.
-            </CardDescription>
+            <CardDescription>Usuarios con una sanción activa.</CardDescription>
           </CardHeader>
           <CardContent className="h-full flex flex-row items-end">
             <p className="text-3xl font-semibold text-red-600 dark:text-red-400">
@@ -448,7 +444,5 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
-

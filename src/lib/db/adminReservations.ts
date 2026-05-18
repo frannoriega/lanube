@@ -5,7 +5,11 @@ import {
 } from "@/lib/admin/admin-timezone";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { ReservationStatus, ResourceType, UserRole } from "@/generated/prisma/client";
+import {
+  ReservationStatus,
+  ResourceType,
+  UserRole,
+} from "@/generated/prisma/client";
 
 const MAX_PAGE_SIZE = 100;
 const RANGE_FETCH_MAX = 3000;
@@ -24,7 +28,7 @@ type ReservationAdminRow = Prisma.ReservationGetPayload<{
         lastName: true;
         dni: true;
         institution: true;
-        user: { select: { email: true, displayEmail: true } };
+        user: { select: { email: true; displayEmail: true } };
       };
     };
   };
@@ -49,7 +53,8 @@ async function actorSizeByReservationId(
   for (const res of reservations) {
     const start = Number(res.startTime);
     const exact = ledgerRows.find(
-      (l) => l.reservationId === res.id && Number(l.occurrenceStartTime) === start,
+      (l) =>
+        l.reservationId === res.id && Number(l.occurrenceStartTime) === start,
     );
     if (exact) {
       result.set(res.id, exact.actorSize);
@@ -93,9 +98,7 @@ async function mapRowsToAdminResults(
   const sizes = await actorSizeByReservationId(
     rows.map((r) => ({ id: r.id, startTime: r.startTime })),
   );
-  return rows.map((r) =>
-    toAdminReservationListResult(r, sizes.get(r.id) ?? 1),
-  );
+  return rows.map((r) => toAdminReservationListResult(r, sizes.get(r.id) ?? 1));
 }
 
 export async function isAdminUser(id: string): Promise<boolean> {
@@ -136,7 +139,10 @@ export async function listAdminReservationsByType(
   options?: ListAdminReservationsOptions,
 ): Promise<ListAdminReservationsResult> {
   const page = Math.max(1, options?.page ?? 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, options?.pageSize ?? 50),
+  );
 
   const where: Prisma.ReservationWhereInput = {
     resource: { type: service },
@@ -224,7 +230,10 @@ export async function listAdminReservationsAllServicesByRange(
   options?: { status?: ReservationStatus; page?: number; pageSize?: number },
 ): Promise<ListAdminReservationsResult> {
   const page = Math.max(1, options?.page ?? 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, options?.pageSize ?? 50),
+  );
 
   const where: Prisma.ReservationWhereInput = {
     startTime: {
@@ -325,7 +334,10 @@ export async function listDaysWithPendingReservationsAllServices(
   options?: ListDaysWithReservationsOptions,
 ): Promise<ListDaysWithReservationsResult> {
   const page = Math.max(1, options?.page ?? 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, options?.pageSize ?? 50),
+  );
 
   const rows = await prisma.reservation.findMany({
     where: {
@@ -357,7 +369,10 @@ export async function listAdminReservationsByRange(
   options?: { page?: number; pageSize?: number },
 ): Promise<ListAdminReservationsResult> {
   const page = Math.max(1, options?.page ?? 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 50));
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, options?.pageSize ?? 50),
+  );
 
   const where = {
     status: "PENDING" as const,
@@ -399,7 +414,9 @@ export async function setReservationStatus(
 export async function approveReservationAndRejectConflicts(
   reservationId: string,
 ): Promise<{ approvedId: string | null; autoRejectedIds: string[] }> {
-  const rows = await prisma.$queryRaw<{ approved_id: string; auto_rejected_ids: string }[]>`
+  const rows = await prisma.$queryRaw<
+    { approved_id: string; auto_rejected_ids: string }[]
+  >`
     SELECT * FROM approve_reservation(${reservationId}::text)
   `;
 

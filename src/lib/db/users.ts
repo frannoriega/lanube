@@ -91,41 +91,41 @@ export async function getRegisteredUsers({
   const trimmedSearch = search?.trim();
   const where: Prisma.RegisteredUserWhereInput | undefined = trimmedSearch
     ? {
-      OR: [
-        {
-          name: {
-            contains: trimmedSearch,
-            mode: "insensitive",
-          },
-        },
-        {
-          lastName: {
-            contains: trimmedSearch,
-            mode: "insensitive",
-          },
-        },
-        {
-          dni: {
-            contains: trimmedSearch,
-            mode: "insensitive",
-          },
-        },
-        {
-          institution: {
-            contains: trimmedSearch,
-            mode: "insensitive",
-          },
-        },
-        {
-          user: {
-            email: {
+        OR: [
+          {
+            name: {
               contains: trimmedSearch,
               mode: "insensitive",
             },
           },
-        },
-      ],
-    }
+          {
+            lastName: {
+              contains: trimmedSearch,
+              mode: "insensitive",
+            },
+          },
+          {
+            dni: {
+              contains: trimmedSearch,
+              mode: "insensitive",
+            },
+          },
+          {
+            institution: {
+              contains: trimmedSearch,
+              mode: "insensitive",
+            },
+          },
+          {
+            user: {
+              email: {
+                contains: trimmedSearch,
+                mode: "insensitive",
+              },
+            },
+          },
+        ],
+      }
     : undefined;
 
   const [total, rows] = await Promise.all([
@@ -188,8 +188,7 @@ export async function getRegisteredUsers({
     (user: RegisteredUserListRow) => {
       const activeBan = user.bans[0] ?? null;
       const isBanned =
-        !!activeBan &&
-        (!activeBan.endTime || Number(activeBan.endTime) > atMs);
+        !!activeBan && (!activeBan.endTime || Number(activeBan.endTime) > atMs);
 
       return {
         id: user.id,

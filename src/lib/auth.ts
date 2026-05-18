@@ -69,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!user) return null;
           if (!user.emailVerified) {
             const err = new CredentialsSignin(
-              "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada."
+              "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
             );
             err.code = "email_not_verified";
             throw err;
@@ -97,7 +97,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.role = token.role as UserRole;
         session.userId = token.userId as string;
         if (session.user) {
-          session.user.displayEmail = (token.displayEmail as string | null | undefined) ?? null;
+          session.user.displayEmail =
+            (token.displayEmail as string | null | undefined) ?? null;
         }
         if (token.exp) {
           session.expires = new Date(token.exp * 1000) as Date & string;
@@ -119,9 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             registeredUser.user.displayEmail ?? registeredUser.user.email;
           if (activeBan) {
             const banEndMs =
-              activeBan.endTime != null
-                ? Number(activeBan.endTime)
-                : Infinity;
+              activeBan.endTime != null ? Number(activeBan.endTime) : Infinity;
             const minExp = Math.min(banEndMs, defaultExp);
             token.banned = true;
             token.bannedUntil =
@@ -153,16 +152,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 });
 
 async function verifyCaptcha(captcha: string): Promise<boolean> {
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      secret: process.env.TURNSTILE_SECRET_KEY ?? "1x0000000000000000000000000000000AA",
-      response: captcha,
-    }),
-  })
-  const data = await res.json()
-  return data.success === true
+  const res = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret:
+          process.env.TURNSTILE_SECRET_KEY ??
+          "1x0000000000000000000000000000000AA",
+        response: captcha,
+      }),
+    },
+  );
+  const data = await res.json();
+  return data.success === true;
 }
 
 export { verifyCaptcha };

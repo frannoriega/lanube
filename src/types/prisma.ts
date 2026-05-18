@@ -1,22 +1,22 @@
 /**
  * Prisma types for use in client components.
  * These are plain TypeScript types that don't require the Prisma client.
- * 
+ *
  * IMPORTANT: Keep these in sync with prisma/models/enums.prisma
  */
 
 export type RegisteredUser = {
-  id: string
-  userId: string
-  name: string
-  lastName: string
-  dni: string
-  institution: string | null
-  reasonToJoin: string
-  role: UserRole
-  createdAt: number
-  updatedAt: number
-}
+  id: string;
+  userId: string;
+  name: string;
+  lastName: string;
+  dni: string;
+  institution: string | null;
+  reasonToJoin: string;
+  role: UserRole;
+  createdAt: number;
+  updatedAt: number;
+};
 
 export enum UserRole {
   USER = "USER",
@@ -28,7 +28,7 @@ export const ResourceType = {
   AUDITORIUM: "AUDITORIUM",
   COWORKING: "COWORKING",
   LAB: "LAB",
-} as const
+} as const;
 
 export enum IncidentStatus {
   OPEN = "OPEN",
