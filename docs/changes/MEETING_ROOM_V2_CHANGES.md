@@ -20,6 +20,7 @@ Complete redesign of the meeting room calendar from a **slot-based system** to a
 ```
 
 **Limitations:**
+
 - ❌ Fixed 1-hour slots only
 - ❌ Click opens dialog with empty form
 - ❌ Manual time selection via dropdowns
@@ -42,6 +43,7 @@ Complete redesign of the meeting room calendar from a **slot-based system** to a
 ```
 
 **Advantages:**
+
 - ✅ Click and drag to select any time range
 - ✅ 15-minute precision
 - ✅ Visual real-time feedback
@@ -54,6 +56,7 @@ Complete redesign of the meeting room calendar from a **slot-based system** to a
 ### 1. Drag-and-Drop Selection
 
 **Implementation:**
+
 ```typescript
 // Mouse event handlers
 onMouseDown  → Start dragging, record position
@@ -65,6 +68,7 @@ Mouse Y → Minutes from midnight (rounded to 15-min intervals)
 ```
 
 **User Experience:**
+
 - Click at start time
 - Drag to end time
 - Release to confirm
@@ -77,6 +81,7 @@ Mouse Y → Minutes from midnight (rounded to 15-min intervals)
 **After:** Quarter-hour precision (9:00, 9:15, 9:30, 9:45, etc.)
 
 **Implementation:**
+
 ```typescript
 const roundedMinutes = Math.round(minutes / 15) * 15;
 ```
@@ -86,6 +91,7 @@ const roundedMinutes = Math.round(minutes / 15) * 15;
 **Before:** Discrete button elements for each hour
 
 **After:** Continuous canvas with:
+
 - Hour lines (darker)
 - 15-minute lines (lighter)
 - Reservations as positioned blocks
@@ -94,12 +100,14 @@ const roundedMinutes = Math.round(minutes / 15) * 15;
 ### 4. Whole Day Events
 
 **New Toggle:**
+
 ```
 [✓] Evento de día completo
     9:00 AM - 6:00 PM
 ```
 
 **When enabled:**
+
 - Time inputs disappear
 - Automatically sets to full business day
 - Perfect for workshops, conferences, etc.
@@ -107,11 +115,13 @@ const roundedMinutes = Math.round(minutes / 15) * 15;
 ### 5. Inline Time Editing
 
 **Dialog now includes:**
+
 ```html
-<Input type="time" step="900" min="09:00" max="18:00" />
+<input type="time" step="900" min="09:00" max="18:00" />
 ```
 
 **Features:**
+
 - Native time picker (browser-dependent)
 - 15-minute step (900 seconds)
 - Constrained to business hours
@@ -120,11 +130,13 @@ const roundedMinutes = Math.round(minutes / 15) * 15;
 ### 6. Real-Time Visual Feedback
 
 **During drag:**
+
 - Blue semi-transparent overlay
 - Updates as you move the mouse
 - Shows exactly what you're selecting
 
 **Existing reservations:**
+
 - Positioned as colored blocks
 - Show title and time range
 - Can't be clicked (future: could enable edit)
@@ -134,6 +146,7 @@ const roundedMinutes = Math.round(minutes / 15) * 15;
 ### State Management
 
 **Added states:**
+
 ```typescript
 const [isDragging, setIsDragging] = useState(false);
 const [dragStart, setDragStart] = useState<Position | null>(null);
@@ -142,6 +155,7 @@ const [selection, setSelection] = useState<DragSelection | null>(null);
 ```
 
 **New types:**
+
 ```typescript
 interface DragSelection {
   day: Date;
@@ -153,9 +167,10 @@ interface DragSelection {
 ### Component Architecture
 
 **Replaced:**
+
 ```typescript
 // Old: Button grid
-{hours.map(hour => 
+{hours.map(hour =>
   {weekDays.map(day =>
     <button onClick={...}>Slot</button>
   )}
@@ -163,9 +178,10 @@ interface DragSelection {
 ```
 
 **With:**
+
 ```typescript
 // New: Continuous canvas
-<div 
+<div
   ref={calendarRef}
   onMouseDown={handleMouseDown}
   onMouseMove={handleMouseMove}
@@ -179,6 +195,7 @@ interface DragSelection {
 ### Position Calculations
 
 **New utility functions:**
+
 ```typescript
 // Convert mouse Y position to time
 getPositionInfo(event, dayIndex) → { day, minutes }
@@ -197,26 +214,27 @@ getReservationStyle(reservation) → { top: "10%", height: "20%" }
 
 **Before:** Grid of fixed-height buttons
 
-**After:** 
+**After:**
+
 - Absolute positioning for reservations
 - Percentage-based heights
 - Layered approach (grid lines → reservations → drag overlay)
 
 ## 📊 Comparison Table
 
-| Feature | V1 (Slots) | V2 (Drag & Drop) |
-|---------|------------|------------------|
-| Time Selection | Click buttons | Drag on canvas |
-| Precision | 1 hour | 15 minutes |
-| Visual Feedback | Hover only | Real-time overlay |
-| Time Range | Fixed durations | Any range |
-| Start Times | Only on the hour | Any quarter-hour |
-| UI Pattern | Button grid | Continuous canvas |
-| Dialog | Empty form | Pre-filled times |
-| Whole Day | Manual (9 AM + 9 hours) | Toggle switch |
-| Editing Times | Dropdown selects | Native time inputs |
-| Code Complexity | Simple | Moderate |
-| User Experience | Basic | Advanced |
+| Feature         | V1 (Slots)              | V2 (Drag & Drop)   |
+| --------------- | ----------------------- | ------------------ |
+| Time Selection  | Click buttons           | Drag on canvas     |
+| Precision       | 1 hour                  | 15 minutes         |
+| Visual Feedback | Hover only              | Real-time overlay  |
+| Time Range      | Fixed durations         | Any range          |
+| Start Times     | Only on the hour        | Any quarter-hour   |
+| UI Pattern      | Button grid             | Continuous canvas  |
+| Dialog          | Empty form              | Pre-filled times   |
+| Whole Day       | Manual (9 AM + 9 hours) | Toggle switch      |
+| Editing Times   | Dropdown selects        | Native time inputs |
+| Code Complexity | Simple                  | Moderate           |
+| User Experience | Basic                   | Advanced           |
 
 ## 🎯 User Flow Comparison
 
@@ -242,6 +260,7 @@ getReservationStyle(reservation) → { top: "10%", height: "20%" }
 ### New Validations
 
 1. **Same-Day Constraint**
+
    ```typescript
    if (!isSameDay(dragStart.day, dragEnd.day)) {
      error("Las reservas deben estar en el mismo día");
@@ -266,16 +285,19 @@ getReservationStyle(reservation) → { top: "10%", height: "20%" }
 ## 📱 Responsive Behavior
 
 ### Desktop
+
 - Full drag interaction
 - Precise mouse tracking
 - 600px minimum height
 
 ### Tablet
+
 - Touch-friendly
 - Larger drag targets
 - Horizontal scroll if needed
 
 ### Mobile
+
 - Touch events converted to mouse events
 - Optimized for smaller screens
 - Scrollable calendar
@@ -285,6 +307,7 @@ getReservationStyle(reservation) → { top: "10%", height: "20%" }
 ### Grid Lines
 
 **Added:**
+
 ```css
 /* Hourly lines (darker) */
 border-top: 1px solid rgb(229, 231, 235)
@@ -412,10 +435,12 @@ if (!isDragging) return;
 - Same reservation data
 
 **Only UI changed:**
+
 - Old: Click slots
 - New: Drag on canvas
 
 **User adaptation:**
+
 - Intuitive drag interaction
 - Quick to learn
 - Instructions on page
@@ -423,6 +448,7 @@ if (!isDragging) return;
 ### For Developers
 
 **API unchanged:**
+
 ```typescript
 // Still the same POST request
 POST /api/meeting-room
@@ -435,6 +461,7 @@ POST /api/meeting-room
 ```
 
 **Only frontend changed:**
+
 - New UI component
 - New interaction model
 - Same underlying logic
@@ -447,13 +474,13 @@ POST /api/meeting-room
 ✅ Data model (unchanged)  
 ✅ Validation rules (enhanced)  
 ✅ Business logic (same)  
-✅ Server-side code (unchanged)  
+✅ Server-side code (unchanged)
 
 ### What's Different
 
 🔄 User interaction (improved)  
 🔄 Visual design (modernized)  
-🔄 Time selection (more flexible)  
+🔄 Time selection (more flexible)
 
 **Result:** Drop-in replacement with better UX!
 
@@ -502,31 +529,36 @@ POST /api/meeting-room
 ## 🔮 Future Roadmap
 
 ### Phase 1: Current (V2.0)
+
 ✅ Drag-and-drop selection  
 ✅ 15-minute intervals  
 ✅ Whole day events  
-✅ Visual feedback  
+✅ Visual feedback
 
 ### Phase 2: Near Future (V2.1)
+
 🔜 Drag to resize existing reservations  
 🔜 Drag to move reservations  
-🔜 Conflict visual warnings  
+🔜 Conflict visual warnings
 
 ### Phase 3: Advanced (V2.2)
+
 🔜 Multi-day event support  
 🔜 Recurring reservation creation  
-🔜 Color-coded event types  
+🔜 Color-coded event types
 
 ### Phase 4: Enterprise (V3.0)
+
 🔜 Multiple room view  
 🔜 Room resource management  
-🔜 Team availability overlay  
+🔜 Team availability overlay
 
 ## 🎉 Conclusion
 
 The V2 drag-and-drop interface represents a **significant UX improvement** while maintaining **100% backwards compatibility** at the API and data level.
 
 **Key Achievements:**
+
 - ✅ True Google Calendar-style interaction
 - ✅ More flexible time selection
 - ✅ Better visual feedback
@@ -535,10 +567,10 @@ The V2 drag-and-drop interface represents a **significant UX improvement** while
 - ✅ Comprehensive documentation
 
 **Impact:**
+
 - 🎯 Faster booking workflow
 - 🎨 Modern, professional appearance
 - 💪 More powerful features
 - 😊 Better user experience
 
 **Ready for production! 🚀**
-

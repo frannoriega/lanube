@@ -15,21 +15,19 @@ describe("parseEmailIdentityForNormalization", () => {
   });
 
   it("uses last @ for local part", () => {
-    expect(
-      parseEmailIdentityForNormalization("a@b@c.com"),
-    ).toEqual({
+    expect(parseEmailIdentityForNormalization("a@b@c.com")).toEqual({
       localBase: "a@b",
       domain: "c.com",
     });
   });
 
   it("strips sole +lanube tag", () => {
-    expect(
-      parseEmailIdentityForNormalization("john+lanube@gmail.com"),
-    ).toEqual({
-      localBase: "john",
-      domain: "gmail.com",
-    });
+    expect(parseEmailIdentityForNormalization("john+lanube@gmail.com")).toEqual(
+      {
+        localBase: "john",
+        domain: "gmail.com",
+      },
+    );
   });
 
   it("rejects other +tags", () => {

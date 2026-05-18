@@ -1,6 +1,12 @@
 import { AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
 
-export function StatusIcon({ status, className = "h-4 w-4" }: { status: string; className?: string }) {
+export function StatusIcon({
+  status,
+  className = "h-4 w-4",
+}: {
+  status: string;
+  className?: string;
+}) {
   switch (status) {
     case "APPROVED":
       return <CheckCircle className={`${className} text-green-500`} />;
@@ -12,5 +18,3 @@ export function StatusIcon({ status, className = "h-4 w-4" }: { status: string; 
       return <AlertCircle className={`${className} text-gray-500`} />;
   }
 }
-
-

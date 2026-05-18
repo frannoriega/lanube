@@ -51,7 +51,10 @@ export function addDaysToDateKey(dateKey: string, deltaDays: number): string {
 }
 
 /** Inclusive list of date keys from `from` through `to` (lexicographic OK if same TZ calendar order). */
-export function enumerateDateKeysInclusive(fromKey: string, toKey: string): string[] {
+export function enumerateDateKeysInclusive(
+  fromKey: string,
+  toKey: string,
+): string[] {
   const out: string[] = [];
   let cur = fromKey;
   while (cur <= toKey) {
@@ -63,7 +66,10 @@ export function enumerateDateKeysInclusive(fromKey: string, toKey: string): stri
 }
 
 /** First and last keys for the default forward window (inclusive). */
-export function adminForwardWindowRange(dayCount: number, nowMs?: number): {
+export function adminForwardWindowRange(
+  dayCount: number,
+  nowMs?: number,
+): {
   fromKey: string;
   toKey: string;
 } {

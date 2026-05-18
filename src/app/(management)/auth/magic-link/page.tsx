@@ -1,42 +1,42 @@
-"use client"
+"use client";
 
-import { useServerTime } from "@/components/providers/server-time"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import { toast } from "sonner"
+import { useServerTime } from "@/components/providers/server-time";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function MagicLinkPage() {
-  const { now } = useServerTime()
-  const [isValidating, setIsValidating] = useState(true)
-  const [error, setError] = useState("")
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  const { now } = useServerTime();
+  const [isValidating, setIsValidating] = useState(true);
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
-        setError("Token inválido")
-        setIsValidating(false)
-        return
+        setError("Token inválido");
+        setIsValidating(false);
+        return;
       }
 
       try {
         // Decode the token (in a real app, you'd validate against a database)
-        const decoded = Buffer.from(token, 'base64').toString('utf-8')
-        const [email, timestamp] = decoded.split(':')
-        
+        const decoded = Buffer.from(token, "base64").toString("utf-8");
+        const [email, timestamp] = decoded.split(":");
+
         // Check if token is not expired (24 hours)
-        const tokenTime = parseInt(timestamp)
-        const atMs = now().getTime()
-        const maxAge = 24 * 60 * 60 * 1000 // 24 hours
-        
+        const tokenTime = parseInt(timestamp);
+        const atMs = now().getTime();
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
         if (atMs - tokenTime > maxAge) {
-          setError("El enlace ha expirado. Por favor solicita uno nuevo.")
-          setIsValidating(false)
-          return
+          setError("El enlace ha expirado. Por favor solicita uno nuevo.");
+          setIsValidating(false);
+          return;
         }
 
         // Create user session (in a real app, you'd create a proper session)
@@ -46,29 +46,28 @@ export default function MagicLinkPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ email, token }),
-        })
+        });
 
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || "Error al validar el enlace")
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Error al validar el enlace");
         }
 
-        toast.success("¡Inicio de sesión exitoso!")
-        
+        toast.success("¡Inicio de sesión exitoso!");
+
         // Redirect to dashboard after a short delay
         setTimeout(() => {
-          router.push("/dashboard")
-        }, 2000)
-
+          router.push("/dashboard");
+        }, 2000);
       } catch (error: unknown) {
         const knownError = error as Error;
-        setError(knownError.message || "Error al validar el enlace")
-        setIsValidating(false)
+        setError(knownError.message || "Error al validar el enlace");
+        setIsValidating(false);
       }
-    }
+    };
 
-    validateToken()
-  }, [token, router, now])
+    validateToken();
+  }, [token, router, now]);
 
   if (isValidating) {
     return (
@@ -88,7 +87,7 @@ export default function MagicLinkPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -99,11 +98,13 @@ export default function MagicLinkPage() {
             <div className="mx-auto h-16 w-16 rounded-full bg-red-500 flex items-center justify-center mb-4">
               <div className="text-2xl text-white">⚠️</div>
             </div>
-            <CardTitle className="text-2xl text-red-600">Enlace Inválido</CardTitle>
+            <CardTitle className="text-2xl text-red-600">
+              Enlace Inválido
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">{error}</p>
-            <Button 
+            <Button
               onClick={() => router.push("/")}
               className="w-full glass-button"
             >
@@ -112,7 +113,7 @@ export default function MagicLinkPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -126,9 +127,10 @@ export default function MagicLinkPage() {
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-muted-foreground">
-            Tu inicio de sesión fue exitoso. Te redirigiremos al dashboard en un momento...
+            Tu inicio de sesión fue exitoso. Te redirigiremos al dashboard en un
+            momento...
           </p>
-          <Button 
+          <Button
             onClick={() => router.push("/dashboard")}
             className="w-full glass-button"
           >
@@ -137,5 +139,5 @@ export default function MagicLinkPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

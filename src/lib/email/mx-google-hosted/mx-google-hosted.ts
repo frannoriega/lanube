@@ -8,9 +8,7 @@ const mxCache = new Map<string, CacheEntry>();
 
 function isGoogleMxExchange(exchange: string): boolean {
   const h = exchange.trim().toLowerCase().replace(/\.$/, "");
-  return (
-    h.endsWith(".google.com") || h.endsWith(".googleusercontent.com")
-  );
+  return h.endsWith(".google.com") || h.endsWith(".googleusercontent.com");
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -33,7 +31,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  * True when `ENABLE_MX_GOOGLE_HOSTED_DETECTION` is set and the domain's lowest-priority MX
  * targets look like Google's. On failure or timeout, returns false (do not strip dots).
  */
-export async function isDomainGoogleHostedByMx(domain: string): Promise<boolean> {
+export async function isDomainGoogleHostedByMx(
+  domain: string,
+): Promise<boolean> {
   if (process.env.ENABLE_MX_GOOGLE_HOSTED_DETECTION !== "true") {
     return false;
   }

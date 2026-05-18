@@ -58,12 +58,12 @@ El archivo `env.example` ya incluye los valores por defecto para desarrollo loca
 
 El proyecto incluye `docker/docker-compose.yml` con todo lo necesario para desarrollo local: base de datos, migraciones, correo de prueba y (opcionalmente) la aplicación Next.js dentro de un contenedor.
 
-| Servicio | Descripción |
-|----------|-------------|
+| Servicio     | Descripción                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
 | **postgres** | PostgreSQL 17.2; imagen basada en la oficial con soporte opcional de **libfaketime** (reloj simulado) |
-| **migrate** | Una sola ejecución al subir el stack: aplica migraciones Prisma y seed |
-| **mailpit** | SMTP de prueba y UI web para ver los emails |
-| **app** | Next.js en modo `next dev`, escuchando en `0.0.0.0:3000` y con inspector Node en el puerto **9229** |
+| **migrate**  | Una sola ejecución al subir el stack: aplica migraciones Prisma y seed                                |
+| **mailpit**  | SMTP de prueba y UI web para ver los emails                                                           |
+| **app**      | Next.js en modo `next dev`, escuchando en `0.0.0.0:3000` y con inspector Node en el puerto **9229**   |
 
 #### Prerrequisitos
 
@@ -212,12 +212,12 @@ Tras las migraciones, el **seed** de Prisma (`prisma/seed.ts`, arreglo `EXAMPLE_
 
 **Contraseña compartida en local (todas las cuentas de ejemplo):** `123123123`
 
-| Correo | Rol |
-|--------|-----|
-| `u1v@lanube.local` | Usuario |
-| `u2@lanube.local` | Usuario |
-| `a1@lanube.local` | Administrador |
-| `a2@lanube.local` | Administrador |
+| Correo             | Rol           |
+| ------------------ | ------------- |
+| `u1v@lanube.local` | Usuario       |
+| `u2@lanube.local`  | Usuario       |
+| `a1@lanube.local`  | Administrador |
+| `a2@lanube.local`  | Administrador |
 
 Son datos **solo para desarrollo**; no uses estas claves ni copies este patrón en producción. Si agregás o cambiás cuentas, actualizá la tabla anterior o remití a `EXAMPLE_USERS` en el código como fuente de verdad.
 
@@ -229,7 +229,7 @@ npm run db:seed
 
 ## Deploy en Vercel
 
-En cada deploy, el comando de build (`npm run build`, definido en `vercel.json`) ejecuta **`prisma migrate deploy`** y luego **`next build`**. La base tiene que ser alcanzable desde los runners de build de Vercel: configurá **`DATABASE_URL`** al menos en el entorno donde corre ese build (producción y, si usás previews contra una DB real, también en *Preview*).
+En cada deploy, el comando de build (`npm run build`, definido en `vercel.json`) ejecuta **`prisma migrate deploy`** y luego **`next build`**. La base tiene que ser alcanzable desde los runners de build de Vercel: configurá **`DATABASE_URL`** al menos en el entorno donde corre ese build (producción y, si usás previews contra una DB real, también en _Preview_).
 
 Si necesitás compilar sin tocar la base (poco habitual), podés usar `npm run build:next` en un comando de build personalizado de Vercel.
 
@@ -237,18 +237,18 @@ Si necesitás compilar sin tocar la base (poco habitual), podés usar `npm run b
 
 Configura las siguientes variables de entorno en Vercel:
 
-| Variable | Función |
-|----------|---------|
-| `DATABASE_URL` | URL de conexión a PostgreSQL (**requerida en build** para `prisma migrate deploy`) |
-| `NEXTAUTH_URL` | URL pública de la aplicación |
-| `NEXTAUTH_SECRET` | Secreto para encriptación de cookies |
-| `SMTP_SERVER_HOST` | Host del servidor SMTP |
-| `SMTP_SERVER_PORT` | Puerto del servidor SMTP |
-| `SMTP_SERVER_USERNAME` | Usuario del servidor SMTP |
-| `SMTP_SERVER_PASSWORD` | Contraseña del servidor SMTP |
-| `SMTP_SERVER_SECURE` | `true` en producción para habilitar TLS |
-| `TURNSTILE_SECRET_KEY` | Secreto de Cloudflare Turnstile |
-| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Cloudflare Turnstile |
+| Variable                        | Función                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | URL de conexión a PostgreSQL (**requerida en build** para `prisma migrate deploy`) |
+| `NEXTAUTH_URL`                  | URL pública de la aplicación                                                       |
+| `NEXTAUTH_SECRET`               | Secreto para encriptación de cookies                                               |
+| `SMTP_SERVER_HOST`              | Host del servidor SMTP                                                             |
+| `SMTP_SERVER_PORT`              | Puerto del servidor SMTP                                                           |
+| `SMTP_SERVER_USERNAME`          | Usuario del servidor SMTP                                                          |
+| `SMTP_SERVER_PASSWORD`          | Contraseña del servidor SMTP                                                       |
+| `SMTP_SERVER_SECURE`            | `true` en producción para habilitar TLS                                            |
+| `TURNSTILE_SECRET_KEY`          | Secreto de Cloudflare Turnstile                                                    |
+| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Cloudflare Turnstile                                             |
 
 ### 2. Deploy
 

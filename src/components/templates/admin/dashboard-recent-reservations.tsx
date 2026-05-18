@@ -6,7 +6,13 @@ import {
   defaultAdminResourceServiceSlug,
   type AdminResourceServiceSlug,
 } from "@/lib/admin/admin-resource-service-slug";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ResourceType } from "@/generated/prisma/enums";
 import { Calendar } from "lucide-react";
 import { useState } from "react";
@@ -52,7 +58,11 @@ export function DashboardRecentReservations({
   processing,
   refetchKey = 0,
 }: {
-  onAction: (id: string, action: "APPROVED" | "REJECTED", reason?: string) => void;
+  onAction: (
+    id: string,
+    action: "APPROVED" | "REJECTED",
+    reason?: string,
+  ) => void;
   processing: string | null;
   refetchKey?: number;
 }) {
@@ -68,8 +78,8 @@ export function DashboardRecentReservations({
           Reservas recientes
         </CardTitle>
         <CardDescription>
-          Esta semana y la próxima (Argentina). Elegí el tipo de recurso y expandí un
-          día con reservas para ver la grilla y el detalle lateral.
+          Esta semana y la próxima (Argentina). Elegí el tipo de recurso y
+          expandí un día con reservas para ver la grilla y el detalle lateral.
         </CardDescription>
         <div className="pt-2">
           <p className="mb-1.5 text-sm font-medium text-muted-foreground">
@@ -94,7 +104,7 @@ export function DashboardRecentReservations({
 
 /** Normalizes API JSON (ms UTC or legacy ISO strings) into AdminReservationListResult. */
 export function parseAdminReservationListFromApi(
-  raw: unknown
+  raw: unknown,
 ): AdminReservationListResult[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((item: Record<string, unknown>) => {

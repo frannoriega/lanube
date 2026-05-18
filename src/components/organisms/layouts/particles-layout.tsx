@@ -50,7 +50,7 @@ export default function ParticlesLayout({
       particles: {
         number: { density: { enable: true }, value: mobile ? 50 : 120 },
         links: {
-          enable: !mobile,          // big win on mobile
+          enable: !mobile, // big win on mobile
           distance: 150,
           opacity: 0.5,
           width: 1,

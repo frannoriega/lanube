@@ -1,26 +1,30 @@
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { serializeJson } from "@/lib/json-bigint"
-import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { serializeJson } from "@/lib/json-bigint";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth();
 
     if (!session?.user?.email) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 })
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const { name, lastName, dni, institution, reasonToJoin } = await request.json()
+    const { name, lastName, dni, institution, reasonToJoin } =
+      await request.json();
 
     // Check if user already exists
     const existingUser = await prisma.registeredUser.findFirst({
       include: { user: true },
-      where: { user: { email: session.user.email } }
-    })
+      where: { user: { email: session.user.email } },
+    });
 
     if (existingUser) {
-      return NextResponse.json({ message: "Usuario ya existe" }, { status: 400 })
+      return NextResponse.json(
+        { message: "Usuario ya existe" },
+        { status: 400 },
+      );
     }
 
     // Create user
@@ -28,16 +32,16 @@ export async function POST(request: NextRequest) {
       data: {
         user: {
           connect: {
-            email: session.user.email
-          }
+            email: session.user.email,
+          },
         },
         name,
         lastName,
         dni: dni.toString(),
         institution: institution || null,
         reasonToJoin,
-      }
-    })
+      },
+    });
 
     const body = JSON.stringify(serializeJson({ user }));
     return new NextResponse(body, {
@@ -45,6 +49,9 @@ export async function POST(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch {
-    return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 })
+    return NextResponse.json(
+      { message: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }

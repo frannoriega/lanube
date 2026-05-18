@@ -75,11 +75,14 @@ function ReservationsPageContent() {
     setProcessing(reservationId);
     try {
       if (action === "APPROVED") {
-        const previewRes = await fetch(`/api/admin/reservations/${reservationId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: action, preview: true }),
-        });
+        const previewRes = await fetch(
+          `/api/admin/reservations/${reservationId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: action, preview: true }),
+          },
+        );
         if (!previewRes.ok) {
           const err = await previewRes.json().catch(() => ({}));
           toast.error(err.message || "No se pudo previsualizar conflictos");
@@ -92,11 +95,14 @@ function ReservationsPageContent() {
           conflicts: previewData.autoRejectedIds || [],
         });
       } else {
-        const response = await fetch(`/api/admin/reservations/${reservationId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: action, deniedReason }),
-        });
+        const response = await fetch(
+          `/api/admin/reservations/${reservationId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: action, deniedReason }),
+          },
+        );
         if (response.ok) {
           toast.success("Reserva rechazada exitosamente");
           triggerRefetch();
@@ -163,7 +169,10 @@ function ReservationsPageContent() {
           <p className="text-sm font-medium text-muted-foreground">
             Tipo de recurso
           </p>
-          <AdminResourceTypeCombobox value={service} onChange={onServiceChange} />
+          <AdminResourceTypeCombobox
+            value={service}
+            onChange={onServiceChange}
+          />
         </div>
       </div>
 

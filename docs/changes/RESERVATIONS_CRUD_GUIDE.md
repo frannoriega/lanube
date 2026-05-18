@@ -121,7 +121,7 @@ await createReservationException(
   {
     isCancelled: true,
     reason: "Holiday - office closed",
-  }
+  },
 );
 
 // Modify a specific occurrence
@@ -133,7 +133,7 @@ await createReservationException(
     newStartTime: new Date("2025-10-28T14:00:00Z"), // Changed time
     newEndTime: new Date("2025-10-28T15:00:00Z"),
     reason: "Moved to afternoon due to conflict",
-  }
+  },
 );
 ```
 
@@ -166,7 +166,7 @@ const { reservations, total } = await listReservations(
     limit: 20,
     offset: 0,
     orderBy: { startTime: "asc" },
-  }
+  },
 );
 ```
 
@@ -189,14 +189,14 @@ const { occurrences, total } = await listExpandedReservations(
   {
     limit: 20,
     offset: 0,
-  }
+  },
 );
 
 // Each occurrence is a separate entry
 occurrences.forEach((occ) => {
   console.log(
     `${occ.occurrenceStartTime} - ${occ.occurrenceEndTime}`,
-    occ.isRecurring ? "(part of recurring series)" : "(single)"
+    occ.isRecurring ? "(part of recurring series)" : "(single)",
   );
 });
 ```
@@ -240,7 +240,7 @@ const reservations = await getResourceReservations(
   "resource_456",
   new Date("2025-10-15T00:00:00Z"),
   new Date("2025-10-15T23:59:59Z"),
-  ["PENDING", "APPROVED"]
+  ["PENDING", "APPROVED"],
 );
 ```
 
@@ -255,7 +255,7 @@ const occurrences = await getExpandedResourceReservations(
   "resource_456",
   new Date("2025-10-15T00:00:00Z"),
   new Date("2025-10-31T23:59:59Z"),
-  ["PENDING", "APPROVED"]
+  ["PENDING", "APPROVED"],
 );
 ```
 
@@ -306,7 +306,7 @@ import { rejectReservation } from "@/lib/db/reservations";
 
 const rejected = await rejectReservation(
   "reservation_123",
-  "Resource is not available at this time"
+  "Resource is not available at this time",
 );
 ```
 
@@ -352,7 +352,7 @@ const isAvailable = await checkResourceAvailability(
   "TEAM",
   "team_789",
   new Date("2025-10-15T10:00:00Z"),
-  new Date("2025-10-15T11:00:00Z")
+  new Date("2025-10-15T11:00:00Z"),
 );
 
 if (isAvailable) {
@@ -382,7 +382,7 @@ const stats = await getReservationStats(
   new Date("2025-10-31"),
   {
     eventType: "MEETING",
-  }
+  },
 );
 
 console.log(stats);
@@ -412,7 +412,7 @@ import { getConflictingReservations } from "@/lib/db/reservations";
 const conflicts = await getConflictingReservations(
   "resource_456",
   new Date("2025-10-15T10:00:00Z"),
-  new Date("2025-10-15T11:00:00Z")
+  new Date("2025-10-15T11:00:00Z"),
 );
 ```
 
@@ -483,7 +483,7 @@ await createReservationException(
   {
     isCancelled: true,
     reason: "Out of office",
-  }
+  },
 );
 
 // Now list occurrences again
@@ -509,7 +509,7 @@ const existing = await getExpandedResourceReservations(
   "meeting_room_1",
   startTime,
   endTime,
-  ["APPROVED", "PENDING"]
+  ["APPROVED", "PENDING"],
 );
 
 if (existing.length > 0) {
@@ -524,7 +524,7 @@ if (existing.length > 0) {
     "TEAM",
     "team_456",
     startTime,
-    endTime
+    endTime,
   );
 
   if (isAvailable) {
@@ -566,12 +566,13 @@ export async function GET(request: NextRequest) {
       includeExpired: false,
       status: ["APPROVED"],
       limit: 100,
-    }
+    },
   );
 
   // Filter by date range if provided
   const filtered = occurrences.filter((occ) => {
-    if (startDate && occ.occurrenceStartTime < new Date(startDate)) return false;
+    if (startDate && occ.occurrenceStartTime < new Date(startDate))
+      return false;
     if (endDate && occ.occurrenceEndTime > new Date(endDate)) return false;
     return true;
   });
@@ -614,4 +615,3 @@ The system leverages these PostgreSQL functions:
 - [Database Functions Migration](prisma/migrations/20251008000836_functions_and_triggers/migration.sql)
 - [Expand Recurring Reservations Migration](prisma/migrations/20251012163357_expand_recurring_reservations/migration.sql)
 - [iCalendar RRULE Specification](https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html)
-

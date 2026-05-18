@@ -7,26 +7,29 @@ MissingSecret: Must pass 'secret' if not set to JWT getToken(). Read more at htt
 ```
 
 Este error ocurría en el middleware porque:
+
 - NextAuth v5 requiere que el `secret` se pase explícitamente cuando se usa `getToken()` en middleware
 - Aunque `NEXTAUTH_SECRET` estaba configurado en `.env`, no se estaba pasando al middleware
 
 ## ✅ **Solución Implementada**
 
 ### **Actualización del Middleware**
+
 En `src/middleware.ts`, agregué el parámetro `secret` al `getToken()`:
 
 ```typescript
 // Antes
-const token = await getToken({ req: request })
+const token = await getToken({ req: request });
 
 // Después
-const token = await getToken({ 
+const token = await getToken({
   req: request,
-  secret: process.env.NEXTAUTH_SECRET 
-})
+  secret: process.env.NEXTAUTH_SECRET,
+});
 ```
 
 ### **Limpieza de Código**
+
 - Removí parámetros no utilizados en el callback `signIn` de `auth.ts`
 - Eliminé warnings de ESLint sobre variables no utilizadas
 
