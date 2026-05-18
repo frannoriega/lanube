@@ -9,6 +9,7 @@ Major improvements to the WeekCalendar component addressing UX, configuration, a
 ### 1. **Dialog Integrated into Calendar Component**
 
 **Before**: Dialog was managed in each page component
+
 ```typescript
 // Each page had its own dialog with duplicated code
 <Dialog>
@@ -19,6 +20,7 @@ Major improvements to the WeekCalendar component addressing UX, configuration, a
 ```
 
 **After**: Dialog is now part of WeekCalendar
+
 ```typescript
 <WeekCalendar
   onCreateReservation={handleCreate}
@@ -28,6 +30,7 @@ Major improvements to the WeekCalendar component addressing UX, configuration, a
 ```
 
 **Benefits**:
+
 - ✅ Single source of truth for dialog behavior
 - ✅ Less code in page components (reduced by ~80 lines each)
 - ✅ Consistent dialog UX across all pages
@@ -36,15 +39,19 @@ Major improvements to the WeekCalendar component addressing UX, configuration, a
 ### 2. **Smart Time Selection with 15-Minute Intervals**
 
 **Before**: Used native HTML time inputs with step attribute
+
 ```html
 <input type="time" step="900" />
 ```
+
 **Problems**:
+
 - Browser-dependent behavior
 - Could allow invalid times
 - No guaranteed 15-minute intervals
 
 **After**: Custom Select dropdowns with exact 15-minute intervals
+
 ```typescript
 // Generates: 09:00, 09:15, 09:30, 09:45, 10:00, ...
 const timeOptions = generateTimeOptions(); // Only valid times
@@ -57,6 +64,7 @@ const timeOptions = generateTimeOptions(); // Only valid times
 ```
 
 **Benefits**:
+
 - ✅ Guaranteed 15-minute intervals (00, 15, 30, 45)
 - ✅ Only shows valid times (9:00 AM - 6:00 PM)
 - ✅ End time automatically filtered (only shows times after start)
@@ -66,32 +74,35 @@ const timeOptions = generateTimeOptions(); // Only valid times
 ### 3. **Configurable Business Hours as Constants**
 
 **Location**: Top of WeekCalendar.tsx
+
 ```typescript
 // Configuration constants
 const BUSINESS_HOURS = {
-  START: 9,  // 9 AM
-  END: 18,   // 6 PM
+  START: 9, // 9 AM
+  END: 18, // 6 PM
 } as const;
 
 const TIME_INTERVAL_MINUTES = 15;
 ```
 
 **Usage Throughout Component**:
+
 ```typescript
 // Time generation
-for (let minutes = BUSINESS_HOURS.START * 60; 
-     minutes <= BUSINESS_HOURS.END * 60; 
+for (let minutes = BUSINESS_HOURS.START * 60;
+     minutes <= BUSINESS_HOURS.END * 60;
      minutes += TIME_INTERVAL_MINUTES) { ... }
 
 // Calendar rendering
 Array.from({ length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 }, ...)
 
 // Validation
-if (startMinutes < BUSINESS_HOURS.START * 60 || 
+if (startMinutes < BUSINESS_HOURS.START * 60 ||
     endMinutes > BUSINESS_HOURS.END * 60) { ... }
 ```
 
 **Benefits**:
+
 - ✅ Single place to change business hours
 - ✅ All calculations automatically adjust
 - ✅ Type-safe with `as const`
@@ -101,34 +112,38 @@ if (startMinutes < BUSINESS_HOURS.START * 60 ||
 ### 4. **Smart Week Detection for Weekends**
 
 **Before**: Always showed current week, even if it's the weekend
+
 ```typescript
 const today = startOfWeek(new Date(), { weekStartsOn: 1 });
 ```
 
 **After**: Automatically shows next week if today is weekend
+
 ```typescript
 function getCurrentWorkWeekStart(): Date {
   const now = new Date();
   const dayOfWeek = getDay(now); // 0 = Sunday, 6 = Saturday
-  
+
   // If it's weekend, get next Monday
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     const monday = startOfWeek(now, { weekStartsOn: 1 });
     return addWeeks(monday, 1); // Next week's Monday
   }
-  
+
   // Otherwise, get this week's Monday
   return startOfWeek(now, { weekStartsOn: 1 });
 }
 ```
 
 **Benefits**:
+
 - ✅ Avoids showing empty/past work week on weekends
 - ✅ Users always see relevant upcoming week
 - ✅ Better UX - no confusion about "current" week
 - ✅ "Hoy" button correctly navigates to next work week
 
 **Example**:
+
 ```
 Saturday, Oct 12, 2025:
   Before: Shows Mon Oct 7 - Fri Oct 11 (past week)
@@ -147,18 +162,18 @@ Monday, Oct 14, 2025:
 interface WeekCalendarProps {
   // Data
   occurrences: ReservationOccurrence[];
-  
+
   // Callback (replaces onSelectionComplete)
   onCreateReservation: (data: ReservationFormData) => Promise<void>;
-  
+
   // Configuration
   eventTypes: Array<{ value: string; label: string }>;
   defaultEventType: string;
-  
+
   // Optional customization
   loading?: boolean;
-  title?: string;        // Dialog title
-  description?: string;  // Textarea label
+  title?: string; // Dialog title
+  description?: string; // Textarea label
 }
 ```
 
@@ -182,6 +197,7 @@ export interface ReservationFormData {
 ## 📊 Page Component Simplification
 
 ### Before (Meeting Room Example)
+
 ```typescript
 // 308 lines total
 const [selection, setSelection] = useState<DragSelection | null>(null);
@@ -200,6 +216,7 @@ const [currentWeekStart, setCurrentWeekStart] = useState(...);
 ```
 
 ### After
+
 ```typescript
 // 128 lines total (58% reduction!)
 const EVENT_TYPES = [
@@ -238,9 +255,11 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
   const startMinutes = BUSINESS_HOURS.START * 60;
   const endMinutes = BUSINESS_HOURS.END * 60;
 
-  for (let minutes = startMinutes; 
-       minutes <= endMinutes; 
-       minutes += TIME_INTERVAL_MINUTES) {
+  for (
+    let minutes = startMinutes;
+    minutes <= endMinutes;
+    minutes += TIME_INTERVAL_MINUTES
+  ) {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     const value = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
@@ -252,6 +271,7 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
 ```
 
 **Generated Options** (with default config):
+
 ```
 09:00, 09:15, 09:30, 09:45,
 10:00, 10:15, 10:30, 10:45,
@@ -276,6 +296,7 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
 ```
 
 **Example**: If start time is 10:30, end time options are:
+
 ```
 10:45, 11:00, 11:15, ... 18:00
 ```
@@ -284,7 +305,7 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
 
 ```typescript
 {Array.from(
-  { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 }, 
+  { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 },
   (_, i) => i + BUSINESS_HOURS.START
 ).map((hour) => (
   <div style={{
@@ -300,6 +321,7 @@ function generateTimeOptions(): Array<{ value: string; label: string }> {
 ## 📝 Usage Examples
 
 ### Meeting Room
+
 ```typescript
 const EVENT_TYPES = [
   { value: "MEETING", label: "Reunión" },
@@ -320,6 +342,7 @@ const EVENT_TYPES = [
 ```
 
 ### Coworking
+
 ```typescript
 const EVENT_TYPES = [
   { value: "MEETING", label: "Reunión" },
@@ -338,28 +361,31 @@ const EVENT_TYPES = [
 ## 🎨 UX Improvements Summary
 
 ### Time Selection
-| Aspect | Before | After |
-|--------|--------|-------|
-| Input Type | Native HTML time | Select dropdown |
-| Intervals | Step attribute (unreliable) | Guaranteed 15-min |
-| Valid Times | Not enforced | Only 9:00-18:00 |
-| Browser Consistency | Varies | Consistent |
-| End Time Filter | Manual validation | Auto-filtered list |
+
+| Aspect              | Before                      | After              |
+| ------------------- | --------------------------- | ------------------ |
+| Input Type          | Native HTML time            | Select dropdown    |
+| Intervals           | Step attribute (unreliable) | Guaranteed 15-min  |
+| Valid Times         | Not enforced                | Only 9:00-18:00    |
+| Browser Consistency | Varies                      | Consistent         |
+| End Time Filter     | Manual validation           | Auto-filtered list |
 
 ### Weekend Handling
-| Day | Before | After |
-|-----|--------|-------|
-| Sat/Sun | Shows past work week | Shows next work week |
-| Mon-Fri | Shows current week | Shows current week |
-| "Hoy" button | Goes to calendar week | Goes to work week |
+
+| Day          | Before                | After                |
+| ------------ | --------------------- | -------------------- |
+| Sat/Sun      | Shows past work week  | Shows next work week |
+| Mon-Fri      | Shows current week    | Shows current week   |
+| "Hoy" button | Goes to calendar week | Goes to work week    |
 
 ### Business Hours
-| Aspect | Before | After |
-|--------|--------|-------|
-| Configuration | Hardcoded in multiple places | Single constant |
-| Hour Labels | Fixed array | Dynamic from config |
-| Validation | Manual checks | Uses constants |
-| Future Changes | Update many places | Change one constant |
+
+| Aspect         | Before                       | After               |
+| -------------- | ---------------------------- | ------------------- |
+| Configuration  | Hardcoded in multiple places | Single constant     |
+| Hour Labels    | Fixed array                  | Dynamic from config |
+| Validation     | Manual checks                | Uses constants      |
+| Future Changes | Update many places           | Change one constant |
 
 ## 🚀 Performance
 
@@ -373,12 +399,14 @@ const EVENT_TYPES = [
 For each resource type (meeting-room, coworking, lab, auditorium):
 
 ### Basic Functionality
+
 - [ ] Calendar loads and shows correct week
 - [ ] If today is weekend, shows next week
 - [ ] Can drag to select time
 - [ ] Dialog opens with correct times
 
 ### Time Selection
+
 - [ ] Start time dropdown shows 15-min intervals only
 - [ ] Start time options: 09:00 through 18:00
 - [ ] End time only shows times after start time
@@ -386,18 +414,21 @@ For each resource type (meeting-room, coworking, lab, auditorium):
 - [ ] Whole day toggle sets 9:00-18:00
 
 ### Navigation
+
 - [ ] "Anterior" button works (when available)
 - [ ] "Hoy" button returns to work week (not calendar week)
 - [ ] "Siguiente" button works (max 1 week ahead)
 - [ ] Weekend detection works correctly
 
 ### Validation
+
 - [ ] Can't select start >= end
 - [ ] Can't create reservation without reason
 - [ ] Form submission works
 - [ ] Error handling displays correctly
 
 ### Visual
+
 - [ ] Hour labels show 09:00 through 18:00
 - [ ] 18:00 label is fully visible
 - [ ] Time labels close to calendar grid
@@ -406,11 +437,12 @@ For each resource type (meeting-room, coworking, lab, auditorium):
 ## 🔮 Future Enhancements
 
 ### Easy to Change Now
+
 ```typescript
 // Want different hours? Just change constants:
 const BUSINESS_HOURS = {
-  START: 8,   // 8 AM
-  END: 20,    // 8 PM
+  START: 8, // 8 AM
+  END: 20, // 8 PM
 } as const;
 
 // Want 30-minute intervals?
@@ -420,6 +452,7 @@ const TIME_INTERVAL_MINUTES = 30;
 ```
 
 ### Possible Additions
+
 - Different hours for different days
 - Different intervals for different resources
 - Holiday detection (like weekend detection)
@@ -428,6 +461,7 @@ const TIME_INTERVAL_MINUTES = 30;
 ## 📚 Related Files
 
 ### Modified
+
 - `src/components/organisms/calendar/WeekCalendar.tsx` - Main component
 - `src/components/organisms/calendar/index.ts` - Exports
 - `src/app/(management)/user/meeting-room/page.tsx` - Simplified
@@ -436,22 +470,24 @@ const TIME_INTERVAL_MINUTES = 30;
 - `src/app/(management)/user/auditorium/page.tsx` - Simplified
 
 ### Documentation
+
 - `CALENDAR_COMPONENT_REFACTOR.md` - Initial refactor docs
 - `CALENDAR_IMPROVEMENTS_V3.md` - This document
 
 ## ✨ Summary
 
 **What Changed**:
+
 1. ✅ Dialog moved into WeekCalendar component
 2. ✅ Time selection uses Select dropdowns with 15-min intervals
 3. ✅ Business hours configurable via constants
 4. ✅ Smart weekend detection for "current week"
 
 **Impact**:
+
 - 📦 **Code**: ~60% reduction in page components
 - 🎨 **UX**: Better time selection, smarter navigation
 - 🔧 **Maintainability**: Easier to configure and update
 - ✅ **Consistency**: Same behavior across all pages
 
 **Result**: A more polished, maintainable, and user-friendly calendar system! 🎉
-

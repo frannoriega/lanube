@@ -34,6 +34,7 @@ A true Google Calendar-style week view with **click-and-drag** time selection:
 ## ✨ Key Features
 
 ### 🖱️ Drag-and-Drop Selection
+
 - **Click and Drag**: Select your time range by dragging on the calendar
 - **15-Minute Intervals**: Precise time selection with quarter-hour snapping
 - **Visual Feedback**: Blue overlay shows your selection in real-time
@@ -41,6 +42,7 @@ A true Google Calendar-style week view with **click-and-drag** time selection:
 - **Minimum 15 Minutes**: Ensures reasonable meeting durations
 
 ### 🗓️ Visual Calendar
+
 - **Continuous Grid**: Smooth Google Calendar-style interface (no fixed slots!)
 - **Weekdays Only**: Monday through Friday
 - **Business Hours**: 9:00 AM - 6:00 PM
@@ -48,11 +50,13 @@ A true Google Calendar-style week view with **click-and-drag** time selection:
 - **Hour & 15-Min Lines**: Visual guides for precise selection
 
 ### 🌅 Whole Day Events
+
 - **Toggle Option**: One switch to book the entire day (9 AM - 6 PM)
 - **Auto-Hide Times**: Start/end inputs disappear when whole day is selected
 - **Perfect for**: All-day workshops, conferences, or full-day events
 
 ### 📝 Smart Dialog
+
 - Opens automatically after drag-and-release
 - Pre-filled with your selected time range
 - Edit times manually if needed (15-min steps)
@@ -60,12 +64,14 @@ A true Google Calendar-style week view with **click-and-drag** time selection:
 - Reason/description textarea
 
 ### 📆 Week Navigation
+
 - **Current Week**: Default view
 - **Next Week**: Can view 1 week ahead
 - **Previous**: Can go back to view past weeks
 - **Today Button**: Quick return to current week
 
 ### 🔒 Smart Validation
+
 - ✅ Prevents past bookings
 - ✅ Enforces weekdays only
 - ✅ Limits to business hours (9 AM - 6 PM)
@@ -104,6 +110,7 @@ MEETING_ROOM_README.md (this file) ............. Quick start guide
 ### For End Users
 
 1. **Access the Calendar**
+
    ```
    Navigate to: Dashboard → Sidebar → "Sala de reuniones"
    ```
@@ -147,7 +154,7 @@ MEETING_ROOM_README.md (this file) ............. Quick start guide
    ```typescript
    // GET: Fetch reservations for a week
    GET /api/meeting-room?startDate=2025-10-14&endDate=2025-10-18
-   
+
    // POST: Create new reservation
    POST /api/meeting-room
    Body: {
@@ -162,9 +169,9 @@ MEETING_ROOM_README.md (this file) ............. Quick start guide
 
    ```typescript
    // From reservations CRUD
-   import { 
-     listExpandedReservations,  // Fetch with recurring expanded
-     createReservation           // Create new reservation
+   import {
+     listExpandedReservations, // Fetch with recurring expanded
+     createReservation, // Create new reservation
    } from "@/lib/db/reservations";
    ```
 
@@ -177,8 +184,8 @@ MEETING_ROOM_README.md (this file) ............. Quick start guide
      start_date,
      end_date,
      limit,
-     offset
-   )
+     offset,
+   );
    ```
 
 ## 🎨 Design Highlights
@@ -202,6 +209,7 @@ cursor-not-allowed
 ```
 
 ### Responsive Design
+
 - ✅ Desktop: Full grid view
 - ✅ Tablet: Horizontal scroll
 - ✅ Mobile: Collapsible sidebar + scroll
@@ -211,11 +219,11 @@ cursor-not-allowed
 
 ### ⏰ Time Constraints
 
-| Rule | Value |
-|------|-------|
-| Days | Monday - Friday (weekdays only) |
-| Hours | 9:00 AM - 6:00 PM |
-| Duration | 1-4 hours per booking |
+| Rule            | Value                           |
+| --------------- | ------------------------------- |
+| Days            | Monday - Friday (weekdays only) |
+| Hours           | 9:00 AM - 6:00 PM               |
+| Duration        | 1-4 hours per booking           |
 | Advance booking | Current week + 1 week ahead max |
 
 ### 🚫 Restrictions
@@ -260,6 +268,7 @@ cursor-not-allowed
 ## ✅ Validation & Error Handling
 
 ### Client-Side
+
 ```typescript
 ✓ Required fields validation
 ✓ Date/time format validation
@@ -269,6 +278,7 @@ cursor-not-allowed
 ```
 
 ### Server-Side
+
 ```typescript
 ✓ Authentication check
 ✓ User verification
@@ -278,6 +288,7 @@ cursor-not-allowed
 ```
 
 ### User Feedback
+
 ```typescript
 ✓ Toast notifications (success/error)
 ✓ Loading states
@@ -311,11 +322,11 @@ Or manually insert:
 
 ```sql
 -- Fungible resource
-INSERT INTO fungible_resources (name, type, capacity) 
+INSERT INTO fungible_resources (name, type, capacity)
 VALUES ('Meeting Rooms', 'MEETING', 1);
 
 -- Physical resource
-INSERT INTO resources (name, fungible_resource_id, serial_number) 
+INSERT INTO resources (name, fungible_resource_id, serial_number)
 VALUES ('Main Meeting Room', 'meeting_room_group_id', 'MR-001');
 ```
 
@@ -324,6 +335,7 @@ VALUES ('Main Meeting Room', 'meeting_room_group_id', 'MR-001');
 ### Manual Testing Checklist
 
 #### Basic Functionality
+
 - [ ] Load calendar page
 - [ ] See current week displayed
 - [ ] Navigate to next week
@@ -334,6 +346,7 @@ VALUES ('Main Meeting Room', 'meeting_room_group_id', 'MR-001');
 - [ ] See past slots grayed out
 
 #### Creating Reservations
+
 - [ ] Click available slot
 - [ ] Dialog opens with correct date/time
 - [ ] Select duration
@@ -344,6 +357,7 @@ VALUES ('Main Meeting Room', 'meeting_room_group_id', 'MR-001');
 - [ ] See new reservation in calendar
 
 #### Validation Testing
+
 - [ ] Try booking past slot (should fail)
 - [ ] Try booking on weekend (should fail)
 - [ ] Try booking before 9 AM (should fail)
@@ -351,6 +365,7 @@ VALUES ('Main Meeting Room', 'meeting_room_group_id', 'MR-001');
 - [ ] Try booking without reason (should fail)
 
 #### Edge Cases
+
 - [ ] Week transition over month boundary
 - [ ] Multiple reservations same hour
 - [ ] Long reservation reasons
@@ -361,20 +376,21 @@ VALUES ('Main Meeting Room', 'meeting_room_group_id', 'MR-001');
 
 ```typescript
 // Example test cases
-describe('Meeting Room Calendar', () => {
-  it('should display current week', () => {})
-  it('should navigate to next week', () => {})
-  it('should show occupied slots', () => {})
-  it('should open dialog on slot click', () => {})
-  it('should create reservation', () => {})
-  it('should validate business hours', () => {})
-  it('should prevent weekend bookings', () => {})
-})
+describe("Meeting Room Calendar", () => {
+  it("should display current week", () => {});
+  it("should navigate to next week", () => {});
+  it("should show occupied slots", () => {});
+  it("should open dialog on slot click", () => {});
+  it("should create reservation", () => {});
+  it("should validate business hours", () => {});
+  it("should prevent weekend bookings", () => {});
+});
 ```
 
 ## 📊 Performance
 
 ### Optimizations
+
 - Efficient date calculations with `date-fns`
 - Memoized slot computations
 - Debounced API calls
@@ -382,6 +398,7 @@ describe('Meeting Room Calendar', () => {
 - Database-level filtering
 
 ### Load Times
+
 - Initial load: < 500ms
 - Week navigation: < 200ms
 - Reservation creation: < 300ms
@@ -391,6 +408,7 @@ describe('Meeting Room Calendar', () => {
 ### Common Issues
 
 #### 1. Calendar not loading
+
 ```bash
 # Check API response
 curl http://localhost:3000/api/meeting-room?startDate=...&endDate=...
@@ -400,6 +418,7 @@ npx prisma studio
 ```
 
 #### 2. Cannot create reservation
+
 ```
 Possible causes:
 - Not authenticated (check session)
@@ -410,6 +429,7 @@ Possible causes:
 ```
 
 #### 3. Slots not showing as occupied
+
 ```
 Possible causes:
 - Reservations status not APPROVED/PENDING
@@ -432,17 +452,21 @@ Possible causes:
 ## 📞 Support
 
 ### Documentation
+
 - [Detailed Feature Guide](./MEETING_ROOM_FEATURE.md)
 - [Implementation Summary](./IMPLEMENTATION_SUMMARY.md)
 - [Reservations CRUD Guide](./RESERVATIONS_CRUD_GUIDE.md)
 
 ### Key Files
+
 - **UI**: `src/app/(management)/user/meeting-room/page.tsx`
 - **API**: `src/app/api/meeting-room/route.ts`
 - **CRUD**: `src/lib/db/reservations.ts`
 
 ### Need Help?
+
 Check the browser console for error messages and verify:
+
 1. Authentication is working
 2. Database connection is active
 3. Meeting room resources exist
@@ -450,22 +474,23 @@ Check the browser console for error messages and verify:
 
 ## 🎉 Success!
 
-The meeting room calendar feature is now **fully implemented and ready to use**! 
+The meeting room calendar feature is now **fully implemented and ready to use**!
 
 ### What Users Get
+
 ✅ Intuitive visual calendar  
 ✅ Easy click-to-book interface  
 ✅ Real-time availability  
 ✅ Smart validation  
 ✅ Mobile responsive  
-✅ Dark mode support  
+✅ Dark mode support
 
 ### What Developers Get
+
 ✅ Clean, maintainable code  
 ✅ Type-safe implementation  
 ✅ Comprehensive documentation  
 ✅ Reusable components  
-✅ Extensible architecture  
+✅ Extensible architecture
 
 **Enjoy your new meeting room booking system! 🚀**
-

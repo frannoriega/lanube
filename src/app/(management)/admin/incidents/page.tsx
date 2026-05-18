@@ -1,16 +1,30 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertTriangle,
   Plus,
@@ -18,172 +32,178 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-} from "lucide-react"
-import { toast } from "sonner"
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface Incident {
-  id: string
-  subject: string
-  description: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  resolvedAt: string | null
+  id: string;
+  subject: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
   incidentUsers: {
     user: {
-      name: string
-      lastName: string
-      email: string
-      dni: string
-    }
-  }[]
+      name: string;
+      lastName: string;
+      email: string;
+      dni: string;
+    };
+  }[];
 }
 
 export default function IncidentsPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [incidents, setIncidents] = useState<Incident[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("ALL")
-  const [creating, setCreating] = useState(false)
-  const [processing, setProcessing] = useState<string | null>(null)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
+  const [creating, setCreating] = useState(false);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newIncident, setNewIncident] = useState({
     subject: "",
-    description: ""
-  })
+    description: "",
+  });
 
   useEffect(() => {
-    if (status === "loading") return
+    if (status === "loading") return;
 
     if (!session) {
-      router.push("/")
-      return
+      router.push("/");
+      return;
     }
 
-    fetchIncidents()
-  }, [session, status, router])
+    fetchIncidents();
+  }, [session, status, router]);
 
   const fetchIncidents = async () => {
     try {
-      const response = await fetch('/api/admin/incidents')
+      const response = await fetch("/api/admin/incidents");
       if (response.ok) {
-        const data = await response.json()
-        setIncidents(data)
+        const data = await response.json();
+        setIncidents(data);
       }
     } catch {
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCreateIncident = async () => {
     if (!newIncident.subject || !newIncident.description) {
-      toast.error("Por favor completa todos los campos")
-      return
+      toast.error("Por favor completa todos los campos");
+      return;
     }
 
-    setCreating(true)
+    setCreating(true);
 
     try {
-      const response = await fetch('/api/admin/incidents', {
-        method: 'POST',
+      const response = await fetch("/api/admin/incidents", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newIncident),
-      })
+      });
 
       if (response.ok) {
-        toast.success('Incidente creado exitosamente')
-        setNewIncident({ subject: "", description: "" })
-        setShowCreateDialog(false)
-        fetchIncidents()
+        toast.success("Incidente creado exitosamente");
+        setNewIncident({ subject: "", description: "" });
+        setShowCreateDialog(false);
+        fetchIncidents();
       } else {
-        const error = await response.json()
-        toast.error(error.message || 'Error al crear el incidente')
+        const error = await response.json();
+        toast.error(error.message || "Error al crear el incidente");
       }
     } catch {
-      toast.error('Error al crear el incidente')
+      toast.error("Error al crear el incidente");
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   const handleStatusChange = async (incidentId: string, newStatus: string) => {
-    setProcessing(incidentId)
+    setProcessing(incidentId);
 
     try {
       const response = await fetch(`/api/admin/incidents/${incidentId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: newStatus }),
-      })
+      });
 
       if (response.ok) {
-        toast.success(`Incidente ${newStatus === 'RESOLVED' ? 'resuelto' : newStatus === 'CLOSED' ? 'cerrado' : 'actualizado'} exitosamente`)
-        fetchIncidents()
+        toast.success(
+          `Incidente ${newStatus === "RESOLVED" ? "resuelto" : newStatus === "CLOSED" ? "cerrado" : "actualizado"} exitosamente`,
+        );
+        fetchIncidents();
       } else {
-        const error = await response.json()
-        toast.error(error.message || 'Error al actualizar el incidente')
+        const error = await response.json();
+        toast.error(error.message || "Error al actualizar el incidente");
       }
     } catch {
-      toast.error('Error al actualizar el incidente')
+      toast.error("Error al actualizar el incidente");
     } finally {
-      setProcessing(null)
+      setProcessing(null);
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'OPEN':
-        return <Badge className="bg-red-100 text-red-800">Abierto</Badge>
-      case 'RESOLVED':
-        return <Badge className="bg-green-100 text-green-800">Resuelto</Badge>
-      case 'CLOSED':
-        return <Badge className="bg-gray-100 text-gray-800">Cerrado</Badge>
+      case "OPEN":
+        return <Badge className="bg-red-100 text-red-800">Abierto</Badge>;
+      case "RESOLVED":
+        return <Badge className="bg-green-100 text-green-800">Resuelto</Badge>;
+      case "CLOSED":
+        return <Badge className="bg-gray-100 text-gray-800">Cerrado</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'OPEN':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
-      case 'RESOLVED':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'CLOSED':
-        return <XCircle className="h-4 w-4 text-gray-500" />
+      case "OPEN":
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case "RESOLVED":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "CLOSED":
+        return <XCircle className="h-4 w-4 text-gray-500" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
-  const filteredIncidents = incidents.filter(incident => {
-    const matchesSearch = incident.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = selectedStatus === "ALL" || incident.status === selectedStatus
-    return matchesSearch && matchesStatus
-  })
+  const filteredIncidents = incidents.filter((incident) => {
+    const matchesSearch =
+      incident.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      selectedStatus === "ALL" || incident.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  });
 
-  const openIncidents = incidents.filter(i => i.status === 'OPEN').length
-  const resolvedIncidents = incidents.filter(i => i.status === 'RESOLVED').length
-  const closedIncidents = incidents.filter(i => i.status === 'CLOSED').length
+  const openIncidents = incidents.filter((i) => i.status === "OPEN").length;
+  const resolvedIncidents = incidents.filter(
+    (i) => i.status === "RESOLVED",
+  ).length;
+  const closedIncidents = incidents.filter((i) => i.status === "CLOSED").length;
 
   if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
       </div>
-    )
+    );
   }
 
   if (!session) {
-    return null
+    return null;
   }
 
   return (
@@ -191,7 +211,9 @@ export default function IncidentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Incidentes</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Incidentes
+          </h1>
           <p className="text-gray-600 dark:text-gray-300">
             Gestiona y reporta incidentes en La Nube
           </p>
@@ -208,7 +230,8 @@ export default function IncidentsPage() {
             <DialogHeader>
               <DialogTitle>Reportar Nuevo Incidente</DialogTitle>
               <DialogDescription>
-                Crea un nuevo reporte de incidente. Se registrarán automáticamente todos los usuarios presentes en La Nube.
+                Crea un nuevo reporte de incidente. Se registrarán
+                automáticamente todos los usuarios presentes en La Nube.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -217,7 +240,12 @@ export default function IncidentsPage() {
                 <Input
                   id="subject"
                   value={newIncident.subject}
-                  onChange={(e) => setNewIncident(prev => ({ ...prev, subject: e.target.value }))}
+                  onChange={(e) =>
+                    setNewIncident((prev) => ({
+                      ...prev,
+                      subject: e.target.value,
+                    }))
+                  }
                   placeholder="Describe brevemente el incidente"
                 />
               </div>
@@ -226,18 +254,26 @@ export default function IncidentsPage() {
                 <Textarea
                   id="description"
                   value={newIncident.description}
-                  onChange={(e) => setNewIncident(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setNewIncident((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Proporciona detalles del incidente"
                   rows={4}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateDialog(false)}
+              >
                 Cancelar
               </Button>
               <Button onClick={handleCreateIncident} disabled={creating}>
-                {creating ? 'Creando...' : 'Crear Incidente'}
+                {creating ? "Creando..." : "Crear Incidente"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -252,7 +288,9 @@ export default function IncidentsPage() {
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{openIncidents}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {openIncidents}
+            </div>
           </CardContent>
         </Card>
 
@@ -262,7 +300,9 @@ export default function IncidentsPage() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{resolvedIncidents}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {resolvedIncidents}
+            </div>
           </CardContent>
         </Card>
 
@@ -272,7 +312,9 @@ export default function IncidentsPage() {
             <XCircle className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">{closedIncidents}</div>
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">
+              {closedIncidents}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -318,12 +360,14 @@ export default function IncidentsPage() {
           <CardContent className="flex flex-col items-center justify-center py-8">
             <AlertTriangle className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchTerm || selectedStatus !== "ALL" ? 'No se encontraron incidentes' : 'No hay incidentes reportados'}
+              {searchTerm || selectedStatus !== "ALL"
+                ? "No se encontraron incidentes"
+                : "No hay incidentes reportados"}
             </h3>
             <p className="text-gray-500">
               {searchTerm || selectedStatus !== "ALL"
-                ? 'Intenta con otros filtros de búsqueda.'
-                : 'Los incidentes reportados aparecerán aquí.'}
+                ? "Intenta con otros filtros de búsqueda."
+                : "Los incidentes reportados aparecerán aquí."}
             </p>
           </CardContent>
         </Card>
@@ -336,7 +380,9 @@ export default function IncidentsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-3">
                       {getStatusIcon(incident.status)}
-                      <h3 className="font-semibold text-lg">{incident.subject}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {incident.subject}
+                      </h3>
                       {getStatusBadge(incident.status)}
                     </div>
 
@@ -346,32 +392,50 @@ export default function IncidentsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Fechas</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          Fechas
+                        </p>
                         <p className="text-sm">
-                          Creado: {new Date(incident.createdAt).toLocaleDateString()} a las {new Date(incident.createdAt).toLocaleTimeString()}
+                          Creado:{" "}
+                          {new Date(incident.createdAt).toLocaleDateString()} a
+                          las{" "}
+                          {new Date(incident.createdAt).toLocaleTimeString()}
                         </p>
                         {incident.resolvedAt && (
                           <p className="text-sm">
-                            Resuelto: {new Date(incident.resolvedAt).toLocaleDateString()} a las {new Date(incident.resolvedAt).toLocaleTimeString()}
+                            Resuelto:{" "}
+                            {new Date(incident.resolvedAt).toLocaleDateString()}{" "}
+                            a las{" "}
+                            {new Date(incident.resolvedAt).toLocaleTimeString()}
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Usuarios Presentes</p>
-                        <p className="text-sm">{incident.incidentUsers.length} usuarios</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          Usuarios Presentes
+                        </p>
+                        <p className="text-sm">
+                          {incident.incidentUsers.length} usuarios
+                        </p>
                       </div>
                     </div>
 
                     {incident.incidentUsers.length > 0 && (
                       <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Usuarios presentes durante el incidente:</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+                          Usuarios presentes durante el incidente:
+                        </p>
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {incident.incidentUsers.map((incidentUser, index) => (
-                              <div key={index} className="text-sm">
-                                {incidentUser.user.name} {incidentUser.user.lastName} - {incidentUser.user.email}
-                              </div>
-                            ))}
+                            {incident.incidentUsers.map(
+                              (incidentUser, index) => (
+                                <div key={index} className="text-sm">
+                                  {incidentUser.user.name}{" "}
+                                  {incidentUser.user.lastName} -{" "}
+                                  {incidentUser.user.email}
+                                </div>
+                              ),
+                            )}
                           </div>
                         </div>
                       </div>
@@ -379,8 +443,12 @@ export default function IncidentsPage() {
                   </div>
 
                   <div className="flex flex-col gap-2 ml-4">
-                    {incident.status === 'OPEN' && (
-                      <Select onValueChange={(value) => handleStatusChange(incident.id, value)}>
+                    {incident.status === "OPEN" && (
+                      <Select
+                        onValueChange={(value) =>
+                          handleStatusChange(incident.id, value)
+                        }
+                      >
                         <SelectTrigger className="w-32">
                           <SelectValue placeholder="Acción" />
                         </SelectTrigger>
@@ -391,14 +459,18 @@ export default function IncidentsPage() {
                       </Select>
                     )}
 
-                    {incident.status === 'RESOLVED' && (
+                    {incident.status === "RESOLVED" && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleStatusChange(incident.id, 'CLOSED')}
+                        onClick={() =>
+                          handleStatusChange(incident.id, "CLOSED")
+                        }
                         disabled={processing === incident.id}
                       >
-                        {processing === incident.id ? 'Procesando...' : 'Cerrar'}
+                        {processing === incident.id
+                          ? "Procesando..."
+                          : "Cerrar"}
                       </Button>
                     )}
                   </div>
@@ -409,5 +481,5 @@ export default function IncidentsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

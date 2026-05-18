@@ -34,7 +34,8 @@ export async function normalizeEmailForIdentityServer(
 ): Promise<string> {
   const { localBase, domain } = parseEmailIdentityForNormalization(raw);
   let stripDots =
-    isGmailConsumerDomain(domain) || googleWorkspaceDomainsFromEnv().has(domain);
+    isGmailConsumerDomain(domain) ||
+    googleWorkspaceDomainsFromEnv().has(domain);
   if (!stripDots) {
     stripDots = await isDomainGoogleHostedByMx(domain);
   }

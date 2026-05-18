@@ -9,18 +9,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
 import { getServiceIcon } from "@/lib/constants/services";
 import { ResourceType } from "@/generated/prisma/enums";
-import {
-  Calendar,
-  Clock,
-  Eye,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { Calendar, Clock, Eye, TrendingUp, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
     async (
       reservationId: string,
       action: "APPROVED" | "REJECTED",
-      deniedReason?: string
+      deniedReason?: string,
     ) => {
       setProcessing(reservationId);
       try {
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: action, preview: true }),
-            }
+            },
           );
           if (!previewRes.ok) {
             const err = await previewRes.json().catch(() => ({}));
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: action, deniedReason }),
-            }
+            },
           );
           if (response.ok) {
             toast.success("Reserva rechazada exitosamente");
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
         if (action !== "APPROVED") setProcessing(null);
       }
     },
-    [fetchAdminStats, triggerRefetch]
+    [fetchAdminStats, triggerRefetch],
   );
 
   const confirmApprove = useCallback(async () => {
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "APPROVED" }),
-        }
+        },
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -158,10 +158,11 @@ export default function AdminDashboard() {
         const data = await res.json().catch(() => ({}));
         const count = (data.autoRejectedIds || []).length;
         toast.success(
-          `Reserva aprobada. ${count > 0
-            ? `${count} reservas rechazadas automáticamente`
-            : "Sin conflictos"
-          }`
+          `Reserva aprobada. ${
+            count > 0
+              ? `${count} reservas rechazadas automáticamente`
+              : "Sin conflictos"
+          }`,
         );
         setConfirmData(null);
         fetchAdminStats();

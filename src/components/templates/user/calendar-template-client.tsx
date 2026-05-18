@@ -1,10 +1,19 @@
 "use client";
 import { WeekCalendar } from "@/components/organisms/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
-interface EventTypeOption { value: string; label: string }
+interface EventTypeOption {
+  value: string;
+  label: string;
+}
 
 export function CalendarTemplateClient({
   title,
@@ -32,7 +41,6 @@ export function CalendarTemplateClient({
     setLoadingUser(false);
   }, [session, status]);
 
-
   // Skeleton while auth/user loads
   if (status === "loading" || loadingUser) {
     return (
@@ -55,7 +63,9 @@ export function CalendarTemplateClient({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {title}
+        </h1>
         <p className="text-gray-600 dark:text-gray-300">{description}</p>
       </div>
 
@@ -81,5 +91,3 @@ export function CalendarTemplateClient({
     </div>
   );
 }
-
-

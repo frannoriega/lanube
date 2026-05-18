@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
   `;
   const row = rows[0];
   if (!row) {
-    return NextResponse.json({ error: "No result from maintain_reservations" }, { status: 500 });
+    return NextResponse.json(
+      { error: "No result from maintain_reservations" },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({

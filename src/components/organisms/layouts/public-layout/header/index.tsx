@@ -19,7 +19,10 @@ export default function Header() {
                   key={item.name}
                   className="text-black dark:text-white relative group"
                 >
-                  <Link href={item.href} className="relative pb-1 w-fit text-wrap text-center flex flex-col items-center" >
+                  <Link
+                    href={item.href}
+                    className="relative pb-1 w-fit text-wrap text-center flex flex-col items-center"
+                  >
                     {item.name}
                     <span className="absolute left-0 bottom-0 w-full h-[2px] bg-black dark:bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-center"></span>
                   </Link>

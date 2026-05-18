@@ -43,11 +43,11 @@ Reservations are made in **15-minute time slots**. The admin needs to quickly id
 
 For each 15-minute time slot within a space, calculate the **total people** across all overlapping reservations (both pending and approved). Then compare against the space's capacity:
 
-| Status | Condition | Color | Meaning |
-|---|---|---|---|
-| **Safe** | `totalPeople / capacity < 0.8` | Green | No conflicts, can approve freely |
-| **Caution** | `0.8 <= totalPeople / capacity <= 1.0` | Amber/Yellow | Near capacity, approve with care |
-| **Overload** | `totalPeople / capacity > 1.0` | Red | Over capacity, at least one reservation must be rejected |
+| Status       | Condition                              | Color        | Meaning                                                  |
+| ------------ | -------------------------------------- | ------------ | -------------------------------------------------------- |
+| **Safe**     | `totalPeople / capacity < 0.8`         | Green        | No conflicts, can approve freely                         |
+| **Caution**  | `0.8 <= totalPeople / capacity <= 1.0` | Amber/Yellow | Near capacity, approve with care                         |
+| **Overload** | `totalPeople / capacity > 1.0`         | Red          | Over capacity, at least one reservation must be rejected |
 
 A reservation's status color is determined by the **worst slot** it covers. If a 1-hour reservation spans 4 slots and 3 are green but 1 is red, the entire reservation block shows as red.
 
@@ -98,12 +98,12 @@ Horizontal bar at the top with:
 
 Row of 4 summary cards with:
 
-| Card | Value | Color |
-|---|---|---|
-| Pendientes | Count of pending reservations for the day | Warning/amber |
-| Aprobadas hoy | Count of approved reservations | Default |
-| Espacios con conflicto | Count of spaces that have at least one overloaded slot | Danger/red |
-| Pico ocupación | Highest `totalPeople / capacity` percentage across all spaces and slots | Default (danger if > 100%) |
+| Card                   | Value                                                                   | Color                      |
+| ---------------------- | ----------------------------------------------------------------------- | -------------------------- |
+| Pendientes             | Count of pending reservations for the day                               | Warning/amber              |
+| Aprobadas hoy          | Count of approved reservations                                          | Default                    |
+| Espacios con conflicto | Count of spaces that have at least one overloaded slot                  | Danger/red                 |
+| Pico ocupación         | Highest `totalPeople / capacity` percentage across all spaces and slots | Default (danger if > 100%) |
 
 ### 3. Legend
 
@@ -226,14 +226,14 @@ Allow shift-click or checkbox selection of multiple pending reservations to appr
 
 Use semantic colors from the design system:
 
-| Element | Light mode | Dark mode |
-|---|---|---|
-| Safe reservation | Green-50 bg, Green-800 text, Green-400 border | Green-800 bg, Green-200 text, Green-600 border |
-| Caution reservation | Amber-50 bg, Amber-800 text, Amber-400 border | Amber-800 bg, Amber-200 text, Amber-600 border |
-| Overload reservation | Red-50 bg, Red-800 text, Red-400 border | Red-800 bg, Red-200 text, Red-600 border |
-| Approved reservation | Blue-50 bg, Blue-800 text, Blue-400 border | Blue-800 bg, Blue-200 text, Blue-600 border |
-| Pending badge | Amber-50 bg, Amber-800 text | Amber-800 bg, Amber-200 text |
-| Approved badge | Green-50 bg, Green-800 text | Green-800 bg, Green-200 text |
+| Element              | Light mode                                    | Dark mode                                      |
+| -------------------- | --------------------------------------------- | ---------------------------------------------- |
+| Safe reservation     | Green-50 bg, Green-800 text, Green-400 border | Green-800 bg, Green-200 text, Green-600 border |
+| Caution reservation  | Amber-50 bg, Amber-800 text, Amber-400 border | Amber-800 bg, Amber-200 text, Amber-600 border |
+| Overload reservation | Red-50 bg, Red-800 text, Red-400 border       | Red-800 bg, Red-200 text, Red-600 border       |
+| Approved reservation | Blue-50 bg, Blue-800 text, Blue-400 border    | Blue-800 bg, Blue-200 text, Blue-600 border    |
+| Pending badge        | Amber-50 bg, Amber-800 text                   | Amber-800 bg, Amber-200 text                   |
+| Approved badge       | Green-50 bg, Green-800 text                   | Green-800 bg, Green-200 text                   |
 
 ### Typography
 

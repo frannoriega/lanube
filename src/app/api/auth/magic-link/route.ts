@@ -1,8 +1,11 @@
 // import { prisma } from "@/lib/prisma"
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 
 export async function POST() {
-    return NextResponse.json({ message: "Servicio no implementado" }, { status: 501 })
+  return NextResponse.json(
+    { message: "Servicio no implementado" },
+    { status: 501 },
+  );
 }
 
 // export async function POST(request: NextRequest) {
@@ -19,7 +22,7 @@ export async function POST() {
 //     // Decode and validate token
 //     const decoded = Buffer.from(token, 'base64').toString('utf-8')
 //     const [tokenEmail, timestamp] = decoded.split(':')
-    
+
 //     if (tokenEmail !== email) {
 //       return NextResponse.json(
 //         { message: "Token inválido" },
@@ -31,7 +34,7 @@ export async function POST() {
 //     const tokenTime = parseInt(timestamp)
 //     const now = Date.now()
 //     const maxAge = 24 * 60 * 60 * 1000 // 24 hours
-    
+
 //     if (now - tokenTime > maxAge) {
 //       return NextResponse.json(
 //         { message: "El enlace ha expirado" },
@@ -63,7 +66,7 @@ export async function POST() {
 //     // In a real implementation, you would create a session here
 //     // For now, we'll just return success
 //     return NextResponse.json(
-//       { 
+//       {
 //         message: "Inicio de sesión exitoso",
 //         user: {
 //           id: user.id,
