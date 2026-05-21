@@ -1,0 +1,13 @@
+model ReportSnapshot {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. "MONTHLY_2024_01" or "YEARLY_2024"
+  type      String   // "MONTHLY" | "YEARLY"
+  year      Int
+  month     Int?
+  fromDate  String   @map("from_date")
+  toDate    String   @map("to_date")
+  data      Json
+  createdAt BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@map("report_snapshots")
+}
