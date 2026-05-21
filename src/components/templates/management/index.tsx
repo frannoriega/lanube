@@ -9,6 +9,7 @@ import useUser from "@/hooks/use-user";
 import { getServiceIcon } from "@/lib/constants/services";
 import { ResourceType, UserRole } from "@/types/prisma";
 import {
+  BarChart3,
   Calendar,
   ChevronDown,
   LayoutDashboard,
@@ -67,6 +68,7 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Usuarios", href: "/admin/users", icon: Users },
     { name: "Reservas", href: "/admin/reservations", icon: Calendar },
+    { name: "Reportes", href: "/admin/reports", icon: BarChart3 },
   ],
 };
 
@@ -169,7 +171,7 @@ export default function ManagementLayout({
       <div className={`min-h-screen bg-slate-100 dark:bg-slate-800`}>
         {/* Mobile sidebar */}
         <div
-          className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? "block" : "hidden"}`}
+          className={`fixed inset-0 z-50 lg:hidden print:hidden ${sidebarOpen ? "block" : "hidden"}`}
         >
           <div
             className="fixed inset-0 bg-gray-600 bg-opacity-75"
@@ -201,7 +203,7 @@ export default function ManagementLayout({
         </div>
 
         {/* Desktop sidebar */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col print:hidden">
           <div className="flex min-h-0 flex-1 flex-col glass-sidebar dark:glass-sidebar-dark shadow">
             <div className="flex h-16 items-center px-4">
               <div className="flex items-center space-x-2">
@@ -221,9 +223,9 @@ export default function ManagementLayout({
         </div>
 
         {/* Main content */}
-        <div className="lg:pl-64">
+        <div className="lg:pl-64 print:pl-0">
           {/* Header */}
-          <div className="sticky top-0 z-100 flex h-16 shrink-0 items-center gap-x-4 glass-header dark:glass-header-dark px-4 sm:gap-x-6 sm:px-6 lg:px-8">
+          <div className="sticky top-0 z-100 flex h-16 shrink-0 items-center gap-x-4 glass-header dark:glass-header-dark px-4 sm:gap-x-6 sm:px-6 lg:px-8 print:hidden">
             <Button
               variant="ghost"
               size="sm"
