@@ -82,7 +82,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: #c6c6c6;
+  --muted-foreground: #888282;
   --accent: #eeeeee;
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -102,6 +102,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-selected: #2e5885;
 }
 
 .dark {
@@ -136,6 +137,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-selected: #2e5885;
 }
 
 @layer base {
@@ -199,6 +201,7 @@
     0% {
       transform: translateX(0);
     }
+
     100% {
       transform: translateX(var(--marquee-translate, -100%));
     }
@@ -293,6 +296,97 @@
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
   }
 
+  @media print {
+    /* Scale the whole page to fit the print width.
+       zoom shrinks rendered content AND widens the virtual viewport (print_width ÷ zoom),
+       so responsive breakpoints (sm, lg, …) keep applying as they do on screen. */
+    html {
+      zoom: 0.65;
+    }
+
+    /* More vertical margin so content that lands at the top of a new page
+       after a break has breathing room from the paper edge. */
+    @page {
+      margin: 1.5cm 1cm;
+    }
+
+    /* Force white page regardless of dark/light mode. */
+    html,
+    body {
+      background: white !important;
+      color: black !important;
+    }
+
+    /* Override CSS variable-based colors (text-muted-foreground, text-foreground, etc.) */
+    :root,
+    .dark {
+      --foreground: black;
+      --muted-foreground: black;
+      --card-foreground: black;
+      --popover-foreground: black;
+    }
+
+    /* Cards: white background, simple border, no glass/shadow effects. */
+    [data-slot="card"] {
+      border: 1px solid #d1d5db !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      /* Small top margin so a card that opens a new page isn't flush against
+         the @page margin. Has no visible effect when cards are mid-page. */
+      margin-top: 0.5rem;
+    }
+
+    /* Clean page breaks: prevent cards from being sliced mid-element. */
+    [data-slot="card"] {
+      break-inside: avoid;
+    }
+
+    /* Keep section headings attached to the content that follows them. */
+    section > h3 {
+      color: black !important;
+      break-after: avoid;
+    }
+
+    /* Chart: fixed height so it never overflows the printed page. */
+    [data-slot="chart"] {
+      height: 340px !important;
+      max-height: 340px !important;
+      aspect-ratio: auto !important; /* override the screen-side aspect-video */
+      width: 100% !important;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    [data-slot="chart"] svg {
+      height: 340px !important;
+      max-height: 340px !important;
+      max-width: 100% !important;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    [data-slot="chart"] line {
+      color: #d1d1d1;
+      fill: currentColor !important;
+      stroke: currentColor !important;
+    }
+
+    /* Browsers strip SVG fill/stroke in print even with print-color-adjust,
+       but never strip the CSS `color` property (it's text color).
+       Setting fill/stroke to currentColor piggybacks on that guarantee. */
+    [data-slot="chart"] .recharts-cartesian-axis-tick text {
+      color: #d1d1d1;
+      fill: currentColor !important;
+      stroke: currentColor;
+    }
+
+    [data-slot="chart"] .recharts-yAxis line,
+    [data-slot="chart"] .recharts-xAxis line {
+      color: #6b7280;
+      stroke: currentColor !important;
+    }
+  }
+
   .markdown {
     h1 {
       @apply text-2xl font-bold;
@@ -306,5 +400,24 @@
     ol {
       @apply list-disc list-inside;
     }
+  }
+}
+
+/* Print text-color overrides — intentionally outside @layer so they are
+   unlayered and sit above all Tailwind utilities in the cascade.
+   This guarantees they win without relying on source-order or specificity tricks. */
+@media print {
+  .text-gray-300,
+  .text-gray-400,
+  .text-gray-500,
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800,
+  .text-gray-900,
+  .text-muted-foreground,
+  [data-slot="card-title"],
+  th,
+  td {
+    color: black !important;
   }
 }
