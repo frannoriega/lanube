@@ -142,7 +142,7 @@ export default function ManagementLayout({
             href={item.href}
             className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
               isActive(item.href)
-                ? "bg-la-nube-primary text-white"
+                ? "bg-(--sidebar-selected) text-white"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
             }`}
             onClick={() => setSidebarOpen(false)}
@@ -190,6 +190,7 @@ export default function ManagementLayout({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(false)}
+                aria-label="Cerrar menu"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -231,6 +232,7 @@ export default function ManagementLayout({
               size="sm"
               className="lg:hidden"
               onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
             </Button>

@@ -57,7 +57,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const report = await getReportForRange(fromMs, toMs);
+    const compareFromRaw = searchParams.get("compareFrom");
+    const compareToRaw = searchParams.get("compareTo");
+
+    let compareFromMs: number | undefined;
+    let compareToMs: number | undefined;
+
+    if (compareFromRaw && compareToRaw) {
+      const cfMs = Number(compareFromRaw);
+      const ctMs = Number(compareToRaw);
+      if (
+        Number.isInteger(cfMs) &&
+        Number.isInteger(ctMs) &&
+        cfMs > 0 &&
+        ctMs > 0 &&
+        cfMs <= ctMs &&
+        ctMs - cfMs <= MAX_RANGE_MS
+      ) {
+        compareFromMs = cfMs;
+        compareToMs = ctMs;
+      }
+    }
+
+    const report = await getReportForRange(
+      fromMs,
+      toMs,
+      compareFromMs,
+      compareToMs,
+    );
     return NextResponse.json(report);
   } catch {
     return NextResponse.json(

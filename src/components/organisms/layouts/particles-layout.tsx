@@ -1,11 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Engine, OutMode } from "@tsparticles/engine";
-import { initParticlesEngine, Particles } from "@tsparticles/react";
+import { OutMode } from "@tsparticles/engine";
+import { Particles, ParticlesProvider } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import { useTheme } from "next-themes";
-import { useLayoutEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 interface ParticlesLayoutProps extends React.ComponentPropsWithoutRef<"div"> {
   forceTheme?: "light" | "dark";
@@ -18,11 +18,6 @@ export default function ParticlesLayout({
   forceTheme,
   backgroundClass,
 }: ParticlesLayoutProps) {
-  useLayoutEffect(() => {
-    initParticlesEngine(async (engine: Engine) => {
-      await loadSlim(engine);
-    });
-  }, []);
   const { resolvedTheme: theme } = useTheme();
 
   const themeToUse = forceTheme || theme;
@@ -50,7 +45,7 @@ export default function ParticlesLayout({
       particles: {
         number: { density: { enable: true }, value: mobile ? 50 : 120 },
         links: {
-          enable: !mobile, // big win on mobile
+          enable: !mobile,
           distance: 150,
           opacity: 0.5,
           width: 1,
@@ -66,19 +61,23 @@ export default function ParticlesLayout({
     };
   }, [themeToUse, isCoarsePointer, prefersReducedMotion]);
 
-  const cns = cn(
-    "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
-    className,
-  );
-  const bgCns = cn(
-    "absolute inset-0 z-0 h-full w-full pointer-events-none",
-    backgroundClass,
-  );
-
   return (
-    <div className={cns}>
-      <Particles options={options} className={bgCns} />
-      <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
-    </div>
+    <ParticlesProvider init={loadSlim}>
+      <div
+        className={cn(
+          "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
+          className,
+        )}
+      >
+        <Particles
+          options={options}
+          className={cn(
+            "absolute inset-0 z-0 h-full w-full pointer-events-none",
+            backgroundClass,
+          )}
+        />
+        <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
+      </div>
+    </ParticlesProvider>
   );
 }
