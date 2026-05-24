@@ -1,24 +1,42 @@
 import {
+  EventType,
   PrismaClient,
+  ReservableType,
+  ReservationStatus,
   ResourceType,
   UserRole,
 } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
-/**
- * Dev-only accounts: same shape the app expects from register → email confirm → signup profile.
- *
- * - `User`: login (email, passwordHash). Must match `hashPassword` in src/lib/db/users.ts (bcryptjs, 12 rounds).
- * - `emailVerified`: required for credentials sign-in (see NextAuth authorize).
- * - `RegisteredUser`: profile row linked by `userId` (created in /api/auth/signup in production).
- *
- * To add more users: duplicate the object in EXAMPLE_USERS, use unique `email` + `dni`, and pick `role`:
- * `UserRole.USER` | `UserRole.ADMIN`.
- */
 const BCRYPT_ROUNDS = 12;
+
+// ── Seeded PRNG (Mulberry32) ──────────────────────────────────────────────────
+// Fixed seed ensures the same reservations are generated every time the seed
+// runs, regardless of when Date.now() actually is.
+class Rng {
+  private s: number;
+  constructor(seed = 42) {
+    this.s = seed >>> 0;
+  }
+  next(): number {
+    this.s = (this.s + 0x6d2b79f5) | 0;
+    let t = Math.imul(this.s ^ (this.s >>> 15), 1 | this.s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) | 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32;
+  }
+  int(lo: number, hi: number): number {
+    return lo + Math.floor(this.next() * (hi - lo + 1));
+  }
+  pick<T>(arr: readonly T[]): T {
+    return arr[Math.floor(this.next() * arr.length)];
+  }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
 
 function generateUsers(): Array<{
   email: string;
@@ -117,63 +135,387 @@ async function seedExampleUsers() {
   }
 }
 
+// ── Time slots ────────────────────────────────────────────────────────────────
+// 22 pairs [startHour, endHour] spanning 1 h – 8 h.
+// Variety is intentional: reports show min/avg/max duration, so having a wide
+// spread (60 min to 480 min) makes those stats meaningful.
+const SLOT_PAIRS: readonly [number, number][] = [
+  [9, 10], // 1 h
+  [10, 11], // 1 h
+  [11, 12], // 1 h
+  [14, 15], // 1 h
+  [15, 16], // 1 h
+  [16, 17], // 1 h
+  [9, 11], // 2 h
+  [10, 12], // 2 h
+  [11, 13], // 2 h
+  [13, 15], // 2 h
+  [14, 16], // 2 h
+  [15, 17], // 2 h
+  [9, 12], // 3 h
+  [10, 13], // 3 h
+  [13, 16], // 3 h
+  [14, 17], // 3 h
+  [9, 13], // 4 h
+  [10, 14], // 4 h
+  [13, 17], // 4 h
+  [9, 14], // 5 h
+  [10, 16], // 6 h
+  [9, 17], // 8 h
+];
+
+// ── Content pools ─────────────────────────────────────────────────────────────
+const REASONS: Record<EventType, readonly string[]> = {
+  [EventType.MEETING]: [
+    "[seed] Reunión semanal de equipo",
+    "[seed] Revisión de proyecto",
+    "[seed] Planificación de sprint",
+    "[seed] Entrevista a candidato",
+    "[seed] Junta directiva",
+    "[seed] Retrospectiva de equipo",
+    "[seed] Reunión con cliente",
+    "[seed] Coordinación de área",
+  ],
+  [EventType.WORKSHOP]: [
+    "[seed] Taller de programación",
+    "[seed] Curso de Arduino",
+    "[seed] Taller de impresión 3D",
+    "[seed] Sesión de prototipado",
+    "[seed] Práctica de electrónica",
+    "[seed] Taller de diseño UX",
+    "[seed] Capacitación técnica",
+    "[seed] Hackathon interna",
+  ],
+  [EventType.CONFERENCE]: [
+    "[seed] Conferencia de innovación",
+    "[seed] Demo day de startups",
+    "[seed] Presentación de proyecto",
+    "[seed] Charla de networking",
+    "[seed] Presentación anual",
+    "[seed] Conferencia de tecnología",
+    "[seed] Simposio de investigación",
+  ],
+  [EventType.OTHER]: [
+    "[seed] Evento comunitario",
+    "[seed] Jornada cultural",
+    "[seed] Asamblea de socios",
+    "[seed] Evento de bienvenida",
+    "[seed] Actividad de integración",
+    "[seed] Exposición fotográfica",
+  ],
+};
+
+const DENIED_REASONS: readonly string[] = [
+  "[seed] Turno no disponible en ese horario",
+  "[seed] Recurso en mantenimiento programado",
+  "[seed] Franja horaria ya asignada",
+  "[seed] Cupo máximo alcanzado para ese horario",
+  "[seed] Solicitud fuera del horario de funcionamiento",
+];
+
+// ── Status logic ──────────────────────────────────────────────────────────────
+// Always consumes exactly one RNG value so the sequence stays deterministic
+// regardless of which branch is taken.
+//
+// Probabilities are set so that ALL days (including today and future) produce
+// enough APPROVED reservations to be visible in the admin reports, which filter
+// for status = APPROVED.
+//
+//  day <  0 → 80 % APPROVED / 20 % REJECTED  (settled history)
+//  day =  0 → 70 % APPROVED / 30 % PENDING   (today — mostly confirmed)
+//  day <= 14 → 50 % APPROVED / 50 % PENDING  (near future — half pre-approved)
+//  day >  14 → 15 % APPROVED / 85 % PENDING  (far future — mostly pending)
+function pickStatus(day: number, rng: Rng): ReservationStatus {
+  const r = rng.next();
+  if (day < 0)
+    return r < 0.8 ? ReservationStatus.APPROVED : ReservationStatus.REJECTED;
+  if (day === 0)
+    return r < 0.7 ? ReservationStatus.APPROVED : ReservationStatus.PENDING;
+  if (day <= 14)
+    return r < 0.5 ? ReservationStatus.APPROVED : ReservationStatus.PENDING;
+  return r < 0.15 ? ReservationStatus.APPROVED : ReservationStatus.PENDING;
+}
+
+// ── Reservation seeding ───────────────────────────────────────────────────────
+
+interface ReservationRow {
+  reservableType: ReservableType;
+  reservableId: string;
+  resourceId: string;
+  eventType: EventType;
+  reason: string;
+  status: ReservationStatus;
+  startTime: bigint;
+  endTime: bigint;
+  deniedReason?: string;
+}
+
+async function seedReservations(
+  resourceIds: {
+    meeting: string;
+    lab: string;
+    auditorium: string;
+    coworking: string;
+  },
+  userIds: string[],
+) {
+  // Clear previous seed reservations (idempotent re-runs)
+  await prisma.reservation.deleteMany({
+    where: { reason: { startsWith: "[seed]" } },
+  });
+
+  const rng = new Rng(42);
+  const rows: ReservationRow[] = [];
+
+  // Midnight of "today" as perceived by the process (respects FAKETIME via
+  // LD_PRELOAD set in migrate-entry.sh when the timemock overlay is active).
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+
+  // makeRow always consumes the same number of RNG values (6) so the sequence
+  // is fully deterministic regardless of the resource or day.
+  const makeRow = (
+    dayMs: number,
+    day: number,
+    resourceId: string,
+    eventTypes: readonly EventType[],
+  ): ReservationRow => {
+    const [s, e] = rng.pick(SLOT_PAIRS);
+    const userId = rng.pick(userIds);
+    const status = pickStatus(day, rng);
+    const denied = rng.pick(DENIED_REASONS);
+    const eventType = rng.pick(eventTypes);
+    const reason = rng.pick(REASONS[eventType]);
+    return {
+      reservableType: ReservableType.USER,
+      reservableId: userId,
+      resourceId,
+      startTime: BigInt(dayMs + s * 3_600_000),
+      endTime: BigInt(dayMs + e * 3_600_000),
+      status,
+      eventType,
+      reason,
+      deniedReason: status === ReservationStatus.REJECTED ? denied : undefined,
+    };
+  };
+
+  // ── Daily loop: day −30 → +30 ─────────────────────────────────────────────
+  // Per day:
+  //   • Meeting room (exclusive):   always 1   → total 4-8/day with others
+  //   • Lab          (exclusive):   always 1
+  //   • Auditorium   (cap 40):      1-3
+  //   • Coworking    (cap 12):      1-3
+  //
+  // Expected: 4-8 reservations/day, well within the 2-10 target.
+  // No two APPROVED for the same exclusive resource on the same day because
+  // each exclusive resource produces at most 1 row per day.
+  for (let day = -30; day <= 30; day++) {
+    const dayMs = todayMs + day * 86_400_000;
+
+    rows.push(makeRow(dayMs, day, resourceIds.meeting, [EventType.MEETING]));
+
+    rows.push(
+      makeRow(dayMs, day, resourceIds.lab, [
+        EventType.WORKSHOP,
+        EventType.OTHER,
+      ]),
+    );
+
+    const nAudit = rng.int(1, 3);
+    for (let j = 0; j < nAudit; j++) {
+      rows.push(
+        makeRow(dayMs, day, resourceIds.auditorium, [
+          EventType.CONFERENCE,
+          EventType.WORKSHOP,
+          EventType.OTHER,
+        ]),
+      );
+    }
+
+    const nCow = rng.int(1, 3);
+    for (let j = 0; j < nCow; j++) {
+      rows.push(
+        makeRow(dayMs, day, resourceIds.coworking, [
+          EventType.MEETING,
+          EventType.WORKSHOP,
+        ]),
+      );
+    }
+  }
+
+  // ── Special: pending over exclusive capacity ──────────────────────────────
+  // Day +5, 10:00-12:00: 3 PENDING for meeting room at the same slot.
+  // Only 1 can ever be approved (exclusive), so this shows an over-capacity
+  // conflict queue for admins to resolve.
+  {
+    const ms = todayMs + 5 * 86_400_000 + 10 * 3_600_000;
+    for (let i = 0; i < 3; i++) {
+      rows.push({
+        reservableType: ReservableType.USER,
+        reservableId: userIds[i % userIds.length],
+        resourceId: resourceIds.meeting,
+        startTime: BigInt(ms),
+        endTime: BigInt(ms + 2 * 3_600_000),
+        status: ReservationStatus.PENDING,
+        eventType: EventType.MEETING,
+        reason: `[seed] Solicitud de sala – turno concurrido (${i + 1}/3)`,
+      });
+    }
+  }
+
+  // Day +8, 14:00-17:00: 4 PENDING for lab at the same slot.
+  {
+    const ms = todayMs + 8 * 86_400_000 + 14 * 3_600_000;
+    for (let i = 0; i < 4; i++) {
+      rows.push({
+        reservableType: ReservableType.USER,
+        reservableId: userIds[(i + 3) % userIds.length],
+        resourceId: resourceIds.lab,
+        startTime: BigInt(ms),
+        endTime: BigInt(ms + 3 * 3_600_000),
+        status: ReservationStatus.PENDING,
+        eventType: EventType.WORKSHOP,
+        reason: `[seed] Solicitud de laboratorio – turno concurrido (${i + 1}/4)`,
+      });
+    }
+  }
+
+  // ── Special: pending over non-exclusive capacity ──────────────────────────
+  // Day +12, 10:00-13:00: 15 PENDING for coworking (capacity = 12).
+  // Demonstrates the over-capacity conflict queue for non-exclusive resources.
+  {
+    const ms = todayMs + 12 * 86_400_000 + 10 * 3_600_000;
+    for (let i = 0; i < 15; i++) {
+      rows.push({
+        reservableType: ReservableType.USER,
+        reservableId: userIds[i % userIds.length],
+        resourceId: resourceIds.coworking,
+        startTime: BigInt(ms),
+        endTime: BigInt(ms + 3 * 3_600_000),
+        status: ReservationStatus.PENDING,
+        eventType: EventType.MEETING,
+        reason: `[seed] Solicitud de coworking – turno superpoblado (${i + 1}/15)`,
+      });
+    }
+  }
+
+  await prisma.reservation.createMany({ data: rows });
+  console.log(`[seed] ${rows.length} reservations created across 61 days`);
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 async function main() {
-  const meetingRoomResource = await prisma.fungibleResource.create({
-    data: {
-      name: "Sala de reuniones",
-      capacity: 6,
-      isExclusive: true,
-    },
-  });
+  // Resources — idempotent: find existing row or create a new one.
+  const meetingRoomFR =
+    (await prisma.fungibleResource.findFirst({
+      where: { name: "Sala de reuniones" },
+    })) ??
+    (await prisma.fungibleResource.create({
+      data: { name: "Sala de reuniones", capacity: 6, isExclusive: true },
+    }));
 
-  const laboratoryResource = await prisma.fungibleResource.create({
-    data: {
-      name: "Laboratorio",
-      capacity: 8,
-      isExclusive: true,
-    },
-  });
+  const laboratoryFR =
+    (await prisma.fungibleResource.findFirst({
+      where: { name: "Laboratorio" },
+    })) ??
+    (await prisma.fungibleResource.create({
+      data: { name: "Laboratorio", capacity: 8, isExclusive: true },
+    }));
 
-  const auditoriumResource = await prisma.fungibleResource.create({
-    data: {
-      name: "Auditorio",
-      capacity: 40,
-    },
-  });
+  const auditoriumFR =
+    (await prisma.fungibleResource.findFirst({
+      where: { name: "Auditorio" },
+    })) ??
+    (await prisma.fungibleResource.create({
+      data: { name: "Auditorio", capacity: 40 },
+    }));
 
-  const coworkingResource = await prisma.fungibleResource.create({
-    data: {
-      name: "Coworking",
-      capacity: 12,
-    },
-  });
+  const coworkingFR =
+    (await prisma.fungibleResource.findFirst({
+      where: { name: "Coworking" },
+    })) ??
+    (await prisma.fungibleResource.create({
+      data: { name: "Coworking", capacity: 12 },
+    }));
 
-  await prisma.resource.createMany({
-    data: [
-      {
+  const meetingRoom =
+    (await prisma.resource.findFirst({
+      where: { type: ResourceType.MEETING },
+    })) ??
+    (await prisma.resource.create({
+      data: {
         name: "Sala de reuniones",
         type: ResourceType.MEETING,
-        fungibleResourceId: meetingRoomResource.id,
+        fungibleResourceId: meetingRoomFR.id,
       },
-      {
+    }));
+
+  const laboratory =
+    (await prisma.resource.findFirst({ where: { type: ResourceType.LAB } })) ??
+    (await prisma.resource.create({
+      data: {
         name: "Laboratorio",
         type: ResourceType.LAB,
-        fungibleResourceId: laboratoryResource.id,
+        fungibleResourceId: laboratoryFR.id,
       },
-      {
+    }));
+
+  const auditorium =
+    (await prisma.resource.findFirst({
+      where: { type: ResourceType.AUDITORIUM },
+    })) ??
+    (await prisma.resource.create({
+      data: {
         name: "Auditorio",
         type: ResourceType.AUDITORIUM,
-        fungibleResourceId: auditoriumResource.id,
+        fungibleResourceId: auditoriumFR.id,
       },
-      {
+    }));
+
+  const coworking =
+    (await prisma.resource.findFirst({
+      where: { type: ResourceType.COWORKING },
+    })) ??
+    (await prisma.resource.create({
+      data: {
         name: "Coworking",
         type: ResourceType.COWORKING,
-        fungibleResourceId: coworkingResource.id,
+        fungibleResourceId: coworkingFR.id,
       },
-    ],
-  });
+    }));
+
+  console.log("[seed] Resources ready");
 
   await seedExampleUsers();
+
+  // Build a stable ordered list of RegisteredUser IDs (u1 … u30), sorted
+  // numerically so rng.pick(userIds) returns the same user for a given RNG
+  // value regardless of insertion order in the DB.
+  const seedUsers = await prisma.user.findMany({
+    where: { email: { endsWith: "@lanube.local" } },
+    select: { email: true, registeredUser: { select: { id: true } } },
+  });
+
+  const userIds = seedUsers
+    .filter((u) => /^u\d+@lanube\.local$/.test(u.email) && u.registeredUser?.id)
+    .sort((a, b) => {
+      const nA = parseInt(a.email.match(/\d+/)![0]);
+      const nB = parseInt(b.email.match(/\d+/)![0]);
+      return nA - nB;
+    })
+    .map((u) => u.registeredUser!.id);
+
+  await seedReservations(
+    {
+      meeting: meetingRoom.id,
+      lab: laboratory.id,
+      auditorium: auditorium.id,
+      coworking: coworking.id,
+    },
+    userIds,
+  );
 }
 
 main()

@@ -20,3 +20,6 @@ services:
   app:
     environment:
       FAKETIME: "${FAKETIME:-}"
+  migrate:
+    environment:
+      FAKETIME: "${FAKETIME:-}"
