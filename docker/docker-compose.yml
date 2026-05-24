@@ -54,10 +54,14 @@ services:
         condition: service_started
 
   migrate:
-    image: node:24-bookworm
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.app
     container_name: lanube-migrate
     restart: "no"
     working_dir: /app
+    # Override the app entrypoint so migrate-entry.sh drives the whole run.
+    entrypoint: ""
     volumes:
       - ../:/app
       - migrate_node_modules:/app/node_modules
