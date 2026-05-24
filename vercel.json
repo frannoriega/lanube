@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/maintain-reservations",
       "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/cron/report-snapshot",
-      "schedule": "0 6 1 * *"
     }
   ]
 }
