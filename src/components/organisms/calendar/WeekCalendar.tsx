@@ -204,10 +204,7 @@ export function WeekCalendar({
     [currentWeekStart],
   );
 
-  const todayWeekStart = useMemo(
-    () => getCurrentWorkWeekStart(now()),
-    [alignRevision],
-  );
+  const todayWeekStart = useMemo(() => getCurrentWorkWeekStart(now()), [now]);
   const maxWeekStart = addWeeks(todayWeekStart, 1);
   const canGoNext = !!(
     currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart
