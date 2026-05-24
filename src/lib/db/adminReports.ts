@@ -1,24 +1,18 @@
 import { prisma } from "@/lib/prisma";
+import {
+  dateKeyFromUnixMs,
+  enumerateDateKeysInclusive,
+} from "@/lib/admin/admin-timezone";
+import type { ResourceStats, DailyStats } from "@/types/stats";
+import type { PeriodSummary, ReportData } from "@/types/stats/report";
 
-export type ResourceStats = {
-  resourceType: string;
-  count: number;
-  minMinutes: number;
-  avgMinutes: number;
-  maxMinutes: number;
-};
+export type { ResourceStats };
 
-export type ReportData = {
-  period: { from: number; to: number }; // Unix ms UTC
-  users: { newRegistrations: number };
-  reservations: {
-    total: number;
-    perResource: { resourceType: string; count: number }[];
-    durationStats: {
-      overall: { min: number; avg: number; max: number } | null;
-      perResource: ResourceStats[];
-    };
-  };
+type ReservationRow = {
+  startTime: bigint;
+  endTime: bigint;
+  status: string;
+  resource: { type: string } | null;
 };
 
 function durationStats(
@@ -31,49 +25,84 @@ function durationStats(
   return { min: Math.round(min), avg: Math.round(avg), max: Math.round(max) };
 }
 
-export async function getReportForRange(
-  fromMs: number,
-  toMs: number,
-): Promise<ReportData> {
+async function fetchRangeData(fromMs: number, toMs: number) {
   const startMs = BigInt(fromMs);
   const endMs = BigInt(toMs);
 
-  const [newRegistrations, reservations] = await Promise.all([
-    prisma.registeredUser.count({
+  return Promise.all([
+    prisma.registeredUser.findMany({
       where: { createdAt: { gte: startMs, lte: endMs } },
+      select: { createdAt: true },
     }),
     prisma.reservation.findMany({
       where: {
-        status: "APPROVED",
         startTime: { gte: startMs, lte: endMs },
       },
       select: {
         startTime: true,
         endTime: true,
+        status: true,
         resource: { select: { type: true } },
       },
     }),
   ]);
+}
 
-  // Group durations (in minutes) by resource type
-  const byType = new Map<string, number[]>();
+function buildPeriodSummary(
+  fromMs: number,
+  toMs: number,
+  users: { createdAt: bigint }[],
+  reservations: ReservationRow[],
+): PeriodSummary {
+  type TypeBucket = {
+    approved: number[];
+    pending: number[];
+    rejected: number[];
+    cancelled: number[];
+  };
+  const byType = new Map<string, TypeBucket>();
+
   for (const r of reservations) {
     const type = r.resource?.type ?? "UNKNOWN";
+    if (!byType.has(type))
+      byType.set(type, {
+        approved: [],
+        pending: [],
+        rejected: [],
+        cancelled: [],
+      });
+    const bucket = byType.get(type)!;
     const mins = (Number(r.endTime) - Number(r.startTime)) / 60_000;
-    if (!byType.has(type)) byType.set(type, []);
-    byType.get(type)!.push(mins);
+    if (r.status === "APPROVED") bucket.approved.push(mins);
+    else if (r.status === "PENDING") bucket.pending.push(mins);
+    else if (r.status === "REJECTED") bucket.rejected.push(mins);
+    else if (r.status === "CANCELLED") bucket.cancelled.push(mins);
   }
 
-  const perResource: { resourceType: string; count: number }[] = [];
+  const perResource: PeriodSummary["reservations"]["perResource"] = [];
   const perResourceStats: ResourceStats[] = [];
 
-  for (const [resourceType, durations] of byType.entries()) {
-    perResource.push({ resourceType, count: durations.length });
-    const stats = durationStats(durations);
+  for (const [resourceType, bucket] of byType.entries()) {
+    const total =
+      bucket.approved.length +
+      bucket.pending.length +
+      bucket.rejected.length +
+      bucket.cancelled.length;
+    perResource.push({
+      resourceType,
+      count: total,
+      byStatus: {
+        approved: bucket.approved.length,
+        pending: bucket.pending.length,
+        rejected: bucket.rejected.length,
+        cancelled: bucket.cancelled.length,
+      },
+    });
+    const stats = durationStats(bucket.approved);
     if (stats) {
       perResourceStats.push({
         resourceType,
-        count: durations.length,
+        count: bucket.approved.length,
         minMinutes: stats.min,
         avgMinutes: stats.avg,
         maxMinutes: stats.max,
@@ -81,20 +110,122 @@ export async function getReportForRange(
     }
   }
 
-  const allDurations = reservations.map(
-    (r) => (Number(r.endTime) - Number(r.startTime)) / 60_000,
-  );
+  const approvedCount = reservations.filter(
+    (r) => r.status === "APPROVED",
+  ).length;
+  const pendingCount = reservations.filter(
+    (r) => r.status === "PENDING",
+  ).length;
+  const rejectedCount = reservations.filter(
+    (r) => r.status === "REJECTED",
+  ).length;
+  const cancelledCount = reservations.filter(
+    (r) => r.status === "CANCELLED",
+  ).length;
+
+  const approvedDurations = reservations
+    .filter((r) => r.status === "APPROVED")
+    .map((r) => (Number(r.endTime) - Number(r.startTime)) / 60_000);
 
   return {
     period: { from: fromMs, to: toMs },
-    users: { newRegistrations },
+    users: { newRegistrations: users.length },
     reservations: {
       total: reservations.length,
+      byStatus: {
+        approved: approvedCount,
+        pending: pendingCount,
+        rejected: rejectedCount,
+        cancelled: cancelledCount,
+      },
       perResource,
       durationStats: {
-        overall: durationStats(allDurations),
+        overall: durationStats(approvedDurations),
         perResource: perResourceStats,
       },
     },
   };
+}
+
+function buildDailyStats(
+  fromMs: number,
+  toMs: number,
+  users: { createdAt: bigint }[],
+  reservations: ReservationRow[],
+): DailyStats[] {
+  const fromKey = dateKeyFromUnixMs(fromMs);
+  const toKey = dateKeyFromUnixMs(toMs);
+  const dailyMap = new Map<
+    string,
+    {
+      reservations: number;
+      approved: number;
+      pending: number;
+      rejected: number;
+      cancelled: number;
+      newUsers: number;
+    }
+  >();
+
+  for (const key of enumerateDateKeysInclusive(fromKey, toKey)) {
+    dailyMap.set(key, {
+      reservations: 0,
+      approved: 0,
+      pending: 0,
+      rejected: 0,
+      cancelled: 0,
+      newUsers: 0,
+    });
+  }
+
+  for (const r of reservations) {
+    const key = dateKeyFromUnixMs(Number(r.startTime));
+    const entry = dailyMap.get(key);
+    if (entry) {
+      entry.reservations++;
+      if (r.status === "APPROVED") entry.approved++;
+      else if (r.status === "PENDING") entry.pending++;
+      else if (r.status === "REJECTED") entry.rejected++;
+      else if (r.status === "CANCELLED") entry.cancelled++;
+    }
+  }
+
+  for (const u of users) {
+    const key = dateKeyFromUnixMs(Number(u.createdAt));
+    const entry = dailyMap.get(key);
+    if (entry) entry.newUsers++;
+  }
+
+  return Array.from(dailyMap.entries()).map(([dateKey, stats]) => ({
+    dateKey,
+    ...stats,
+  }));
+}
+
+export async function getReportForRange(
+  fromMs: number,
+  toMs: number,
+  compareFromMs?: number,
+  compareToMs?: number,
+): Promise<ReportData> {
+  const [users, reservations] = await fetchRangeData(fromMs, toMs);
+
+  const summary = buildPeriodSummary(fromMs, toMs, users, reservations);
+  const daily = buildDailyStats(fromMs, toMs, users, reservations);
+
+  let comparison: PeriodSummary | undefined;
+  if (compareFromMs != null && compareToMs != null) {
+    const [cmpUsers, cmpReservations] = await fetchRangeData(
+      compareFromMs,
+      compareToMs,
+    );
+    comparison = buildPeriodSummary(
+      compareFromMs,
+      compareToMs,
+      cmpUsers,
+      cmpReservations,
+    );
+  }
+
+  return { ...summary, daily, comparison };
 }
