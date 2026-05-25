@@ -37,6 +37,7 @@ async function fetchRangeData(fromMs: number, toMs: number) {
     prisma.reservation.findMany({
       where: {
         startTime: { gte: startMs, lte: endMs },
+        status: { not: "CANCELLED" },
       },
       select: {
         startTime: true,
@@ -58,25 +59,18 @@ function buildPeriodSummary(
     approved: number[];
     pending: number[];
     rejected: number[];
-    cancelled: number[];
   };
   const byType = new Map<string, TypeBucket>();
 
   for (const r of reservations) {
     const type = r.resource?.type ?? "UNKNOWN";
     if (!byType.has(type))
-      byType.set(type, {
-        approved: [],
-        pending: [],
-        rejected: [],
-        cancelled: [],
-      });
+      byType.set(type, { approved: [], pending: [], rejected: [] });
     const bucket = byType.get(type)!;
     const mins = (Number(r.endTime) - Number(r.startTime)) / 60_000;
     if (r.status === "APPROVED") bucket.approved.push(mins);
     else if (r.status === "PENDING") bucket.pending.push(mins);
     else if (r.status === "REJECTED") bucket.rejected.push(mins);
-    else if (r.status === "CANCELLED") bucket.cancelled.push(mins);
   }
 
   const perResource: PeriodSummary["reservations"]["perResource"] = [];
@@ -84,10 +78,7 @@ function buildPeriodSummary(
 
   for (const [resourceType, bucket] of byType.entries()) {
     const total =
-      bucket.approved.length +
-      bucket.pending.length +
-      bucket.rejected.length +
-      bucket.cancelled.length;
+      bucket.approved.length + bucket.pending.length + bucket.rejected.length;
     perResource.push({
       resourceType,
       count: total,
@@ -95,7 +86,6 @@ function buildPeriodSummary(
         approved: bucket.approved.length,
         pending: bucket.pending.length,
         rejected: bucket.rejected.length,
-        cancelled: bucket.cancelled.length,
       },
     });
     const stats = durationStats(bucket.approved);
@@ -119,9 +109,6 @@ function buildPeriodSummary(
   const rejectedCount = reservations.filter(
     (r) => r.status === "REJECTED",
   ).length;
-  const cancelledCount = reservations.filter(
-    (r) => r.status === "CANCELLED",
-  ).length;
 
   const approvedDurations = reservations
     .filter((r) => r.status === "APPROVED")
@@ -136,7 +123,6 @@ function buildPeriodSummary(
         approved: approvedCount,
         pending: pendingCount,
         rejected: rejectedCount,
-        cancelled: cancelledCount,
       },
       perResource,
       durationStats: {
@@ -162,7 +148,6 @@ function buildDailyStats(
       approved: number;
       pending: number;
       rejected: number;
-      cancelled: number;
       newUsers: number;
     }
   >();
@@ -173,7 +158,6 @@ function buildDailyStats(
       approved: 0,
       pending: 0,
       rejected: 0,
-      cancelled: 0,
       newUsers: 0,
     });
   }
@@ -186,7 +170,6 @@ function buildDailyStats(
       if (r.status === "APPROVED") entry.approved++;
       else if (r.status === "PENDING") entry.pending++;
       else if (r.status === "REJECTED") entry.rejected++;
-      else if (r.status === "CANCELLED") entry.cancelled++;
     }
   }
 

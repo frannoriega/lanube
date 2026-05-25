@@ -4,7 +4,6 @@ type StatusBreakdown = {
   approved: number;
   pending: number;
   rejected: number;
-  cancelled: number;
 };
 
 type ReservationSummary = {

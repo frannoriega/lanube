@@ -1,0 +1,82 @@
+/* Screen: dark mode axis labels — scoped to admin-report */
+.dark .admin-report [data-slot="chart"] .recharts-cartesian-axis-tick text {
+  fill: oklch(0.85 0 0) !important;
+}
+
+@media print {
+  /* Force all text to black regardless of dark/light mode */
+  .admin-report,
+  .admin-report * {
+    color: black !important;
+  }
+
+  /* SVG text elements (axis labels, tick marks) */
+  .admin-report svg text {
+    fill: black !important;
+  }
+
+  /* Cards */
+  .admin-report [data-slot="card"] {
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    background: white !important;
+    margin-top: 0.5rem;
+    break-inside: avoid;
+  }
+
+  /* Section headings stay attached to following content */
+  .admin-report section > h3 {
+    break-after: avoid;
+  }
+
+  /* Chart container: fixed height so chart + legend both fit */
+  .admin-report [data-slot="chart"] {
+    height: 380px !important;
+    max-height: 380px !important;
+    aspect-ratio: auto !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .admin-report [data-slot="chart"] .recharts-wrapper {
+    height: 380px !important;
+    overflow: hidden !important;
+  }
+
+  /* SVG is 40px shorter than the wrapper — Recharts places the legend
+     div in that gap, absolutely positioned at bottom: 0 */
+  .admin-report [data-slot="chart"] svg {
+    height: 340px !important;
+    max-height: 340px !important;
+    max-width: 100% !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Preserve legend colour swatches (background-color) in print */
+  .admin-report [data-slot="chart"] .recharts-legend-wrapper {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Axis grid lines */
+  .admin-report [data-slot="chart"] line {
+    color: #d1d1d1;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+  }
+
+  .admin-report [data-slot="chart"] .recharts-cartesian-axis-tick text {
+    color: black;
+    fill: black !important;
+  }
+
+  .admin-report [data-slot="chart"] .recharts-yAxis line,
+  .admin-report [data-slot="chart"] .recharts-xAxis line {
+    color: #6b7280;
+    stroke: currentColor !important;
+  }
+}
