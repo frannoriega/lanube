@@ -14,7 +14,6 @@ type DailyStats = {
   approved: number;
   pending: number;
   rejected: number;
-  cancelled: number;
   newUsers: number;
 };
 
