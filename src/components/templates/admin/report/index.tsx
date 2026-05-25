@@ -69,7 +69,6 @@ type ChartBar = {
   approved: number;
   pending: number;
   rejected: number;
-  cancelled: number;
 };
 
 function aggregateForChart(daily: DailyStats[], rangeMs: number): ChartBar[] {
@@ -83,7 +82,6 @@ function aggregateForChart(daily: DailyStats[], rangeMs: number): ChartBar[] {
         approved: d.approved,
         pending: d.pending,
         rejected: d.rejected,
-        cancelled: d.cancelled,
       };
     });
   }
@@ -98,14 +96,12 @@ function aggregateForChart(daily: DailyStats[], rangeMs: number): ChartBar[] {
         approved: 0,
         pending: 0,
         rejected: 0,
-        cancelled: 0,
       });
     }
     const entry = monthMap.get(monthKey)!;
     entry.approved += d.approved;
     entry.pending += d.pending;
     entry.rejected += d.rejected;
-    entry.cancelled += d.cancelled;
   }
   return Array.from(monthMap.values());
 }
@@ -154,10 +150,6 @@ const chartConfig = {
     label: "Rechazadas",
     color: "var(--color-rejected)",
   },
-  cancelled: {
-    label: "Canceladas",
-    color: "var(--color-cancelled)",
-  },
 } satisfies ChartConfig;
 
 function ActivityChart({ bars }: { bars: ChartBar[] }) {
@@ -170,7 +162,6 @@ function ActivityChart({ bars }: { bars: ChartBar[] }) {
           "--color-approved": "hsl(142 67.98% 53.32%)",
           "--color-pending": "hsl(45 93% 47%)",
           "--color-rejected": "hsl(0 86.72% 64.92%)",
-          "--color-cancelled": "hsl(220 9% 60%)",
         } as React.CSSProperties
       }
     >
@@ -181,17 +172,16 @@ function ActivityChart({ bars }: { bars: ChartBar[] }) {
           tickLine={false}
           tickMargin={10}
           axisLine={false}
+          tick={{ fill: "currentColor" }}
         />
         <YAxis
           allowDecimals={false}
           axisLine={{ stroke: "#6b7280", strokeWidth: 1 }}
           tickLine={{ fill: "#6b7280", stroke: "#6b7280", strokeWidth: 2 }}
+          tick={{ fill: "currentColor" }}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-        <ChartLegend
-          content={<ChartLegendContent />}
-          className="print:text-black"
-        />
+        <ChartLegend content={<ChartLegendContent />} />
         <Bar
           dataKey="approved"
           stackId="a"
@@ -222,19 +212,6 @@ function ActivityChart({ bars }: { bars: ChartBar[] }) {
           dataKey="rejected"
           stackId="a"
           fill="var(--color-rejected)"
-          radius={[0, 0, 0, 0]}
-        >
-          <LabelList
-            position="inside"
-            fontSize={12}
-            angle={-90}
-            className="fill-black"
-          />
-        </Bar>
-        <Bar
-          dataKey="cancelled"
-          stackId="a"
-          fill="var(--color-cancelled)"
           radius={[4, 4, 0, 0]}
         >
           <LabelList
@@ -261,7 +238,7 @@ export default function AdminReport({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="admin-report space-y-6">
       {/* Report header */}
       <div className="flex items-start justify-between">
         <div>
@@ -449,37 +426,6 @@ export default function AdminReport({
               )}
             </CardContent>
           </Card>
-
-          <Card className="glass-card dark:glass-card-dark print:border print:border-gray-300 print:shadow-none">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Canceladas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <h4 className="text-3xl font-bold text-gray-500 dark:text-gray-400 print:text-black">
-                {data.reservations.byStatus.cancelled}
-              </h4>
-              {data.reservations.total > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {Math.round(
-                    (data.reservations.byStatus.cancelled /
-                      data.reservations.total) *
-                      100,
-                  )}
-                  % del total
-                </p>
-              )}
-              {data.comparison && (
-                <div className="mt-1">
-                  <DeltaBadge
-                    current={data.reservations.byStatus.cancelled}
-                    previous={data.comparison.reservations.byStatus.cancelled}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* ACTIVIDAD POR DÍA */}
@@ -526,9 +472,6 @@ export default function AdminReport({
                     <TableHead className="pb-2 text-right font-medium text-red-500 dark:text-red-400">
                       Rechazadas
                     </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-gray-500 dark:text-gray-400">
-                      Canceladas
-                    </TableHead>
                     {data.comparison && (
                       <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
                         vs anterior
@@ -565,9 +508,6 @@ export default function AdminReport({
                           </TableCell>
                           <TableCell className="py-2 text-right text-red-500 dark:text-red-400">
                             {row.byStatus.rejected}
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-gray-500 dark:text-gray-400">
-                            {row.byStatus.cancelled}
                           </TableCell>
                           {data.comparison && (
                             <TableCell className="py-2 text-right">

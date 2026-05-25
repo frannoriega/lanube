@@ -316,75 +316,6 @@
       background: white !important;
       color: black !important;
     }
-
-    /* Override CSS variable-based colors (text-muted-foreground, text-foreground, etc.) */
-    :root,
-    .dark {
-      --foreground: black;
-      --muted-foreground: black;
-      --card-foreground: black;
-      --popover-foreground: black;
-    }
-
-    /* Cards: white background, simple border, no glass/shadow effects. */
-    [data-slot="card"] {
-      border: 1px solid #d1d5db !important;
-      box-shadow: none !important;
-      backdrop-filter: none !important;
-      /* Small top margin so a card that opens a new page isn't flush against
-         the @page margin. Has no visible effect when cards are mid-page. */
-      margin-top: 0.5rem;
-    }
-
-    /* Clean page breaks: prevent cards from being sliced mid-element. */
-    [data-slot="card"] {
-      break-inside: avoid;
-    }
-
-    /* Keep section headings attached to the content that follows them. */
-    section > h3 {
-      color: black !important;
-      break-after: avoid;
-    }
-
-    /* Chart: fixed height so it never overflows the printed page. */
-    [data-slot="chart"] {
-      height: 340px !important;
-      max-height: 340px !important;
-      aspect-ratio: auto !important; /* override the screen-side aspect-video */
-      width: 100% !important;
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-    }
-
-    [data-slot="chart"] svg {
-      height: 340px !important;
-      max-height: 340px !important;
-      max-width: 100% !important;
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-    }
-
-    [data-slot="chart"] line {
-      color: #d1d1d1;
-      fill: currentColor !important;
-      stroke: currentColor !important;
-    }
-
-    /* Browsers strip SVG fill/stroke in print even with print-color-adjust,
-       but never strip the CSS `color` property (it's text color).
-       Setting fill/stroke to currentColor piggybacks on that guarantee. */
-    [data-slot="chart"] .recharts-cartesian-axis-tick text {
-      color: #d1d1d1;
-      fill: currentColor !important;
-      stroke: currentColor;
-    }
-
-    [data-slot="chart"] .recharts-yAxis line,
-    [data-slot="chart"] .recharts-xAxis line {
-      color: #6b7280;
-      stroke: currentColor !important;
-    }
   }
 
   .markdown {
@@ -400,24 +331,5 @@
     ol {
       @apply list-disc list-inside;
     }
-  }
-}
-
-/* Print text-color overrides — intentionally outside @layer so they are
-   unlayered and sit above all Tailwind utilities in the cascade.
-   This guarantees they win without relying on source-order or specificity tricks. */
-@media print {
-  .text-gray-300,
-  .text-gray-400,
-  .text-gray-500,
-  .text-gray-600,
-  .text-gray-700,
-  .text-gray-800,
-  .text-gray-900,
-  .text-muted-foreground,
-  [data-slot="card-title"],
-  th,
-  td {
-    color: black !important;
   }
 }
