@@ -319,7 +319,7 @@ src/
 **Vercel Deploy**:
 
 - Build command: `npm run build` (lint + format check + migrate + next build)
-- Env vars: DATABASE*URL, NEXTAUTH_SECRET, NEXTAUTH_URL, SMTP*_, TURNSTILE\__, CRON_SECRET
+- Env vars: DATABASE*URL, NEXTAUTH_SECRET, NEXTAUTH_URL, SMTP*\_, TURNSTILE\_\_, CRON_SECRET
 - Database must be reachable from Vercel runners (migrations run at build time)
 - Preview deployments can use separate DB or shared (must handle concurrent migrations)
 
