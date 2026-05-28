@@ -14,8 +14,9 @@ import { cn } from "@/lib/utils";
 import React, { useCallback } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-interface ThemeToggleProps
-  extends React.ComponentPropsWithoutRef<typeof Button> {
+interface ThemeToggleProps extends React.ComponentPropsWithoutRef<
+  typeof Button
+> {
   toggleMode?: boolean;
 }
 
