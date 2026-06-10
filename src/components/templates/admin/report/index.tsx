@@ -538,6 +538,9 @@ export default function AdminReport({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
                 Duración de reservas aprobadas
+                <span className="ml-2 font-normal text-muted-foreground">
+                  (solo aprobadas)
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -546,6 +549,9 @@ export default function AdminReport({
                   <TableRow className="border-b border-gray-200 dark:border-gray-700 text-left">
                     <TableHead className="pb-2 font-medium text-gray-600 dark:text-gray-300">
                       Servicio
+                    </TableHead>
+                    <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
+                      Total
                     </TableHead>
                     <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
                       Mínima
@@ -561,12 +567,17 @@ export default function AdminReport({
                 <TableBody>
                   <TableRow className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
                     <TableCell className="py-2 font-medium">General</TableCell>
+                    <TableCell className="py-2 text-right font-semibold text-la-nube-primary print:text-black">
+                      {minutesToDisplay(
+                        data.reservations.durationStats.overall.total,
+                      )}
+                    </TableCell>
                     <TableCell className="py-2 text-right">
                       {minutesToDisplay(
                         data.reservations.durationStats.overall.min,
                       )}
                     </TableCell>
-                    <TableCell className="py-2 text-right font-semibold text-la-nube-primary print:text-black">
+                    <TableCell className="py-2 text-right font-semibold">
                       {minutesToDisplay(
                         data.reservations.durationStats.overall.avg,
                       )}
@@ -590,6 +601,9 @@ export default function AdminReport({
                         <TableCell className="py-2">
                           {RESOURCE_LABELS[row.resourceType] ??
                             row.resourceType}
+                        </TableCell>
+                        <TableCell className="py-2 text-right font-semibold">
+                          {minutesToDisplay(row.totalMinutes)}
                         </TableCell>
                         <TableCell className="py-2 text-right">
                           {minutesToDisplay(row.minMinutes)}
