@@ -1,8 +1,9 @@
-type DurationStats = { min: number; avg: number; max: number };
+type DurationStats = { total: number; min: number; avg: number; max: number };
 
 type ResourceStats = {
   resourceType: string;
   count: number;
+  totalMinutes: number;
   minMinutes: number;
   avgMinutes: number;
   maxMinutes: number;
@@ -14,6 +15,7 @@ type DailyStats = {
   approved: number;
   pending: number;
   rejected: number;
+  cancelled: number;
   newUsers: number;
 };
 
