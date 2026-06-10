@@ -17,12 +17,18 @@ type ReservationRow = {
 
 function durationStats(
   durations: number[],
-): { min: number; avg: number; max: number } | null {
+): { total: number; min: number; avg: number; max: number } | null {
   if (!durations.length) return null;
+  const total = durations.reduce((a, b) => a + b, 0);
   const min = Math.min(...durations);
   const max = Math.max(...durations);
-  const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
-  return { min: Math.round(min), avg: Math.round(avg), max: Math.round(max) };
+  const avg = total / durations.length;
+  return {
+    total: Math.round(total),
+    min: Math.round(min),
+    avg: Math.round(avg),
+    max: Math.round(max),
+  };
 }
 
 async function fetchRangeData(fromMs: number, toMs: number) {
@@ -93,6 +99,7 @@ function buildPeriodSummary(
       perResourceStats.push({
         resourceType,
         count: bucket.approved.length,
+        totalMinutes: stats.total,
         minMinutes: stats.min,
         avgMinutes: stats.avg,
         maxMinutes: stats.max,
@@ -148,6 +155,7 @@ function buildDailyStats(
       approved: number;
       pending: number;
       rejected: number;
+      cancelled: number;
       newUsers: number;
     }
   >();
@@ -158,6 +166,7 @@ function buildDailyStats(
       approved: 0,
       pending: 0,
       rejected: 0,
+      cancelled: 0,
       newUsers: 0,
     });
   }
