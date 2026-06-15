@@ -139,6 +139,17 @@ function timeToMinutes(time: string): number {
   return hours * 60 + mins;
 }
 
+const RESERVATION_STATUS_MESSAGES: Record<string, string> = {
+  PENDING: "Pendiente de aprobación",
+  APPROVED: "Reserva confirmada",
+  REJECTED: "Reserva rechazada",
+  CANCELLED: "Reserva cancelada",
+};
+
+function getReservationStatusMessage(status: string): string {
+  return RESERVATION_STATUS_MESSAGES[status] || status;
+}
+
 export function WeekCalendar({
   apiEndpoint,
   eventTypes,
@@ -387,8 +398,14 @@ export function WeekCalendar({
       return;
     }
 
-    const startMinutes = Math.min(dragStart.minutes, dragCurrent.minutes);
-    const endMinutes = Math.max(dragStart.minutes, dragCurrent.minutes);
+    let startMinutes = Math.min(dragStart.minutes, dragCurrent.minutes);
+    let endMinutes = Math.max(dragStart.minutes, dragCurrent.minutes);
+
+    // If it's a click or a very short drag, default to 4 hours duration
+    if (endMinutes - startMinutes < TIME_INTERVAL_MINUTES) {
+      startMinutes = dragStart.minutes;
+      endMinutes = Math.min(startMinutes + 240, BUSINESS_HOURS.END * 60);
+    }
 
     if (endMinutes - startMinutes < TIME_INTERVAL_MINUTES) {
       setIsDragging(false);
@@ -802,6 +819,7 @@ export function WeekCalendar({
 
                     {/* Existing reservations */}
                     {dayReservations.map((occ, idx) => {
+<<<<<<< HEAD
                       const style = getReservationStyle({
                         startTime: occ.occurrenceStartTime,
                         endTime: occ.occurrenceEndTime,
@@ -819,6 +837,19 @@ export function WeekCalendar({
                           : isOwnReservation
                             ? "bg-green-600" // User's approved reservation (green)
                             : "bg-la-nube-primary"; // Other's approved reservation (blue)
+=======
+                      const style = getReservationStyle({ startTime: occ.occurrenceStartTime, endTime: occ.occurrenceEndTime });
+                      const isOwnReservation = userId && occ.reservableType === "USER" && occ.reservableId === userId;
+
+                      // Visual styling based on status following aesthetic requirements
+                      const bgColor = occ.status === "PENDING"
+                        ? "bg-amber-400"  // Aesthetic yellow for pending
+                        : occ.status === "APPROVED"
+                          ? "bg-emerald-500" // Subtle green for approved
+                          : occ.status === "REJECTED"
+                            ? "bg-rose-400"    // Soft red for rejected
+                            : "bg-gray-400";   // Fallback for cancelled/others
+>>>>>>> 5af47ce (Fix colores y leyenda de estados de turnos)
 
                       return (
                         <div
@@ -827,13 +858,19 @@ export function WeekCalendar({
                           style={{ top: style.top, height: style.height }}
                         >
                           <div
+<<<<<<< HEAD
                             className={`h-full rounded ${bgColor} text-white text-xs p-1 overflow-hidden cursor-pointer shadow-sm`}
                             title={`${occ.reason} ${isOwnReservation ? "(Tu reserva)" : ""} ${isPending ? "(Pendiente)" : ""}`}
+=======
+                            className={`h-full rounded ${bgColor} text-white text-[11px] p-1.5 overflow-hidden cursor-pointer shadow-sm transition-opacity hover:opacity-90`}
+                            title={`${occ.reason} ${isOwnReservation ? '(Tu reserva)' : ''} (${occ.status})`}
+>>>>>>> 5af47ce (Fix colores y leyenda de estados de turnos)
                             onClick={() => setSelectedOccurrence(occ)}
                           >
-                            <div className="font-semibold truncate">
+                            <div className="font-bold truncate flex items-center gap-1">
                               {occ.reason}
                               {isOwnReservation && (
+<<<<<<< HEAD
                                 <span className="ml-1">✓</span>
                               )}
                             </div>
@@ -850,6 +887,14 @@ export function WeekCalendar({
                               {isPending && isOwnReservation && (
                                 <span className="ml-1">⏳</span>
                               )}
+=======
+                                <span>{occ.status === "APPROVED" ? "✓" : (occ.status === "PENDING" ? "⏳" : "✕")}</span>
+                              )}
+                            </div>
+                            <div className="opacity-90 text-[10px]">
+                              {format(fromUtcMs(occ.occurrenceStartTime), "HH:mm")} -{" "}
+                              {format(fromUtcMs(occ.occurrenceEndTime), "HH:mm")}
+>>>>>>> 5af47ce (Fix colores y leyenda de estados de turnos)
                             </div>
                           </div>
                         </div>
@@ -1016,7 +1061,14 @@ export function WeekCalendar({
               </div>
               <div className="text-sm">
                 <span className="font-medium">Estado:</span>{" "}
+<<<<<<< HEAD
                 {selectedOccurrence.status}
+=======
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase 
+                  `}>
+                  {getReservationStatusMessage(selectedOccurrence.status)}
+                </span>
+>>>>>>> 5af47ce (Fix colores y leyenda de estados de turnos)
               </div>
               {userId &&
                 selectedOccurrence.reservableType === "USER" &&
