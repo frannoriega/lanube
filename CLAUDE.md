@@ -36,7 +36,8 @@ npm run build:next              # Build Next.js only (skip migrations, lint, for
 npm start                       # Run production server
 
 # Docker
-docker compose -f docker/docker-compose.yml up --build          # Start full stack
+docker compose -f docker/docker-compose.yml up --build          # Start full stack (app on :3000)
+APP_PORT=3001 docker compose -f docker/docker-compose.yml up --build  # Use a different host port
 docker compose -f docker/docker-compose.yml up postgres mailpit # Infra only (no app container)
 docker compose -f docker/docker-compose.yml down -v             # Stop and remove volumes
 
