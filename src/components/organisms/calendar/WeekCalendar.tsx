@@ -60,10 +60,13 @@ function isBookableReservationDay(day: Date, clock: Date): boolean {
   return isAfter(startOfDay(day), startOfDay(clock));
 }
 
+export type UnavailableSlotKind = "resource_full" | "cross_resource";
+
 export interface UnavailableSlot {
   resourceId?: string;
   startTime: number;
   endTime: number;
+  kind?: UnavailableSlotKind;
 }
 
 export interface DragSelection {
@@ -227,6 +230,7 @@ export function WeekCalendar({
         ) ||
         occurrences.some(
           (occ) =>
+            (occ.status === "PENDING" || occ.status === "APPROVED") &&
             isSameDay(fromUtcMs(occ.occurrenceStartTime), day) &&
             ((startMinutes > getMinutes(fromUtcMs(occ.occurrenceStartTime)) &&
               endMinutes < getMinutes(fromUtcMs(occ.occurrenceEndTime))) ||
@@ -257,8 +261,11 @@ export function WeekCalendar({
           let current = rawSlots[0];
           for (let i = 1; i < rawSlots.length; i++) {
             const slot = rawSlots[i];
-            if (current.endTime === slot.startTime) {
-              current.endTime = slot.endTime;
+            if (
+              current.endTime === slot.startTime &&
+              current.kind === slot.kind
+            ) {
+              current = { ...current, endTime: slot.endTime };
             } else {
               processedUnavailableSlots.push(current);
               current = slot;
@@ -789,13 +796,17 @@ export function WeekCalendar({
                           startTime: slot.startTime,
                           endTime: slot.endTime,
                         });
+                        const stripeClass =
+                          slot.kind === "cross_resource"
+                            ? "h-full rounded bg-[repeating-linear-gradient(135deg,_#7c3aed_0,_#7c3aed_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#a78bfa_0,_#a78bfa_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
+                            : "h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed";
                         return (
                           <div
                             key={idx}
-                            className="absolute w-full bg-red z-50"
+                            className="absolute w-full z-50"
                             style={{ top: style.top, height: style.height }}
                           >
-                            <div className="h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed" />
+                            <div className={stripeClass} />
                           </div>
                         );
                       })}
@@ -811,14 +822,19 @@ export function WeekCalendar({
                         occ.reservableType === "USER" &&
                         occ.reservableId === userId;
                       const isPending = occ.status === "PENDING";
+                      const isRejected = occ.status === "REJECTED";
+                      const isCancelled = occ.status === "CANCELLED";
 
-                      // Visual styling based on reservation ownership and status
                       const bgColor =
                         isOwnReservation && isPending
-                          ? "bg-yellow-500" // User's pending reservation (yellow)
-                          : isOwnReservation
-                            ? "bg-green-600" // User's approved reservation (green)
-                            : "bg-la-nube-primary"; // Other's approved reservation (blue)
+                          ? "bg-yellow-500"
+                          : isOwnReservation && isRejected
+                            ? "bg-red-600"
+                            : isOwnReservation && isCancelled
+                              ? "bg-gray-500"
+                              : isOwnReservation
+                                ? "bg-green-600"
+                                : "bg-la-nube-primary";
 
                       return (
                         <div
@@ -828,13 +844,16 @@ export function WeekCalendar({
                         >
                           <div
                             className={`h-full rounded ${bgColor} text-white text-xs p-1 overflow-hidden cursor-pointer shadow-sm`}
-                            title={`${occ.reason} ${isOwnReservation ? "(Tu reserva)" : ""} ${isPending ? "(Pendiente)" : ""}`}
+                            title={`${occ.reason} ${isOwnReservation ? "(Tu reserva)" : ""} ${isPending ? "(Pendiente)" : isRejected ? "(Rechazada)" : isCancelled ? "(Cancelada)" : ""}`}
                             onClick={() => setSelectedOccurrence(occ)}
                           >
                             <div className="font-semibold truncate">
                               {occ.reason}
-                              {isOwnReservation && (
-                                <span className="ml-1">✓</span>
+                              {isOwnReservation &&
+                                !isRejected &&
+                                !isCancelled && <span className="ml-1">✓</span>}
+                              {isOwnReservation && isRejected && (
+                                <span className="ml-1">✗</span>
                               )}
                             </div>
                             <div className="text-[10px] opacity-90">
