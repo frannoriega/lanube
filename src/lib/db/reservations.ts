@@ -192,6 +192,14 @@ export async function createReservation(
           "No hay recursos disponibles para el horario seleccionado",
         );
       }
+      const overlapMatch = error.message?.match(
+        /Overlap with approved reservation at (.+?) \(/,
+      );
+      if (overlapMatch) {
+        throw new Error(
+          `Ya tenés una reserva aprobada en "${overlapMatch[1]}" en ese horario`,
+        );
+      }
       if (error.message?.includes("Conflict on")) {
         throw new Error("Conflicto en una de las fechas de la recurrencia");
       }
@@ -865,7 +873,7 @@ export async function getUserNextReservations(
   >`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
-      ${resourceType}::resource_types,
+      ${resourceType ?? null}::resource_types,
       ${limit}::int,
       ${offset}::int
     )
