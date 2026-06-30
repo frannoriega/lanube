@@ -33,6 +33,7 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -1037,6 +1038,20 @@ export function WeekCalendar({
                 <span className="font-medium">Estado:</span>{" "}
                 {selectedOccurrence.status}
               </div>
+              {selectedOccurrence.reservableType === "EVENT" &&
+                selectedOccurrence.formOpen &&
+                selectedOccurrence.formSlug && (
+                  <div className="pt-2 flex justify-end">
+                    <Button asChild>
+                      <Link
+                        href={`/forms/${selectedOccurrence.formSlug}`}
+                        target="_blank"
+                      >
+                        Inscribirse
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               {userId &&
                 selectedOccurrence.reservableType === "USER" &&
                 selectedOccurrence.reservableId === userId && (
