@@ -46,6 +46,11 @@ services:
       SMTP_SERVER_HOST: mailpit
       WATCHPACK_POLLING: "true"
       ENABLE_MX_GOOGLE_HOSTED_DETECTION: "true"
+      # Event-image uploads use the filesystem provider in dev: LocalStorage writes to
+      # /app/public/uploads, which is the bind-mounted repo (../:/app), so files persist
+      # on the host at ./public/uploads (git-ignored) and are served by Next at /uploads/*.
+      # In production set BLOB_READ_WRITE_TOKEN instead to use Vercel Blob.
+      STORAGE_PROVIDER: local
     command: ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
     depends_on:
       postgres:
