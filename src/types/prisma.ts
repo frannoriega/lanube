@@ -62,9 +62,27 @@ export enum EventType {
   OTHER = "OTHER",
 }
 
+export enum EventStatus {
+  DRAFT = "DRAFT",
+  PUBLISHED = "PUBLISHED",
+  PAUSED = "PAUSED",
+}
+
 export enum ReservationStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
   CANCELLED = "CANCELLED",
+}
+
+export enum FormFieldType {
+  SHORT_TEXT = "SHORT_TEXT",
+  LONG_TEXT = "LONG_TEXT",
+  NUMBER = "NUMBER",
+  SINGLE_SELECT = "SINGLE_SELECT",
+  MULTI_SELECT = "MULTI_SELECT",
+  DATE = "DATE",
+  TIME = "TIME",
+  PHONE = "PHONE",
+  DNI = "DNI",
 }

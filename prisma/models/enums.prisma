@@ -45,6 +45,16 @@ enum EventType {
   @@map("event_types")
 }
 
+// Lifecycle of an event. ENDED is NOT stored — it's derived when the last occurrence has
+// passed (see eventDisplayStatus); only these three values are persisted.
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+
+  @@map("event_statuses")
+}
+
 enum ReservationStatus {
   PENDING
   APPROVED
@@ -61,4 +71,18 @@ enum ResourceType {
   LAB
 
   @@map("resource_types")
+}
+
+enum FormFieldType {
+  SHORT_TEXT
+  LONG_TEXT
+  NUMBER
+  SINGLE_SELECT
+  MULTI_SELECT
+  DATE
+  TIME
+  PHONE
+  DNI
+
+  @@map("form_field_types")
 }
