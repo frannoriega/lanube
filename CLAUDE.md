@@ -178,7 +178,18 @@ src/
 **Features** (expanding):
 
 - `Organization`, `Team`, `OrgMembership`, `TeamMember`: Group management
-- `Event`, `UserEvent`: Calendar events
+- `Event`: Admin-run workshops/classes booked on a resource with a weekly cadence. Each
+  event owns its reservations (`reservableType=EVENT`, `reservableId=event.id`) and an
+  optional custom form.
+- `Form`, `FormField`: a form's structure (name, description, fields à la Google Forms).
+  A `Form` is either a reusable **template** (`isTemplate=true`, managed in the admin Forms
+  section) or a per-event **instance** (`isTemplate=false`) cloned from a template at bind time.
+- `EventForm`: binds a cloned instance `Form` to an event, carrying the public `slug`,
+  registration open/close window, and `isPublished` flag (`@@unique` on both `eventId` and
+  `formId`; `templateId` records the source template).
+- `EventParticipant`: A registration, keyed by **normalized email** per event
+  (`@@unique([eventId, email])`), with `displayEmail`, a tokenized `editToken` (edit/cancel
+  without an account), and a nullable `userId` linked if the participant later registers.
 - `Incident`, `IncidentUser`: Incident tracking
 - `Proposal`, `ProposalComment`, `ProposalLike`: Suggestions system
 - `Inventory`, `PurchaseOrder`: Stock management
@@ -275,13 +286,90 @@ src/
 - Vercel injects `Authorization: Bearer <CRON_SECRET>` automatically
 - **Correctness requirement, not just cleanup**: if it misses, recurring reservations stop being materialized forward and conflict checks silently fail
 
-### 5. Prisma Config & Schema
+### 5. Events & Custom Forms
+
+- **Events create reservations**: an event creates one weekly-recurring reservation per
+  selected weekday via the `create_event_reservation()` SQL function (specific resource,
+  status `APPROVED`, `actor_size` = resource capacity so the resource is fully blocked).
+- **Forms are templates; events bind instances**: admins build reusable form templates in
+  their own section (`/admin/forms`, `db/forms.ts`). Creating/editing an event optionally
+  picks a template; binding **clones** the template into an instance `Form` (fresh field ids)
+  plus an `EventForm` carrying the registration window. The clone is a snapshot — editing or
+  deleting a template never alters a bound event's fields or its participants' answers (answers
+  are keyed by field id). On event edit, re-cloning happens only when the template is swapped,
+  which is blocked once anyone has registered; otherwise only the window/publish state changes,
+  keeping the slug + field ids stable. `deleteEvent` drops the instance `Form` explicitly (the
+  event FK doesn't cascade to it).
+- **Polymorphic `reservable_id`**: the `reservations.reservable_id → registered_users` FK
+  was dropped (migration `20260622000000`) so EVENT reservations can point at an event.
+  The Prisma `Reservation.registeredUser` relation is kept (joins on the column; yields
+  `null` for non-USER rows). ⚠️ A plain `prisma migrate dev` may propose re-adding this FK —
+  **discard that**; the hand-written migration is the source of truth.
+- **Calendar display**: `getEventOccurrencesForType()` surfaces APPROVED EVENT occurrences
+  as named, read-only cards (with an "Inscribirse" form link) instead of anonymous
+  unavailable blocks (see `resourceCalendar.ts` + `WeekCalendar.tsx`).
+- **Public form flow**: unauthenticated routes under `/forms/[slug]` (submit) and
+  `/forms/response/[token]` (edit/cancel); APIs under `/api/forms/*` (rate-limited).
+  Participant email uses the same normalization + `displayEmail` rules as registration.
+  Public pages show the **event** name + description + image (`EventHero`); the internal
+  form name is never exposed (`getPublicForm` returns `eventName/eventDescription/eventImageUrl`).
+- **Event image**: optional `Event.imageUrl`, uploaded via `POST /api/admin/events/upload`
+  → `getStorage().upload()`. The reusable `ImageUpload` molecule drives it.
+- **Form picker**: events choose a template via `FormPicker` — a searchable dialog (shadcn
+  Command) showing each template as a card with a field-type-chip preview. `listFormTemplates`
+  includes a lightweight `fields` summary for the preview. Field-type labels/icons live in
+  `src/lib/constants/form-fields.ts` (shared by the picker + form builder).
+
+### Storage abstraction (`src/lib/storage/`)
+
+`getStorage()` returns a `StorageProvider` (`upload`/`remove`). Selection: `STORAGE_PROVIDER`
+env (`vercel-blob` | `local`), defaulting to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set,
+else a `local` filesystem provider (writes `public/uploads`, dev only — not serverless-safe).
+Add a future S3/custom provider by implementing the interface + registering it in the factory;
+no call sites change. Allow new public image hosts in `next.config.ts` (`STORAGE_PUBLIC_HOST`).
+
+Reusable UI: `CopyField` (molecule) backs `CopyFormUrl` — generic copy-to-clipboard for any
+text (box or button variant).
+
+### Event description (markdown)
+
+### Event lifecycle status
+
+`Event.status` is an `EventStatus` enum — **DRAFT / PUBLISHED / PAUSED** (migration
+`20260629000000`). **ENDED is derived, never stored** (`eventDisplayStatus()` returns ENDED once
+`recurrenceEnd ?? endTime` is in the past). Only PUBLISHED events are public: `getPublicForm` /
+`submitForm` / `getUpcomingPublicEvents` gate on `status === PUBLISHED` (+ window/capacity/not-ended).
+`EventForm.isPublished` is kept as a mirror of `status === PUBLISHED` (set on save) for the
+calendar query. The admin sets status via a Select in the event form (no separate publish
+toggle); PAUSED takes a published event down without deleting it. Admin Events + Forms lists
+are paginated (`listEvents`/`listFormTemplatesPage`, newest first) via the `Pagination` molecule
+
+- `?page=`; the form picker still loads all templates via `listFormTemplates`.
+
+An event's description is **markdown**, required (min 100 chars), authored with `MarkdownEditor`
+(toolbar: heading/bold/italic/quote/code/link + ordered/bullet list, write/preview tabs, and a
+"Soporta markdown" badge linking to external Spanish docs) and rendered with `Markdown`
+(`molecules/markdown.tsx`) on the public form (`EventHero`). `Markdown` uses react-markdown +
+remark-gfm only — raw HTML is **not** parsed (react-markdown escapes it) and URLs are sanitized
+by react-markdown's default transform, so admin-authored content is safe to show publicly.
+
+### Landing "Próximos eventos"
+
+`getUpcomingPublicEvents()` (public, auth-free) returns events whose last occurrence hasn't
+passed, newest start first. The landing `EventsSection` (`templates/landing/events/`) renders
+them in a dependency-free scroll-snap `EventsCarousel`; the **section returns `null` when
+there are none** (no empty placeholder). Cards link to `/forms/[slug]` when registration is
+open. The public `/forms` shell (`app/forms/layout.tsx`) is its own branded, chrome-light
+layout (logo + theme, no nav) showing the **event** identity via `EventHero`. Shared event
+labels (type + weekday) live in `src/lib/constants/events.ts`.
+
+### 6. Prisma Config & Schema
 
 - `prisma/schema.prisma` contains only datasource & generator; models live in `prisma/models/*.prisma` (imported via `include`)
 - Business logic lives in DB functions, not application code — search migrations for `CREATE OR REPLACE FUNCTION`
 - PrismaPg adapter with connection pooling via `pg.Pool`
 
-### 6. Component Structure
+### 7. Component Structure
 
 - Pages are Server Components by default; add `"use client"` at the component level when needed
 - Forms: react-hook-form + Zod; toasts: Sonner; path alias `@/` → `src/`

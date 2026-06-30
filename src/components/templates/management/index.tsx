@@ -11,7 +11,9 @@ import { ResourceType, UserRole } from "@/types/prisma";
 import {
   BarChart3,
   Calendar,
+  CalendarDays,
   ChevronDown,
+  FileText,
   LayoutDashboard,
   LucideProps,
   Menu,
@@ -63,11 +65,18 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/user/meeting-room",
       icon: getServiceIcon(ResourceType.MEETING),
     },
+    {
+      name: "Mis eventos",
+      href: "/user/events",
+      icon: CalendarDays,
+    },
   ],
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Usuarios", href: "/admin/users", icon: Users },
     { name: "Reservas", href: "/admin/reservations", icon: Calendar },
+    { name: "Eventos", href: "/admin/events", icon: CalendarDays },
+    { name: "Formularios", href: "/admin/forms", icon: FileText },
     { name: "Reportes", href: "/admin/reports", icon: BarChart3 },
   ],
 };

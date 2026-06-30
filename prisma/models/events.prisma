@@ -1,25 +1,111 @@
 model Event {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  location    String?
-  startTime   BigInt      @map("start_time")
-  endTime     BigInt      @map("end_time")
-  imageUrl    String?     @map("image_url")
-  createdAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  userEvents  UserEvent[]
+  id            String             @id @default(cuid())
+  name          String
+  description   String?
+  location      String?
+  eventType     EventType          @map("event_type")
+  status        EventStatus        @default(DRAFT)
+  resourceId    String             @map("resource_id")
+  // First occurrence's time-of-day window. Recurrence (cadence + span) is encoded
+  // in rrule + recurrenceEnd, mirroring how recurring Reservations are stored.
+  startTime     BigInt             @map("start_time")
+  endTime       BigInt             @map("end_time")
+  rrule         String?
+  recurrenceEnd BigInt?            @map("recurrence_end")
+  // Optional participant cap. NULL => fall back to the resource's capacity.
+  capacity      Int?
+  imageUrl      String?            @map("image_url")
+  createdAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  resource      Resource           @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  form          EventForm?
+  participants  EventParticipant[]
 
+  @@index([resourceId])
   @@index([startTime, endTime])
   @@map("events")
 }
 
-model UserEvent {
-  userId         String         @map("user_id")
-  eventId        String         @map("event_id")
-  event          Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  registeredUser RegisteredUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+// Holds the form structure. A Form is either a reusable template (isTemplate = true,
+// managed in the admin Forms section) or a per-event instance (isTemplate = false) that
+// is cloned from a template when an event binds it. Cloning snapshots the fields so later
+// edits to a template never alter a bound event's form or its participants' answers
+// (answers are keyed by field id).
+model Form {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  isTemplate  Boolean     @default(true) @map("is_template")
+  createdAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  fields      FormField[]
+  // Present only for instances (isTemplate = false).
+  eventForm   EventForm?
 
-  @@id([userId, eventId])
-  @@map("user_events")
+  @@map("forms")
+}
+
+// Binds a cloned Form instance to an event, with the registration window + publish state.
+model EventForm {
+  id          String   @id @default(cuid())
+  eventId     String   @unique @map("event_id")
+  // The cloned instance Form whose fields this binding exposes.
+  formId      String   @unique @map("form_id")
+  // Source template id (provenance): preselects the template on edit and detects a swap.
+  // Plain scalar (no FK) — the instance is a snapshot, so a deleted template may dangle.
+  templateId  String?  @map("template_id")
+  // Public link key (handed to participants): /forms/[slug]
+  slug        String   @unique
+  opensAt     BigInt   @map("opens_at")
+  closesAt    BigInt   @map("closes_at")
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("event_forms")
+}
+
+model FormField {
+  id          String        @id @default(cuid())
+  formId      String        @map("form_id")
+  order       Int
+  type        FormFieldType
+  label       String
+  placeholder String?
+  required    Boolean       @default(false)
+  // Choices for SINGLE_SELECT / MULTI_SELECT.
+  options     Json?
+  // Extra per-type config (e.g. number min/max).
+  config      Json?
+  form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@map("form_fields")
+}
+
+model EventParticipant {
+  id             String          @id @default(cuid())
+  eventId        String          @map("event_id")
+  // Normalized email — the participant's primary key for an event.
+  email          String
+  // Original email as typed (before normalization), for display.
+  displayEmail   String?         @map("display_email")
+  // Linked once/if the participant registers as a system user (matched by normalized email).
+  userId         String?         @map("user_id")
+  // Tokenized link to edit/cancel the registration without an account.
+  editToken      String          @unique @map("edit_token")
+  cancelled      Boolean         @default(false)
+  // Map of fieldId -> answer value.
+  answers        Json
+  createdAt      BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt      BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  event          Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, email])
+  @@index([email])
+  @@index([userId])
+  @@map("event_participants")
 }
