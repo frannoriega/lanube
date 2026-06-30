@@ -20,6 +20,7 @@ model Resource {
   createdAt          BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt          BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   reservations       Reservation[]
+  events             Event[]
   fungibleResource   FungibleResource @relation(fields: [fungibleResourceId], references: [id], onDelete: Cascade)
 
   @@index([fungibleResourceId])
