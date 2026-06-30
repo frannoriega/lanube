@@ -1,0 +1,152 @@
+import { DATETIME_LOCAL_RE } from "@/lib/events/datetime";
+import { registerEmailSchema } from "@/lib/schemas/auth";
+import { EventStatus, EventType, FormFieldType } from "@/types/prisma";
+import z from "zod";
+
+/** YYYY-MM-DD calendar date key (interpreted in the admin timezone). */
+const dateKeySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Fecha inválida" });
+
+/** HH:mm 24h time-of-day (admin timezone). */
+const timeOfDaySchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: "Hora inválida" });
+
+/** Weekday numbers, 0 = Sunday .. 6 = Saturday (matches Date.getDay()). */
+export const WEEKDAY_RRULE = [
+  "SU",
+  "MO",
+  "TU",
+  "WE",
+  "TH",
+  "FR",
+  "SA",
+] as const;
+
+/**
+ * Binds a form template to an event. opens/closes are datetime-local strings (admin TZ);
+ * the template is cloned into an instance at bind time.
+ */
+export const eventFormBindingSchema = z
+  .object({
+    templateId: z.string().min(1, { message: "Elegí un formulario" }),
+    // Public link key, generated client-side so the URL is known before the event is saved.
+    slug: z.string().min(1),
+    opensAt: z.string().regex(DATETIME_LOCAL_RE, { message: "Fecha inválida" }),
+    closesAt: z
+      .string()
+      .regex(DATETIME_LOCAL_RE, { message: "Fecha inválida" }),
+  })
+  .refine((d) => d.closesAt > d.opensAt, {
+    message: "El cierre debe ser posterior a la apertura",
+    path: ["closesAt"],
+  });
+
+export type EventFormBindingInput = z.infer<typeof eventFormBindingSchema>;
+
+/** Input for creating/updating an event (admin). */
+export const eventInputSchema = z
+  .object({
+    name: z.string().trim().min(1, { message: "El nombre es obligatorio" }),
+    description: z
+      .string()
+      .trim()
+      .min(100, {
+        message: "La descripción debe tener al menos 100 caracteres",
+      })
+      .max(2000),
+    eventType: z.enum(EventType),
+    // Lifecycle state set by the admin. ENDED is derived, so it's not a valid input.
+    status: z.enum(EventStatus),
+    resourceId: z.string().min(1, { message: "Elegí un recurso" }),
+    startDate: dateKeySchema,
+    endDate: dateKeySchema,
+    weekdays: z
+      .array(z.number().int().min(0).max(6))
+      .min(1, { message: "Elegí al menos un día de la semana" }),
+    startTime: timeOfDaySchema,
+    endTime: timeOfDaySchema,
+    capacity: z
+      .number()
+      .int()
+      .positive({ message: "La capacidad debe ser positiva" })
+      .optional()
+      .nullable(),
+    // Optional cover image URL produced by the upload endpoint. Accepts an absolute
+    // http(s) URL (Vercel Blob / custom host) or a root-relative path (local dev provider).
+    imageUrl: z
+      .string()
+      .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/"), {
+        message: "URL de imagen inválida",
+      })
+      .optional()
+      .nullable(),
+    // Optional form binding: a template to clone + the registration window/publish state.
+    form: eventFormBindingSchema.optional().nullable(),
+  })
+  .refine((d) => d.endDate >= d.startDate, {
+    message: "La fecha de fin debe ser igual o posterior a la de inicio",
+    path: ["endDate"],
+  })
+  .refine((d) => d.startTime < d.endTime, {
+    message: "La hora de inicio debe ser anterior a la de fin",
+    path: ["endTime"],
+  })
+  .refine((d) => [...new Set(d.weekdays)].length === d.weekdays.length, {
+    message: "Días de la semana duplicados",
+    path: ["weekdays"],
+  });
+
+export type EventInput = z.infer<typeof eventInputSchema>;
+
+/** Field types whose answers come from a fixed option list. */
+export const SELECT_FIELD_TYPES = [
+  FormFieldType.SINGLE_SELECT,
+  FormFieldType.MULTI_SELECT,
+] as const;
+
+export const formFieldSchema = z
+  .object({
+    type: z.enum(FormFieldType),
+    label: z.string().trim().min(1, { message: "La etiqueta es obligatoria" }),
+    placeholder: z.string().trim().max(200).optional().nullable(),
+    required: z.boolean(),
+    options: z.array(z.string().trim().min(1)).optional().nullable(),
+  })
+  .superRefine((field, ctx) => {
+    const needsOptions = (SELECT_FIELD_TYPES as readonly string[]).includes(
+      field.type,
+    );
+    if (needsOptions && (!field.options || field.options.length < 1)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Agregá al menos una opción",
+        path: ["options"],
+      });
+    }
+  });
+
+export type FormFieldInput = z.infer<typeof formFieldSchema>;
+
+/** Admin form-template builder: the reusable structure (name, description, fields). */
+export const formTemplateSchema = z.object({
+  name: z.string().trim().min(1, { message: "El nombre es obligatorio" }),
+  description: z.string().trim().max(2000).optional().nullable(),
+  fields: z.array(formFieldSchema),
+});
+
+export type FormTemplateInput = z.infer<typeof formTemplateSchema>;
+
+/** Public participant submission: email (kept raw for displayEmail) + dynamic answers. */
+export const participantSubmitSchema = z.object({
+  email: registerEmailSchema,
+  answers: z.record(z.string(), z.unknown()),
+});
+
+export type ParticipantSubmitInput = z.infer<typeof participantSubmitSchema>;
+
+/** Editing an existing registration (no email change — keyed by token). */
+export const participantEditSchema = z.object({
+  answers: z.record(z.string(), z.unknown()),
+});

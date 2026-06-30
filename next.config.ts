@@ -1,9 +1,21 @@
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
+// Remote hosts allowed for next/image. Vercel Blob is the current provider; a future
+// custom/S3-compatible host (e.g. on Coolify) can be whitelisted via STORAGE_PUBLIC_HOST.
+const imageRemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] =
+  [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }];
+if (process.env.STORAGE_PUBLIC_HOST) {
+  imageRemotePatterns.push({
+    protocol: "https",
+    hostname: process.env.STORAGE_PUBLIC_HOST,
+  });
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  images: { remotePatterns: imageRemotePatterns },
   async redirects() {
     return [
       {
