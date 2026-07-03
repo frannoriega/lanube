@@ -42,25 +42,33 @@ export const WEEKDAY_SHORT_LABELS = [
   "Sáb",
 ] as const;
 
-/** Derived (display-only) event lifecycle state. ENDED is computed, never stored. */
-export type EventDisplayStatus = "DRAFT" | "PUBLISHED" | "PAUSED" | "ENDED";
+/** Derived (display-only) event lifecycle state. CANCELLED + ENDED are computed, not stored. */
+export type EventDisplayStatus =
+  | "DRAFT"
+  | "PUBLISHED"
+  | "PAUSED"
+  | "ENDED"
+  | "CANCELLED";
 
 export const EVENT_STATUS_LABELS: Record<EventDisplayStatus, string> = {
   DRAFT: "Borrador",
   PUBLISHED: "Publicado",
   PAUSED: "Pausado",
   ENDED: "Finalizado",
+  CANCELLED: "Cancelado",
 };
 
 /**
- * The state to show for an event: ENDED once its last occurrence has passed, otherwise the
- * stored status. `lastOccurrenceMs` = recurrenceEnd ?? endTime.
+ * The state to show for an event. Precedence: CANCELLED (soft-deleted) > ENDED (last
+ * occurrence passed) > stored status. `lastOccurrenceMs` = recurrenceEnd ?? endTime.
  */
 export function eventDisplayStatus(
   status: string,
   lastOccurrenceMs: number,
   nowMs: number,
+  deletedAt: number | null = null,
 ): EventDisplayStatus {
+  if (deletedAt != null) return "CANCELLED";
   if (lastOccurrenceMs < nowMs) return "ENDED";
   return (status as EventDisplayStatus) ?? "DRAFT";
 }

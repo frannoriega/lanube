@@ -5,10 +5,19 @@ import {
   FormPicker,
   FormPickerTemplate,
 } from "@/components/organisms/admin/form-picker";
+import { DateRangePicker } from "@/components/molecules/date-range-picker";
 import { ImageUpload } from "@/components/molecules/image-upload";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { TimeSelect } from "@/components/molecules/time-select";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -29,8 +38,19 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EVENT_STATUS_LABELS, EVENT_TYPE_LABELS } from "@/lib/constants/events";
+import type {
+  ExistingException,
+  SessionAction,
+} from "@/lib/events/occurrences";
 import { EventInput, eventInputSchema } from "@/lib/schemas/events";
 import { EventStatus, EventType } from "@/types/prisma";
+
+/** A per-session change the edit would drop (mirrors the API's 409 payload). */
+interface DroppedSession {
+  date: string; // yyyy-MM-dd
+  kind: "cancel" | "reschedule";
+  reason: string | null;
+}
 
 // ENDED is derived, never chosen by the admin.
 const SELECTABLE_STATUSES: EventStatus[] = [
@@ -38,9 +58,11 @@ const SELECTABLE_STATUSES: EventStatus[] = [
   EventStatus.PUBLISHED,
   EventStatus.PAUSED,
 ];
+import { EventSessions } from "@/components/organisms/admin/event-sessions";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CalendarCog } from "lucide-react";
 import { createId } from "@paralleldrive/cuid2";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -106,12 +128,32 @@ interface EventFormProps {
   mode: "create" | "edit";
   eventId?: string;
   defaults?: EventFormDefaults;
+  /** Saved session exceptions (edit mode) — the session editor overlays staged changes on these. */
+  existingExceptions?: ExistingException[];
 }
 
-export function EventForm({ mode, eventId, defaults }: EventFormProps) {
+export function EventForm({
+  mode,
+  eventId,
+  defaults,
+  existingExceptions = [],
+}: EventFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [resources, setResources] = useState<ResourceOption[]>([]);
   const [templates, setTemplates] = useState<FormPickerTemplate[]>([]);
+  const [dropWarning, setDropWarning] = useState<{
+    dropped: DroppedSession[];
+    values: EventInput;
+  } | null>(null);
+  // Opened via the ?sessions=1 shortcut (from the admin card) or the "Sesiones" button.
+  const [sessionsOpen, setSessionsOpen] = useState(
+    mode === "edit" && searchParams.get("sessions") === "1",
+  );
+  // Staged per-session changes — applied (and emailed) only when the event is saved.
+  const [sessionActions, setSessionActions] = useState<SessionAction[]>([]);
+  // Single reason shared by all staged cancels/reschedules (asked once, at the end).
+  const [sessionReason, setSessionReason] = useState("");
 
   const form = useForm<EventInput>({
     resolver: zodResolver(eventInputSchema),
@@ -135,7 +177,7 @@ export function EventForm({ mode, eventId, defaults }: EventFormProps) {
   // while the same template stays selected (switching templates mints a new one).
   const onSelectTemplate = (templateId: string | null) => {
     if (templateId === null) {
-      setValue("form", null, { shouldValidate: true });
+      setValue("form", null, { shouldValidate: true, shouldDirty: true });
       return;
     }
     const current = getValues("form");
@@ -150,7 +192,7 @@ export function EventForm({ mode, eventId, defaults }: EventFormProps) {
         opensAt: current?.opensAt ?? "",
         closesAt: current?.closesAt ?? "",
       },
-      { shouldValidate: true },
+      { shouldValidate: true, shouldDirty: true },
     );
   };
 
@@ -158,127 +200,129 @@ export function EventForm({ mode, eventId, defaults }: EventFormProps) {
   const resourceId = watch("resourceId");
   const selectedResource = resources.find((r) => r.id === resourceId);
 
-  const onSubmit = async (values: EventInput) => {
+  const needsSessionReason = sessionActions.some(
+    (a) => a.kind === "cancel" || a.kind === "reschedule",
+  );
+
+  const save = async (values: EventInput, force: boolean): Promise<boolean> => {
+    // A batch of cancels/reschedules needs the single shared reason before it can be saved.
+    if (mode === "edit" && needsSessionReason && sessionReason.trim() === "") {
+      toast.error("Indicá el motivo de los cambios de sesiones");
+      setSessionsOpen(true);
+      return false;
+    }
     const res = await fetch(
       mode === "create" ? "/api/admin/events" : `/api/admin/events/${eventId}`,
       {
         method: mode === "create" ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(
+          mode === "create"
+            ? values
+            : {
+                ...values,
+                force,
+                sessionActions,
+                sessionReason: sessionReason.trim(),
+              },
+        ),
       },
     );
+    // The edit would drop per-session changes → confirm before forcing.
+    if (res.status === 409) {
+      const err = await res.json().catch(() => ({}));
+      setDropWarning({ dropped: err.dropped ?? [], values });
+      return false;
+    }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       toast.error(err.message ?? "No se pudo guardar el evento");
-      return;
+      return false;
     }
+    setDropWarning(null);
+    setSessionActions([]);
+    setSessionReason("");
     toast.success(mode === "create" ? "Evento creado" : "Evento actualizado");
     router.push("/admin/events");
     router.refresh();
+    return true;
   };
 
+  const onSubmit = (values: EventInput) => save(values, false);
+
   return (
-    <Form {...form}>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-2xl space-y-6"
-        noValidate
-      >
-        <FormField
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej.: Taller de impresión 3D" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción</FormLabel>
-              <FormDescription>
-                La ven los participantes. Admite formato (negrita, cursiva,
-                listas…).
-              </FormDescription>
-              <FormControl>
-                <MarkdownEditor
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  rows={5}
-                  minLength={100}
-                  maxLength={2000}
-                  placeholder="Contá de qué se trata el evento. Usá la barra de formato para resaltar lo importante."
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Imagen (opcional)</FormLabel>
-              <FormControl>
-                <ImageUpload
-                  value={field.value ?? null}
-                  onChange={field.onChange}
-                  uploadUrl="/api/admin/events/upload"
-                  alt={watch("name") || "Imagen del evento"}
-                  containerClassName="h-32 w-full max-w-md"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Estado</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {SELECTABLE_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {EVENT_STATUS_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Publicado: visible con link de inscripción. Pausado: se da de
-                baja temporalmente sin borrarlo.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <>
+      <Form {...form}>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="max-w-2xl space-y-6"
+          noValidate
+        >
           <FormField
             control={control}
-            name="eventType"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo de evento</FormLabel>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej.: Taller de impresión 3D" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descripción</FormLabel>
+                <FormDescription>
+                  La ven los participantes. Admite formato (negrita, cursiva,
+                  listas…).
+                </FormDescription>
+                <FormControl>
+                  <MarkdownEditor
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    rows={5}
+                    minLength={100}
+                    maxLength={2000}
+                    placeholder="Contá de qué se trata el evento. Usá la barra de formato para resaltar lo importante."
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Imagen (opcional)</FormLabel>
+                <FormControl>
+                  <ImageUpload
+                    value={field.value ?? null}
+                    onChange={field.onChange}
+                    uploadUrl="/api/admin/events/upload"
+                    alt={watch("name") || "Imagen del evento"}
+                    containerClassName="h-32 w-full max-w-md"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
@@ -286,13 +330,164 @@ export function EventForm({ mode, eventId, defaults }: EventFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
+                    {SELECTABLE_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {EVENT_STATUS_LABELS[s]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <FormDescription>
+                  Publicado: visible con link de inscripción. Pausado: se da de
+                  baja temporalmente sin borrarlo.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField
+              control={control}
+              name="eventType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de evento</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(EVENT_TYPE_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="resourceId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recurso</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Elegí un recurso" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {resources.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name} ({r.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormItem>
+            <FormLabel>Fechas del evento</FormLabel>
+            <DateRangePicker
+              value={{ from: watch("startDate"), to: watch("endDate") }}
+              onChange={(range) => {
+                setValue("startDate", range.from ?? "", {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
+                setValue("endDate", range.to ?? "", {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
+              }}
+              ariaLabel="Fechas del evento"
+            />
+            {(formState.errors.startDate || formState.errors.endDate) && (
+              <p className="text-sm text-destructive">
+                {formState.errors.startDate?.message ??
+                  formState.errors.endDate?.message}
+              </p>
+            )}
+            <FormDescription>
+              El evento se repite cada semana en los días elegidos, dentro de
+              este rango.
+            </FormDescription>
+          </FormItem>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField
+              control={control}
+              name="startTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora de inicio</FormLabel>
+                  <FormControl>
+                    <TimeSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      ariaLabel="Hora de inicio"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="endTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora de fin</FormLabel>
+                  <FormControl>
+                    <TimeSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      ariaLabel="Hora de fin"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={control}
+            name="weekdays"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Días de la semana</FormLabel>
+                <FormControl>
+                  <ToggleGroup
+                    type="multiple"
+                    variant="outline"
+                    value={field.value.map(String)}
+                    onValueChange={(vals) =>
+                      field.onChange(vals.map(Number).sort((a, b) => a - b))
+                    }
+                    className="flex-wrap justify-start"
+                  >
+                    {WEEKDAYS.map((d) => (
+                      <ToggleGroupItem key={d.value} value={d.value}>
+                        {d.label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -300,237 +495,191 @@ export function EventForm({ mode, eventId, defaults }: EventFormProps) {
 
           <FormField
             control={control}
-            name="resourceId"
+            name="capacity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Recurso</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Elegí un recurso" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {resources.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name} ({r.type})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>Cupo de participantes (opcional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === "" ? null : Number(e.target.value),
+                      )
+                    }
+                    placeholder={
+                      selectedResource
+                        ? `Por defecto: ${selectedResource.capacity}`
+                        : "Por defecto: capacidad del recurso"
+                    }
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-medium">Inicio</legend>
-            <div className="grid grid-cols-2 gap-2">
-              <FormField
-                control={control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      Fecha
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="space-y-4 rounded-md border p-4">
+            <div className="space-y-2">
+              <Label>Formulario de inscripción (opcional)</Label>
+              <FormPicker
+                templates={templates}
+                value={binding?.templateId ?? null}
+                onSelect={onSelectTemplate}
               />
-              <FormField
-                control={control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      Hora
-                    </FormLabel>
-                    <FormControl>
-                      <TimeSelect
-                        value={field.value}
-                        onChange={field.onChange}
-                        ariaLabel="Hora de inicio"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <p className="text-sm text-muted-foreground">
+                Se crea una copia del formulario para este evento. Editar la
+                plantilla más adelante no afecta a los eventos ya creados.
+              </p>
             </div>
-          </fieldset>
 
-          <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-medium">Fin</legend>
-            <div className="grid grid-cols-2 gap-2">
-              <FormField
-                control={control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      Fecha
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+            {binding && (
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="form.opensAt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Apertura de inscripción</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="datetime-local"
+                            lang="es-AR"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name="form.closesAt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cierre de inscripción</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="datetime-local"
+                            lang="es-AR"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {watch("status") === EventStatus.PUBLISHED && (
+                  <CopyFormUrl slug={binding.slug} />
                 )}
-              />
-              <FormField
-                control={control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      Hora
-                    </FormLabel>
-                    <FormControl>
-                      <TimeSelect
-                        value={field.value}
-                        onChange={field.onChange}
-                        ariaLabel="Hora de fin"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </fieldset>
-        </div>
-
-        <FormField
-          control={control}
-          name="weekdays"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Días de la semana</FormLabel>
-              <FormControl>
-                <ToggleGroup
-                  type="multiple"
-                  variant="outline"
-                  value={field.value.map(String)}
-                  onValueChange={(vals) =>
-                    field.onChange(vals.map(Number).sort((a, b) => a - b))
-                  }
-                  className="flex-wrap justify-start"
-                >
-                  {WEEKDAYS.map((d) => (
-                    <ToggleGroupItem key={d.value} value={d.value}>
-                      {d.label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="capacity"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cupo de participantes (opcional)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  value={field.value ?? ""}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value === "" ? null : Number(e.target.value),
-                    )
-                  }
-                  placeholder={
-                    selectedResource
-                      ? `Por defecto: ${selectedResource.capacity}`
-                      : "Por defecto: capacidad del recurso"
-                  }
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="space-y-4 rounded-md border p-4">
-          <div className="space-y-2">
-            <Label>Formulario de inscripción (opcional)</Label>
-            <FormPicker
-              templates={templates}
-              value={binding?.templateId ?? null}
-              onSelect={onSelectTemplate}
-            />
-            <p className="text-sm text-muted-foreground">
-              Se crea una copia del formulario para este evento. Editar la
-              plantilla más adelante no afecta a los eventos ya creados.
-            </p>
+              </>
+            )}
           </div>
 
-          {binding && (
-            <>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={control}
-                  name="form.opensAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Apertura de inscripción</FormLabel>
-                      <FormControl>
-                        <Input type="datetime-local" lang="es-AR" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="form.closesAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cierre de inscripción</FormLabel>
-                      <FormControl>
-                        <Input type="datetime-local" lang="es-AR" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/admin/events")}
+            >
+              Cancelar
+            </Button>
+            {mode === "edit" && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSessionsOpen(true)}
+                disabled={formState.isSubmitting}
+              >
+                <CalendarCog className="h-4 w-4" />
+                Sesiones
+                {sessionActions.length > 0 && ` (${sessionActions.length})`}
+              </Button>
+            )}
+            <Button type="submit" disabled={formState.isSubmitting}>
+              {formState.isSubmitting
+                ? "Guardando..."
+                : mode === "create"
+                  ? "Crear evento"
+                  : "Guardar cambios"}
+            </Button>
+          </div>
+        </form>
+      </Form>
 
-              {watch("status") === EventStatus.PUBLISHED && (
-                <CopyFormUrl slug={binding.slug} />
-              )}
-            </>
-          )}
-        </div>
+      {mode === "edit" && eventId && (
+        <EventSessions
+          open={sessionsOpen}
+          onOpenChange={setSessionsOpen}
+          recipe={{
+            weekdays: watch("weekdays"),
+            startDate: watch("startDate"),
+            endDate: watch("endDate"),
+            startTime: watch("startTime"),
+            endTime: watch("endTime"),
+          }}
+          existing={existingExceptions}
+          actions={sessionActions}
+          onActionsChange={setSessionActions}
+          reason={sessionReason}
+          onReasonChange={setSessionReason}
+        />
+      )}
 
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push("/admin/events")}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={formState.isSubmitting}>
-            {formState.isSubmitting
-              ? "Guardando..."
-              : mode === "create"
-                ? "Crear evento"
-                : "Guardar cambios"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <Dialog
+        open={dropWarning !== null}
+        onOpenChange={(o) => !o && setDropWarning(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Se perderán cambios de sesiones</DialogTitle>
+            <DialogDescription>
+              Con estas fechas, las siguientes sesiones modificadas dejarán de
+              existir. Si continuás, se eliminarán.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="max-h-56 space-y-1 overflow-y-auto text-sm">
+            {dropWarning?.dropped.map((d, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="font-medium">{formatDropDate(d.date)}</span>
+                <span className="text-muted-foreground">
+                  · {d.kind === "cancel" ? "cancelada" : "reprogramada"}
+                  {d.reason ? ` — ${d.reason}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDropWarning(null)}
+            >
+              Volver
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (dropWarning) save(dropWarning.values, true);
+              }}
+            >
+              Continuar y eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
+}
+
+/** yyyy-MM-dd → dd/mm/yyyy for the drop-warning list. */
+function formatDropDate(key: string): string {
+  const [y, m, d] = key.split("-");
+  return y && m && d ? `${d}/${m}/${y}` : key;
 }

@@ -15,6 +15,12 @@ export interface OccurrencePlan {
   recurrenceEndMs: number;
 }
 
+/** The scheduling fields of an event — enough to expand its weekly occurrences. */
+export type EventRecipe = Pick<
+  EventInput,
+  "weekdays" | "startDate" | "endDate" | "startTime" | "endTime"
+>;
+
 /** Unix ms for a calendar date-key + HH:mm, interpreted in the admin timezone. */
 export function dateKeyTimeToMs(dateKey: string, hhmm: string): number {
   const [y, m, d] = dateKey.split("-").map(Number);
@@ -33,7 +39,7 @@ export function weekdayOfDateKey(dateKey: string): number {
  * weekly from the first occurrence, so multiple weekdays => multiple reservations, all
  * sharing reservableId = eventId).
  */
-export function planEventOccurrences(input: EventInput): OccurrencePlan[] {
+export function planEventOccurrences(input: EventRecipe): OccurrencePlan[] {
   const recurrenceEndMs = endOfDateKeyMs(input.endDate);
   const plans: OccurrencePlan[] = [];
 
