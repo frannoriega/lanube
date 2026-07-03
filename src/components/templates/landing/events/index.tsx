@@ -1,31 +1,12 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
-import { EventsCarousel } from "@/components/templates/landing/events/events-carousel";
-import { UpcomingEventCardData } from "@/components/templates/landing/events/event-card";
-import { getUpcomingPublicEvents } from "@/lib/db/events";
+import { EventsGrid } from "@/components/templates/landing/events/events-grid";
+import { getUpcomingPublicEventsPage } from "@/lib/db/events";
 
 export default async function EventsSection() {
-  const events = await getUpcomingPublicEvents();
+  const { events, total } = await getUpcomingPublicEventsPage(1, 6);
 
-  // Section is hidden entirely when there's nothing upcoming.
-  if (events.length === 0) return null;
-
-  // Dates stay as UNIX ms here; the card localizes them client-side (LocalDateRange).
-  const cards: UpcomingEventCardData[] = events.map((e) => ({
-    id: e.id,
-    name: e.name,
-    description: e.description,
-    imageUrl: e.imageUrl,
-    eventType: e.eventType,
-    startMs: e.startTime,
-    recurrenceEndMs: e.recurrenceEnd,
-    resourceName: e.resourceName,
-    weekdays: e.weekdays,
-    formSlug: e.formSlug,
-    registration: e.registration,
-    formOpensAt: e.formOpensAt,
-    formClosesAt: e.formClosesAt,
-  }));
+  if (total === 0) return null;
 
   return (
     <Breakout className="bg-gradient-to-b from-la-nube-accent/40 to-transparent dark:from-la-nube-selected/15">
@@ -48,7 +29,7 @@ export default async function EventsSection() {
             </p>
           </div>
 
-          <EventsCarousel events={cards} />
+          <EventsGrid initialEvents={events} initialTotal={total} />
         </Container>
       </section>
     </Breakout>
