@@ -264,6 +264,23 @@ export async function createReservationException(
   }
 
   return await prisma.$transaction(async (tx) => {
+    // A reschedule (new window, not a cancel) must not collide with another booking on the
+    // resource — the ledger rebuild below performs no conflict check on its own.
+    if (!data.isCancelled && data.newStartTime && data.newEndTime) {
+      const newStartMs = Number(dateToUnixMs(data.newStartTime));
+      const newEndMs = Number(dateToUnixMs(data.newEndTime));
+      const rows = await tx.$queryRaw<{ conflicts: boolean }[]>`
+        SELECT reservation_window_conflicts(
+          ${reservationId}::text, ${newStartMs}::bigint, ${newEndMs}::bigint
+        ) AS conflicts
+      `;
+      if (rows[0]?.conflicts) {
+        throw new Error(
+          "El nuevo horario se superpone con otra reserva en ese recurso",
+        );
+      }
+    }
+
     const created = await tx.reservationException.create({
       data: {
         reservationId,

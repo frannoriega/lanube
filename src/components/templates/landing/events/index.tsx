@@ -22,7 +22,9 @@ export default async function EventsSection() {
     resourceName: e.resourceName,
     weekdays: e.weekdays,
     formSlug: e.formSlug,
-    formOpen: e.formOpen,
+    registration: e.registration,
+    formOpensAt: e.formOpensAt,
+    formClosesAt: e.formClosesAt,
   }));
 
   return (

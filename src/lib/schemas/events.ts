@@ -100,6 +100,46 @@ export const eventInputSchema = z
 
 export type EventInput = z.infer<typeof eventInputSchema>;
 
+/**
+ * A staged per-session (occurrence) change, sent with the event save. Keyed by weekday + nominal
+ * occurrence date (resolved to a reservation server-side after the recurrence diff), so it survives
+ * date-range edits. The reason is **not** per-action: cancels/reschedules share a single batch
+ * reason (`sessionReason`), collected once at the end and sent alongside the actions.
+ */
+export const sessionActionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("cancel"),
+    weekday: z.number().int().min(0).max(6),
+    occurrenceDateMs: z.number().int(),
+  }),
+  z
+    .object({
+      kind: z.literal("reschedule"),
+      weekday: z.number().int().min(0).max(6),
+      occurrenceDateMs: z.number().int(),
+      newStartMs: z.number().int(),
+      newEndMs: z.number().int(),
+    })
+    .refine((d) => d.newEndMs > d.newStartMs, {
+      message: "El horario de fin debe ser posterior al de inicio",
+      path: ["newEndMs"],
+    }),
+  z.object({
+    kind: z.literal("revert"),
+    weekday: z.number().int().min(0).max(6),
+    occurrenceDateMs: z.number().int(),
+  }),
+]);
+
+export type SessionActionInput = z.infer<typeof sessionActionSchema>;
+
+/** Does this batch of session actions need a reason? (any cancel/reschedule requires one). */
+export function sessionActionsNeedReason(
+  actions: Pick<SessionActionInput, "kind">[],
+): boolean {
+  return actions.some((a) => a.kind === "cancel" || a.kind === "reschedule");
+}
+
 /** Field types whose answers come from a fixed option list. */
 export const SELECT_FIELD_TYPES = [
   FormFieldType.SINGLE_SELECT,
