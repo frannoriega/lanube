@@ -333,6 +333,37 @@ text (box or button variant).
 
 ### Event description (markdown)
 
+### Event sessions (per-occurrence cancel / reschedule)
+
+Events stay **weekly-recurring** (one reservation per weekday). Individual sessions are
+cancelled/rescheduled as **`ReservationException`s** — the reservation machinery applies them
+(`effective_occurrence_window` + `rebuild_reservation_ledger_forward`). A **reason is required**
+for event exceptions (business rule; the `reason` column is optional). The pure occurrence logic
+(weekly expansion + exception overlay, drop detection, and the saved-vs-staged merge
+`effectiveExceptions`) lives in `src/lib/events/occurrences.ts` (unit-tested).
+
+- **Sessions commit with the event, not on their own.** The `Sesiones` dialog
+  (`event-sessions.tsx`, launched from the event form / the `?sessions=1` card shortcut) is a
+  **client-side staging UI**: it previews occurrences from the _live form recipe_ (`planEventOccurrences`
+  - `expandEventOccurrences`) overlaid with the saved exceptions (`getEventSessionExceptions`,
+    passed as `existingExceptions`) and the not-yet-saved `SessionAction[]` held in the form. Editing
+    a session only mutates that local array (rows show a **"Sin guardar"** badge; the button shows a
+    count). **Nothing persists — and no email is sent — until the event is saved.** So date-range
+    edits reflect in the list instantly, without a save round-trip. Actions are keyed by
+    **weekday + nominal occurrence date** (not reservation id) so they survive recipe edits.
+- On save the form sends `sessionActions` with the `PUT`; `updateEvent` (`opts.sessionActions`)
+  resolves each to a reservation by weekday **after** the recurrence diff, writes/clears the
+  exception (one per date), rebuilds the ledger, and **collects notifications sent only after the
+  transaction commits** (never on a rolled-back edit). `revert` emails a **"restored"** notice.
+- **Editing preserves exceptions:** `updateEvent` diffs weekdays and updates reservations in place
+  (no delete+recreate). It throws `EventEditDropWarning` (→ **409** with the dropped sessions) only
+  when an edit would **drop** a saved exception (removed weekday / out-of-range date / resource
+  change); the event form confirms, then resends `force: true`.
+- **Notifications** (`src/lib/email/event-occurrence-update.ts`, kinds cancelled/rescheduled/restored)
+  email all non-cancelled participants. **⚠️ Sent synchronously in the request** — fine at current
+  scale, but for ~100+ participants move to a background job/queue (Vercel has little background
+  capacity). See the `TODO(scale)` at `notifyEventParticipants`.
+
 ### Event lifecycle status
 
 `Event.status` is an `EventStatus` enum — **DRAFT / PUBLISHED / PAUSED** (migration
@@ -345,6 +376,21 @@ toggle); PAUSED takes a published event down without deleting it. Admin Events +
 are paginated (`listEvents`/`listFormTemplatesPage`, newest first) via the `Pagination` molecule
 
 - `?page=`; the form picker still loads all templates via `listFormTemplates`.
+
+**Soft delete:** `Event.deletedAt` (migration `20260630000000`). `deleteEvent` is a soft delete —
+it sets `deletedAt`, frees the reservations (resource no longer blocked), and keeps the event +
+form + participant history. Cancelled events show as **CANCELLED** (derived, highest precedence
+in `eventDisplayStatus`) and are excluded from every public surface; editing + saving revives
+one (clears `deletedAt`). Delete is triggered from the event edit page (`DeleteEventButton`).
+
+**Admin events list:** filterable by status / resource type / date-range overlap
+(`listEvents(filters)` → `buildEventListWhere`; derived ENDED/CANCELLED map to date/`deletedAt`
+conditions) via the `EventFilters` bar (wrapped in `Suspense` for `useSearchParams`); pagination
+preserves filters. Cards show the event date + time + weekdays and a de-emphasized registration
+window ("Inscripción: …"). The shared `DateRangePicker` molecule (shadcn Popover + Calendar
+range mode) drives both the event form's date range and the filter bar. Landing cards show the
+registration phase (`getUpcomingPublicEvents` returns `registration` + window): open →
+"Inscribirme" + closes-on date; upcoming → disabled "Disponible el …"; closed → quiet note.
 
 An event's description is **markdown**, required (min 100 chars), authored with `MarkdownEditor`
 (toolbar: heading/bold/italic/quote/code/link + ordered/bullet list, write/preview tabs, and a
