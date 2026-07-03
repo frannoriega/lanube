@@ -239,7 +239,7 @@ export class EventEditDropWarning extends Error {
 }
 
 /** Maps a Prisma event reservation (+ exceptions) to the pure `RawReservation` shape. */
-function toRawReservation(r: {
+export function toRawReservation(r: {
   id: string;
   startTime: bigint;
   endTime: bigint;
@@ -877,8 +877,8 @@ export interface UpcomingEventCard {
   description: string | null;
   imageUrl: string | null;
   eventType: EventType;
-  startTime: number;
-  recurrenceEnd: number | null;
+  startMs: number;
+  recurrenceEndMs: number | null;
   resourceName: string;
   weekdays: number[];
   /** Public form slug, if the event has one bound. */
@@ -888,6 +888,7 @@ export interface UpcomingEventCard {
   /** Registration window (UNIX ms); null when the event has no form. */
   formOpensAt: number | null;
   formClosesAt: number | null;
+  hasExceptions: boolean;
 }
 
 /**
@@ -950,14 +951,209 @@ export async function getUpcomingPublicEvents(
       description: e.description,
       imageUrl: e.imageUrl,
       eventType: e.eventType,
-      startTime: Number(e.startTime),
-      recurrenceEnd: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
+      startMs: Number(e.startTime),
+      recurrenceEndMs: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
       resourceName: e.resource.name,
       weekdays: weekdaysFromRrule(e.rrule),
       formSlug: e.form?.slug ?? null,
       registration,
       formOpensAt: opensAt,
       formClosesAt: closesAt,
+      hasExceptions: false,
     };
   });
+}
+
+/**
+ * Paginated version of `getUpcomingPublicEvents`. Returns the same cards plus a total
+ * count and `hasExceptions` flag per event (true if any ReservationException exists on
+ * the event's reservations — any status, any date).
+ */
+export async function getUpcomingPublicEventsPage(
+  page: number,
+  pageSize: number,
+): Promise<{
+  events: UpcomingEventCard[];
+  total: number;
+  page: number;
+  pageSize: number;
+}> {
+  const nowNum = nowMs();
+  const now = BigInt(nowNum);
+  const where = {
+    status: "PUBLISHED" as const,
+    deletedAt: null,
+    OR: [
+      { recurrenceEnd: { gte: now } },
+      { recurrenceEnd: null, endTime: { gte: now } },
+    ],
+  };
+
+  const [rawEvents, total] = await prisma.$transaction([
+    prisma.event.findMany({
+      where,
+      orderBy: { startTime: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        resource: {
+          select: {
+            name: true,
+            fungibleResource: { select: { capacity: true } },
+          },
+        },
+        form: {
+          select: {
+            slug: true,
+            isPublished: true,
+            opensAt: true,
+            closesAt: true,
+          },
+        },
+        _count: { select: { participants: { where: { cancelled: false } } } },
+      },
+    }),
+    prisma.event.count({ where }),
+  ]);
+
+  // Determine which events have at least one ReservationException (any date/status).
+  const eventIds = rawEvents.map((e) => e.id);
+  const reservationsWithExceptions = await prisma.reservation.findMany({
+    where: {
+      reservableType: "EVENT",
+      reservableId: { in: eventIds },
+      exceptions: { some: {} },
+    },
+    select: { reservableId: true },
+  });
+  const withExceptions = new Set(
+    reservationsWithExceptions.map((r) => r.reservableId),
+  );
+
+  const events: UpcomingEventCard[] = rawEvents.map((e) => {
+    const cap = e.capacity ?? e.resource.fungibleResource?.capacity ?? null;
+    const isFull = cap !== null && e._count.participants >= cap;
+    const opensAt = e.form ? Number(e.form.opensAt) : null;
+    const closesAt = e.form ? Number(e.form.closesAt) : null;
+
+    let registration: RegistrationPhase;
+    if (!e.form || opensAt === null || closesAt === null) registration = "none";
+    else if (opensAt > nowNum) registration = "upcoming";
+    else if (nowNum <= closesAt && !isFull) registration = "open";
+    else registration = "closed";
+
+    return {
+      id: e.id,
+      name: e.name,
+      description: e.description,
+      imageUrl: e.imageUrl,
+      eventType: e.eventType,
+      startMs: Number(e.startTime),
+      recurrenceEndMs: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
+      resourceName: e.resource.name,
+      weekdays: weekdaysFromRrule(e.rrule),
+      formSlug: e.form?.slug ?? null,
+      registration,
+      formOpensAt: opensAt,
+      formClosesAt: closesAt,
+      hasExceptions: withExceptions.has(e.id),
+    };
+  });
+
+  return { events, total, page, pageSize };
+}
+
+export interface PublicEventDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  eventType: EventType;
+  startTime: number;
+  endTime: number;
+  recurrenceEnd: number | null;
+  weekdays: number[];
+  resourceName: string;
+  registration: RegistrationPhase;
+  formSlug: string | null;
+  formOpensAt: number | null;
+  formClosesAt: number | null;
+  reservations: RawReservation[];
+}
+
+/**
+ * Public event detail for the /events/[id] page. Returns null for non-existent,
+ * non-PUBLISHED, or soft-deleted events. Includes all reservations with their
+ * exceptions so the caller can expand the full agenda.
+ */
+export async function getPublicEventDetail(
+  id: string,
+): Promise<PublicEventDetail | null> {
+  const nowNum = nowMs();
+
+  const event = await prisma.event.findUnique({
+    where: { id },
+    include: {
+      resource: {
+        select: {
+          name: true,
+          fungibleResource: { select: { capacity: true } },
+        },
+      },
+      form: {
+        select: {
+          slug: true,
+          isPublished: true,
+          opensAt: true,
+          closesAt: true,
+        },
+      },
+      _count: { select: { participants: { where: { cancelled: false } } } },
+    },
+  });
+
+  if (!event || event.status !== "PUBLISHED" || event.deletedAt !== null) {
+    return null;
+  }
+
+  const rawReservations = await prisma.reservation.findMany({
+    where: { reservableType: "EVENT", reservableId: id },
+    include: { exceptions: true },
+  });
+
+  const cap =
+    event.capacity ?? event.resource.fungibleResource?.capacity ?? null;
+  const isFull = cap !== null && event._count.participants >= cap;
+  const opensAt = event.form ? Number(event.form.opensAt) : null;
+  const closesAt = event.form ? Number(event.form.closesAt) : null;
+
+  const lastOccurrenceMs = event.recurrenceEnd
+    ? Number(event.recurrenceEnd)
+    : Number(event.endTime);
+
+  let registration: RegistrationPhase;
+  if (!event.form || opensAt === null || closesAt === null)
+    registration = "none";
+  else if (lastOccurrenceMs < nowNum) registration = "closed";
+  else if (opensAt > nowNum) registration = "upcoming";
+  else if (nowNum <= closesAt && !isFull) registration = "open";
+  else registration = "closed";
+
+  return {
+    id: event.id,
+    name: event.name,
+    description: event.description,
+    imageUrl: event.imageUrl,
+    eventType: event.eventType,
+    startTime: Number(event.startTime),
+    endTime: Number(event.endTime),
+    recurrenceEnd: event.recurrenceEnd ? Number(event.recurrenceEnd) : null,
+    weekdays: weekdaysFromRrule(event.rrule),
+    resourceName: event.resource.name,
+    registration,
+    formSlug: event.form?.slug ?? null,
+    formOpensAt: opensAt,
+    formClosesAt: closesAt,
+    reservations: rawReservations.map(toRawReservation),
+  };
 }

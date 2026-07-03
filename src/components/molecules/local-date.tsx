@@ -42,7 +42,7 @@ export function LocalDate({
       className={className}
       suppressHydrationWarning
     >
-      {text || " "}
+      {text || " "}
     </time>
   );
 }
@@ -74,7 +74,49 @@ export function LocalDateRange({
   }, [startMs, endMs, fmt]);
   return (
     <span className={className} suppressHydrationWarning>
-      {text || " "}
+      {text || " "}
     </span>
+  );
+}
+
+/**
+ * Renders an occurrence's start date + time range (e.g. "jue. 2 jul. 2026, 10:00 – 13:00")
+ * in the viewer's timezone + locale. Hydration-safe: empty on first paint, filled on client.
+ */
+export function LocalDateTime({
+  startMs,
+  endMs,
+  className,
+}: {
+  startMs: number;
+  endMs: number;
+  className?: string;
+}) {
+  const [text, setText] = useState("");
+  useEffect(() => {
+    const opts: Intl.DateTimeFormatOptions = {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+    const startStr = new Date(startMs).toLocaleString(undefined, opts);
+    const endOpts: Intl.DateTimeFormatOptions = {
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+    const endStr = new Date(endMs).toLocaleTimeString(undefined, endOpts);
+    setText(`${startStr} – ${endStr}`);
+  }, [startMs, endMs]);
+  return (
+    <time
+      dateTime={new Date(startMs).toISOString()}
+      className={className}
+      suppressHydrationWarning
+    >
+      {text || " "}
+    </time>
   );
 }
