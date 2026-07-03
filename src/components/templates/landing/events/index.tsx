@@ -1,12 +1,14 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
-import { EventsGrid } from "@/components/templates/landing/events/events-grid";
+import { EventCard } from "@/components/templates/landing/events/event-card";
 import { getUpcomingPublicEventsPage } from "@/lib/db/events";
 
 export default async function EventsSection() {
-  const { events, total } = await getUpcomingPublicEventsPage(1, 6);
+  const { events, total } = await getUpcomingPublicEventsPage(1, 8);
 
   if (total === 0) return null;
+
+  const hasAsterisk = events.some((e) => e.hasExceptions);
 
   return (
     <Breakout className="bg-gradient-to-b from-la-nube-accent/40 to-transparent dark:from-la-nube-selected/15">
@@ -29,7 +31,17 @@ export default async function EventsSection() {
             </p>
           </div>
 
-          <EventsGrid initialEvents={events} initialTotal={total} />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+
+          {hasAsterisk && (
+            <p className="text-xs text-muted-foreground">
+              * Este evento tiene sesiones reprogramadas o canceladas.
+            </p>
+          )}
         </Container>
       </section>
     </Breakout>
