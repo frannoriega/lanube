@@ -10,14 +10,26 @@ export function Pagination({
   page,
   totalPages,
   basePath,
+  query,
 }: {
   page: number;
   totalPages: number;
   basePath: string;
+  /** Extra query params to preserve across pages (e.g. active filters). */
+  query?: Record<string, string | undefined>;
 }) {
   if (totalPages <= 1) return null;
   const atStart = page <= 1;
   const atEnd = page >= totalPages;
+
+  const href = (p: number) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query ?? {})) {
+      if (v) params.set(k, v);
+    }
+    params.set("page", String(p));
+    return `${basePath}?${params.toString()}`;
+  };
 
   return (
     <nav
@@ -31,7 +43,7 @@ export function Pagination({
         </Button>
       ) : (
         <Button asChild variant="outline" size="sm">
-          <Link href={`${basePath}?page=${page - 1}`}>
+          <Link href={href(page - 1)}>
             <ChevronLeft className="h-4 w-4" />
             Anterior
           </Link>
@@ -49,7 +61,7 @@ export function Pagination({
         </Button>
       ) : (
         <Button asChild variant="outline" size="sm">
-          <Link href={`${basePath}?page=${page + 1}`}>
+          <Link href={href(page + 1)}>
             Siguiente
             <ChevronRight className="h-4 w-4" />
           </Link>

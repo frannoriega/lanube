@@ -67,6 +67,7 @@ export async function getPublicForm(
           imageUrl: true,
           capacity: true,
           status: true,
+          deletedAt: true,
           endTime: true,
           recurrenceEnd: true,
           resource: {
@@ -88,7 +89,11 @@ export async function getPublicForm(
     eventForm.event.recurrenceEnd ?? eventForm.event.endTime,
   );
   let status: FormStatus;
-  if (eventForm.event.status !== "PUBLISHED") status = "unpublished";
+  if (
+    eventForm.event.deletedAt != null ||
+    eventForm.event.status !== "PUBLISHED"
+  )
+    status = "unpublished";
   else if (lastOccurrence < now) status = "closed";
   else if (Number(eventForm.opensAt) > now || now > Number(eventForm.closesAt))
     status = "closed";
@@ -134,6 +139,7 @@ export async function submitForm(
             name: true,
             capacity: true,
             status: true,
+            deletedAt: true,
             endTime: true,
             recurrenceEnd: true,
             resource: {
@@ -152,7 +158,10 @@ export async function submitForm(
     const lastOccurrence = Number(
       eventForm.event.recurrenceEnd ?? eventForm.event.endTime,
     );
-    if (eventForm.event.status !== "PUBLISHED")
+    if (
+      eventForm.event.deletedAt != null ||
+      eventForm.event.status !== "PUBLISHED"
+    )
       return { ok: false, status: "unpublished" };
     if (lastOccurrence < now) return { ok: false, status: "closed" };
     if (Number(eventForm.opensAt) > now || now > Number(eventForm.closesAt))
