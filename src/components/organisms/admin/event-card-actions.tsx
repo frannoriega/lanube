@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Check, Link2, Pencil, Users } from "lucide-react";
+import { CalendarCog, Check, Link2, Pencil, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -85,6 +85,20 @@ export function EventCardActions({
             ? "Copiar link de inscripción"
             : "El formulario no está publicado"}
         </TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+            <Link
+              href={`/admin/events/${eventId}?sessions=1`}
+              aria-label="Gestionar sesiones"
+            >
+              <CalendarCog className="h-4 w-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Gestionar sesiones</TooltipContent>
       </Tooltip>
 
       <Tooltip>
