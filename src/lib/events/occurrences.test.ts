@@ -3,6 +3,7 @@ import {
   ExistingException,
   detectDroppedExceptions,
   effectiveExceptions,
+  expandAllEventOccurrences,
   expandEventOccurrences,
   weekdayOfRrule,
   type RawReservation,
@@ -267,6 +268,35 @@ describe("detectDroppedExceptions", () => {
       "2026-07-15",
     );
     expect(droppedIds).toEqual(["outOfRange"]);
+  });
+});
+
+describe("expandAllEventOccurrences", () => {
+  it("includes past occurrences that expandEventOccurrences would drop", () => {
+    // now = well after all 4 occurrences ended
+    const farFuture = START + 10 * WEEK;
+    // expandEventOccurrences with farFuture as now → drops everything
+    expect(expandEventOccurrences([makeRes()], farFuture)).toHaveLength(0);
+    // expandAllEventOccurrences → returns all 4
+    const all = expandAllEventOccurrences([makeRes()]);
+    expect(all).toHaveLength(4);
+    expect(all[0].startMs).toBe(START);
+  });
+
+  it("still overlays exceptions on past occurrences", () => {
+    const cancelled: RawReservation["exceptions"][number] = {
+      id: "ex1",
+      exceptionDateMs: START,
+      isCancelled: true,
+      newStartMs: null,
+      newEndMs: null,
+      reason: "sala ocupada",
+      createdAtMs: START - 1,
+    };
+    const all = expandAllEventOccurrences([makeRes([cancelled])]);
+    expect(all).toHaveLength(4);
+    expect(all[0].status).toBe("cancelled");
+    expect(all[0].reason).toBe("sala ocupada");
   });
 });
 

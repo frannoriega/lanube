@@ -112,6 +112,18 @@ export function expandEventOccurrences(
 }
 
 /**
+ * Like `expandEventOccurrences` but includes past occurrences too — every
+ * week from startMs through recurrenceEndMs. Used on the public event detail
+ * page to show the full agenda (past sessions grayed out).
+ */
+export function expandAllEventOccurrences(
+  reservations: RawReservation[],
+): EventOccurrence[] {
+  // Pass 0 as nowMs so `filterEnd <= 0` is never true for real events.
+  return expandEventOccurrences(reservations, 0);
+}
+
+/**
  * A saved exception, tagged with the weekday of its reservation so the client can overlay it
  * on the per-weekday preview without needing reservation ids.
  */
