@@ -1,4 +1,5 @@
 import { EventCardActions } from "@/components/organisms/admin/event-card-actions";
+import { EventFilters } from "@/components/organisms/admin/event-filters";
 import { EventCover } from "@/components/molecules/event-cover";
 import { LocalDateRange } from "@/components/molecules/local-date";
 import { Pagination } from "@/components/molecules/pagination";
@@ -21,19 +22,42 @@ import {
   WEEKDAY_SHORT_LABELS,
 } from "@/lib/constants/events";
 import { listEvents, weekdaysFromRrule } from "@/lib/db/events";
-import { CalendarDays, Clock, Users } from "lucide-react";
+import { CalendarDays, Clock, Ticket, Users } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+
+interface EventsSearchParams {
+  page?: string;
+  status?: string;
+  resource?: string;
+  from?: string;
+  to?: string;
+}
 
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<EventsSearchParams>;
 }) {
-  const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
-  const { events, total, pageSize } = await listEvents({ page });
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
+  const { events, total, pageSize } = await listEvents({
+    page,
+    status: sp.status,
+    resourceType: sp.resource,
+    from: sp.from,
+    to: sp.to,
+  });
   const totalPages = Math.ceil(total / pageSize);
   const now = nowMs();
+  const hasFilters = Boolean(sp.status || sp.resource || sp.from || sp.to);
+  // Preserve active filters across pagination.
+  const filterQuery = {
+    status: sp.status,
+    resource: sp.resource,
+    from: sp.from,
+    to: sp.to,
+  };
 
   return (
     <div className="space-y-6">
@@ -44,18 +68,40 @@ export default async function EventsPage({
         </Button>
       </div>
 
+      <Suspense>
+        <EventFilters
+          status={sp.status}
+          resourceType={sp.resource}
+          from={sp.from}
+          to={sp.to}
+        />
+      </Suspense>
+
       {total === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <CalendarDays className="h-6 w-6" />
           </span>
-          <p className="text-muted-foreground">
-            Todavía no hay eventos. Creá el primero para empezar a recibir
-            inscripciones.
-          </p>
-          <Button asChild>
-            <Link href="/admin/events/new">Nuevo evento</Link>
-          </Button>
+          {hasFilters ? (
+            <>
+              <p className="text-muted-foreground">
+                Ningún evento coincide con los filtros.
+              </p>
+              <Button asChild variant="outline">
+                <Link href="/admin/events">Limpiar filtros</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground">
+                Todavía no hay eventos. Creá el primero para empezar a recibir
+                inscripciones.
+              </p>
+              <Button asChild>
+                <Link href="/admin/events/new">Nuevo evento</Link>
+              </Button>
+            </>
+          )}
         </div>
       ) : (
         <>
@@ -65,12 +111,14 @@ export default async function EventsPage({
                 event.status,
                 Number(event.recurrenceEnd ?? event.endTime),
                 now,
+                event.deletedAt ? Number(event.deletedAt) : null,
               );
               const weekdays = weekdaysFromRrule(event.rrule);
+              const cancelled = status === "CANCELLED";
               return (
                 <Card
                   key={event.id}
-                  className="flex h-full flex-col overflow-hidden transition-colors pb-0"
+                  className={`flex h-full flex-col overflow-hidden pb-0 transition-colors ${cancelled ? "opacity-70" : ""}`}
                 >
                   <EventCover
                     imageUrl={event.imageUrl}
@@ -124,6 +172,18 @@ export default async function EventsPage({
                         Number(event.endTime),
                       )}
                     </span>
+                    {event.form && (
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                        <Ticket className="h-3.5 w-3.5 shrink-0" />
+                        <span>
+                          Inscripción:{" "}
+                          <LocalDateRange
+                            startMs={Number(event.form.opensAt)}
+                            endMs={Number(event.form.closesAt)}
+                          />
+                        </span>
+                      </span>
+                    )}
                     <span className="flex items-center gap-1.5">
                       <Users className="h-4 w-4 shrink-0" />
                       {event._count.participants} inscripto
@@ -144,6 +204,7 @@ export default async function EventsPage({
             page={page}
             totalPages={totalPages}
             basePath="/admin/events"
+            query={filterQuery}
           />
         </>
       )}
@@ -158,10 +219,12 @@ const STATUS_BADGE_CLASS: Record<EventDisplayStatus, string> = {
   PAUSED:
     "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400",
   ENDED: "",
+  CANCELLED: "border-transparent bg-destructive/10 text-destructive",
 };
 
 function StatusBadge({ status }: { status: EventDisplayStatus }) {
-  const tinted = status === "PUBLISHED" || status === "PAUSED";
+  const tinted =
+    status === "PUBLISHED" || status === "PAUSED" || status === "CANCELLED";
   return (
     <Badge
       variant={tinted ? "default" : "outline"}

@@ -1,8 +1,9 @@
 import { EventCover } from "@/components/molecules/event-cover";
-import { LocalDateRange } from "@/components/molecules/local-date";
+import { LocalDate, LocalDateRange } from "@/components/molecules/local-date";
 import { Button } from "@/components/ui/button";
 import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
-import { ArrowUpRight, MapPin } from "lucide-react";
+import type { RegistrationPhase } from "@/lib/db/events";
+import { ArrowUpRight, CalendarClock, MapPin } from "lucide-react";
 import Link from "next/link";
 
 export interface UpcomingEventCardData {
@@ -17,7 +18,9 @@ export interface UpcomingEventCardData {
   resourceName: string;
   weekdays: number[];
   formSlug: string | null;
-  formOpen: boolean;
+  registration: RegistrationPhase;
+  formOpensAt: number | null;
+  formClosesAt: number | null;
 }
 
 /**
@@ -79,20 +82,51 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
             <span className="truncate">{event.resourceName}</span>
           </span>
 
-          {event.formOpen && event.formSlug ? (
-            <Button asChild size="sm" className="w-full">
-              <Link href={`/forms/${event.formSlug}`}>
-                Inscribirme
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          ) : (
-            <span className="rounded-md border border-dashed border-border py-1.5 text-center text-xs text-muted-foreground">
-              {event.formSlug ? "Inscripción cerrada" : "Próximamente"}
-            </span>
-          )}
+          <RegistrationCta event={event} />
         </div>
       </div>
     </article>
+  );
+}
+
+/**
+ * Registration CTA, by phase:
+ *  - open: "Inscribirme" link + the closing date underneath.
+ *  - upcoming: disabled, showing when registration opens.
+ *  - closed / none: a quiet, non-actionable note.
+ */
+function RegistrationCta({ event }: { event: UpcomingEventCardData }) {
+  if (event.registration === "open" && event.formSlug) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Button asChild size="sm" className="w-full">
+          <Link href={`/forms/${event.formSlug}`}>
+            Inscribirme
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </Button>
+        {event.formClosesAt !== null && (
+          <span className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <CalendarClock className="h-3 w-3 shrink-0" />
+            Cierra el <LocalDate ms={event.formClosesAt} />
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (event.registration === "upcoming" && event.formOpensAt !== null) {
+    return (
+      <Button size="sm" className="w-full" disabled aria-disabled="true">
+        <CalendarClock className="h-4 w-4" />
+        Disponible el <LocalDate ms={event.formOpensAt} />
+      </Button>
+    );
+  }
+
+  return (
+    <span className="rounded-md border border-dashed border-border py-1.5 text-center text-xs text-muted-foreground">
+      {event.registration === "closed" ? "Inscripción cerrada" : "Próximamente"}
+    </span>
   );
 }

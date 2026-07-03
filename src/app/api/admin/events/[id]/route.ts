@@ -1,8 +1,18 @@
 import { auth } from "@/lib/auth";
 import { isAdminUser } from "@/lib/db/adminReservations";
-import { deleteEvent, getEvent, updateEvent } from "@/lib/db/events";
-import { eventInputSchema } from "@/lib/schemas/events";
+import {
+  deleteEvent,
+  EventEditDropWarning,
+  getEvent,
+  updateEvent,
+} from "@/lib/db/events";
+import {
+  eventInputSchema,
+  sessionActionSchema,
+  sessionActionsNeedReason,
+} from "@/lib/schemas/events";
 import { serializeJson } from "@/lib/json-bigint";
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 async function requireAdmin() {
@@ -55,10 +65,45 @@ export async function PUT(
     );
   }
 
+  const force = body?.force === true;
+  const sessionsParsed = z
+    .array(sessionActionSchema)
+    .safeParse(body?.sessionActions ?? []);
+  if (!sessionsParsed.success) {
+    return NextResponse.json(
+      {
+        message: "Cambios de sesión inválidos",
+        issues: sessionsParsed.error.issues,
+      },
+      { status: 400 },
+    );
+  }
+
+  // Single reason shared by every cancel/reschedule in this save (required when any exist).
+  const sessionReason =
+    typeof body?.sessionReason === "string" ? body.sessionReason.trim() : "";
+  if (sessionActionsNeedReason(sessionsParsed.data) && sessionReason === "") {
+    return NextResponse.json(
+      { message: "El motivo del cambio de sesiones es obligatorio" },
+      { status: 400 },
+    );
+  }
+
   try {
-    const event = await updateEvent(id, parsed.data);
+    const event = await updateEvent(id, parsed.data, {
+      force,
+      sessionActions: sessionsParsed.data,
+      sessionReason,
+    });
     return NextResponse.json(serializeJson(event));
   } catch (e) {
+    // Edit would drop per-session changes → ask the admin to confirm (frontend resends force).
+    if (e instanceof EventEditDropWarning) {
+      return NextResponse.json(
+        { message: e.message, dropped: e.dropped },
+        { status: 409 },
+      );
+    }
     const message =
       e instanceof Error ? e.message : "Error interno del servidor";
     const status = message.includes("no encontrado") ? 404 : 400;

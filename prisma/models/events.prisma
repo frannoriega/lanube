@@ -15,6 +15,9 @@ model Event {
   // Optional participant cap. NULL => fall back to the resource's capacity.
   capacity      Int?
   imageUrl      String?            @map("image_url")
+  // Soft delete: set when the event is cancelled. Non-null => excluded from public surfaces
+  // and shown as "Cancelado" in admin.
+  deletedAt     BigInt?            @map("deleted_at")
   createdAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   resource      Resource           @relation(fields: [resourceId], references: [id], onDelete: Cascade)
