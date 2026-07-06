@@ -1,12 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+import { useUserProfile } from "@/hooks/api";
+import { apiErrorMessage } from "@/lib/api/client";
+import { updateUserProfile } from "@/lib/api/mutations";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -49,22 +52,7 @@ const formSchema = z.object({
 type SettingsFormValues = z.infer<typeof formSchema>;
 
 export default function SettingsPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{
-    id: string;
-    name: string;
-    lastName: string;
-    email: string;
-    displayEmail: string | null;
-    dni: string;
-    institution: string | null;
-    reasonToJoin: string;
-    role: string;
-    createdAt: string;
-    updatedAt: string;
-  } | null>(null);
+  const { data: user, firstTime, refetch } = useUserProfile();
   const [saving, setSaving] = useState(false);
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(formSchema) as Resolver<SettingsFormValues>,
@@ -77,76 +65,47 @@ export default function SettingsPage() {
     },
   });
 
-  const fetchUserProfile = useCallback(async () => {
-    try {
-      const response = await fetch("/api/user/profile");
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        form.reset({
-          name: userData.name || "",
-          lastName: userData.lastName || "",
-          dni: userData.dni ? Number(userData.dni) : Number.NaN,
-          institution: userData.institution || "",
-          reasonToJoin: userData.reasonToJoin || "",
-        });
-      }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  }, [form]);
-
   useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/");
-      return;
-    }
-
-    fetchUserProfile();
-  }, [session, status, router, fetchUserProfile]);
+    if (!user) return;
+    form.reset({
+      name: user.name || "",
+      lastName: user.lastName || "",
+      dni: user.dni ? Number(user.dni) : Number.NaN,
+      institution: user.institution || "",
+      reasonToJoin: user.reasonToJoin || "",
+    });
+  }, [user, form]);
 
   const onSubmit = async (values: SettingsFormValues) => {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/user/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...values,
-          dni: values.dni.toString(),
-        }),
+      await updateUserProfile({
+        ...values,
+        dni: values.dni.toString(),
       });
-
-      if (response.ok) {
-        toast.success("Perfil actualizado exitosamente");
-        fetchUserProfile();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Error al actualizar el perfil");
-      }
-    } catch {
-      toast.error("Error al actualizar el perfil");
+      toast.success("Perfil actualizado exitosamente");
+      refetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al actualizar el perfil"));
     } finally {
       setSaving(false);
     }
   };
 
-  if (status === "loading" || loading) {
+  if (firstTime) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="mt-2 h-4 w-80" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-72 w-full" />
+        </div>
       </div>
     );
-  }
-
-  if (!session) {
-    return null;
   }
 
   return (
@@ -282,13 +241,7 @@ export default function SettingsPage() {
             <div>
               <Label>Email</Label>
               <Input
-                value={
-                  user?.displayEmail ??
-                  user?.email ??
-                  session.user?.displayEmail ??
-                  session.user?.email ??
-                  ""
-                }
+                value={user?.displayEmail ?? user?.email ?? ""}
                 disabled
                 className="bg-gray-50"
               />

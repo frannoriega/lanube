@@ -2,7 +2,7 @@
 
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import { cn } from "@/lib/utils";
-import { formatTime } from "@/lib/utils/date";
+import { formatTime, formatTimeShort } from "@/lib/utils/date";
 import {
   type LoadLevel,
   SLOT_WIDTH_PX,
@@ -17,7 +17,7 @@ import { useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 
 const LABEL_W = 132;
-const HEADER_H = 44;
+const HEADER_H = 28;
 const RESOURCE_HEADER_H = 40;
 
 /** Normalize API/status casing so styling branches stay correct. */
@@ -190,6 +190,17 @@ function timelineGridBackground(metaId: string, slotCount: number) {
   );
 }
 
+/**
+ * Sticky label column cell. Opaque (`bg-background`) so grid content sliding
+ * underneath while scrolling horizontally never shows through.
+ */
+function labelCellClass(extra?: string) {
+  return cn(
+    "sticky left-0 z-10 shrink-0 border-r border-neutral-300 bg-background dark:border-border",
+    extra,
+  );
+}
+
 export function AdminServiceDayTimeline({
   dateKey,
   reservationsForCapacity,
@@ -206,6 +217,7 @@ export function AdminServiceDayTimeline({
 }) {
   const slotCount = timelineSlotCount();
   const gridWidth = slotCount * SLOT_WIDTH_PX;
+  const hourCount = slotCount / 4;
 
   const resourcesMeta = useMemo(
     () => uniqueResources(reservationsForCapacity),
@@ -232,111 +244,77 @@ export function AdminServiceDayTimeline({
     resourcesMeta.length === 1 ? resourcesMeta[0]! : null;
 
   const t0 = adminDayTimelineStartMs(dateKey);
-  const t1End = t0 + slotCount * 15 * 60 * 1000;
-  const SLOT_MS = 15 * 60 * 1000;
-
-  if (
-    process.env.NODE_ENV === "development" &&
-    reservationsForCapacity.length > 0
-  ) {
-    const sample = reservationsForCapacity[0];
-    console.info(
-      "[AdminTimeline] dateKey=%s, timelineRange=[%s, %s], resources=%d, total=%d, sample: id=%s start=%d end=%d status=%s resource=%s",
-      dateKey,
-      new Date(t0).toISOString(),
-      new Date(t1End).toISOString(),
-      resourcesMeta.length,
-      reservationsForCapacity.length,
-      sample.id,
-      sample.startTime,
-      sample.endTime,
-      sample.status,
-      sample.resource.id,
-    );
-    const clipped = clipToTimeline(sample, dateKey);
-    console.info(
-      "[AdminTimeline] sample clipToTimeline => %o  (null = outside 8:00–20:00 window)",
-      clipped,
-    );
-  }
+  const HOUR_MS = 60 * 60 * 1000;
 
   return (
-    <div className="w-full min-w-0 rounded-md border border-neutral-300 overflow-hidden bg-background dark:border-border">
-      <div className="flex flex-col">
-        <div className="flex min-h-0 border-b border-neutral-300 dark:border-border">
+    <div className="w-full min-w-0 overflow-x-auto rounded-md border border-neutral-300 bg-background dark:border-border">
+      <div className="flex w-max min-w-full flex-col">
+        {/* Time header: one label per hour, no slot divisions */}
+        <div className="flex border-b border-neutral-300 dark:border-border">
           <div
-            className="shrink-0 border-r border-neutral-300 bg-muted/30 px-1.5 py-0.5 dark:border-border flex flex-col justify-center gap-0.5"
+            className={labelCellClass()}
             style={{ width: LABEL_W, minHeight: HEADER_H }}
           >
-            {singleHeaderMeta ? (
-              <>
-                <p className="text-[11px] font-semibold leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
-                  {singleHeaderMeta.name}
-                </p>
-                {showResourceTypeLabels ? (
-                  <p className="text-[9px] text-neutral-700 uppercase tracking-wide leading-tight dark:text-muted-foreground">
-                    {singleHeaderMeta.spaceName}
+            <div className="flex h-full w-full flex-col justify-center gap-0.5 bg-muted/30 px-1.5 py-0.5">
+              {singleHeaderMeta ? (
+                <>
+                  <p className="text-[11px] font-semibold leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
+                    {singleHeaderMeta.name}
                   </p>
-                ) : null}
-                <p className="text-[10px] text-neutral-800 tabular-nums leading-tight dark:text-muted-foreground">
-                  Cap: {singleHeaderMeta.capacity}
-                </p>
-              </>
-            ) : null}
-          </div>
-          <div className="min-w-0 flex-1 overflow-x-auto">
-            <div
-              className="relative flex border-b border-neutral-300 dark:border-border"
-              style={{ width: gridWidth, minHeight: HEADER_H }}
-            >
-              {Array.from({ length: slotCount }, (_, i) => {
-                const slot = new Date(t0 + i * SLOT_MS);
-                return (
-                  <div
-                    key={`h-${i}`}
-                    className={cn(
-                      "flex flex-col justify-start border-r border-neutral-300 text-[11px] text-neutral-800 dark:border-border/60 dark:text-muted-foreground",
-                      i % 4 === 0 &&
-                        "border-l border-l-neutral-400 dark:border-l-border",
-                    )}
-                    style={{
-                      width: SLOT_WIDTH_PX,
-                      minWidth: SLOT_WIDTH_PX,
-                      height: HEADER_H,
-                    }}
-                  >
-                    <div className="px-0.5 pt-1">
-                      {i % 4 === 0 ? formatTime(slot) : null}
-                    </div>
-                  </div>
-                );
-              })}
+                  {showResourceTypeLabels ? (
+                    <p className="text-[9px] text-neutral-700 uppercase tracking-wide leading-tight dark:text-muted-foreground">
+                      {singleHeaderMeta.spaceName}
+                    </p>
+                  ) : null}
+                  <p className="text-[10px] text-neutral-800 tabular-nums leading-tight dark:text-muted-foreground">
+                    Cap: {singleHeaderMeta.capacity}
+                  </p>
+                </>
+              ) : null}
             </div>
+          </div>
+          <div
+            className="flex shrink-0"
+            style={{ width: gridWidth, height: HEADER_H }}
+          >
+            {Array.from({ length: hourCount }, (_, h) => (
+              <div
+                key={`h-${h}`}
+                className="flex items-center whitespace-nowrap px-1 text-[11px] tabular-nums text-neutral-800 dark:text-muted-foreground"
+                style={{
+                  width: SLOT_WIDTH_PX * 4,
+                  minWidth: SLOT_WIDTH_PX * 4,
+                }}
+              >
+                {formatTimeShort(new Date(t0 + h * HOUR_MS))}
+              </div>
+            ))}
           </div>
         </div>
 
+        {/* Occupancy heatmap */}
         <div className="flex border-b border-neutral-300 dark:border-border">
-          <div
-            className="flex shrink-0 items-center border-r border-neutral-300 bg-muted/20 px-2 text-[13px] font-medium text-neutral-900 dark:border-border dark:text-foreground"
-            style={{ width: LABEL_W }}
-          >
-            <span className="leading-tight">Ocupación</span>
-          </div>
-          <div className="min-w-0 flex-1 overflow-x-auto">
-            <div className="flex" style={{ width: gridWidth }}>
-              {heatLevels.map((L, i) => (
-                <div
-                  key={`hm-${i}`}
-                  className={cn(
-                    "border-r border-neutral-300 h-8 dark:border-border/40",
-                    i % 4 === 0 &&
-                      "border-l border-l-neutral-400 dark:border-l-border",
-                    heatmapCellClass(L),
-                  )}
-                  style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
-                />
-              ))}
+          <div className={labelCellClass()} style={{ width: LABEL_W }}>
+            <div className="flex h-full w-full items-center bg-muted/20 px-2 text-[13px] font-medium text-neutral-900 dark:text-foreground">
+              <span className="leading-tight">Ocupación</span>
             </div>
+          </div>
+          <div
+            className="flex shrink-0 items-stretch"
+            style={{ width: gridWidth }}
+          >
+            {heatLevels.map((L, i) => (
+              <div
+                key={`hm-${i}`}
+                className={cn(
+                  "min-h-8 border-r border-neutral-300 dark:border-border/40",
+                  i % 4 === 0 &&
+                    "border-l border-l-neutral-400 dark:border-l-border",
+                  heatmapCellClass(L),
+                )}
+                style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
+              />
+            ))}
           </div>
         </div>
 
@@ -355,33 +333,10 @@ export function AdminServiceDayTimeline({
             const clippedItems: ClippedItem[] = visible
               .map((r) => {
                 const c = clipToTimeline(r, dateKey);
-                if (!c && process.env.NODE_ENV === "development") {
-                  console.warn(
-                    "[AdminTimeline] clipToTimeline returned null for reservation id=%s start=%d (%s) end=%d (%s) — outside timeline [%s, %s]",
-                    r.id,
-                    r.startTime,
-                    new Date(r.startTime).toISOString(),
-                    r.endTime,
-                    new Date(r.endTime).toISOString(),
-                    new Date(t0).toISOString(),
-                    new Date(t1End).toISOString(),
-                  );
-                }
                 if (!c) return null;
                 return { id: r.id, res: r, start: c.start, end: c.end };
               })
               .filter((x): x is ClippedItem => x !== null);
-
-            if (process.env.NODE_ENV === "development") {
-              console.info(
-                "[AdminTimeline] resource=%s (%s) visible=%d clipped=%d pendingOnly=%s",
-                meta.id,
-                meta.name,
-                visible.length,
-                clippedItems.length,
-                pendingOnly,
-              );
-            }
 
             const byUser = new Map<string, ClippedItem[]>();
             for (const item of clippedItems) {
@@ -417,52 +372,47 @@ export function AdminServiceDayTimeline({
                 className="flex flex-col border-b border-neutral-300 last:border-b-0 dark:border-border"
               >
                 {showPerResourceStrip ? (
-                  <div className="flex min-h-0 border-b border-neutral-300 bg-muted/10 dark:border-border">
+                  <div className="flex border-b border-neutral-300 dark:border-border">
                     <div
-                      className="shrink-0 border-r border-neutral-300 py-1.5 pl-2 pr-1 dark:border-border"
+                      className={labelCellClass()}
                       style={{ width: LABEL_W, minHeight: RESOURCE_HEADER_H }}
                     >
-                      <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
-                        {meta.name}
-                      </p>
-                      {showResourceTypeLabels ? (
-                        <p className="text-[10px] text-neutral-700 uppercase tracking-wide mt-0.5 dark:text-muted-foreground">
-                          {meta.spaceName}
+                      <div className="h-full w-full bg-muted/10 py-1.5 pl-2 pr-1">
+                        <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
+                          {meta.name}
                         </p>
-                      ) : null}
-                      <p className="text-[11px] text-neutral-800 mt-0.5 dark:text-muted-foreground">
-                        Cap: {meta.capacity}
-                      </p>
+                        {showResourceTypeLabels ? (
+                          <p className="text-[10px] text-neutral-700 uppercase tracking-wide mt-0.5 dark:text-muted-foreground">
+                            {meta.spaceName}
+                          </p>
+                        ) : null}
+                        <p className="text-[11px] text-neutral-800 mt-0.5 dark:text-muted-foreground">
+                          Cap: {meta.capacity}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1 overflow-x-auto">
-                      <div
-                        style={{
-                          width: gridWidth,
-                          minHeight: RESOURCE_HEADER_H,
-                        }}
-                      />
-                    </div>
+                    <div
+                      className="shrink-0 bg-muted/10"
+                      style={{ width: gridWidth }}
+                    />
                   </div>
                 ) : null}
 
                 {userBuckets.length === 0 ? (
                   <div className="flex border-b border-neutral-300 last:border-b-0 dark:border-border">
                     <div
-                      className="shrink-0 border-r border-neutral-300 py-2 pl-2 pr-1 text-[11px] text-neutral-700 dark:border-border dark:text-muted-foreground"
+                      className={labelCellClass(
+                        "py-2 pl-2 pr-1 text-[11px] text-neutral-700 dark:text-muted-foreground",
+                      )}
                       style={{ width: LABEL_W }}
                     >
                       —
                     </div>
-                    <div className="min-w-0 flex-1 overflow-x-auto">
-                      <div
-                        className="relative"
-                        style={{
-                          width: gridWidth,
-                          minHeight: TRACK_H + 8,
-                        }}
-                      >
-                        {timelineGridBackground(meta.id, slotCount)}
-                      </div>
+                    <div
+                      className="relative shrink-0"
+                      style={{ width: gridWidth, minHeight: TRACK_H + 8 }}
+                    >
+                      {timelineGridBackground(meta.id, slotCount)}
                     </div>
                   </div>
                 ) : (
@@ -486,7 +436,7 @@ export function AdminServiceDayTimeline({
                         className="flex border-b border-neutral-300 last:border-b-0 dark:border-border"
                       >
                         <div
-                          className="shrink-0 border-r border-neutral-300 py-2 pl-2 pr-1 dark:border-border"
+                          className={labelCellClass("py-2 pl-2 pr-1")}
                           style={{ width: LABEL_W }}
                         >
                           <p className="text-[13px] font-medium leading-tight line-clamp-2 text-neutral-950 dark:text-foreground">
@@ -496,79 +446,74 @@ export function AdminServiceDayTimeline({
                             {bucket.actorLabel}
                           </p>
                         </div>
-                        <div className="min-w-0 flex-1 overflow-x-auto">
-                          <div
-                            className="relative"
-                            style={{
-                              width: gridWidth,
-                              minHeight: rowBodyH,
-                            }}
-                          >
-                            {timelineGridBackground(meta.id, slotCount)}
+                        {/* Stretches with the flex row, so the grid lines reach the row border */}
+                        <div
+                          className="relative shrink-0"
+                          style={{ width: gridWidth, minHeight: rowBodyH }}
+                        >
+                          {timelineGridBackground(meta.id, slotCount)}
 
-                            {bucket.items.map(({ res, start, end }) => {
-                              const { startBlock, spanBlocks } =
-                                blockGridPosition(start, end, dateKey);
-                              const leftPct = (startBlock / slotCount) * 100;
-                              const widthPct = (spanBlocks / slotCount) * 100;
-                              const track = tracks.get(res.id) ?? 0;
-                              const top = BLOCK_TOP + track * TRACK_H;
+                          {bucket.items.map(({ res, start, end }) => {
+                            const { startBlock, spanBlocks } =
+                              blockGridPosition(start, end, dateKey);
+                            const leftPct = (startBlock / slotCount) * 100;
+                            const widthPct = (spanBlocks / slotCount) * 100;
+                            const track = tracks.get(res.id) ?? 0;
+                            const top = BLOCK_TOP + track * TRACK_H;
 
-                              const pendingLoad =
-                                reservationStatusKey(res) === "PENDING"
-                                  ? worstLoadForPendingReservation(
-                                      res,
-                                      reservationsForCapacity,
-                                      dateKey,
-                                    )
-                                  : "safe";
+                            const pendingLoad =
+                              reservationStatusKey(res) === "PENDING"
+                                ? worstLoadForPendingReservation(
+                                    res,
+                                    reservationsForCapacity,
+                                    dateKey,
+                                  )
+                                : "safe";
 
-                              const st = reservationStatusKey(res);
-                              const statusEs =
-                                st === "PENDING"
-                                  ? "pendiente"
-                                  : st === "APPROVED"
-                                    ? "aprobada"
-                                    : st === "REJECTED"
-                                      ? "rechazada"
-                                      : st === "CANCELLED"
-                                        ? "cancelada"
-                                        : res.status;
-                              const aria = `${res.registeredUser.name} ${res.registeredUser.lastName}, ${formatTime(new Date(res.startTime))} a ${formatTime(new Date(res.endTime))}, ${res.actorSize} personas, ${statusEs}`;
-                              const titleShort = `${formatTime(new Date(res.startTime))} – ${formatTime(new Date(res.endTime))}`;
+                            const st = reservationStatusKey(res);
+                            const statusEs =
+                              st === "PENDING"
+                                ? "pendiente"
+                                : st === "APPROVED"
+                                  ? "aprobada"
+                                  : st === "REJECTED"
+                                    ? "rechazada"
+                                    : st === "CANCELLED"
+                                      ? "cancelada"
+                                      : res.status;
+                            const aria = `${res.registeredUser.name} ${res.registeredUser.lastName}, ${formatTime(new Date(res.startTime))} a ${formatTime(new Date(res.endTime))}, ${res.actorSize} personas, ${statusEs}`;
+                            const titleShort = `${formatTime(new Date(res.startTime))} – ${formatTime(new Date(res.endTime))}`;
 
-                              return (
-                                <button
-                                  key={res.id}
-                                  type="button"
-                                  className={cn(
-                                    "absolute z-[1] overflow-hidden rounded px-0 text-left",
-                                    blockVisualClass(
-                                      res,
-                                      pendingLoad,
-                                      !pendingOnly,
-                                    ),
-                                  )}
-                                  style={{
-                                    left: `${leftPct}%`,
-                                    width: `${widthPct}%`,
-                                    minWidth: widthPct < 8 ? 24 : undefined,
-                                    top,
-                                    height: BLOCK_H,
-                                    ...(st === "APPROVED" ||
-                                    ((st === "REJECTED" ||
-                                      st === "CANCELLED") &&
-                                      !pendingOnly)
-                                      ? { borderStyle: "solid" as const }
-                                      : {}),
-                                  }}
-                                  aria-label={aria}
-                                  title={titleShort}
-                                  onClick={() => onSelectReservation(res)}
-                                />
-                              );
-                            })}
-                          </div>
+                            return (
+                              <button
+                                key={res.id}
+                                type="button"
+                                className={cn(
+                                  "absolute z-[1] overflow-hidden rounded px-0 text-left",
+                                  blockVisualClass(
+                                    res,
+                                    pendingLoad,
+                                    !pendingOnly,
+                                  ),
+                                )}
+                                style={{
+                                  left: `${leftPct}%`,
+                                  width: `${widthPct}%`,
+                                  minWidth: widthPct < 8 ? 24 : undefined,
+                                  top,
+                                  height: BLOCK_H,
+                                  ...(st === "APPROVED" ||
+                                  ((st === "REJECTED" || st === "CANCELLED") &&
+                                    !pendingOnly)
+                                    ? { borderStyle: "solid" as const }
+                                    : {}),
+                                }}
+                                aria-label={aria}
+                                title={titleShort}
+                                onClick={() => onSelectReservation(res)}
+                              />
+                            );
+                          })}
                         </div>
                       </div>
                     );

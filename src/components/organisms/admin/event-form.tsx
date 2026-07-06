@@ -37,6 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useApi } from "@/hooks/use-api";
+import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
 import { EVENT_STATUS_LABELS, EVENT_TYPE_LABELS } from "@/lib/constants/events";
 import type {
   ExistingException,
@@ -63,7 +65,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarCog } from "lucide-react";
 import { createId } from "@paralleldrive/cuid2";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -140,8 +142,13 @@ export function EventForm({
 }: EventFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [resources, setResources] = useState<ResourceOption[]>([]);
-  const [templates, setTemplates] = useState<FormPickerTemplate[]>([]);
+  const { data: resourcesData } = useApi<ResourceOption[]>(
+    "/api/admin/resources",
+  );
+  const resources = useMemo(() => resourcesData ?? [], [resourcesData]);
+  const { data: templatesData } =
+    useApi<FormPickerTemplate[]>("/api/admin/forms");
+  const templates = templatesData ?? [];
   const [dropWarning, setDropWarning] = useState<{
     dropped: DroppedSession[];
     values: EventInput;
@@ -160,17 +167,6 @@ export function EventForm({
     defaultValues: (defaults as EventInput | undefined) ?? EMPTY_DEFAULTS,
   });
   const { control, handleSubmit, watch, getValues, setValue, formState } = form;
-
-  useEffect(() => {
-    fetch("/api/admin/resources")
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setResources)
-      .catch(() => setResources([]));
-    fetch("/api/admin/forms")
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setTemplates)
-      .catch(() => setTemplates([]));
-  }, []);
 
   // Picking a template opens the binding section with empty dates; null clears it. The slug
   // (public link key) is generated client-side so the URL is known before saving, and reused
@@ -211,32 +207,29 @@ export function EventForm({
       setSessionsOpen(true);
       return false;
     }
-    const res = await fetch(
-      mode === "create" ? "/api/admin/events" : `/api/admin/events/${eventId}`,
-      {
-        method: mode === "create" ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          mode === "create"
-            ? values
-            : {
-                ...values,
-                force,
-                sessionActions,
-                sessionReason: sessionReason.trim(),
-              },
-        ),
-      },
-    );
-    // The edit would drop per-session changes → confirm before forcing.
-    if (res.status === 409) {
-      const err = await res.json().catch(() => ({}));
-      setDropWarning({ dropped: err.dropped ?? [], values });
-      return false;
-    }
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      toast.error(err.message ?? "No se pudo guardar el evento");
+    try {
+      await apiSend(
+        mode === "create"
+          ? "/api/admin/events"
+          : `/api/admin/events/${eventId}`,
+        mode === "create" ? "POST" : "PUT",
+        mode === "create"
+          ? values
+          : {
+              ...values,
+              force,
+              sessionActions,
+              sessionReason: sessionReason.trim(),
+            },
+      );
+    } catch (err) {
+      // The edit would drop per-session changes → confirm before forcing.
+      if (err instanceof ApiError && err.status === 409) {
+        const body = err.body as { dropped?: DroppedSession[] } | null;
+        setDropWarning({ dropped: body?.dropped ?? [], values });
+        return false;
+      }
+      toast.error(apiErrorMessage(err, "No se pudo guardar el evento"));
       return false;
     }
     setDropWarning(null);

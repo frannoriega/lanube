@@ -11,7 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useSession } from "next-auth/react";
+import { apiErrorMessage } from "@/lib/api/client";
+import { reviewAdminReservation } from "@/lib/api/mutations";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,10 +22,8 @@ export function ReservationsPageContent({
 }: {
   spaceOptions: SpaceOption[];
 }) {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [confirmData, setConfirmData] = useState<{
     reservationId: string;
@@ -58,15 +57,6 @@ export function ReservationsPageContent({
     [router],
   );
 
-  useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
-      router.push("/");
-      return;
-    }
-    setLoading(false);
-  }, [session, status, router]);
-
   const handleReservationAction = async (
     reservationId: string,
     action: "APPROVED" | "REJECTED",
@@ -75,44 +65,24 @@ export function ReservationsPageContent({
     setProcessing(reservationId);
     try {
       if (action === "APPROVED") {
-        const previewRes = await fetch(
-          `/api/admin/reservations/${reservationId}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: action, preview: true }),
-          },
-        );
-        if (!previewRes.ok) {
-          const err = await previewRes.json().catch(() => ({}));
-          toast.error(err.message || "No se pudo previsualizar conflictos");
-          setProcessing(null);
-          return;
-        }
-        const previewData = await previewRes.json();
+        const preview = await reviewAdminReservation(reservationId, {
+          status: action,
+          preview: true,
+        });
         setConfirmData({
           reservationId,
-          conflicts: previewData.autoRejectedIds || [],
+          conflicts: preview.autoRejectedIds || [],
         });
       } else {
-        const response = await fetch(
-          `/api/admin/reservations/${reservationId}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: action, deniedReason }),
-          },
-        );
-        if (response.ok) {
-          toast.success("Reserva rechazada exitosamente");
-          triggerRefetch();
-        } else {
-          const error = await response.json();
-          toast.error(error.message || "Error al procesar la reserva");
-        }
+        await reviewAdminReservation(reservationId, {
+          status: action,
+          deniedReason,
+        });
+        toast.success("Reserva rechazada exitosamente");
+        triggerRefetch();
       }
-    } catch {
-      toast.error("Error al procesar la reserva");
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al procesar la reserva"));
     } finally {
       if (action !== "APPROVED") setProcessing(null);
     }
@@ -122,45 +92,22 @@ export function ReservationsPageContent({
     if (!confirmData) return;
     setConfirming(true);
     try {
-      const res = await fetch(
-        `/api/admin/reservations/${confirmData.reservationId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "APPROVED" }),
-        },
+      const data = await reviewAdminReservation(confirmData.reservationId, {
+        status: "APPROVED",
+      });
+      const count = (data.autoRejectedIds || []).length;
+      toast.success(
+        `Reserva aprobada. ${count > 0 ? `${count} reservas rechazadas automáticamente` : "Sin conflictos"}`,
       );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.message || "No se pudo aprobar la reserva");
-      } else {
-        const data = await res.json().catch(() => ({}));
-        const count = (data.autoRejectedIds || []).length;
-        toast.success(
-          `Reserva aprobada. ${count > 0 ? `${count} reservas rechazadas automáticamente` : "Sin conflictos"}`,
-        );
-        setConfirmData(null);
-        triggerRefetch();
-      }
-    } catch {
-      toast.error("Error al aprobar la reserva");
+      setConfirmData(null);
+      triggerRefetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al aprobar la reserva"));
     } finally {
       setConfirming(false);
       setProcessing(null);
     }
   };
-
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-la-nube-primary border-b-transparent" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
 
   const spaceName = spaceOptions.find((o) => o.id === service)?.name ?? "";
 

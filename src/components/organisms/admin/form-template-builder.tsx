@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useApi } from "@/hooks/use-api";
+import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import {
   FIELD_TYPE_LABELS,
   SELECT_FIELD_TYPES,
@@ -28,7 +30,7 @@ import { FormFieldType } from "@/types/prisma";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -87,7 +89,6 @@ export function FormTemplateBuilder({
   templateId,
 }: FormTemplateBuilderProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(mode === "edit");
 
   const form = useForm<BuilderValues>({
     resolver: zodResolver(builderSchema),
@@ -99,34 +100,33 @@ export function FormTemplateBuilder({
     name: "fields",
   });
 
+  const { data: template, firstTime } = useApi<{
+    name?: string;
+    description?: string | null;
+    fields?: {
+      type: FormFieldType;
+      label: string;
+      placeholder: string | null;
+      required: boolean;
+      options: string[] | null;
+    }[];
+  }>(mode === "edit" && templateId ? `/api/admin/forms/${templateId}` : null);
+  const loading = mode === "edit" && firstTime;
+
   useEffect(() => {
-    if (mode !== "edit" || !templateId) return;
-    fetch(`/api/admin/forms/${templateId}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((tpl) => {
-        if (!tpl) return;
-        reset({
-          name: tpl.name ?? "",
-          description: tpl.description ?? "",
-          fields: (tpl.fields ?? []).map(
-            (f: {
-              type: string;
-              label: string;
-              placeholder: string | null;
-              required: boolean;
-              options: string[] | null;
-            }) => ({
-              type: f.type,
-              label: f.label,
-              placeholder: f.placeholder ?? "",
-              required: f.required,
-              optionsText: Array.isArray(f.options) ? f.options.join("\n") : "",
-            }),
-          ),
-        });
-      })
-      .finally(() => setLoading(false));
-  }, [mode, templateId, reset]);
+    if (!template) return;
+    reset({
+      name: template.name ?? "",
+      description: template.description ?? "",
+      fields: (template.fields ?? []).map((f) => ({
+        type: f.type,
+        label: f.label,
+        placeholder: f.placeholder ?? "",
+        required: f.required,
+        optionsText: Array.isArray(f.options) ? f.options.join("\n") : "",
+      })),
+    });
+  }, [template, reset]);
 
   const onSubmit = async (values: BuilderValues) => {
     const payload = {
@@ -146,17 +146,16 @@ export function FormTemplateBuilder({
       })),
     };
 
-    const res = await fetch(
-      mode === "create" ? "/api/admin/forms" : `/api/admin/forms/${templateId}`,
-      {
-        method: mode === "create" ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      toast.error(err.message ?? "No se pudo guardar el formulario");
+    try {
+      await apiSend(
+        mode === "create"
+          ? "/api/admin/forms"
+          : `/api/admin/forms/${templateId}`,
+        mode === "create" ? "POST" : "PUT",
+        payload,
+      );
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "No se pudo guardar el formulario"));
       return;
     }
     toast.success(

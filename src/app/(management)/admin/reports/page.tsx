@@ -17,9 +17,10 @@ import {
 import { TZDate } from "@date-fns/tz";
 import { BarChart3, CalendarIcon } from "lucide-react";
 import { useServerTime } from "@/components/providers/server-time";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useApi } from "@/hooks/use-api";
+import { apiErrorMessage } from "@/lib/api/client";
+import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { ReportData } from "@/types/stats/report";
 import AdminReport from "@/components/templates/admin/report";
@@ -142,95 +143,64 @@ function windowLabel(key: WindowKey, nowMs: number): string {
 
 export default function AdminReportsPage() {
   const { now, alignRevision } = useServerTime();
-  const { data: session, status } = useSession();
-  const router = useRouter();
 
   const [activeWindow, setActiveWindow] = useState<WindowKey>("last-month");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
-  const [report, setReport] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [appliedCustom, setAppliedCustom] = useState<{
+    fromMs: number;
+    toMs: number;
+  } | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string>("");
 
-  const fetchReport = useCallback(
-    async (
-      fromMs: number,
-      toMs: number,
-      signal?: AbortSignal,
-      compareFromMs?: number,
-      compareToMs?: number,
-    ) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams({
-          from: String(fromMs),
-          to: String(toMs),
-        });
-        if (compareFromMs != null && compareToMs != null) {
-          params.set("compareFrom", String(compareFromMs));
-          params.set("compareTo", String(compareToMs));
-        }
-        const res = await fetch(`/api/admin/reports?${params.toString()}`, {
-          signal,
-          cache: "no-store",
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.message ?? "Error al cargar el reporte");
-        }
-        const data: ReportData = await res.json();
-        setReport(data);
-        setGeneratedAt(now().toLocaleString("es-AR", { timeZone: ADMIN_TZ }));
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Error inesperado");
-      } finally {
-        if (!signal?.aborted) setLoading(false);
-      }
-    },
-    [now],
-  );
+  const reportUrl = useMemo(() => {
+    if (activeWindow === "custom") {
+      if (!appliedCustom) return null;
+      return `/api/admin/reports?${new URLSearchParams({
+        from: String(appliedCustom.fromMs),
+        to: String(appliedCustom.toMs),
+      }).toString()}`;
+    }
+    const range = getWindowRange(activeWindow, now().getTime());
+    if (!range) return null;
+    const params = new URLSearchParams({
+      from: String(range.fromMs),
+      to: String(range.toMs),
+    });
+    const compareRange = getComparisonRange(activeWindow, now().getTime());
+    if (compareRange) {
+      params.set("compareFrom", String(compareRange.fromMs));
+      params.set("compareTo", String(compareRange.toMs));
+    }
+    return `/api/admin/reports?${params.toString()}`;
+    // `now` is a stable callback; alignRevision signals the server clock sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeWindow, appliedCustom, alignRevision]);
+
+  const {
+    data: report,
+    error: reportError,
+    loading,
+    firstTime,
+  } = useApi<ReportData>(reportUrl);
+  const error = reportError
+    ? apiErrorMessage(reportError, "Error al cargar el reporte")
+    : null;
 
   useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
-      router.push("/");
-      return;
+    if (report) {
+      setGeneratedAt(now().toLocaleString("es-AR", { timeZone: ADMIN_TZ }));
     }
-
-    if (activeWindow !== "custom") {
-      const range = getWindowRange(activeWindow, now().getTime());
-      const compareRange = getComparisonRange(activeWindow, now().getTime());
-      if (!range) return;
-      const ctrl = new AbortController();
-      void fetchReport(
-        range.fromMs,
-        range.toMs,
-        ctrl.signal,
-        compareRange?.fromMs,
-        compareRange?.toMs,
-      );
-      return () => ctrl.abort();
-    }
-  }, [session, status, activeWindow, alignRevision, fetchReport, now, router]);
+  }, [report, now]);
 
   const handleCustomFetch = () => {
     if (!customRange?.from || !customRange?.to) return;
     const fromKey = toDateKey(new TZDate(customRange.from.getTime(), ADMIN_TZ));
     const toKey = toDateKey(new TZDate(customRange.to.getTime(), ADMIN_TZ));
-    void fetchReport(startOfDateKeyMs(fromKey), endOfDateKeyMs(toKey));
+    setAppliedCustom({
+      fromMs: startOfDateKeyMs(fromKey),
+      toMs: endOfDateKeyMs(toKey),
+    });
   };
-
-  if (status === "loading") {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-la-nube-primary" />
-      </div>
-    );
-  }
-
-  if (!session) return null;
 
   const activePeriodLabel = report
     ? `${formatMs(report.period.from)} — ${formatMs(report.period.to)}`
@@ -271,11 +241,7 @@ export default function AdminReportsPage() {
               <Button
                 key={key}
                 variant={activeWindow === key ? "default" : "outline"}
-                onClick={() => {
-                  setActiveWindow(key);
-                  setReport(null);
-                  setError(null);
-                }}
+                onClick={() => setActiveWindow(key)}
               >
                 {label}
               </Button>
@@ -345,8 +311,14 @@ export default function AdminReportsPage() {
         </div>
       )}
 
-      {/* Loading spinner */}
-      {loading && (
+      {/* First load: skeleton; refresh: spinner */}
+      {loading && firstTime && (
+        <div className="space-y-3 print:hidden">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      )}
+      {loading && !firstTime && (
         <div className="flex h-32 items-center justify-center print:hidden">
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-la-nube-primary" />
         </div>

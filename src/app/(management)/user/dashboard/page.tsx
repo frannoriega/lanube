@@ -1,64 +1,35 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useUserStats } from "@/hooks/api";
 import useUser from "@/hooks/use-user";
 import { Calendar, Clock, TrendingUp } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
-interface DashboardStats {
-  upcomingReservations: number;
-  totalTimeThisWeek: number;
-  totalTimeThisMonth: number;
-  recentReservations: {
-    id: string;
-    service: string;
-    serviceType: string;
-    startTime: number;
-    endTime: number;
-    status: string;
-    reason: string | null;
-  }[];
-}
-
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
   const user = useUser();
-  const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: stats, error, firstTime } = useUserStats();
 
   useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/");
-      return;
-    }
-
-    fetchDashboardStats();
-  }, [router, session, status]);
-
-  const fetchDashboardStats = async () => {
-    try {
-      const response = await fetch("/api/user/stats", { cache: "no-store" });
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (ignored) {
+    if (error) {
       toast.error("Error al obtener las estadísticas");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error]);
 
-  if (status === "loading" || loading) {
+  if (firstTime) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-72" />
+          <Skeleton className="mt-2 h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="h-28 w-full" />
+          ))}
+        </div>
       </div>
     );
   }

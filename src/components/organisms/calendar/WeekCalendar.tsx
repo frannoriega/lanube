@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useServerTime } from "@/components/providers/server-time";
+import { useApi } from "@/hooks/use-api";
+import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { toCapitalCase } from "@/lib/utils/string";
 import {
@@ -243,50 +245,52 @@ export function WeekCalendar({
     [unavailableSlots, occurrences],
   );
 
-  const fetchReservations = useCallback(async () => {
-    if (!currentWeekStart) return;
-    try {
-      const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1);
-      weekEnd.setHours(23, 59, 59, 999);
-
-      const response = await fetch(
-        `${apiEndpoint}?startDate=${currentWeekStart.getTime()}&endDate=${weekEnd.getTime()}`,
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const rawSlots: UnavailableSlot[] = data.unavailableSlots || [];
-        rawSlots.sort((a, b) => a.startTime - b.startTime);
-        const processedUnavailableSlots: UnavailableSlot[] = [];
-        if (rawSlots.length > 0) {
-          let current = rawSlots[0];
-          for (let i = 1; i < rawSlots.length; i++) {
-            const slot = rawSlots[i];
-            if (
-              current.endTime === slot.startTime &&
-              current.kind === slot.kind
-            ) {
-              current = { ...current, endTime: slot.endTime };
-            } else {
-              processedUnavailableSlots.push(current);
-              current = slot;
-            }
-          }
-          processedUnavailableSlots.push(current);
-        }
-        setOccurrences(data.userReservations || []);
-        setUnavailableSlots(processedUnavailableSlots);
-      } else {
-        toast.error("Error al cargar las reservas");
-      }
-    } catch {
-      toast.error("Error al cargar las reservas");
-    }
+  const calendarUrl = useMemo(() => {
+    if (!currentWeekStart) return null;
+    const weekEnd = addWeeks(addDays(currentWeekStart, 4), 1);
+    weekEnd.setHours(23, 59, 59, 999);
+    return `${apiEndpoint}?startDate=${currentWeekStart.getTime()}&endDate=${weekEnd.getTime()}`;
   }, [currentWeekStart, apiEndpoint]);
 
+  const {
+    data: calendarData,
+    error: calendarError,
+    refetch: refetchReservations,
+  } = useApi<{
+    unavailableSlots?: UnavailableSlot[];
+    userReservations?: ReservationOccurrence[];
+  }>(calendarUrl);
+
   useEffect(() => {
-    fetchReservations();
-  }, [fetchReservations]);
+    if (!calendarData) return;
+    const rawSlots: UnavailableSlot[] = [
+      ...(calendarData.unavailableSlots || []),
+    ];
+    rawSlots.sort((a, b) => a.startTime - b.startTime);
+    // Merge adjacent slots of the same kind into a single block.
+    const processedUnavailableSlots: UnavailableSlot[] = [];
+    if (rawSlots.length > 0) {
+      let current = rawSlots[0];
+      for (let i = 1; i < rawSlots.length; i++) {
+        const slot = rawSlots[i];
+        if (current.endTime === slot.startTime && current.kind === slot.kind) {
+          current = { ...current, endTime: slot.endTime };
+        } else {
+          processedUnavailableSlots.push(current);
+          current = slot;
+        }
+      }
+      processedUnavailableSlots.push(current);
+    }
+    setOccurrences(calendarData.userReservations || []);
+    setUnavailableSlots(processedUnavailableSlots);
+  }, [calendarData]);
+
+  useEffect(() => {
+    if (calendarError) {
+      toast.error("Error al cargar las reservas");
+    }
+  }, [calendarError]);
 
   // Get position info from mouse event
   const getPositionInfo = useCallback(
@@ -575,29 +579,23 @@ export function WeekCalendar({
         return;
       }
 
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await apiSend(apiEndpoint, "POST", {
           startTime: startDateTime.getTime(),
           endTime: endDateTime.getTime(),
           reason,
           eventType,
-        }),
-      });
-
-      // Success - close dialog and reset form
-      if (response.ok) {
+        });
+        // Success - close dialog and reset form
         setDialogOpen(false);
         setReason("");
         setEventType(defaultEventType);
         setIsWholeDay(false);
         setSelection(null);
 
-        await fetchReservations();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Error al crear la reserva");
+        await refetchReservations();
+      } catch (err) {
+        toast.error(apiErrorMessage(err, "Error al crear la reserva"));
       }
     } finally {
       setSubmitting(false);
@@ -1062,31 +1060,25 @@ export function WeekCalendar({
                       onClick={async () => {
                         try {
                           setDeleting(true);
-                          const res = await fetch(apiEndpoint, {
-                            method: "DELETE",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              reservationId: selectedOccurrence.reservationId,
-                            }),
+                          await apiSend(apiEndpoint, "DELETE", {
+                            reservationId: selectedOccurrence.reservationId,
                           });
-                          if (!res.ok) {
-                            const err = await res.json().catch(() => ({}));
-                            toast.error(
-                              err.error || "No se pudo eliminar la reserva",
-                            );
-                          } else {
-                            toast.success("Reserva eliminada");
-                            setOccurrences((occurrences) =>
-                              occurrences.filter(
-                                (occ) =>
-                                  occ.reservationId !==
-                                  selectedOccurrence.reservationId,
-                              ),
-                            );
-                            setSelectedOccurrence(null);
-                          }
-                        } catch (ignored) {
-                          toast.error("Error al eliminar la reserva");
+                          toast.success("Reserva eliminada");
+                          setOccurrences((occurrences) =>
+                            occurrences.filter(
+                              (occ) =>
+                                occ.reservationId !==
+                                selectedOccurrence.reservationId,
+                            ),
+                          );
+                          setSelectedOccurrence(null);
+                        } catch (err) {
+                          toast.error(
+                            apiErrorMessage(
+                              err,
+                              "No se pudo eliminar la reserva",
+                            ),
+                          );
                         } finally {
                           setDeleting(false);
                         }

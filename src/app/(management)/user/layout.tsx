@@ -1,6 +1,9 @@
 import UserProvider from "@/components/providers/user";
 import ManagementLayout from "@/components/templates/management";
 import { auth } from "@/lib/auth";
+import { getRegisteredUserById } from "@/lib/db/users";
+import { serializeJson } from "@/lib/json-bigint";
+import type { RegisteredUser } from "@/types/prisma";
 import { ThemeProvider } from "next-themes";
 import { redirect } from "next/navigation";
 
@@ -13,6 +16,12 @@ export default async function UserLayout({ children }: UserLayoutProps) {
   if (!session?.userId) {
     redirect("/auth/signin");
   }
+  const registeredUser = await getRegisteredUserById(session.userId);
+  if (!registeredUser) {
+    redirect("/auth/signup");
+  }
+  // serializeJson turns BigInt timestamps into numbers, matching the client type
+  const user = serializeJson(registeredUser) as unknown as RegisteredUser;
   return (
     <ThemeProvider
       attribute="class"
@@ -20,7 +29,7 @@ export default async function UserLayout({ children }: UserLayoutProps) {
       enableSystem
       storageKey="la-nube-theme"
     >
-      <UserProvider userId={session.userId}>
+      <UserProvider user={user}>
         <ManagementLayout userType="user">{children}</ManagementLayout>
       </UserProvider>
     </ThemeProvider>
