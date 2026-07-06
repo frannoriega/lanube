@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_6_review_pkg_resourcecalendardb",
+      "label": "Task 6 Review Package: Diff of resourceCalendar.ts and [type]/route.ts changes",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-6-review-pkg.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_6_report_resourcecalendardb",
+      "target": "superpowers_sdd_task_6_review_pkg_resourcecalendardb",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": ".superpowers/sdd/task-6-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

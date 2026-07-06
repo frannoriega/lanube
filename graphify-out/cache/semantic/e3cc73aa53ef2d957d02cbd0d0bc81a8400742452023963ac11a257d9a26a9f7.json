@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_building",
+      "label": "La Nube \u2014 Physical Building Exterior (Corner Facade)",
+      "file_type": "image",
+      "source_file": "public/images/building.jpg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Exterior photograph of the La Nube coworking/innovation space building. A low-rise, modern institutional building situated on a street corner in a Latin American urban setting. The facade features exposed concrete panels on the left wing and orange/terracotta-painted masonry on the right wing. The main entrance is centered, marked by a glass-and-metal door with a wheelchair-accessible ramp and handrails. A prominent sign reading 'La Nube' with its logo is mounted above the entrance. The building is single-story, set back slightly from the sidewalk with small landscaping. Utility poles and wires are visible in the background against a clear blue sky, with palm and other trees nearby.",
+      "confidence_score": 1.0,
+      "tags": [
+        "la-nube",
+        "coworking",
+        "building",
+        "exterior",
+        "argentina",
+        "latin-america",
+        "physical-location",
+        "institutional",
+        "accessibility"
+      ]
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

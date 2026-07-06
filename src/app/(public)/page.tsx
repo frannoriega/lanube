@@ -1,18 +1,29 @@
+import Breakout from "@/components/atoms/breakout";
 import EventsSection from "@/components/templates/landing/events";
 import HeroSection from "@/components/templates/landing/hero";
 import MembersSection from "@/components/templates/landing/members";
 import PartnersSection from "@/components/templates/landing/partners";
-import ServicesSection from "@/components/templates/landing/services";
+import SpacesSection from "@/components/templates/landing/spaces";
 
 export default function Home() {
   return (
     <div className="flex flex-col w-full">
-      <HeroSection />
-      <ServicesSection />
+      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
+        <HeroSection />
+      </Breakout>
+      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
+        <SpacesSection />
+      </Breakout>
       {/* Hidden automatically when there are no upcoming events. */}
-      <EventsSection />
-      <MembersSection />
-      <PartnersSection />
+      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
+        <EventsSection />
+      </Breakout>
+      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
+        <MembersSection />
+      </Breakout>
+      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
+        <PartnersSection />
+      </Breakout>
     </div>
   );
 }

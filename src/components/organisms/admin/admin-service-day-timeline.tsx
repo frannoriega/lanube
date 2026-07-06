@@ -1,7 +1,6 @@
 "use client";
 
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
-import { ResourceType } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/utils/date";
 import {
@@ -42,21 +41,6 @@ const TRACK_H = 32;
 const BLOCK_H = 24;
 const BLOCK_TOP = 4;
 
-function resourceTypeLabel(t: ResourceType): string {
-  switch (t) {
-    case "COWORKING":
-      return "Coworking";
-    case "LAB":
-      return "Laboratorio";
-    case "AUDITORIUM":
-      return "Auditorio";
-    case "MEETING":
-      return "Reuniones";
-    default:
-      return t;
-  }
-}
-
 function uniqueResources(items: AdminReservationListResult[]) {
   const m = new Map<
     string,
@@ -64,7 +48,7 @@ function uniqueResources(items: AdminReservationListResult[]) {
       id: string;
       name: string;
       capacity: number;
-      type: ResourceType;
+      spaceName: string;
       isExclusive: boolean;
     }
   >();
@@ -74,14 +58,14 @@ function uniqueResources(items: AdminReservationListResult[]) {
         id: r.resource.id,
         name: r.resource.name,
         capacity: r.resource.capacity,
-        type: r.resource.type,
+        spaceName: r.resource.spaceName,
         isExclusive: r.resource.isExclusive,
       });
     }
   }
   return Array.from(m.values()).sort((a, b) => {
-    const byType = a.type.localeCompare(b.type);
-    if (byType !== 0) return byType;
+    const bySpace = a.spaceName.localeCompare(b.spaceName, "es");
+    if (bySpace !== 0) return bySpace;
     return a.name.localeCompare(b.name, "es");
   });
 }
@@ -291,7 +275,7 @@ export function AdminServiceDayTimeline({
                 </p>
                 {showResourceTypeLabels ? (
                   <p className="text-[9px] text-neutral-700 uppercase tracking-wide leading-tight dark:text-muted-foreground">
-                    {resourceTypeLabel(singleHeaderMeta.type)}
+                    {singleHeaderMeta.spaceName}
                   </p>
                 ) : null}
                 <p className="text-[10px] text-neutral-800 tabular-nums leading-tight dark:text-muted-foreground">
@@ -443,7 +427,7 @@ export function AdminServiceDayTimeline({
                       </p>
                       {showResourceTypeLabels ? (
                         <p className="text-[10px] text-neutral-700 uppercase tracking-wide mt-0.5 dark:text-muted-foreground">
-                          {resourceTypeLabel(meta.type)}
+                          {meta.spaceName}
                         </p>
                       ) : null}
                       <p className="text-[11px] text-neutral-800 mt-0.5 dark:text-muted-foreground">

@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_meeting2",
+      "label": "Meeting Room Photo 2 \u2013 La Nube Polo Tecnol\u00f3gico",
+      "file_type": "image",
+      "source_file": "public/images/meeting2.jpg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Interior photograph of a small-to-medium meeting room at La Nube Polo Tecnol\u00f3gico. The room features a rectangular wooden conference table surrounded by approximately 6\u20138 white ergonomic mesh-back office chairs. A large flat-screen display mounted on the wall shows the 'La Nube Polo Tecnol\u00f3gico' branding logo (brain/cloud icon). A video-conferencing camera bar sits atop the display. A laptop and tablet/document holder are placed on the table. The room has glass partition walls with black metal frames, offering visibility into an adjacent corridor and open coworking area. A wooden/OSB-panel door is visible to the right. White tile flooring. Bright, modern aesthetic. This is a second angle of the meeting room resource, complementing meeting.jpg, likely showing the room from the opposite end (looking toward the glass partition and exit rather than the wall).",
+      "tags": [
+        "meeting-room",
+        "sala-de-reuniones",
+        "la-nube",
+        "polo-tecnologico",
+        "video-conferencing",
+        "conference-table",
+        "ergonomic-chairs",
+        "branding",
+        "glass-partition",
+        "interior-photo",
+        "resource-space"
+      ],
+      "confidence_score": 1.0,
+      "extraction_method": "EXTRACTED"
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

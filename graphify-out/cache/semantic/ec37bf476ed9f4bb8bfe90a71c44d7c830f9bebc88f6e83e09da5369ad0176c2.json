@@ -1,0 +1,104 @@
+{
+  "nodes": [
+    {
+      "id": "docs_superpowers_plans_2026_07_03_events_landing_rework_eventslandingreworkplan",
+      "label": "Plan: Events Landing Rework & Event Detail Page",
+      "file_type": "document",
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_events_grid_component",
+      "label": "EventsGrid Component (Paginated)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Replaces scroll-snap EventsCarousel with a responsive paginated grid (1/2/3/4 columns via Tailwind breakpoints). Page size adapts to column count on mount to minimize layout shift. Includes asterisk badge for events with exceptions."
+    },
+    {
+      "id": "concept_registration_cta_molecule",
+      "label": "RegistrationCta Molecule",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_expand_all_event_occurrences_fn",
+      "label": "expandAllEventOccurrences (TS function)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Variant of expandEventOccurrences that passes nowMs=0 to include past occurrences. Used on public event detail page to show full session agenda including historical sessions."
+    },
+    {
+      "id": "concept_public_event_detail_page",
+      "label": "Public Event Detail Page /events/[id]",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_superpowers_plans_2026_07_03_events_landing_rework_eventslandingreworkplan",
+      "target": "concept_expand_all_event_occurrences_fn",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_03_events_landing_rework_eventslandingreworkplan",
+      "target": "concept_events_grid_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_03_events_landing_rework_eventslandingreworkplan",
+      "target": "concept_registration_cta_molecule",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_03_events_landing_rework_eventslandingreworkplan",
+      "target": "concept_public_event_detail_page",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-03-events-landing-rework.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

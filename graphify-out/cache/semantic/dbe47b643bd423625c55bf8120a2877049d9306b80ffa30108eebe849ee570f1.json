@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_members_ucu",
+      "label": "Universidad de Concepci\u00f3n del Uruguay (UCU) Logo",
+      "file_type": "image",
+      "source_file": "public/images/members/ucu.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Official logo of Universidad de Concepci\u00f3n del Uruguay (UCU). Features a stylized graphic of two overlapping human face profiles wearing a graduation cap, rendered in gray, alongside the full institution name 'Universidad de Concepci\u00f3n del Uruguay' in bold gray typography. Used as a member/partner institution logo on the landing page.",
+      "entity_type": "university_logo",
+      "institution_name": "Universidad de Concepci\u00f3n del Uruguay",
+      "institution_abbreviation": "UCU",
+      "country": "Uruguay",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

@@ -88,7 +88,7 @@ export async function getDashboardStatsByUserId(
         resource: {
           select: {
             name: true,
-            type: true,
+            fungibleResource: { select: { name: true } },
           },
         },
         startTime: true,
@@ -113,8 +113,10 @@ export async function getDashboardStatsByUserId(
     recentReservations: recentReservations.map((reservation) => ({
       id: reservation.id,
       service:
-        reservation.resource?.name ?? reservation.resource?.type ?? "Servicio",
-      serviceType: reservation.resource?.type ?? "UNKNOWN",
+        reservation.resource?.name ??
+        reservation.resource?.fungibleResource?.name ??
+        "Servicio",
+      serviceType: reservation.resource?.fungibleResource?.name ?? "Unknown",
       startTime: Number(reservation.startTime),
       endTime: Number(reservation.endTime),
       status: reservation.status,

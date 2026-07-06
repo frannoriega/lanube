@@ -1,0 +1,115 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_7_brief_admindblayer",
+      "label": "Task 7 Brief: Replace ResourceType in admin DB layer (adminReservations, adminReports, events)",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_lib_db_adminreservations_ts_adminreservations",
+      "label": "src/lib/db/adminReservations.ts \u2014 listAdminReservationsByFungibleResource, listReservationDayCountsInRange",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_lib_db_adminreports_ts_adminreports",
+      "label": "src/lib/db/adminReports.ts \u2014 fetchRangeData keyed by fungibleResource.name",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_lib_db_events_ts_eventlistfilters",
+      "label": "src/lib/db/events.ts \u2014 EventListFilters.fungibleResourceId, buildEventListWhere",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_7_brief_admindblayer",
+      "target": "src_lib_db_adminreservations_ts_adminreservations",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_7_brief_admindblayer",
+      "target": "src_lib_db_adminreports_ts_adminreports",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_7_brief_admindblayer",
+      "target": "src_lib_db_events_ts_eventlistfilters",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_7_brief_admindblayer",
+      "target": "concept_resource_type_removal",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "target": "superpowers_sdd_task_7_brief_admindblayer",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": ".superpowers/sdd/task-7-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "admin_db_layer_files_refactor",
+      "label": "Admin DB Layer Files Modified in Task 7 Refactor",
+      "nodes": [
+        "src_lib_db_adminreservations_ts_adminreservations",
+        "src_lib_db_adminreports_ts_adminreports",
+        "src_lib_db_events_ts_eventlistfilters"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-7-brief.md"
+    }
+  ]
+}

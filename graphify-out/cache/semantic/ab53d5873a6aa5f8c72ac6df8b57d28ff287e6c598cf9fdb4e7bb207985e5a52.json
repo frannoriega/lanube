@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_intellymation",
+      "label": "Intellymation Partner Logo",
+      "file_type": "image",
+      "source_file": "public/images/partners/intellymation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Logo of Intellymation, a company/partner. The logo features a blue geometric icon (two overlapping parallelogram/arrow shapes) on the left, and the company name 'Intellymation' in dark navy blue sans-serif text on the right, split across two lines as 'Intelly' and 'mation'.",
+      "entity_type": "company_logo",
+      "entity_name": "Intellymation",
+      "role": "partner",
+      "confidence_score": 1.0,
+      "visual_attributes": {
+        "primary_color": "blue",
+        "secondary_color": "dark navy blue",
+        "background": "white",
+        "icon_style": "geometric parallelogram/arrow shapes",
+        "text": "Intellymation"
+      }
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

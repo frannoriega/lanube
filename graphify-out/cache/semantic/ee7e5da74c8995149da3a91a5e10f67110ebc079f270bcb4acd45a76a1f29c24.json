@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "docker_docker_compose_timemock_yml_timemock",
+      "label": "Docker Compose Timemock Overlay (libfaketime for postgres/app/migrate)",
+      "file_type": "code",
+      "source_file": "docker/docker-compose.timemock.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_libfaketime_docker",
+      "label": "libfaketime Docker Integration \u2014 simulate wall clock for date-sensitive tests",
+      "file_type": "concept",
+      "source_file": "docker/docker-compose.timemock.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docker_docker_compose_timemock_yml_timemock",
+      "target": "docker_docker_compose_yml_stack",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docker/docker-compose.timemock.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docker_docker_compose_timemock_yml_timemock",
+      "target": "concept_libfaketime_docker",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docker/docker-compose.timemock.yml",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

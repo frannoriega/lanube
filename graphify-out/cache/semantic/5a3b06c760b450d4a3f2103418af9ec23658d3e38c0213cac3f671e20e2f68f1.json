@@ -1,0 +1,50 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_performance_optimization_or_logic_dborlogicoptimization",
+      "label": "Performance Optimization: Database-Level OR Logic",
+      "file_type": "document",
+      "source_file": "docs/changes/PERFORMANCE_OPTIMIZATION_OR_LOGIC.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_expand_reservations_for_calendar_fn",
+      "label": "PostgreSQL Function: expand_reservations_for_calendar (single resource, OR logic)",
+      "file_type": "concept",
+      "source_file": "docs/changes/PERFORMANCE_OPTIMIZATION_OR_LOGIC.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Collapses multi-step application-level filtering (approved OR user's pending) + recurring expansion + exception handling into a single PostgreSQL function call, reducing 11+ round-trips to 1 and cutting code from 82 to 45 lines."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_performance_optimization_or_logic_dborlogicoptimization",
+      "target": "concept_expand_reservations_for_calendar_fn",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/PERFORMANCE_OPTIMIZATION_OR_LOGIC.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_performance_optimization_or_logic_dborlogicoptimization",
+      "target": "concept_reservation_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/PERFORMANCE_OPTIMIZATION_OR_LOGIC.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}
