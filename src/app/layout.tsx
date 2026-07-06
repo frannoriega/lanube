@@ -1,4 +1,5 @@
 import { ServerTimeProvider } from "@/components/providers/server-time";
+import { auth } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
 import { SessionProvider } from "@/components/providers/session";
 import type { Metadata } from "next";
@@ -30,6 +31,7 @@ export default async function RootLayout({
 }>) {
   await connection();
   const serverNowMs = nowMs();
+  const session = await auth();
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -37,7 +39,7 @@ export default async function RootLayout({
         className={`${roboto.variable} ${robotoMono.variable} font-sans flex flex-col min-h-[100svh] antialiased transition-colors`}
       >
         <ServerTimeProvider serverNowMs={serverNowMs}>
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider session={session}>{children}</SessionProvider>
         </ServerTimeProvider>
       </body>
     </html>
