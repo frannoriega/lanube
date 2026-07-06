@@ -1,9 +1,7 @@
 "use client";
 
 import { useServerTime } from "@/components/providers/server-time";
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -14,6 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCheckedInUsers } from "@/hooks/api";
+import { apiErrorMessage } from "@/lib/api/client";
+import { checkOutUser } from "@/lib/api/mutations";
 import {
   Search,
   CheckCircle,
@@ -26,78 +28,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface CurrentUser {
-  id: string;
-  name: string;
-  lastName: string;
-  email: string;
-  dni: string;
-  checkInTime: number;
-  reservationEndTime: number | null;
-  service: string;
-  reservationId: string;
-}
-
 export default function AdminCheckInPage() {
   const { now } = useServerTime();
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [currentUsers, setCurrentUsers] = useState<CurrentUser[]>([]);
+  const { data: currentUsersData, firstTime, refetch } = useCheckedInUsers();
+  const currentUsers = currentUsersData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [checkOutProcessing, setCheckOutProcessing] = useState<string | null>(
     null,
   );
 
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/");
-      return;
-    }
-
-    fetchCurrentUsers();
-
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchCurrentUsers, 30000);
-    return () => clearInterval(interval);
-  }, [session, status, router]);
-
-  const fetchCurrentUsers = async () => {
-    try {
-      const response = await fetch("/api/admin/checkin/current");
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUsers(data);
-      }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCheckOut = async (userId: string) => {
     setCheckOutProcessing(userId);
-
     try {
-      const response = await fetch(`/api/admin/checkin/${userId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ action: "checkout" }),
-      });
-
-      if (response.ok) {
-        toast.success("Check-out realizado exitosamente");
-        fetchCurrentUsers();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Error al realizar check-out");
-      }
-    } catch {
-      toast.error("Error al realizar check-out");
+      await checkOutUser(userId);
+      toast.success("Check-out realizado exitosamente");
+      await refetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al realizar check-out"));
     } finally {
       setCheckOutProcessing(null);
     }
@@ -176,16 +123,21 @@ export default function AdminCheckInPage() {
     isReservationOverdue(user.reservationEndTime),
   );
 
-  if (status === "loading" || loading) {
+  if (firstTime) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="mt-2 h-4 w-80" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="h-28 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-40 w-full" />
       </div>
     );
-  }
-
-  if (!session) {
-    return null;
   }
 
   return (
