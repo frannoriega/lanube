@@ -11,7 +11,7 @@ import {
   groupAdminReservationsByDateKey,
   isAdminUser,
   listAdminReservationsAllServicesByRange,
-  listAdminReservationsByFungibleResource,
+  listAdminReservationsBySpace,
   listAllAdminReservationsAllServicesInDateRange,
   listAllAdminReservationsInDateRange,
 } from "@/lib/db/adminReservations";
@@ -65,10 +65,10 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         );
       }
-      const fr = await prisma.fungibleResource.findUnique({
+      const sp = await prisma.space.findUnique({
         where: { id: service },
       });
-      if (!fr)
+      if (!sp)
         return NextResponse.json(
           { message: "Tipo de recurso inválido" },
           { status: 400 },
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
             page,
             pageSize,
           })
-        : await listAdminReservationsByFungibleResource(service!, {
+        : await listAdminReservationsBySpace(service!, {
             startMs,
             endMs,
             status: statusFilter,

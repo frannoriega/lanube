@@ -11,14 +11,14 @@ const EVENT_TYPES = [
 
 export default async function AuditoriumPage() {
   const space = await getSpaceBySlug("auditorium");
-  if (!space?.fungibleResourceId) notFound();
+  if (!space) notFound();
 
   return (
     <CalendarTemplateClient
       title={space.name}
       description="Reserva el auditorio para eventos y presentaciones"
       iconName={space.iconName ?? undefined}
-      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
+      apiEndpoint={`/api/resources/${space.id}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="CONFERENCE"
     />

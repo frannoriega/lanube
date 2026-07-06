@@ -240,7 +240,7 @@ function pickStatus(day: number, rng: Rng): ReservationStatus {
 interface ReservationRow {
   reservableType: ReservableType;
   reservableId: string;
-  resourceId: string;
+  spaceId: string;
   eventType: EventType;
   reason: string;
   status: ReservationStatus;
@@ -266,18 +266,22 @@ async function seedReservations(
   const rng = new Rng(42);
   const rows: ReservationRow[] = [];
 
-  // Midnight of "today" as perceived by the process (respects FAKETIME via
-  // LD_PRELOAD set in migrate-entry.sh when the timemock overlay is active).
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayMs = today.getTime();
+  // Midnight in Argentina timezone (UTC-3), so slot hours (9, 10, 14…) map to
+  // Argentina business hours regardless of server TZ (e.g. UTC in Docker).
+  // Argentina is UTC-3: subtract 3 h to convert to Argentina wall time, zero
+  // the UTC clock at that point (= midnight Argentina), then add 3 h back to
+  // get the UTC ms for midnight Argentina.
+  const ARGENTINA_OFFSET_MS = 3 * 3_600_000;
+  const nowInArgentina = new Date(Date.now() - ARGENTINA_OFFSET_MS);
+  nowInArgentina.setUTCHours(0, 0, 0, 0);
+  const todayMs = nowInArgentina.getTime() + ARGENTINA_OFFSET_MS;
 
   // makeRow always consumes the same number of RNG values (6) so the sequence
   // is fully deterministic regardless of the resource or day.
   const makeRow = (
     dayMs: number,
     day: number,
-    resourceId: string,
+    spaceId: string,
     eventTypes: readonly EventType[],
   ): ReservationRow => {
     const [s, e] = rng.pick(SLOT_PAIRS);
@@ -289,7 +293,7 @@ async function seedReservations(
     return {
       reservableType: ReservableType.USER,
       reservableId: userId,
-      resourceId,
+      spaceId,
       startTime: BigInt(dayMs + s * 3_600_000),
       endTime: BigInt(dayMs + e * 3_600_000),
       status,
@@ -353,7 +357,7 @@ async function seedReservations(
       rows.push({
         reservableType: ReservableType.USER,
         reservableId: userIds[i % userIds.length],
-        resourceId: resourceIds.meeting,
+        spaceId: resourceIds.meeting,
         startTime: BigInt(ms),
         endTime: BigInt(ms + 2 * 3_600_000),
         status: ReservationStatus.PENDING,
@@ -370,7 +374,7 @@ async function seedReservations(
       rows.push({
         reservableType: ReservableType.USER,
         reservableId: userIds[(i + 3) % userIds.length],
-        resourceId: resourceIds.lab,
+        spaceId: resourceIds.lab,
         startTime: BigInt(ms),
         endTime: BigInt(ms + 3 * 3_600_000),
         status: ReservationStatus.PENDING,
@@ -389,7 +393,7 @@ async function seedReservations(
       rows.push({
         reservableType: ReservableType.USER,
         reservableId: userIds[i % userIds.length],
-        resourceId: resourceIds.coworking,
+        spaceId: resourceIds.coworking,
         startTime: BigInt(ms),
         endTime: BigInt(ms + 3 * 3_600_000),
         status: ReservationStatus.PENDING,
@@ -406,85 +410,6 @@ async function seedReservations(
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  // Resources — idempotent: find existing row or create a new one.
-  const meetingRoomFR =
-    (await prisma.fungibleResource.findFirst({
-      where: { name: "Sala de reuniones" },
-    })) ??
-    (await prisma.fungibleResource.create({
-      data: { name: "Sala de reuniones", capacity: 6, isExclusive: true },
-    }));
-
-  const laboratoryFR =
-    (await prisma.fungibleResource.findFirst({
-      where: { name: "Laboratorio" },
-    })) ??
-    (await prisma.fungibleResource.create({
-      data: { name: "Laboratorio", capacity: 8, isExclusive: true },
-    }));
-
-  const auditoriumFR =
-    (await prisma.fungibleResource.findFirst({
-      where: { name: "Auditorio" },
-    })) ??
-    (await prisma.fungibleResource.create({
-      data: { name: "Auditorio", capacity: 40 },
-    }));
-
-  const coworkingFR =
-    (await prisma.fungibleResource.findFirst({
-      where: { name: "Coworking" },
-    })) ??
-    (await prisma.fungibleResource.create({
-      data: { name: "Coworking", capacity: 12 },
-    }));
-
-  const meetingRoom =
-    (await prisma.resource.findFirst({
-      where: { fungibleResourceId: meetingRoomFR.id },
-    })) ??
-    (await prisma.resource.create({
-      data: {
-        name: "Sala de reuniones",
-        fungibleResourceId: meetingRoomFR.id,
-      },
-    }));
-
-  const laboratory =
-    (await prisma.resource.findFirst({
-      where: { fungibleResourceId: laboratoryFR.id },
-    })) ??
-    (await prisma.resource.create({
-      data: {
-        name: "Laboratorio",
-        fungibleResourceId: laboratoryFR.id,
-      },
-    }));
-
-  const auditorium =
-    (await prisma.resource.findFirst({
-      where: { fungibleResourceId: auditoriumFR.id },
-    })) ??
-    (await prisma.resource.create({
-      data: {
-        name: "Auditorio",
-        fungibleResourceId: auditoriumFR.id,
-      },
-    }));
-
-  const coworking =
-    (await prisma.resource.findFirst({
-      where: { fungibleResourceId: coworkingFR.id },
-    })) ??
-    (await prisma.resource.create({
-      data: {
-        name: "Coworking",
-        fungibleResourceId: coworkingFR.id,
-      },
-    }));
-
-  console.log("[seed] Resources ready");
-
   // ── Spaces ────────────────────────────────────────────────────────────────────
   await prisma.space.upsert({
     where: { slug: "coworking" },
@@ -492,19 +417,17 @@ async function main() {
       name: "Coworking",
       slug: "coworking",
       description:
-        "Espacio flexible para trabajo individual y colaborativo.\n\nMesas compartidas y livings con puntos de energía y conectividad de alta velocidad. Ideal para programar, diseñar, investigar, atender reuniones breves y avanzar proyectos tecnológicos.",
+        "Espacio flexible para trabajo individual y colaborativo.\n\n Ideal para programar, diseñar, investigar, atender reuniones breves y avanzar proyectos tecnológicos.",
       imageUrl: "/images/services/coworking.jpg",
       iconName: "Building2",
       isReservable: true,
       isFeatured: false,
       displayOrder: 0,
-      metadata: [
-        { type: "stat", label: "Mesas compartidas", value: "12 puestos" },
-        { type: "stat", label: "Conectividad", value: "Alta velocidad" },
-      ],
-      fungibleResourceId: coworkingFR.id,
+      capacity: 12,
+      isExclusive: false,
+      metadata: [],
     },
-    update: { fungibleResourceId: coworkingFR.id },
+    update: {},
   });
 
   await prisma.space.upsert({
@@ -513,19 +436,17 @@ async function main() {
       name: "Laboratorio",
       slug: "lab",
       description:
-        "Ámbito técnico para 6–10 personas (según montaje).\n\nMesa de trabajo en configuración colaborativa. Pensado para hackathones, workshops prácticos y sesiones de trabajo en equipo.",
+        "Ámbito técnico para talleres.\n\n Pensado para hackathones, workshops prácticos y sesiones de trabajo en equipo.",
       imageUrl: "/images/services/laboratorio.jpg",
       iconName: "FlaskConical",
       isReservable: true,
       isFeatured: false,
       displayOrder: 1,
-      metadata: [
-        { type: "fraction", label: "Capacidad", numerator: 8, denominator: 10 },
-        { type: "stat", label: "Configuración", value: "Colaborativa" },
-      ],
-      fungibleResourceId: laboratoryFR.id,
+      capacity: 8,
+      isExclusive: true,
+      metadata: [],
     },
-    update: { fungibleResourceId: laboratoryFR.id },
+    update: {},
   });
 
   await prisma.space.upsert({
@@ -534,19 +455,17 @@ async function main() {
       name: "Sala de reuniones",
       slug: "meeting-room",
       description:
-        "Ámbito reservado para 6–10 personas (según montaje).\n\nMesa de trabajo, pantalla y pizarra digital. Pensada para planificaciones, presentaciones a equipos y entrevistas.",
+        "Ámbito reservado para reuniones privadas.\n\n Pensada para planificaciones, presentaciones a equipos y entrevistas.",
       imageUrl: "/images/services/sala-de-reuniones.jpg",
       iconName: "MessagesSquare",
       isReservable: true,
       isFeatured: false,
       displayOrder: 2,
-      metadata: [
-        { type: "fraction", label: "Capacidad", numerator: 6, denominator: 10 },
-        { type: "stat", label: "Equipamiento", value: "Pizarra digital" },
-      ],
-      fungibleResourceId: meetingRoomFR.id,
+      capacity: 6,
+      isExclusive: true,
+      metadata: [{ type: "stat", value: "Pizarra digital", icon: "Monitor" }],
     },
-    update: { fungibleResourceId: meetingRoomFR.id },
+    update: {},
   });
 
   await prisma.space.upsert({
@@ -555,21 +474,41 @@ async function main() {
       name: "Auditorio",
       slug: "auditorium",
       description:
-        "Ambiente amplio y modular para charlas, talleres y presentaciones.\n\nSoporte de proyección y sonido con posibilidad de transmisión en línea. Apto para actividades académicas, empresariales y comunitarias.",
+        "Ambiente amplio y modular para charlas, talleres y presentaciones.\n\n Apto para actividades académicas, empresariales y comunitarias.",
       imageUrl: "/images/services/auditorio.jpg",
       iconName: "Presentation",
       isReservable: true,
-      isFeatured: true,
+      isFeatured: false,
       displayOrder: 3,
+      capacity: 40,
+      isExclusive: false,
       metadata: [
-        { type: "stat", label: "Capacidad", value: "50 personas" },
-        { type: "stat", label: "Equipamiento", value: "Proyección · Sonido" },
-        { type: "stat", label: "Streaming", value: "Transmisión en línea" },
+        { type: "stat", value: "Proyección", icon: "Presentation" },
+        { type: "stat", value: "Sonido", icon: "Speaker" },
+        { type: "stat", value: "Streaming", icon: "Radio" },
       ],
-      fungibleResourceId: auditoriumFR.id,
     },
-    update: { fungibleResourceId: auditoriumFR.id },
+    update: {},
   });
+
+  const [meetingRoom, laboratory, auditorium, coworking] = await Promise.all([
+    prisma.space.findUniqueOrThrow({
+      where: { slug: "meeting-room" },
+      select: { id: true },
+    }),
+    prisma.space.findUniqueOrThrow({
+      where: { slug: "lab" },
+      select: { id: true },
+    }),
+    prisma.space.findUniqueOrThrow({
+      where: { slug: "auditorium" },
+      select: { id: true },
+    }),
+    prisma.space.findUniqueOrThrow({
+      where: { slug: "coworking" },
+      select: { id: true },
+    }),
+  ]);
 
   console.log("[seed] Spaces ready");
 

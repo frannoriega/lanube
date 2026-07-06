@@ -11,14 +11,14 @@ const EVENT_TYPES = [
 
 export default async function MeetingRoomPage() {
   const space = await getSpaceBySlug("meeting-room");
-  if (!space?.fungibleResourceId) notFound();
+  if (!space) notFound();
 
   return (
     <CalendarTemplateClient
       title={space.name}
       description="Arrastra para seleccionar el horario de tu reunión"
       iconName={space.iconName ?? undefined}
-      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
+      apiEndpoint={`/api/resources/${space.id}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="MEETING"
     />

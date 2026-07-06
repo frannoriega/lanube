@@ -1,47 +1,31 @@
-model FungibleResource {
-  id          String     @id @default(cuid())
-  name        String
-  capacity    Int
-  isExclusive Boolean    @default(false) @map("is_exclusive")
-  createdAt   BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt   BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  resources   Resource[]
-  space       Space?
-
-  @@map("fungible_resources")
-}
-
 model Resource {
-  id                 String           @id @default(cuid())
-  name               String
-  fungibleResourceId String           @map("fungible_resource_id")
-  serialNumber       String?          @unique @map("serial_number")
-  metadata           Json?
-  createdAt          BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt          BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  reservations       Reservation[]
-  events             Event[]
-  fungibleResource   FungibleResource @relation(fields: [fungibleResourceId], references: [id], onDelete: Cascade)
+  id           String  @id @default(cuid())
+  name         String
+  serialNumber String? @unique @map("serial_number")
+  metadata     Json?
+  createdAt    BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt    BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
 
-  @@index([fungibleResourceId])
   @@map("resources")
 }
 
 model Space {
-  id                 String            @id @default(cuid())
-  name               String
-  slug               String            @unique
-  description        String
-  imageUrl           String?           @map("image_url")
-  iconName           String?           @map("icon_name")
-  isReservable       Boolean           @default(false) @map("is_reservable")
-  isFeatured         Boolean           @default(false) @map("is_featured")
-  displayOrder       Int               @default(0) @map("display_order")
-  metadata           Json?
-  fungibleResourceId String?           @unique @map("fungible_resource_id")
-  createdAt          BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt          BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  fungibleResource   FungibleResource? @relation(fields: [fungibleResourceId], references: [id])
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String
+  imageUrl     String?       @map("image_url")
+  iconName     String?       @map("icon_name")
+  capacity     Int           @default(1)
+  isExclusive  Boolean       @default(false) @map("is_exclusive")
+  isReservable Boolean       @default(false) @map("is_reservable")
+  isFeatured   Boolean       @default(false) @map("is_featured")
+  displayOrder Int           @default(0) @map("display_order")
+  metadata     Json?
+  createdAt    BigInt        @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt    BigInt        @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  reservations Reservation[]
+  events       Event[]
 
   @@map("spaces")
 }

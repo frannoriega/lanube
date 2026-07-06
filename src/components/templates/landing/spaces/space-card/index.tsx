@@ -45,7 +45,7 @@ function StatBox({ icon: Icon, value }: StatData) {
 
 export function SpaceCard({ space }: { space: SpaceWithFungible }) {
   const stats = buildStats(space, 4);
-  const capacity = space.fungibleResource?.capacity;
+  const capacity = space.capacity;
   const href = space.isReservable
     ? `/user/${space.slug}`
     : `/spaces/${space.slug}`;
@@ -76,7 +76,7 @@ export function SpaceCard({ space }: { space: SpaceWithFungible }) {
               className="h-px bg-muted-foreground"
             />
             <p className="line-clamp-2 text-lg text-muted-foreground">
-              {space.description.split("\n")[0]}
+              {space.description.split("\n")}
             </p>
           </div>
           <div className="flex flex-row flex-wrap gap-2 items-center justify-start">

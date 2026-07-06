@@ -295,7 +295,7 @@ export function AdminServiceDayTimeline({
                   <div
                     key={`h-${i}`}
                     className={cn(
-                      "flex flex-col justify-end border-r border-neutral-300 text-[11px] text-neutral-800 dark:border-border/60 dark:text-muted-foreground",
+                      "flex flex-col justify-start border-r border-neutral-300 text-[11px] text-neutral-800 dark:border-border/60 dark:text-muted-foreground",
                       i % 4 === 0 &&
                         "border-l border-l-neutral-400 dark:border-l-border",
                     )}
@@ -305,7 +305,7 @@ export function AdminServiceDayTimeline({
                       height: HEADER_H,
                     }}
                   >
-                    <div className="px-0.5 pb-0.5">
+                    <div className="px-0.5 pt-1">
                       {i % 4 === 0 ? formatTime(slot) : null}
                     </div>
                   </div>

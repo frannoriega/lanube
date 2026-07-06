@@ -72,10 +72,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ items, total });
     }
 
-    const fr = await prisma.fungibleResource.findUnique({
+    const sp = await prisma.space.findUnique({
       where: { id: service },
     });
-    if (!fr)
+    if (!sp)
       return NextResponse.json(
         { message: "Tipo de recurso inválido" },
         { status: 400 },

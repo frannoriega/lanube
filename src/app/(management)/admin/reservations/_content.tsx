@@ -181,7 +181,7 @@ export function ReservationsPageContent({
 
       <AdminReservationsCardsPanel
         variant="admin"
-        fungibleResourceId={service}
+        spaceId={service}
         spaceName={selectedSpace?.name ?? ""}
         showHeading
         onAction={handleReservationAction}

@@ -53,9 +53,7 @@ export async function getAdminAggregateStats() {
       registeredUser: { select: { id: true, name: true, lastName: true } },
       reservation: {
         select: {
-          resource: {
-            select: { fungibleResource: { select: { name: true } } },
-          },
+          space: { select: { name: true } },
           endTime: true,
         },
       },
@@ -67,7 +65,7 @@ export async function getAdminAggregateStats() {
     where: { status: "PENDING" },
     include: {
       registeredUser: { select: { name: true, lastName: true } },
-      resource: { select: { fungibleResource: { select: { name: true } } } },
+      space: { select: { name: true } },
     },
     orderBy: { createdAt: "desc" },
     take: 10,
@@ -87,7 +85,7 @@ export async function getAdminAggregateStats() {
       checkInTime: Number(ci.checkInTime),
       reservationEndTime:
         ci.reservation?.endTime != null ? Number(ci.reservation.endTime) : null,
-      service: ci.reservation?.resource?.fungibleResource?.name || "Unknown",
+      service: ci.reservation?.space?.name || "Unknown",
     })),
     recentReservations: recentReservationsRaw.map((r) => ({
       id: r.id,
@@ -95,7 +93,7 @@ export async function getAdminAggregateStats() {
         name: r.registeredUser.name,
         lastName: r.registeredUser.lastName,
       },
-      service: r.resource?.fungibleResource?.name || "Unknown",
+      service: r.space?.name || "Unknown",
       startTime: Number(r.startTime),
       endTime: Number(r.endTime),
       status: r.status,
@@ -125,9 +123,7 @@ export async function getCurrentCheckinsForToday() {
       },
       reservation: {
         select: {
-          resource: {
-            select: { fungibleResource: { select: { name: true } } },
-          },
+          space: { select: { name: true } },
           endTime: true,
         },
       },
@@ -143,7 +139,7 @@ export async function getCurrentCheckinsForToday() {
     checkInTime: Number(ci.checkInTime),
     reservationEndTime:
       ci.reservation?.endTime != null ? Number(ci.reservation.endTime) : null,
-    service: ci.reservation?.resource?.fungibleResource?.name || "Unknown",
+    service: ci.reservation?.space?.name || "Unknown",
     reservationId: ci.reservationId || "",
   }));
 }
@@ -166,9 +162,7 @@ export async function checkoutActiveCheckinByUserId(userId: string) {
       },
       reservation: {
         select: {
-          resource: {
-            select: { fungibleResource: { select: { name: true } } },
-          },
+          space: { select: { name: true } },
           startTime: true,
           endTime: true,
         },

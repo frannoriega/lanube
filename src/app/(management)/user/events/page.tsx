@@ -64,7 +64,7 @@ export default async function UserEventsPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 shrink-0" />
-                  {event.resource.name}
+                  {event.space?.name}
                 </span>
               </CardContent>
             </Card>

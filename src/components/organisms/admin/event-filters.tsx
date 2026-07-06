@@ -30,13 +30,13 @@ const ALL = "ALL";
 
 export function EventFilters({
   status,
-  fungibleResourceId,
+  spaceId,
   spaceOptions,
   from,
   to,
 }: {
   status?: string;
-  fungibleResourceId?: string;
+  spaceId?: string;
   spaceOptions: SpaceOption[];
   from?: string;
   to?: string;
@@ -55,7 +55,7 @@ export function EventFilters({
     router.push(qs ? `/admin/events?${qs}` : "/admin/events");
   };
 
-  const hasFilters = Boolean(status || fungibleResourceId || from || to);
+  const hasFilters = Boolean(status || spaceId || from || to);
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
@@ -82,10 +82,8 @@ export function EventFilters({
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">Recurso</Label>
         <Select
-          value={fungibleResourceId ?? ALL}
-          onValueChange={(v) =>
-            update({ fungibleResourceId: v === ALL ? undefined : v })
-          }
+          value={spaceId ?? ALL}
+          onValueChange={(v) => update({ spaceId: v === ALL ? undefined : v })}
         >
           <SelectTrigger className="w-[170px]">
             <SelectValue />

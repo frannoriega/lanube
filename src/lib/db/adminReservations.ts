@@ -15,9 +15,7 @@ export const ADMIN_RESERVATION_FORWARD_DAYS = 14;
 
 type ReservationAdminRow = Prisma.ReservationGetPayload<{
   include: {
-    resource: {
-      include: { fungibleResource: true };
-    };
+    space: true;
     registeredUser: {
       select: {
         name: true;
@@ -67,7 +65,6 @@ function toAdminReservationListResult(
   row: ReservationAdminRow,
   actorSize: number,
 ): AdminReservationListResult {
-  const cap = row.resource.fungibleResource?.capacity ?? 1;
   return {
     id: row.id,
     startTime: Number(row.startTime),
@@ -78,11 +75,11 @@ function toAdminReservationListResult(
     deniedReason: row.deniedReason,
     actorSize,
     resource: {
-      id: row.resource.id,
-      name: row.resource.name,
-      capacity: cap,
-      isExclusive: row.resource.fungibleResource?.isExclusive ?? false,
-      spaceName: row.resource.fungibleResource?.name ?? "",
+      id: row.space?.id ?? "",
+      name: row.space?.name ?? "",
+      capacity: row.space?.capacity ?? 1,
+      isExclusive: row.space?.isExclusive ?? false,
+      spaceName: row.space?.name ?? "",
     },
     registeredUser: row.registeredUser,
   };
@@ -102,6 +99,31 @@ export async function isAdminUser(id: string): Promise<boolean> {
   return !!user && user.role === UserRole.ADMIN;
 }
 
+export async function approveReservationAndRejectConflicts(
+  id: string,
+): Promise<{ approvedId: string; autoRejectedIds: string[] }> {
+  await prisma.$executeRaw`SELECT approve_reservation(${id}::text)`;
+  return { approvedId: id, autoRejectedIds: [] };
+}
+
+export async function previewConflictingPending(): Promise<string[]> {
+  return [];
+}
+
+export async function setReservationStatus(
+  id: string,
+  status: ReservationStatus,
+  deniedReason?: string,
+) {
+  return prisma.reservation.update({
+    where: { id },
+    data: {
+      status,
+      ...(deniedReason ? { deniedReason } : {}),
+    },
+  });
+}
+
 export interface ListAdminReservationsOptions {
   startMs?: number;
   endMs?: number;
@@ -116,9 +138,7 @@ export interface ListAdminReservationsResult {
 }
 
 const reservationAdminInclude = {
-  resource: {
-    include: { fungibleResource: true },
-  },
+  space: true,
   registeredUser: {
     select: {
       name: true,
@@ -130,8 +150,8 @@ const reservationAdminInclude = {
   },
 } as const;
 
-export async function listAdminReservationsByFungibleResource(
-  fungibleResourceId: string,
+export async function listAdminReservationsBySpace(
+  spaceId: string,
   options?: ListAdminReservationsOptions,
 ): Promise<ListAdminReservationsResult> {
   const page = Math.max(1, options?.page ?? 1);
@@ -140,9 +160,7 @@ export async function listAdminReservationsByFungibleResource(
     Math.max(1, options?.pageSize ?? 50),
   );
 
-  const where: Prisma.ReservationWhereInput = {
-    resource: { fungibleResourceId },
-  };
+  const where: Prisma.ReservationWhereInput = { spaceId };
 
   if (options?.startMs != null && options?.endMs != null) {
     where.startTime = {
@@ -170,18 +188,14 @@ export async function listAdminReservationsByFungibleResource(
   return { items, total };
 }
 
-/**
- * All reservations for a service in [startMs, endMs], every status.
- * @param startMs  Inclusive lower bound (Unix ms).
- * @param endMs    Inclusive upper bound (Unix ms).
- */
+/** All reservations for a space in [startMs, endMs], every status. */
 export async function listAllAdminReservationsInDateRange(
-  fungibleResourceId: string,
+  spaceId: string,
   startMs: number,
   endMs: number,
 ): Promise<AdminReservationListResult[]> {
   const where: Prisma.ReservationWhereInput = {
-    resource: { fungibleResourceId },
+    spaceId,
     startTime: {
       gte: BigInt(startMs),
       lte: BigInt(endMs),
@@ -198,7 +212,7 @@ export async function listAllAdminReservationsInDateRange(
   return mapRowsToAdminResults(rows);
 }
 
-/** All reservations in [startMs, endMs] across every resource type. */
+/** All reservations in [startMs, endMs] across every space. */
 export async function listAllAdminReservationsAllServicesInDateRange(
   startMs: number,
   endMs: number,
@@ -288,12 +302,9 @@ export interface ListDaysWithReservationsResult {
   total: number;
 }
 
-/**
- * Per-day reservation counts in [startMs, endMs].
- * Date keys for bucketing are derived from the admin timezone.
- */
+/** Per-day reservation counts for a space in [startMs, endMs]. */
 export async function listReservationDayCountsInRange(
-  fungibleResourceId: string,
+  spaceId: string,
   status: ReservationStatus | undefined,
   startMs: number,
   endMs: number,
@@ -303,7 +314,7 @@ export async function listReservationDayCountsInRange(
   const keys = enumerateDateKeysInclusive(fromKey, toKey);
 
   const where: Prisma.ReservationWhereInput = {
-    resource: { fungibleResourceId },
+    spaceId,
     startTime: { gte: BigInt(startMs), lte: BigInt(endMs) },
   };
   if (status) where.status = status;
@@ -357,74 +368,4 @@ export async function listDaysWithPendingReservationsAllServices(
   const total = allDays.length;
   const items = allDays.slice((page - 1) * pageSize, page * pageSize);
   return { items, total };
-}
-
-export async function listAdminReservationsByRange(
-  startMs: number,
-  endMs: number,
-  options?: { page?: number; pageSize?: number },
-): Promise<ListAdminReservationsResult> {
-  const page = Math.max(1, options?.page ?? 1);
-  const pageSize = Math.min(
-    MAX_PAGE_SIZE,
-    Math.max(1, options?.pageSize ?? 50),
-  );
-
-  const where = {
-    status: "PENDING" as const,
-    startTime: {
-      gte: BigInt(startMs),
-      lte: BigInt(endMs),
-    },
-  };
-
-  const [rows, total] = await Promise.all([
-    prisma.reservation.findMany({
-      where,
-      include: reservationAdminInclude,
-      orderBy: { startTime: "asc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.reservation.count({ where }),
-  ]);
-
-  const items = await mapRowsToAdminResults(rows);
-  return { items, total };
-}
-
-export async function setReservationStatus(
-  reservationId: string,
-  status: ReservationStatus,
-  deniedReason?: string,
-) {
-  return prisma.reservation.update({
-    where: { id: reservationId },
-    data: {
-      status,
-      ...(status === "REJECTED" && deniedReason ? { deniedReason } : {}),
-    },
-  });
-}
-
-export async function approveReservationAndRejectConflicts(
-  reservationId: string,
-): Promise<{ approvedId: string | null; autoRejectedIds: string[] }> {
-  const rows = await prisma.$queryRaw<
-    { approved_id: string; auto_rejected_ids: string }[]
-  >`
-    SELECT * FROM approve_reservation(${reservationId}::text)
-  `;
-
-  const approvedId = rows?.[0]?.approved_id ?? null;
-  const autoRejectedCsv = rows?.[0]?.auto_rejected_ids as string | null;
-  const autoRejectedIds = autoRejectedCsv
-    ? autoRejectedCsv.split(",").filter(Boolean)
-    : [];
-
-  return { approvedId, autoRejectedIds };
-}
-
-export async function previewConflictingPending(): Promise<string[]> {
-  return [];
 }

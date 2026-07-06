@@ -1,21 +1,18 @@
 import { auth } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
 import { createReservation } from "@/lib/db/reservations";
-import { getCalendarDataByFungibleResource } from "@/lib/db/resourceCalendar";
+import { getCalendarDataBySpace } from "@/lib/db/resourceCalendar";
 import { getRegisteredUserById } from "@/lib/db/users";
+import { getSpaceById } from "@/lib/db/spaces";
 import { serializeJson } from "@/lib/json-bigint";
 import { unixMsToDate } from "@/lib/unix-ms";
 import { prisma } from "@/lib/prisma";
 import { isAfter, startOfDay } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 
-async function resolveFungibleResource(id: string) {
-  return prisma.fungibleResource.findUnique({ where: { id } });
-}
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ fungibleResourceId: string }> },
+  { params }: { params: Promise<{ spaceId: string }> },
 ) {
   try {
     const session = await auth();
@@ -29,11 +26,11 @@ export async function GET(
         { status: 401 },
       );
 
-    const { fungibleResourceId } = await params;
-    const fr = await resolveFungibleResource(fungibleResourceId);
-    if (!fr)
+    const { spaceId } = await params;
+    const space = await getSpaceById(spaceId);
+    if (!space)
       return NextResponse.json(
-        { error: "Recurso no encontrado" },
+        { error: "Espacio no encontrado" },
         { status: 404 },
       );
 
@@ -46,8 +43,8 @@ export async function GET(
         { status: 400 },
       );
 
-    const data = await getCalendarDataByFungibleResource(
-      fungibleResourceId,
+    const data = await getCalendarDataBySpace(
+      spaceId,
       user.id,
       unixMsToDate(startMs),
       unixMsToDate(endMs),
@@ -63,7 +60,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ fungibleResourceId: string }> },
+  { params }: { params: Promise<{ spaceId: string }> },
 ) {
   try {
     const session = await auth();
@@ -77,11 +74,11 @@ export async function POST(
         { status: 401 },
       );
 
-    const { fungibleResourceId } = await params;
-    const fr = await resolveFungibleResource(fungibleResourceId);
-    if (!fr)
+    const { spaceId } = await params;
+    const space = await getSpaceById(spaceId);
+    if (!space)
       return NextResponse.json(
-        { error: "Recurso no encontrado" },
+        { error: "Espacio no encontrado" },
         { status: 404 },
       );
 
@@ -147,7 +144,7 @@ export async function POST(
     const reservation = await createReservation({
       reservableType: "USER",
       reservableId: user.id,
-      fungibleResourceId,
+      spaceId,
       eventType: eventType || "MEETING",
       reason,
       startTime: startDateTime,

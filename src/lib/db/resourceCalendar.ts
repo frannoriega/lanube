@@ -28,7 +28,7 @@ export interface ReservationOccurrence {
 export type UnavailableSlotKind = "resource_full" | "cross_resource";
 
 export interface CalendarUnavailableSlot {
-  resourceId: string;
+  spaceId: string;
   startTime: number;
   endTime: number;
   kind: UnavailableSlotKind;
@@ -49,18 +49,18 @@ export async function getRegisteredUserIdByEmail(
 interface EventOccurrenceRow {
   reservation_id: string;
   event_id: string;
-  resource_id: string;
+  space_id: string;
   occurrence_start_time: bigint;
   occurrence_end_time: bigint;
   reason: string | null;
 }
 
 /**
- * APPROVED EVENT occurrences for a fungible resource in a window. These render on the calendar
+ * APPROVED EVENT occurrences for a space in a window. These render on the calendar
  * as named, read-only cards (with a form link) rather than anonymous unavailable blocks.
  */
-export async function getEventOccurrencesForFungibleResource(
-  fungibleResourceId: string,
+export async function getEventOccurrencesForSpace(
+  spaceId: string,
   startDate: Date,
   endDate: Date,
 ): Promise<ReservationOccurrence[]> {
@@ -68,13 +68,12 @@ export async function getEventOccurrencesForFungibleResource(
   const rangeEndMs = dateToUnixMs(endDate);
 
   const rows = await prisma.$queryRaw<EventOccurrenceRow[]>`
-    SELECT l.reservation_id, l.reservable_id AS event_id, l.resource_id,
+    SELECT l.reservation_id, l.reservable_id AS event_id, l.space_id,
            l.occurrence_start_time, l.occurrence_end_time, l.reason
     FROM reservation_ledger l
-    JOIN resources r ON r.id = l.resource_id
     WHERE l.reservable_type = 'EVENT'
       AND l.status = 'APPROVED'
-      AND r.fungible_resource_id = ${fungibleResourceId}
+      AND l.space_id = ${spaceId}
       AND l.occurrence_start_time < ${rangeEndMs}::bigint
       AND l.occurrence_end_time > ${rangeStartMs}::bigint
   `;
@@ -87,9 +86,7 @@ export async function getEventOccurrencesForFungibleResource(
       id: true,
       name: true,
       capacity: true,
-      resource: {
-        select: { fungibleResource: { select: { capacity: true } } },
-      },
+      space: { select: { capacity: true } },
       form: {
         select: {
           slug: true,
@@ -105,7 +102,7 @@ export async function getEventOccurrencesForFungibleResource(
   const now = nowMs();
   const meta = new Map(
     events.map((e) => {
-      const cap = e.capacity ?? e.resource.fungibleResource?.capacity ?? null;
+      const cap = e.capacity ?? e.space.capacity;
       const isFull = cap !== null && e._count.participants >= cap;
       const formOpen = Boolean(
         e.form?.isPublished &&
@@ -117,9 +114,7 @@ export async function getEventOccurrencesForFungibleResource(
     }),
   );
 
-  // The ledger stores each occurrence as contiguous 15-min buckets (insert_into_ledger), so a
-  // 10:00–11:00 event is 4 rows. Merge adjacent buckets of the same reservation back into one
-  // span; gaps (e.g. between weekly occurrences) stay separate.
+  // Merge adjacent 15-min ledger buckets back into full occurrence spans.
   const byReservation = new Map<string, EventOccurrenceRow[]>();
   for (const r of rows) {
     const list = byReservation.get(r.reservation_id);
@@ -172,8 +167,8 @@ export async function getEventOccurrencesForFungibleResource(
 }
 
 /** Fetches calendar data: unavailable slots (by other users) and user's own reservations. */
-export async function getCalendarDataByFungibleResource(
-  fungibleResourceId: string,
+export async function getCalendarDataBySpace(
+  spaceId: string,
   userId: string,
   startDate: Date,
   endDate: Date,
@@ -186,35 +181,10 @@ export async function getCalendarDataByFungibleResource(
 
   const [unavailableSlotsRaw, allUserReservations, eventOccurrences] =
     await Promise.all([
-      getUnavailableSlots(fungibleResourceId, startDate, endDate, userId),
+      getUnavailableSlots(spaceId, startDate, endDate, userId),
       getUserNextReservations(userId, undefined, 100, 0),
-      getEventOccurrencesForFungibleResource(
-        fungibleResourceId,
-        startDate,
-        endDate,
-      ),
+      getEventOccurrencesForSpace(spaceId, startDate, endDate),
     ]);
-
-  // Resolve each reservation's resource type so we can split:
-  //   - same resource type  -> show as a reservation card
-  //   - different resource type (PENDING/APPROVED) -> block the slot (cross_resource)
-  const uniqueResourceIds = [
-    ...new Set(
-      allUserReservations
-        .map((r) => r.resourceId)
-        .filter((id): id is string => id !== null),
-    ),
-  ];
-  const resourceFungibleMap = new Map<string, string>();
-  if (uniqueResourceIds.length > 0) {
-    const resources = await prisma.resource.findMany({
-      where: { id: { in: uniqueResourceIds } },
-      select: { id: true, fungibleResourceId: true },
-    });
-    for (const r of resources) {
-      resourceFungibleMap.set(r.id, r.fungibleResourceId);
-    }
-  }
 
   const userReservations: ReservationOccurrence[] = [];
   const crossResourceSlots: CalendarUnavailableSlot[] = [];
@@ -223,11 +193,7 @@ export async function getCalendarDataByFungibleResource(
     const ms = Number(res.occurrenceStartTime);
     if (ms < rangeStartMs || ms > rangeEndMs) continue;
 
-    const resFungibleId = res.resourceId
-      ? resourceFungibleMap.get(res.resourceId)
-      : undefined;
-
-    if (resFungibleId === fungibleResourceId) {
+    if (res.spaceId === spaceId) {
       userReservations.push({
         reservationId: res.id,
         occurrenceStartTime: Number(res.occurrenceStartTime),
@@ -238,11 +204,11 @@ export async function getCalendarDataByFungibleResource(
         reservableId: res.reservableId,
       });
     } else if (
-      resFungibleId !== undefined &&
+      res.spaceId != null &&
       (res.status === "PENDING" || res.status === "APPROVED")
     ) {
       crossResourceSlots.push({
-        resourceId: res.resourceId ?? "",
+        spaceId: res.spaceId,
         startTime: Number(res.occurrenceStartTime),
         endTime: Number(res.occurrenceEndTime),
         kind: "cross_resource",
@@ -250,12 +216,11 @@ export async function getCalendarDataByFungibleResource(
     }
   }
 
-  // Event occurrences fully block their resource, so get_unavailable_slots also reports
-  // them as resource_full. Drop those windows here so each event renders once — as the
-  // named, read-only card below — instead of an anonymous stripe underneath it.
+  // Event occurrences fully block their space — get_unavailable_slots reports them too.
+  // Drop the anonymous blocks so each event renders once as its named card.
   const resourceFullSlots = unavailableSlotsRaw
     .map((s) => ({
-      resourceId: s.resourceId,
+      spaceId: s.spaceId,
       startTime: Number(s.startTime),
       endTime: Number(s.endTime),
       kind: "resource_full" as UnavailableSlotKind,

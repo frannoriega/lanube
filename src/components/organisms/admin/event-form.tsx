@@ -97,7 +97,7 @@ export interface EventFormDefaults {
   description: string;
   eventType: string;
   status: string;
-  resourceId: string;
+  spaceId: string;
   startDate: string;
   endDate: string;
   weekdays: number[];
@@ -113,7 +113,7 @@ const EMPTY_DEFAULTS: EventInput = {
   description: "",
   eventType: EventType.WORKSHOP,
   status: EventStatus.DRAFT,
-  resourceId: "",
+  spaceId: "",
   startDate: "",
   endDate: "",
   weekdays: [],
@@ -197,8 +197,8 @@ export function EventForm({
   };
 
   const binding = watch("form");
-  const resourceId = watch("resourceId");
-  const selectedResource = resources.find((r) => r.id === resourceId);
+  const spaceId = watch("spaceId");
+  const selectedResource = resources.find((r) => r.id === spaceId);
 
   const needsSessionReason = sessionActions.some(
     (a) => a.kind === "cancel" || a.kind === "reschedule",
@@ -376,7 +376,7 @@ export function EventForm({
 
             <FormField
               control={control}
-              name="resourceId"
+              name="spaceId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Recurso</FormLabel>

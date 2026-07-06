@@ -1,10 +1,9 @@
 import { auth } from "@/lib/auth";
 import { isAdminUser } from "@/lib/db/adminReservations";
 import { prisma } from "@/lib/prisma";
-import { serializeJson } from "@/lib/json-bigint";
 import { NextResponse } from "next/server";
 
-// GET: list all resources (for the admin event resource picker).
+// GET: list all reservable spaces (for the admin event space picker).
 export async function GET() {
   const session = await auth();
   if (!session?.userId) {
@@ -14,23 +13,21 @@ export async function GET() {
     return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
   }
 
-  const resources = await prisma.resource.findMany({
-    orderBy: [{ name: "asc" }],
+  const spaces = await prisma.space.findMany({
+    where: { isReservable: true },
+    orderBy: [{ displayOrder: "asc" }],
     select: {
       id: true,
       name: true,
-      fungibleResource: { select: { name: true, capacity: true } },
+      capacity: true,
     },
   });
 
   return NextResponse.json(
-    serializeJson(
-      resources.map((r) => ({
-        id: r.id,
-        name: r.name,
-        fungibleResourceName: r.fungibleResource?.name ?? "",
-        capacity: r.fungibleResource?.capacity ?? 1,
-      })),
-    ),
+    spaces.map((s) => ({
+      id: s.id,
+      name: s.name,
+      capacity: s.capacity,
+    })),
   );
 }
