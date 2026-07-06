@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_auditorium",
+      "label": "Auditorium room at La Nube Polo Tecnol\u00f3gico \u2014 theater-style seating with white plastic chairs arranged in rows facing a large LED display showing the La Nube Polo Tecnol\u00f3gico logo; exposed concrete ceiling with recessed lighting, brick accent wall with windows on the left, white walls, barn-style sliding wooden door on the right, two wall-mounted air conditioning units, and a small side table. The space is designed for presentations, workshops, events, and talks with capacity for approximately 30\u201340 attendees.",
+      "file_type": "image",
+      "source_file": "public/images/auditorium.jpg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

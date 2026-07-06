@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_restart_server_required_restartnote",
+      "label": "Restart Dev Server Required After DB Reset",
+      "file_type": "document",
+      "source_file": "docs/changes/RESTART_SERVER_REQUIRED.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_restart_server_required_restartnote",
+      "target": "docs_changes_fixes_async_params_and_timestamp_asyncparamstimestampfix",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "docs/changes/RESTART_SERVER_REQUIRED.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

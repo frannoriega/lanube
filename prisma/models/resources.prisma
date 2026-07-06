@@ -6,6 +6,7 @@ model FungibleResource {
   createdAt   BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt   BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   resources   Resource[]
+  space       Space?
 
   @@map("fungible_resources")
 }
@@ -13,7 +14,6 @@ model FungibleResource {
 model Resource {
   id                 String           @id @default(cuid())
   name               String
-  type               ResourceType     @map("type")
   fungibleResourceId String           @map("fungible_resource_id")
   serialNumber       String?          @unique @map("serial_number")
   metadata           Json?
@@ -25,4 +25,23 @@ model Resource {
 
   @@index([fungibleResourceId])
   @@map("resources")
+}
+
+model Space {
+  id                 String            @id @default(cuid())
+  name               String
+  slug               String            @unique
+  description        String
+  imageUrl           String?           @map("image_url")
+  iconName           String?           @map("icon_name")
+  isReservable       Boolean           @default(false) @map("is_reservable")
+  isFeatured         Boolean           @default(false) @map("is_featured")
+  displayOrder       Int               @default(0) @map("display_order")
+  metadata           Json?
+  fungibleResourceId String?           @unique @map("fungible_resource_id")
+  createdAt          BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt          BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  fungibleResource   FungibleResource? @relation(fields: [fungibleResourceId], references: [id])
+
+  @@map("spaces")
 }

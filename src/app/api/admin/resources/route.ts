@@ -15,12 +15,11 @@ export async function GET() {
   }
 
   const resources = await prisma.resource.findMany({
-    orderBy: [{ type: "asc" }, { name: "asc" }],
+    orderBy: [{ name: "asc" }],
     select: {
       id: true,
       name: true,
-      type: true,
-      fungibleResource: { select: { capacity: true } },
+      fungibleResource: { select: { name: true, capacity: true } },
     },
   });
 
@@ -29,7 +28,7 @@ export async function GET() {
       resources.map((r) => ({
         id: r.id,
         name: r.name,
-        type: r.type,
+        fungibleResourceName: r.fungibleResource?.name ?? "",
         capacity: r.fungibleResource?.capacity ?? 1,
       })),
     ),

@@ -1,5 +1,4 @@
 import type { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
-import { ResourceType } from "@/generated/prisma/enums";
 import { describe, expect, it } from "vitest";
 import {
   TIMELINE_FIRST_HOUR,
@@ -53,7 +52,7 @@ describe("admin-timeline exclusive resources", () => {
         resource: {
           id: "space-1",
           name: "S",
-          type: ResourceType.COWORKING,
+          spaceName: "S",
           capacity: 10,
           isExclusive: true,
         },
@@ -81,7 +80,7 @@ describe("admin-timeline exclusive resources", () => {
         resource: {
           id: "space-1",
           name: "S",
-          type: ResourceType.LAB,
+          spaceName: "S",
           capacity: 10,
           isExclusive: true,
         },
@@ -94,7 +93,7 @@ describe("admin-timeline exclusive resources", () => {
         resource: {
           id: "space-1",
           name: "S",
-          type: ResourceType.LAB,
+          spaceName: "S",
           capacity: 10,
           isExclusive: true,
         },
@@ -120,7 +119,7 @@ describe("admin-timeline exclusive resources", () => {
         resource: {
           id: "space-2",
           name: "T",
-          type: ResourceType.COWORKING,
+          spaceName: "T",
           capacity: 10,
           isExclusive: false,
         },
@@ -146,7 +145,7 @@ describe("admin-timeline exclusive resources", () => {
       resource: {
         id: "ex",
         name: "E",
-        type: ResourceType.AUDITORIUM,
+        spaceName: "E",
         capacity: 10,
         isExclusive: true,
       },

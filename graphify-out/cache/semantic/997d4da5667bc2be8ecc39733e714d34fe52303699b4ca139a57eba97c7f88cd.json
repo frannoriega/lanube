@@ -1,0 +1,24 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_members_uner",
+      "label": "Universidad Nacional de Entre R\u00edos (UNER) Logo",
+      "file_type": "image",
+      "source_file": "public/images/members/uner.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Official logo of Universidad Nacional de Entre R\u00edos (UNER), an Argentine national university. The logo features a stylized three-wave graphic in blue and teal tones above the institution name in dark gray text: 'Universidad Nacional de Entre R\u00edos'.",
+      "entity_type": "organization_logo",
+      "organization": "Universidad Nacional de Entre R\u00edos",
+      "organization_abbreviation": "UNER",
+      "organization_type": "public_university",
+      "country": "Argentina",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

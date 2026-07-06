@@ -18,9 +18,17 @@ import {
 } from "@/components/ui/dialog";
 import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
-import { getServiceIcon } from "@/lib/constants/services";
-import { ResourceType } from "@/generated/prisma/enums";
-import { Calendar, Clock, Eye, TrendingUp, Users } from "lucide-react";
+import {
+  Building2,
+  Calendar,
+  Clock,
+  Eye,
+  FlaskConical,
+  MessagesSquare,
+  Presentation,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -188,8 +196,14 @@ export default function AdminDashboard() {
     fetchAdminStats();
   }, [session, status, router, fetchAdminStats]);
 
-  const createServiceIcon = (service: ResourceType) => {
-    const Icon = getServiceIcon(service);
+  const createServiceIcon = (service: string) => {
+    const icons: Record<string, React.ElementType> = {
+      COWORKING: Building2,
+      LAB: FlaskConical,
+      AUDITORIUM: Presentation,
+      MEETING: MessagesSquare,
+    };
+    const Icon = icons[service] ?? Building2;
     return <Icon className="h-8 w-8 text-blue-500" />;
   };
 
@@ -312,7 +326,7 @@ export default function AdminDashboard() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    {createServiceIcon(user.service as ResourceType)}
+                    {createServiceIcon(user.service)}
                     <div>
                       <p className="font-medium">
                         {user.name} {user.lastName}

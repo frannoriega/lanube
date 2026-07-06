@@ -1,6 +1,7 @@
 "use client";
 
 import { DateRangePicker } from "@/components/molecules/date-range-picker";
+import { type SpaceOption } from "@/components/molecules/admin-resource-type-combobox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,23 +26,18 @@ const STATUS_OPTIONS: EventDisplayStatus[] = [
   "CANCELLED",
 ];
 
-const RESOURCE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "AUDITORIUM", label: "Auditorio" },
-  { value: "COWORKING", label: "Coworking" },
-  { value: "LAB", label: "Laboratorio" },
-  { value: "MEETING", label: "Sala de reuniones" },
-];
-
 const ALL = "ALL";
 
 export function EventFilters({
   status,
-  resourceType,
+  fungibleResourceId,
+  spaceOptions,
   from,
   to,
 }: {
   status?: string;
-  resourceType?: string;
+  fungibleResourceId?: string;
+  spaceOptions: SpaceOption[];
   from?: string;
   to?: string;
 }) {
@@ -59,7 +55,7 @@ export function EventFilters({
     router.push(qs ? `/admin/events?${qs}` : "/admin/events");
   };
 
-  const hasFilters = Boolean(status || resourceType || from || to);
+  const hasFilters = Boolean(status || fungibleResourceId || from || to);
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
@@ -86,17 +82,19 @@ export function EventFilters({
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">Recurso</Label>
         <Select
-          value={resourceType ?? ALL}
-          onValueChange={(v) => update({ resource: v === ALL ? undefined : v })}
+          value={fungibleResourceId ?? ALL}
+          onValueChange={(v) =>
+            update({ fungibleResourceId: v === ALL ? undefined : v })
+          }
         >
           <SelectTrigger className="w-[170px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Todos</SelectItem>
-            {RESOURCE_OPTIONS.map((r) => (
-              <SelectItem key={r.value} value={r.value}>
-                {r.label}
+            {spaceOptions.map((o) => (
+              <SelectItem key={o.id} value={o.id}>
+                {o.name}
               </SelectItem>
             ))}
           </SelectContent>

@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_lanube_logo",
+      "label": "La Nube Polo Tecnol\u00f3gico \u2014 Brand Logo (SVG)",
+      "file_type": "image",
+      "source_file": "public/images/lanube-logo.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "confidence_score": 1.0,
+      "extraction_method": "EXTRACTED",
+      "description": "Full isologo (icon + wordmark) for 'La Nube Polo Tecnol\u00f3gico'. Composed of two SVG groups: (1) ISOLOGO \u2014 an abstract network/cloud icon made of curved strokes representing atmospheric layers and seven circular nodes connected by lines, evoking a cloud topology or knowledge graph; nodes are colored in a palette of blues and teals (navy #1c62a3, royal #336bb3, cornflower #4189c8, sky #56c3eb, cyan #5bc1d2, aqua #91d1db, turquoise #3db7e4) with white stroke outlines; (2) LA_NUBE_POLO_TECNOLOGICO \u2014 the wordmark text in two lines: 'LA NUBE' rendered in large bold dark-blue (#1c62a3) letterforms, and 'POLO TECNOL\u00d3GICO' rendered in smaller light-blue (#3db7e4) letterforms beneath. The viewBox is 395\u00d7156.76 px (landscape). The icon uses stroke-width 14px with rounded linecaps and miterlimit styling for smooth curves. The overall brand identity communicates a technology hub or coworking space themed around cloud computing and network connectivity.",
+      "brand_name": "La Nube Polo Tecnol\u00f3gico",
+      "logo_type": "isologo",
+      "color_palette": [
+        "#1c62a3",
+        "#336bb3",
+        "#4189c8",
+        "#56c3eb",
+        "#3db7e4",
+        "#5bc1d2",
+        "#91d1db",
+        "#ffffff"
+      ],
+      "primary_colors": ["#1c62a3", "#3db7e4"],
+      "icon_style": "abstract network graph with cloud curves and circular nodes",
+      "text_content": ["LA NUBE", "POLO TECNOL\u00d3GICO"],
+      "language": "es",
+      "format": "SVG",
+      "dimensions": "395.02 x 156.76 (viewBox units)"
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

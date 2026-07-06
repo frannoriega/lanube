@@ -1,0 +1,87 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_final_optimization_type_based_typebasedoptimization",
+      "label": "Final Optimization: Type-Based Calendar Query",
+      "file_type": "document",
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_expand_reservations_for_calendar_by_type_fn",
+      "label": "PostgreSQL Function: expand_reservations_for_calendar_by_type",
+      "file_type": "concept",
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Final evolution: passes only the resource type string; PostgreSQL resolves all fungible groups and resources internally. API code reduces to ~5 lines per endpoint. Eliminates the application-side fungible resource lookup from the critical path."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_final_optimization_type_based_typebasedoptimization",
+      "target": "docs_changes_fungible_resource_optimization_fungibleresourceoptimization",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_final_optimization_type_based_typebasedoptimization",
+      "target": "concept_expand_reservations_for_calendar_by_type_fn",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_final_optimization_type_based_typebasedoptimization",
+      "target": "concept_fungible_resource_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_expand_reservations_for_calendar_by_fungible_fn",
+      "target": "concept_expand_reservations_for_calendar_by_type_fn",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_calendar_query_optimization_chain",
+      "label": "Calendar Query Optimization Evolution (V1 individual \u2192 V2 fungible \u2192 V3 type-based)",
+      "nodes": [
+        "docs_changes_performance_optimization_or_logic_dborlogicoptimization",
+        "docs_changes_fungible_resource_optimization_fungibleresourceoptimization",
+        "docs_changes_final_optimization_type_based_typebasedoptimization",
+        "concept_expand_reservations_for_calendar_fn",
+        "concept_expand_reservations_for_calendar_by_fungible_fn",
+        "concept_expand_reservations_for_calendar_by_type_fn"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FINAL_OPTIMIZATION_TYPE_BASED.md"
+    }
+  ]
+}

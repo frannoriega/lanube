@@ -1,0 +1,180 @@
+{
+  "nodes": [
+    {
+      "id": "prisma_schema_organization_doc",
+      "label": "Prisma Schema Organization Guide",
+      "file_type": "document",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_organization_modular_schema",
+      "label": "Prisma Modular Schema (domain-per-file)",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "## How It Works",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_organization_enums_prisma",
+      "label": "enums.prisma \u2014 all enum definitions",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### enums.prisma",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_organization_auth_prisma",
+      "label": "auth.prisma \u2014 User, RegisteredUser, Session",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### auth.prisma",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_organization_resources_prisma",
+      "label": "resources.prisma \u2014 FungibleResource, Resource",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### resources.prisma",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_organization_reservations_prisma",
+      "label": "reservations.prisma \u2014 Reservation, ReservationException, CheckIn",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### reservations.prisma",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_organization_events_prisma",
+      "label": "events.prisma \u2014 Event, UserEvent",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### events.prisma",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_organization_modular_schema",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "## How It Works",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_organization_enums_prisma",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### enums.prisma",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_organization_auth_prisma",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### auth.prisma",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_organization_resources_prisma",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### resources.prisma",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_organization_reservations_prisma",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### reservations.prisma",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_organization_events_prisma",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### events.prisma",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_doc",
+      "target": "prisma_schema_structure_doc",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_organization_resources_prisma",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md",
+      "source_location": "#### resources.prisma",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "he_prisma_domain_model_files",
+      "label": "Prisma domain model files",
+      "nodes": [
+        "prisma_schema_organization_enums_prisma",
+        "prisma_schema_organization_auth_prisma",
+        "prisma_schema_organization_resources_prisma",
+        "prisma_schema_organization_reservations_prisma",
+        "prisma_schema_organization_events_prisma"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_ORGANIZATION.md"
+    }
+  ]
+}

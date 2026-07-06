@@ -1,0 +1,58 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_implementation_summary_meetingroomimplementation",
+      "label": "Implementation Summary: Meeting Room Calendar Feature",
+      "file_type": "document",
+      "source_file": "docs/changes/IMPLEMENTATION_SUMMARY.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_implementation_summary_meetingroomimplementation",
+      "target": "docs_changes_meeting_room_feature_meetingroomfeature",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/IMPLEMENTATION_SUMMARY.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_implementation_summary_meetingroomimplementation",
+      "target": "concept_reservation_model",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/changes/IMPLEMENTATION_SUMMARY.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_implementation_summary_meetingroomimplementation",
+      "target": "docs_changes_reservations_crud_guide_reservationscrudguide",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/changes/IMPLEMENTATION_SUMMARY.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_implementation_summary_meetingroomimplementation",
+      "target": "concept_week_calendar_component",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/changes/IMPLEMENTATION_SUMMARY.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

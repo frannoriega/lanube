@@ -1,0 +1,84 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_calendar_improvements_v3_weekcalendar",
+      "label": "Calendar Improvements V3: Dialog into component, 15-min Select, business hours constants, weekend detection",
+      "file_type": "document",
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_business_hours_constants",
+      "label": "Business Hours as Named Constants (BUSINESS_HOURS.START/END, TIME_INTERVAL_MINUTES)",
+      "file_type": "concept",
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_calendar_improvements_v3_weekcalendar",
+      "target": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_calendar_improvements_v3_weekcalendar",
+      "target": "concept_business_hours_constants",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_calendar_improvements_v3_weekcalendar",
+      "target": "docs_changes_calendar_component_refactor_weekcalendar",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_business_hours_constants",
+      "target": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "calendar_component_evolution_series",
+      "label": "Calendar Component Evolution Documentation Series",
+      "nodes": [
+        "docs_changes_calendar_component_refactor_weekcalendar",
+        "docs_changes_calendar_improvements_v3_weekcalendar",
+        "docs_changes_calendar_or_logic_orlogic",
+        "docs_changes_calendar_refactor_complete_statemanagement"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "docs/changes/CALENDAR_IMPROVEMENTS_V3.md"
+    }
+  ]
+}

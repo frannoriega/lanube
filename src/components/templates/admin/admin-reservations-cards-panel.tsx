@@ -19,8 +19,6 @@ import {
   startOfIsoWeekDateKey,
   todayDateKeyInAdminTz,
 } from "@/lib/admin/admin-timezone";
-import type { AdminResourceServiceSlug } from "@/lib/admin/admin-resource-service-slug";
-import { ADMIN_RESOURCE_SERVICE_OPTIONS } from "@/lib/admin/admin-resource-service-slug";
 import { useServerTime } from "@/components/providers/server-time";
 import { cn } from "@/lib/utils";
 import {
@@ -38,12 +36,6 @@ import {
   useState,
 } from "react";
 
-function serviceTitle(slug: AdminResourceServiceSlug): string {
-  return (
-    ADMIN_RESOURCE_SERVICE_OPTIONS.find((o) => o.slug === slug)?.label ?? slug
-  );
-}
-
 function weekRangeLabel(weekStartKey: string): string {
   const end = endOfIsoWeekDateKey(weekStartKey);
   const d0 = parseDateStringLocal(weekStartKey);
@@ -54,14 +46,16 @@ const CLOSED_ACCORDION_VALUE = "__none__";
 
 export function AdminReservationsCardsPanel({
   variant,
-  serviceSlug,
+  fungibleResourceId,
+  spaceName,
   showHeading = true,
   onAction,
   processing,
   refetchKey = 0,
 }: {
   variant: "admin" | "dashboard";
-  serviceSlug: AdminResourceServiceSlug;
+  fungibleResourceId: string;
+  spaceName: string;
   showHeading?: boolean;
   onAction: (
     id: string,
@@ -124,7 +118,7 @@ export function AdminReservationsCardsPanel({
       if (showSpinner) setLoading(true);
       try {
         const qs = new URLSearchParams({
-          service: serviceSlug,
+          service: fungibleResourceId,
           startDate: String(startOfDateKeyMs(fetchFromKey)),
           endDate: String(endOfDateKeyMs(fetchToKey)),
         });
@@ -151,7 +145,7 @@ export function AdminReservationsCardsPanel({
           ).length;
           console.info(
             "[AdminCardsPanel] fetched service=%s range=[%s,%s] totalItems=%d daysWithData=%d",
-            serviceSlug,
+            fungibleResourceId,
             fetchFromKey,
             fetchToKey,
             totalItems,
@@ -182,7 +176,7 @@ export function AdminReservationsCardsPanel({
         setLoading(false);
       }
     },
-    [serviceSlug, fetchFromKey, fetchToKey],
+    [fungibleResourceId, fetchFromKey, fetchToKey],
   );
 
   useEffect(() => {
@@ -194,7 +188,7 @@ export function AdminReservationsCardsPanel({
   useEffect(() => {
     setExpandedDateKey(null);
     setPanelReservation(null);
-  }, [serviceSlug, fetchFromKey, fetchToKey]);
+  }, [fungibleResourceId, fetchFromKey, fetchToKey]);
 
   const orderedDays = useMemo(() => {
     if (!fetchFromKey || !fetchToKey) return [];
@@ -216,7 +210,7 @@ export function AdminReservationsCardsPanel({
   const canPrevWeek =
     variant === "admin" && !!weekStartKey && weekStartKey > minWeekStart;
 
-  const headingTitle = `Reservas — ${serviceTitle(serviceSlug)}`;
+  const headingTitle = `Reservas — ${spaceName}`;
 
   if (!weekStartKey) {
     return (

@@ -1,0 +1,37 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_coworking",
+      "label": "Coworking Space Photo \u2014 Open-Plan Industrial-Modern Workspace",
+      "file_type": "image",
+      "source_file": "public/images/coworking.jpg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Promotional/UI photo of an open-plan coworking space with an industrial-modern aesthetic. The space features exposed concrete ceilings with black pendant lights, exposed brick walls, large windows flooding the room with natural daylight, and structural concrete columns. Furniture consists of white ergonomic office chairs with brown/tan seat cushions arranged around white rectangular tables forming a cluster of shared workstations. A ceiling-mounted projector is visible. A lounge/sofa seating area occupies the background left. Indoor tropical plants are positioned near the windows on the right, with outdoor greenery visible through the glazing. Tile flooring throughout. The atmosphere is bright, spacious, and professional \u2014 consistent with a shared workspace for independent workers or small teams.",
+      "workspace_type": "coworking",
+      "layout": "open-plan",
+      "style": "industrial-modern",
+      "features": [
+        "exposed concrete ceiling",
+        "exposed brick walls",
+        "pendant industrial lights",
+        "ceiling-mounted projector",
+        "white ergonomic chairs",
+        "shared tables / hot desks",
+        "lounge seating area",
+        "large windows with natural light",
+        "indoor plants",
+        "tile flooring",
+        "structural columns"
+      ],
+      "atmosphere": "bright, airy, professional, communal",
+      "usage_context": "Used as the hero/promotional image for the coworking service page on the La Nube platform",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

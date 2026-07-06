@@ -1,6 +1,6 @@
-"use client";
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
-import { Building2 } from "lucide-react";
+import { getSpaceBySlug } from "@/lib/db/spaces";
+import { notFound } from "next/navigation";
 
 const EVENT_TYPES = [
   { value: "MEETING", label: "Reunión" },
@@ -8,13 +8,16 @@ const EVENT_TYPES = [
   { value: "OTHER", label: "Trabajo individual" },
 ];
 
-export default function CoworkingPage() {
+export default async function CoworkingPage() {
+  const space = await getSpaceBySlug("coworking");
+  if (!space?.fungibleResourceId) notFound();
+
   return (
     <CalendarTemplateClient
-      title="Coworking"
+      title={space.name}
       description="Reserva un espacio de trabajo colaborativo en La Nube"
-      icon={Building2}
-      apiEndpoint="/api/resources/coworking"
+      iconName={space.iconName ?? undefined}
+      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="OTHER"
     />
