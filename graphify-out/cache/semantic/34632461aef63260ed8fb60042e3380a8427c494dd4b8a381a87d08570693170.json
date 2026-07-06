@@ -1,0 +1,70 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_database_setup_complete_databasesetupcomplete",
+      "label": "Database Setup Complete",
+      "file_type": "document",
+      "source_file": "docs/changes/DATABASE_SETUP_COMPLETE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_expand_recurring_reservations_fn",
+      "label": "PostgreSQL Function: expand_recurring_reservations",
+      "file_type": "concept",
+      "source_file": "docs/changes/DATABASE_SETUP_COMPLETE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Handles recurring reservation expansion in SQL using generate_series to produce individual occurrence rows, avoiding N+1 queries from application code for recurring series."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_database_setup_complete_databasesetupcomplete",
+      "target": "docs_changes_reservations_crud_guide_reservationscrudguide",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/DATABASE_SETUP_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_database_setup_complete_databasesetupcomplete",
+      "target": "concept_expand_recurring_reservations_fn",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/DATABASE_SETUP_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_database_setup_complete_databasesetupcomplete",
+      "target": "concept_fungible_resource_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/DATABASE_SETUP_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_database_setup_complete_databasesetupcomplete",
+      "target": "docs_changes_meeting_room_feature_meetingroomfeature",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/DATABASE_SETUP_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

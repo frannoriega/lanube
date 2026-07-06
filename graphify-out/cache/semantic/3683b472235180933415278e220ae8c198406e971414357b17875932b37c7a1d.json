@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_fix_login_error_loginoauthfix",
+      "label": "Fix: OAuthAccountNotLinked Login Error",
+      "file_type": "document",
+      "source_file": "docs/changes/FIX_LOGIN_ERROR.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_fix_login_error_loginoauthfix",
+      "target": "docs_changes_seed_readme_seedreadme",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FIX_LOGIN_ERROR.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_fix_login_error_loginoauthfix",
+      "target": "docs_changes_fix_jwt_middleware_jwtmiddlewarefix",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/changes/FIX_LOGIN_ERROR.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

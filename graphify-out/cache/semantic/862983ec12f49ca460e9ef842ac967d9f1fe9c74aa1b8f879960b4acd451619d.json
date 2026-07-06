@@ -1,0 +1,66 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_fix_jwt_middleware_jwtmiddlewarefix",
+      "label": "Fix: JWT vs Database Sessions in Middleware",
+      "file_type": "document",
+      "source_file": "docs/changes/FIX_JWT_MIDDLEWARE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_jwt_strategy",
+      "label": "JWT Session Strategy",
+      "file_type": "concept",
+      "source_file": "docs/changes/FIX_JWT_MIDDLEWARE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Adopted in Next.js middleware because edge runtime cannot access database; middleware uses getToken() from next-auth/jwt. Stateless verification without DB round-trip enables auth checks in Vercel edge network."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_fix_jwt_middleware_jwtmiddlewarefix",
+      "target": "concept_jwt_strategy",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FIX_JWT_MIDDLEWARE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_fix_jwt_middleware_jwtmiddlewarefix",
+      "target": "docs_changes_session_strategy_analysis_sessionstrategyanalysis",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/changes/FIX_JWT_MIDDLEWARE.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_auth_fixes",
+      "label": "Authentication Fixes (JWT middleware + OAuth login error)",
+      "nodes": [
+        "docs_changes_fix_jwt_middleware_jwtmiddlewarefix",
+        "docs_changes_fix_login_error_loginoauthfix",
+        "docs_changes_session_strategy_analysis_sessionstrategyanalysis",
+        "concept_jwt_strategy",
+        "concept_database_session_strategy"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/changes/FIX_JWT_MIDDLEWARE.md"
+    }
+  ]
+}

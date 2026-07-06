@@ -1,12 +1,11 @@
 "use client";
 
+import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
+import { LogoCard } from "@/components/molecules/logo-card";
 import { Marquee } from "@/components/molecules/marquee";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useViewportWidth } from "@/hooks/use-viewport-width";
-import Link from "next/link";
-import Image from "next/image";
-import { Partner, partners } from "@/lib/constants/partners";
+import { partners } from "@/lib/constants/partners";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -20,54 +19,45 @@ export default function PartnersSection() {
       : 120;
 
   return (
-    <section className="w-full flex flex-col items-center">
-      <Container className="px-8 py-16 gap-8 flex flex-col">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-5xl font-bold text-center md:text-left">
-            Socios
-          </h2>
-          <h3 className="text-2xl text-slate-500">
-            Empresas y organizaciones que confían en nosotros y forman parte de
-            nuestro ecosistema
-          </h3>
-        </div>
-        <div className="w-full flex flex-row">
-          <Marquee
-            direction="right"
-            gradientWidth={gradientWidth}
-            speed={50}
-            pauseOnHover
-            className="py-4"
-          >
-            {partners.map((partner) => (
-              <PartnerCard key={partner.id} partner={partner} />
-            ))}
-          </Marquee>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-function PartnerCard({ partner }: { partner: Partner }) {
-  return (
-    <div className="mx-2">
-      <Link href={partner.url} target="_blank">
-        <Card className="flex flex-col gap-4 bg-slate-50 grayscale transition-all duration-300 hover:grayscale-0 hover:scale-105">
-          <CardHeader className="sr-only text-center w-full">
-            <CardTitle className="text-2xl">{partner.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[200px] flex flex-col items-center justify-center rounded-md">
-            <Image
-              src={partner.img}
-              alt={partner.name}
-              width={200}
-              height={200}
-              className="object-contain h-full rounded-md"
-            />
-          </CardContent>
-        </Card>
-      </Link>
-    </div>
+    <Breakout>
+      <section className="w-full flex flex-col items-center">
+        <Container className="px-8 py-16 gap-8 flex flex-col">
+          <div className="flex flex-col gap-3">
+            <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
+              ~/ socios
+              <span className="animate-blink">▌</span>
+            </span>
+            <h2 id="nuestros-socios" className="text-5xl font-bold">
+              Nuestros{" "}
+              <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
+                socios
+              </span>
+            </h2>
+            <p className="max-w-prose text-lg text-muted-foreground">
+              Empresas y organizaciones que confían en nosotros y forman parte
+              de nuestro ecosistema
+            </p>
+          </div>
+          <div className="w-full flex flex-row">
+            <Marquee
+              direction="right"
+              gradientWidth={gradientWidth}
+              speed={50}
+              pauseOnHover
+              className="py-4"
+            >
+              {partners.map((partner) => (
+                <LogoCard
+                  key={partner.id}
+                  name={partner.name}
+                  img={partner.img}
+                  url={partner.url}
+                />
+              ))}
+            </Marquee>
+          </div>
+        </Container>
+      </section>
+    </Breakout>
   );
 }

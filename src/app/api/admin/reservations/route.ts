@@ -11,11 +11,11 @@ import {
   groupAdminReservationsByDateKey,
   isAdminUser,
   listAdminReservationsAllServicesByRange,
-  listAdminReservationsByType,
+  listAdminReservationsByFungibleResource,
   listAllAdminReservationsAllServicesInDateRange,
   listAllAdminReservationsInDateRange,
 } from "@/lib/db/adminReservations";
-import { ResourceType } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -58,20 +58,22 @@ export async function GET(request: NextRequest) {
     const pageSizeRaw = searchParams.get("pageSize");
     const status = searchParams.get("status");
 
-    if (
-      !allServices &&
-      (!service ||
-        !ResourceType[service.toUpperCase() as keyof typeof ResourceType])
-    ) {
-      return NextResponse.json(
-        { message: "Tipo de recurso inválido" },
-        { status: 400 },
-      );
+    if (!allServices) {
+      if (!service) {
+        return NextResponse.json(
+          { message: "Tipo de recurso inválido" },
+          { status: 400 },
+        );
+      }
+      const fr = await prisma.fungibleResource.findUnique({
+        where: { id: service },
+      });
+      if (!fr)
+        return NextResponse.json(
+          { message: "Tipo de recurso inválido" },
+          { status: 400 },
+        );
     }
-
-    const serviceEnum = !allServices
-      ? (service!.toUpperCase() as ResourceType)
-      : null;
 
     const statusFilter =
       status && ["PENDING", "APPROVED", "REJECTED"].includes(status)
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
             page,
             pageSize,
           })
-        : await listAdminReservationsByType(serviceEnum!, {
+        : await listAdminReservationsByFungibleResource(service!, {
             startMs,
             endMs,
             status: statusFilter,
@@ -133,7 +135,7 @@ export async function GET(request: NextRequest) {
     // Default: return all results grouped by date key
     const flat = allServices
       ? await listAllAdminReservationsAllServicesInDateRange(startMs, endMs)
-      : await listAllAdminReservationsInDateRange(serviceEnum!, startMs, endMs);
+      : await listAllAdminReservationsInDateRange(service!, startMs, endMs);
 
     const fromKey = dateKeyFromUnixMs(startMs);
     const toKey = dateKeyFromUnixMs(endMs);

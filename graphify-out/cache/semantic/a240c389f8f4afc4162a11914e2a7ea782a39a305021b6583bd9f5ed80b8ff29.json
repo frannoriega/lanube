@@ -1,0 +1,69 @@
+{
+  "nodes": [
+    {
+      "id": "sdd_task1_brief",
+      "label": "Task 1 Brief \u2014 Prisma Schema + Migration (Space model, ResourceType removal)",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-1-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_space_model",
+      "label": "Space Prisma Model \u2014 DB-driven space definitions replacing ResourceType enum",
+      "file_type": "concept",
+      "source_file": ".superpowers/sdd/task-1-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "sdd_task1_brief",
+      "target": "concept_space_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-1-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_task1_brief",
+      "target": "concept_resource_type_removal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-1-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_task1_brief",
+      "target": "concept_reservation_system",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-1-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_space_model",
+      "target": "concept_reservation_system",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-1-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

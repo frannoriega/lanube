@@ -1,0 +1,24 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_defymotion",
+      "label": "Defymotion \u2013 Rob\u00f3tica Industrial (partner logo)",
+      "file_type": "image",
+      "source_file": "public/images/partners/defymotion.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "White-on-transparent logo for Defymotion, an industrial robotics company. Features a bold geometric chevron/arrow mark above the wordmark 'DEFYMOTION' in heavy slab-serif capitals, with the tagline 'ROBOTICA INDUSTRIAL' in lighter spaced capitals beneath.",
+      "brand_name": "Defymotion",
+      "tagline": "Rob\u00f3tica Industrial",
+      "industry": "Industrial Robotics",
+      "logo_style": "wordmark + geometric icon",
+      "color_scheme": "white monochrome",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

@@ -1,0 +1,82 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_fungible_resource_optimization_fungibleresourceoptimization",
+      "label": "Fungible Resource Group Optimization",
+      "file_type": "document",
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_fungible_resource_model",
+      "label": "FungibleResource DB Model",
+      "file_type": "concept",
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Groups interchangeable physical resources (e.g., all meeting rooms) so capacity checks and calendar queries can operate on the group level rather than individual resources, enabling a single query instead of N queries."
+    },
+    {
+      "id": "concept_expand_reservations_for_calendar_by_fungible_fn",
+      "label": "PostgreSQL Function: expand_reservations_for_calendar_by_fungible",
+      "file_type": "concept",
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Extends single-resource calendar function to operate on an entire FungibleResource group using IN subquery, reducing N individual resource queries to 1 group query. 80-90% faster for typical resource counts."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_fungible_resource_optimization_fungibleresourceoptimization",
+      "target": "docs_changes_performance_optimization_or_logic_dborlogicoptimization",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_fungible_resource_optimization_fungibleresourceoptimization",
+      "target": "concept_expand_reservations_for_calendar_by_fungible_fn",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_fungible_resource_optimization_fungibleresourceoptimization",
+      "target": "concept_fungible_resource_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_expand_reservations_for_calendar_fn",
+      "target": "concept_expand_reservations_for_calendar_by_fungible_fn",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "docs/changes/FUNGIBLE_RESOURCE_OPTIMIZATION.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

@@ -67,6 +67,19 @@
       visibility: hidden;
     }
   }
+
+  /* Float animation for scroll indicator (ease-in-out, not bounce) */
+  --animate-float: float 2.4s ease-in-out infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(6px);
+    }
+  }
 }
 
 :root {
@@ -152,6 +165,7 @@
 
   html {
     background-color: var(--background);
+    scroll-behavior: smooth;
   }
 
   body {
@@ -209,6 +223,18 @@
 
   .animate-marquee {
     animation: marquee var(--marquee-duration, 20s) linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float {
+      animation: none;
+    }
+    .animate-blink {
+      animation: none;
+    }
+    .animate-marquee {
+      animation-play-state: paused;
+    }
   }
 
   /* Glassmorphism utilities */

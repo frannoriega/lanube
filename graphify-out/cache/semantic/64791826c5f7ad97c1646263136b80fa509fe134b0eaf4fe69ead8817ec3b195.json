@@ -1,0 +1,394 @@
+{
+  "nodes": [
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "label": "Events Landing Rework & Event Detail Page Spec",
+      "file_type": "document",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getupcomingpubliceventspage",
+      "label": "getUpcomingPublicEventsPage",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 1. Data Layer",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getpubliceventdetail",
+      "label": "getPublicEventDetail",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 1. Data Layer",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_expandalleventoccurrences",
+      "label": "expandAllEventOccurrences",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 1. Data Layer",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventsgrid",
+      "label": "EventsGrid (new client component replacing EventsCarousel)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 3. Landing Grid",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventssection",
+      "label": "EventsSection (SSR server component)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 3. Landing Grid",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventcard",
+      "label": "EventCard (updated component)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### EventCard updates",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_api_events_route",
+      "label": "GET /api/events public route",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 2. Public API Route",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_events_detail_page",
+      "label": "/events/[id] public detail page",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 4. Event Detail Page",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_localdatetime",
+      "label": "LocalDateTime molecule",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 5. New LocalDateTime molecule",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_registrationcta",
+      "label": "RegistrationCta molecule (extracted)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 4. Event Detail Page",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_hasexceptions",
+      "label": "hasExceptions field on UpcomingEventCard",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### getUpcomingPublicEventsPage",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_upcomingeventcard",
+      "label": "UpcomingEventCard type",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### getUpcomingPublicEventsPage",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getupcomingpubliceventspage",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 1. Data Layer",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getpubliceventdetail",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 1. Data Layer",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_expandalleventoccurrences",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 1. Data Layer",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventsgrid",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 3. Landing Grid",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventssection",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 3. Landing Grid",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventcard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### EventCard updates",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_api_events_route",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 2. Public API Route",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_events_detail_page",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 4. Event Detail Page",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_localdatetime",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 5. New LocalDateTime molecule",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_registrationcta",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## Files Changed / Created",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_upcomingeventcard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### getUpcomingPublicEventsPage",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_hasexceptions",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### getUpcomingPublicEventsPage",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventssection",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getupcomingpubliceventspage",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### EventsSection",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_api_events_route",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getupcomingpubliceventspage",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 2. Public API Route",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_events_detail_page",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getpubliceventdetail",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 4. Event Detail Page",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_events_detail_page",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_expandalleventoccurrences",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 4. Event Detail Page",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventsgrid",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventcard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "## 3. Landing Grid",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventssection",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventsgrid",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### EventsSection",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_upcomingeventcard",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_hasexceptions",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### getUpcomingPublicEventsPage",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventcard",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_registrationcta",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### EventCard updates",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventcard",
+      "target": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_hasexceptions",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": "### EventCard updates",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_eventssection",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacessection",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_03_events_landing_rework_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "he_events_landing_data_layer_functions",
+      "label": "Events landing data layer functions",
+      "nodes": [
+        "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getupcomingpubliceventspage",
+        "docs_superpowers_specs_2026_07_03_events_landing_rework_design_getpubliceventdetail",
+        "docs_superpowers_specs_2026_07_03_events_landing_rework_design_expandalleventoccurrences"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-03-events-landing-rework-design.md"
+    }
+  ]
+}
