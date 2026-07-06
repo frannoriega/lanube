@@ -29,12 +29,7 @@ import {
 } from "@/lib/schemas/events";
 import { createId } from "@paralleldrive/cuid2";
 import { TZDate } from "@date-fns/tz";
-import {
-  Event,
-  EventType,
-  Prisma,
-  ResourceType,
-} from "@/generated/prisma/client";
+import { Event, EventType, Prisma } from "@/generated/prisma/client";
 
 export { planEventOccurrences } from "@/lib/events/plan";
 
@@ -660,7 +655,7 @@ export async function getEvent(id: string) {
     where: { id },
     include: {
       resource: {
-        select: { id: true, name: true, type: true },
+        select: { id: true, name: true },
       },
       form: {
         select: {
@@ -716,8 +711,8 @@ export interface EventListFilters {
   pageSize?: number;
   /** Display status: DRAFT | PUBLISHED | PAUSED | ENDED | CANCELLED. */
   status?: string;
-  /** Filter by the resource's ResourceType (AUDITORIUM, COWORKING, …). */
-  resourceType?: string;
+  /** Filter by the resource's FungibleResource id. */
+  fungibleResourceId?: string;
   /** Date range (admin-tz "yyyy-MM-dd" keys); an event matches if it overlaps the range. */
   from?: string;
   to?: string;
@@ -757,8 +752,8 @@ function buildEventListWhere(
       break;
   }
 
-  if (filters.resourceType) {
-    and.push({ resource: { type: filters.resourceType as ResourceType } });
+  if (filters.fungibleResourceId) {
+    and.push({ resource: { fungibleResourceId: filters.fungibleResourceId } });
   }
 
   // Overlap with [from, to]: starts on/before `to` AND last occurrence on/after `from`.
@@ -790,7 +785,7 @@ export async function listEvents(filters: EventListFilters = {}) {
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
-        resource: { select: { id: true, name: true, type: true } },
+        resource: { select: { id: true, name: true } },
         form: {
           select: {
             id: true,

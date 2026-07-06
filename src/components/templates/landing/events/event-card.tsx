@@ -8,6 +8,7 @@ import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
 import type { RegistrationPhase } from "@/lib/db/events";
 import { MapPin } from "lucide-react";
 import Link from "next/link";
+import { LandingCard } from "../shared/landing-card";
 
 export interface UpcomingEventCardData {
   id: string;
@@ -40,14 +41,19 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
   };
 
   return (
-    <article className="group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 focus-within:ring-2 focus-within:ring-la-nube-primary hover:-translate-y-1 hover:border-la-nube-primary hover:shadow-md">
+    <LandingCard
+      data={{
+        href: `/events/${event.id}`,
+        label: `Ver detalles: ${event.name}`,
+      }}
+    >
       {/* Cover */}
       <div className="relative">
         <EventCover
           imageUrl={event.imageUrl}
           name={event.name}
           eventType={event.eventType}
-          className="aspect-[16/10] w-full"
+          className="aspect-16/10 w-full"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide text-la-nube-selected shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-la-nube-secondary">
@@ -93,7 +99,7 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
         )}
 
         {/* relative z-[2] keeps this above the stretched-link overlay (z-[1]) */}
-        <div className="relative z-[2] mt-auto flex flex-col gap-3 pt-1">
+        <div className="relative z-2 mt-auto flex flex-col gap-3 pt-1">
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{event.resourceName}</span>
@@ -105,10 +111,10 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
       {/* Full-card link — last in DOM so it stacks above the cover, captured by z-[2] CTA above */}
       <Link
         href={`/events/${event.id}`}
-        className="absolute inset-0 z-[1]"
+        className="absolute inset-0 z-1"
         aria-label={`Ver detalles: ${event.name}`}
         tabIndex={-1}
       />
-    </article>
+    </LandingCard>
   );
 }

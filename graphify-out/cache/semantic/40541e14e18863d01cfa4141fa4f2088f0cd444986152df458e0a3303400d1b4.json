@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_calendar_component_refactor_weekcalendar",
+      "label": "Calendar Component Refactor: Extracted WeekCalendar from booking pages",
+      "file_type": "document",
+      "source_file": "docs/changes/CALENDAR_COMPONENT_REFACTOR.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "label": "WeekCalendar component \u2014 drag-and-drop week calendar, centralized state",
+      "file_type": "code",
+      "source_file": "docs/changes/CALENDAR_COMPONENT_REFACTOR.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_calendar_component_refactor_weekcalendar",
+      "target": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_COMPONENT_REFACTOR.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

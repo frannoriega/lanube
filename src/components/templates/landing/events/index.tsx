@@ -11,7 +11,7 @@ export default async function EventsSection() {
   const hasAsterisk = events.some((e) => e.hasExceptions);
 
   return (
-    <Breakout className="bg-gradient-to-b from-la-nube-accent/40 to-transparent dark:from-la-nube-selected/15">
+    <Breakout>
       <section className="w-full" aria-labelledby="proximos-eventos">
         <Container className="flex flex-col gap-8 px-8 py-16">
           <div className="flex flex-col gap-3">
@@ -21,7 +21,7 @@ export default async function EventsSection() {
             </span>
             <h2 id="proximos-eventos" className="text-5xl font-bold">
               Próximos{" "}
-              <span className="bg-gradient-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
                 eventos
               </span>
             </h2>

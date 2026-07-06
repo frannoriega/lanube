@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {
+      "id": "public_vercel",
+      "label": "Vercel Logo SVG",
+      "file_type": "image",
+      "source_file": "public/vercel.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Official Vercel deployment platform logo. A minimal SVG containing a single white upward-pointing triangle (the canonical Vercel logomark) on a transparent background. Dimensions 1155x1000 viewBox. Used in the Next.js default public assets and referenced in the project as a static brand asset.",
+      "confidence_score": 1.0,
+      "tags": [
+        "logo",
+        "brand",
+        "vercel",
+        "deployment-platform",
+        "svg",
+        "static-asset"
+      ]
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

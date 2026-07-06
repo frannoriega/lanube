@@ -10,7 +10,7 @@ import {
   listDaysWithPendingReservationsAllServices,
   listReservationDayCountsInRange,
 } from "@/lib/db/adminReservations";
-import { ResourceType } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 function parseTimestamp(raw: string | null): number | null {
@@ -72,12 +72,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ items, total });
     }
 
-    if (!ResourceType[service.toUpperCase() as keyof typeof ResourceType]) {
+    const fr = await prisma.fungibleResource.findUnique({
+      where: { id: service },
+    });
+    if (!fr)
       return NextResponse.json(
         { message: "Tipo de recurso inválido" },
         { status: 400 },
       );
-    }
 
     const statusFilter =
       status && ["PENDING", "APPROVED", "REJECTED"].includes(status)
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const { items, total } = await listReservationDayCountsInRange(
-      service.toUpperCase() as ResourceType,
+      service,
       statusFilter,
       startMs,
       endMs,

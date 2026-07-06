@@ -1,0 +1,48 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_8_review_pkg_apiroutes",
+      "label": "Task 8 Review Package: New [fungibleResourceId]/route.ts + deleted [type]/route.ts diffs",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-8-review-pkg.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_8_report_apiroutes",
+      "target": "superpowers_sdd_task_8_review_pkg_apiroutes",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": ".superpowers/sdd/task-8-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_admin_reservations_route_ts_handler",
+      "target": "src_lib_db_adminreservations_ts_adminreservations",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_admin_reservations_days_route_ts_handler",
+      "target": "src_lib_db_adminreservations_ts_adminreservations",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

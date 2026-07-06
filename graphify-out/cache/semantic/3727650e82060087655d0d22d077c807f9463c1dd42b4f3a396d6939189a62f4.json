@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_proguide",
+      "label": "Proguide",
+      "file_type": "image",
+      "source_file": "public/images/partners/proguide.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Proguide partner logo. Teal/mint color scheme with the wordmark 'Proguide' in a light sans-serif font alongside a stylized 'P' icon resembling a curved arrow or page-turn symbol. Used as a partner/sponsor logo on the lanube platform.",
+      "confidence_score": 1.0,
+      "tags": ["partner", "logo", "proguide", "teal", "brand"]
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

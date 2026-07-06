@@ -1,0 +1,37 @@
+{
+  "nodes": [
+    {
+      "id": "public_globe",
+      "label": "Globe SVG Icon",
+      "file_type": "image",
+      "source_file": "public/globe.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "A 16x16 SVG globe/world icon rendered in gray (#666). Uses fill-rule evenodd paths to draw a stylized globe with latitude/longitude grid lines, circular outline, and meridian curves. Part of Next.js default public assets, likely used as a favicon or UI icon representing the web/internet.",
+      "confidence_score": 1.0,
+      "tags": [
+        "icon",
+        "svg",
+        "globe",
+        "world",
+        "web",
+        "navigation",
+        "public-asset",
+        "next.js"
+      ],
+      "visual_properties": {
+        "dimensions": "16x16",
+        "fill_color": "#666",
+        "background": "transparent",
+        "style": "flat",
+        "complexity": "medium"
+      },
+      "semantic_role": "decorative-icon"
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

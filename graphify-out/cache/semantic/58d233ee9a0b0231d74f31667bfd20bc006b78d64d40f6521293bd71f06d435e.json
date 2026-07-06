@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "public_window",
+      "label": "Window / Browser UI Icon (SVG)",
+      "file_type": "image",
+      "source_file": "public/window.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "A 16x16 SVG icon depicting a browser or application window. It shows a rectangular outer frame (full 16x16 viewBox) with a rounded inner panel and three small circular dots (radius 0.75) in the upper-left area, resembling macOS-style traffic-light window controls. The icon is rendered in gray (#666) with fill-rule evenodd. Commonly used as a UI icon to represent a browser window, app window, or desktop application context.",
+      "confidence_score": 1.0,
+      "tags": [
+        "icon",
+        "svg",
+        "browser-window",
+        "ui",
+        "16x16",
+        "gray",
+        "traffic-lights",
+        "window-controls"
+      ]
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

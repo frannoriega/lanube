@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [
+      "src/components/templates/landing/hero/index.tsx",
+      "src/app/globals.css"
+    ],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "#777777",
+        "reason": "tsparticles config cannot consume CSS variables; #777777 is intentional neutral gray for decorative background particles",
+        "createdAt": "2026-07-04T00:55:10.454Z"
+      }
+    ]
+  }
+}

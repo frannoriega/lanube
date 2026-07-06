@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_seed_readme_seedreadme",
+      "label": "Database Seed README",
+      "file_type": "document",
+      "source_file": "docs/changes/SEED_README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

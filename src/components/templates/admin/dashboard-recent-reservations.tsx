@@ -1,11 +1,10 @@
 "use client";
 
-import { AdminResourceTypeCombobox } from "@/components/molecules/admin-resource-type-combobox";
-import { AdminReservationsCardsPanel } from "@/components/templates/admin/admin-reservations-cards-panel";
 import {
-  defaultAdminResourceServiceSlug,
-  type AdminResourceServiceSlug,
-} from "@/lib/admin/admin-resource-service-slug";
+  AdminResourceTypeCombobox,
+  type SpaceOption,
+} from "@/components/molecules/admin-resource-type-combobox";
+import { AdminReservationsCardsPanel } from "@/components/templates/admin/admin-reservations-cards-panel";
 import {
   Card,
   CardContent,
@@ -13,9 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ResourceType } from "@/generated/prisma/enums";
 import { Calendar } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Lists reservations filtered by resource type, including basic user and resource info.
@@ -33,9 +31,9 @@ export interface AdminReservationListResult {
   resource: {
     id: string;
     name: string;
-    type: ResourceType;
     capacity: number;
     isExclusive: boolean;
+    spaceName: string;
   };
   registeredUser: {
     name: string;
@@ -66,9 +64,18 @@ export function DashboardRecentReservations({
   processing: string | null;
   refetchKey?: number;
 }) {
-  const [service, setService] = useState<AdminResourceServiceSlug>(
-    defaultAdminResourceServiceSlug(),
-  );
+  const [spaceOptions, setSpaceOptions] = useState<SpaceOption[]>([]);
+  const [service, setService] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/spaces")
+      .then((r) => r.json())
+      .then((opts: SpaceOption[]) => {
+        setSpaceOptions(opts);
+        setService((prev) => prev || opts[0]?.id || "");
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <Card className="glass-card dark:glass-card-dark">
@@ -85,13 +92,18 @@ export function DashboardRecentReservations({
           <p className="mb-1.5 text-sm font-medium text-muted-foreground">
             Tipo de recurso
           </p>
-          <AdminResourceTypeCombobox value={service} onChange={setService} />
+          <AdminResourceTypeCombobox
+            value={service}
+            onChange={setService}
+            options={spaceOptions}
+          />
         </div>
       </CardHeader>
       <CardContent>
         <AdminReservationsCardsPanel
           variant="dashboard"
-          serviceSlug={service}
+          fungibleResourceId={service}
+          spaceName={spaceOptions.find((o) => o.id === service)?.name ?? ""}
           showHeading={false}
           onAction={onAction}
           processing={processing}
@@ -144,17 +156,17 @@ export function parseAdminReservationListFromApi(
         ? {
             id: String(resource.id),
             name: String(resource.name),
-            type: resource.type as ResourceType,
             capacity:
               typeof resource.capacity === "number" ? resource.capacity : 1,
             isExclusive: Boolean(resource.isExclusive),
+            spaceName: String(resource.spaceName ?? ""),
           }
         : {
             id: "",
             name: "",
-            type: "COWORKING" as ResourceType,
             capacity: 1,
             isExclusive: false,
+            spaceName: "",
           },
     } as AdminReservationListResult;
   });

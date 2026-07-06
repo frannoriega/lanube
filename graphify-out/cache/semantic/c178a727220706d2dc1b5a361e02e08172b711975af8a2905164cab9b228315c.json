@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "docs_flows_user_resource_get_calendar_reservations_getcalendarflow",
+      "label": "User Flow: Get Calendar Reservations",
+      "file_type": "document",
+      "source_file": "docs/flows/user/resource/GET_CALENDAR_RESERVATIONS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_flows_user_resource_get_calendar_reservations_getcalendarflow",
+      "target": "concept_resources_type_api_route",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/flows/user/resource/GET_CALENDAR_RESERVATIONS.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_flows_user_resource_get_calendar_reservations_getcalendarflow",
+      "target": "concept_expand_recurring_reservations_fn",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/flows/user/resource/GET_CALENDAR_RESERVATIONS.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

@@ -9,7 +9,6 @@ import {
   Reservation,
   ReservationException,
   ReservationStatus,
-  ResourceType,
 } from "@/generated/prisma/client";
 
 // Types
@@ -17,7 +16,6 @@ export interface ReservationWithRelations extends Reservation {
   resource?: {
     id: string;
     name: string;
-    type: ResourceType;
     serialNumber: string | null;
     fungibleResource: {
       id: string;
@@ -41,7 +39,7 @@ export interface ReservationWithRelations extends Reservation {
 export interface CreateReservationInput {
   reservableType: ReservableType;
   reservableId: string;
-  resourceType: ResourceType;
+  fungibleResourceId: string;
   eventType: EventType;
   reason: string;
   startTime: Date;
@@ -173,7 +171,7 @@ export async function createReservation(
         ${reservationId}::text,
         ${data.reservableType}::reservable_types,
         ${data.reservableId}::text,
-        ${data.resourceType}::resource_types,
+        ${data.fungibleResourceId}::text,
         ${data.eventType}::event_types,
         ${data.reason}::text,
         ${startMs}::bigint,
@@ -868,7 +866,7 @@ export async function getConflictingReservations(
  */
 export async function getUserNextReservations(
   userId: string,
-  resourceType?: ResourceType,
+  fungibleResourceId?: string,
   limit: number = 10,
   offset: number = 0,
 ): Promise<ReservationLedgerRow[]> {
@@ -890,7 +888,7 @@ export async function getUserNextReservations(
   >`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
-      ${resourceType ?? null}::resource_types,
+      ${fungibleResourceId ?? null}::text,
       ${limit}::int,
       ${offset}::int
     )
@@ -917,7 +915,7 @@ export async function getUserNextReservations(
  * (slots that are fully booked or exclusive by OTHER users)
  */
 export async function getUnavailableSlots(
-  resourceType: ResourceType,
+  fungibleResourceId: string,
   startTime: Date,
   endTime: Date,
   excludeUserId?: string,
@@ -932,7 +930,7 @@ export async function getUnavailableSlots(
     }[]
   >`
     SELECT * FROM get_unavailable_slots(
-      ${resourceType}::resource_types,
+      ${fungibleResourceId}::text,
       ${fromMs}::bigint,
       ${toMs}::bigint,
       ${excludeUserId || null}::text

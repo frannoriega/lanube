@@ -1,0 +1,59 @@
+{
+  "nodes": [
+    {
+      "id": "coworking_admin_spec_overview",
+      "label": "coworking-admin-spec \u2014 Reservation Admin Panel UI/UX Spec",
+      "file_type": "document",
+      "source_file": "coworking-admin-spec.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_admin_timeline",
+      "label": "Admin Reservation Timeline UI \u2014 capacity heatmap + status color system",
+      "file_type": "concept",
+      "source_file": "coworking-admin-spec.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "coworking_admin_spec_overview",
+      "target": "concept_admin_timeline",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "coworking-admin-spec.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coworking_admin_spec_overview",
+      "target": "concept_reservation_system",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "coworking-admin-spec.md",
+      "source_location": null,
+      "weight": 0.85
+    },
+    {
+      "source": "concept_admin_timeline",
+      "target": "concept_reservation_system",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "coworking-admin-spec.md",
+      "source_location": null,
+      "weight": 0.85
+    }
+  ],
+  "hyperedges": []
+}

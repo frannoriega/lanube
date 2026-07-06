@@ -1,0 +1,251 @@
+{
+  "nodes": [
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "label": "Spaces & Resources Redesign Spec",
+      "file_type": "document",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_space_model",
+      "label": "Space Prisma model",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 1. Data Model",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacemetadataitem",
+      "label": "SpaceMetadataItem JSON type",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### Metadata JSON schema",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_getpublicspaces",
+      "label": "getPublicSpaces DB query",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 2. DB Query & Booking URL",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacessection",
+      "label": "SpacesSection SSR landing component",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 4. Landing Section",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spaces_ts",
+      "label": "src/lib/constants/spaces.ts (replaces services.ts)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### Icon helper",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+      "label": "ResourceType enum removal from stack",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 3. ResourceType Removal",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_get_unavailable_slots",
+      "label": "get_unavailable_slots updated to use fungible_resource_id",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### SQL functions",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_superpowers_specs_2026_07_04_spaces_resources_design_api_resources_fungibleresourceid",
+      "label": "GET /api/resources/[fungibleResourceId] (replaces /[type])",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### API",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_space_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 1. Data Model",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacemetadataitem",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### Metadata JSON schema",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_getpublicspaces",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 2. DB Query",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacessection",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 4. Landing Section",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spaces_ts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### Icon helper",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 3. ResourceType Removal",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_get_unavailable_slots",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### SQL functions",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spec",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_api_resources_fungibleresourceid",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### API",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_space_model",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacemetadataitem",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### Metadata JSON schema",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spacessection",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_getpublicspaces",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "## 4. Landing Section",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_spaces_ts",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### Constants",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_get_unavailable_slots",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### SQL functions",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_specs_2026_07_04_spaces_resources_design_api_resources_fungibleresourceid",
+      "target": "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md",
+      "source_location": "### API",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "he_resourcetype_removal_blast_radius",
+      "label": "ResourceType removal blast radius",
+      "nodes": [
+        "docs_superpowers_specs_2026_07_04_spaces_resources_design_resourcetype_removal",
+        "docs_superpowers_specs_2026_07_04_spaces_resources_design_get_unavailable_slots",
+        "docs_superpowers_specs_2026_07_04_spaces_resources_design_api_resources_fungibleresourceid",
+        "docs_superpowers_specs_2026_07_04_spaces_resources_design_spaces_ts"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/specs/2026-07-04-spaces-resources-design.md"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_7_review_pkg_admindblayer",
+      "label": "Task 7 Review Package: Diff of adminReservations, adminReports, events, dashboard-recent-reservations",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-7-review-pkg.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_7_report_admindblayer",
+      "target": "superpowers_sdd_task_7_review_pkg_admindblayer",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": ".superpowers/sdd/task-7-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

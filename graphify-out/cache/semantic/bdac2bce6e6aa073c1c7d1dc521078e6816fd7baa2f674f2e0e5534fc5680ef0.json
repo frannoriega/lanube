@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_members_utn",
+      "label": "UTN Facultad Regional Concepci\u00f3n del Uruguay \u2013 Logo",
+      "file_type": "image",
+      "source_file": "public/images/members/utn.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Official logo of UTN (Universidad Tecnol\u00f3gica Nacional) Facultad Regional Concepci\u00f3n del Uruguay. Displays the UTN wordmark in bold sans-serif alongside the faculty's characteristic cross/asterisk symbol, with the full faculty name 'FACULTAD REGIONAL CONCEPCI\u00d3N DEL URUGUAY' in black on white. Used as a member/partner institution logo on the landing page.",
+      "organization": "Universidad Tecnol\u00f3gica Nacional (UTN)",
+      "faculty": "Facultad Regional Concepci\u00f3n del Uruguay",
+      "country": "Argentina",
+      "institution_type": "public_university",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

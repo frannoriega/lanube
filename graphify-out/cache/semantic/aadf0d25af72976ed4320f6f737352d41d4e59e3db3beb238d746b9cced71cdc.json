@@ -1,0 +1,80 @@
+{
+  "nodes": [
+    {
+      "id": "prisma_schema_structure_doc",
+      "label": "Prisma Schema Structure Reference",
+      "file_type": "document",
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_structure_user_registereduser_separation",
+      "label": "User/RegisteredUser model separation",
+      "file_type": "concept",
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": "## User vs RegisteredUser",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "prisma_schema_structure_two_step_onboarding",
+      "label": "Two-step onboarding rationale (OAuth then profile)",
+      "file_type": "rationale",
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": "## User vs RegisteredUser \u2014 Why?",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "prisma_schema_structure_doc",
+      "target": "prisma_schema_structure_user_registereduser_separation",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": "## User vs RegisteredUser",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_structure_doc",
+      "target": "prisma_schema_structure_two_step_onboarding",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": "## User vs RegisteredUser",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_structure_two_step_onboarding",
+      "target": "prisma_schema_structure_user_registereduser_separation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": "## User vs RegisteredUser \u2014 Why?",
+      "weight": 1.0
+    },
+    {
+      "source": "prisma_schema_structure_doc",
+      "target": "prisma_schema_organization_modular_schema",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "prisma/SCHEMA_STRUCTURE.md",
+      "source_location": "## How It Works",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

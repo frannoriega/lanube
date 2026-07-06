@@ -1,6 +1,6 @@
-"use client";
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
-import { Presentation } from "lucide-react";
+import { getSpaceBySlug } from "@/lib/db/spaces";
+import { notFound } from "next/navigation";
 
 const EVENT_TYPES = [
   { value: "CONFERENCE", label: "Conferencia" },
@@ -9,13 +9,16 @@ const EVENT_TYPES = [
   { value: "OTHER", label: "Otro" },
 ];
 
-export default function AuditoriumPage() {
+export default async function AuditoriumPage() {
+  const space = await getSpaceBySlug("auditorium");
+  if (!space?.fungibleResourceId) notFound();
+
   return (
     <CalendarTemplateClient
-      title="Auditorio"
+      title={space.name}
       description="Reserva el auditorio para eventos y presentaciones"
-      icon={Presentation}
-      apiEndpoint="/api/resources/auditorium"
+      iconName={space.iconName ?? undefined}
+      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="CONFERENCE"
     />

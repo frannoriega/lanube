@@ -5,11 +5,7 @@ import {
 } from "@/lib/admin/admin-timezone";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import {
-  ReservationStatus,
-  ResourceType,
-  UserRole,
-} from "@/generated/prisma/client";
+import { ReservationStatus, UserRole } from "@/generated/prisma/client";
 
 const MAX_PAGE_SIZE = 100;
 const RANGE_FETCH_MAX = 3000;
@@ -84,9 +80,9 @@ function toAdminReservationListResult(
     resource: {
       id: row.resource.id,
       name: row.resource.name,
-      type: row.resource.type,
       capacity: cap,
       isExclusive: row.resource.fungibleResource?.isExclusive ?? false,
+      spaceName: row.resource.fungibleResource?.name ?? "",
     },
     registeredUser: row.registeredUser,
   };
@@ -134,8 +130,8 @@ const reservationAdminInclude = {
   },
 } as const;
 
-export async function listAdminReservationsByType(
-  service: ResourceType,
+export async function listAdminReservationsByFungibleResource(
+  fungibleResourceId: string,
   options?: ListAdminReservationsOptions,
 ): Promise<ListAdminReservationsResult> {
   const page = Math.max(1, options?.page ?? 1);
@@ -145,7 +141,7 @@ export async function listAdminReservationsByType(
   );
 
   const where: Prisma.ReservationWhereInput = {
-    resource: { type: service },
+    resource: { fungibleResourceId },
   };
 
   if (options?.startMs != null && options?.endMs != null) {
@@ -180,12 +176,12 @@ export async function listAdminReservationsByType(
  * @param endMs    Inclusive upper bound (Unix ms).
  */
 export async function listAllAdminReservationsInDateRange(
-  service: ResourceType,
+  fungibleResourceId: string,
   startMs: number,
   endMs: number,
 ): Promise<AdminReservationListResult[]> {
   const where: Prisma.ReservationWhereInput = {
-    resource: { type: service },
+    resource: { fungibleResourceId },
     startTime: {
       gte: BigInt(startMs),
       lte: BigInt(endMs),
@@ -297,7 +293,7 @@ export interface ListDaysWithReservationsResult {
  * Date keys for bucketing are derived from the admin timezone.
  */
 export async function listReservationDayCountsInRange(
-  service: ResourceType,
+  fungibleResourceId: string,
   status: ReservationStatus | undefined,
   startMs: number,
   endMs: number,
@@ -307,7 +303,7 @@ export async function listReservationDayCountsInRange(
   const keys = enumerateDateKeysInclusive(fromKey, toKey);
 
   const where: Prisma.ReservationWhereInput = {
-    resource: { type: service },
+    resource: { fungibleResourceId },
     startTime: { gte: BigInt(startMs), lte: BigInt(endMs) },
   };
   if (status) where.status = status;

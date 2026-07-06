@@ -12,34 +12,14 @@ if (process.env.STORAGE_PUBLIC_HOST) {
   });
 }
 
+// Dev-only allowance so impeccable live mode can load.
+const __impeccableLiveDev =
+  process.env.NODE_ENV === "development" ? " http://localhost:8400" : "";
+
 const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   images: { remotePatterns: imageRemotePatterns },
-  async redirects() {
-    return [
-      {
-        source: "/admin/reservations/coworking",
-        destination: "/admin/reservations?service=coworking",
-        permanent: false,
-      },
-      {
-        source: "/admin/reservations/lab",
-        destination: "/admin/reservations?service=lab",
-        permanent: false,
-      },
-      {
-        source: "/admin/reservations/auditorium",
-        destination: "/admin/reservations?service=auditorium",
-        permanent: false,
-      },
-      {
-        source: "/admin/reservations/meeting",
-        destination: "/admin/reservations?service=meeting",
-        permanent: false,
-      },
-    ];
-  },
   async headers() {
     return [
       {
@@ -48,9 +28,9 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value: `
-              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com;
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com${__impeccableLiveDev};
               frame-src 'self' https://challenges.cloudflare.com;
-              connect-src 'self' https://challenges.cloudflare.com;
+              connect-src 'self' https://challenges.cloudflare.com${__impeccableLiveDev};
             `
               .replace(/\s{2,}/g, " ")
               .trim(),

@@ -1,0 +1,136 @@
+{
+  "nodes": [
+    {
+      "id": "src_assets_policies_privacy_doc",
+      "label": "Pol\u00edtica de Privacidad de La Nube",
+      "file_type": "document",
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_assets_policies_privacy_lanube_platform",
+      "label": "La Nube \u2014 plataforma digital coworking p\u00fablico",
+      "file_type": "concept",
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_assets_policies_privacy_municipalidad",
+      "label": "Municipalidad de Concepci\u00f3n del Uruguay",
+      "file_type": "concept",
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_assets_policies_privacy_ley_25326",
+      "label": "Ley N.\u00ba 25.326 Protecci\u00f3n de Datos Personales (Argentina)",
+      "file_type": "concept",
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_assets_policies_privacy_aaip",
+      "label": "Agencia de Acceso a la Informaci\u00f3n P\u00fablica (AAIP)",
+      "file_type": "concept",
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 11. Autoridad de Aplicaci\u00f3n",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "src_assets_policies_privacy_doc",
+      "target": "src_assets_policies_privacy_lanube_platform",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "weight": 1.0
+    },
+    {
+      "source": "src_assets_policies_privacy_doc",
+      "target": "src_assets_policies_privacy_municipalidad",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "weight": 1.0
+    },
+    {
+      "source": "src_assets_policies_privacy_doc",
+      "target": "src_assets_policies_privacy_ley_25326",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "weight": 1.0
+    },
+    {
+      "source": "src_assets_policies_privacy_doc",
+      "target": "src_assets_policies_privacy_aaip",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 11. Autoridad de Aplicaci\u00f3n",
+      "weight": 1.0
+    },
+    {
+      "source": "src_assets_policies_privacy_municipalidad",
+      "target": "src_assets_policies_privacy_lanube_platform",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 1. Identidad del Responsable",
+      "weight": 1.0
+    },
+    {
+      "source": "src_assets_policies_privacy_ley_25326",
+      "target": "src_assets_policies_privacy_doc",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx",
+      "source_location": "## 5. Base Legal del Tratamiento",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "he_privacy_legal_framework",
+      "label": "Privacy legal framework (Ley 25326, AAIP, Municipalidad)",
+      "nodes": [
+        "src_assets_policies_privacy_ley_25326",
+        "src_assets_policies_privacy_aaip",
+        "src_assets_policies_privacy_municipalidad"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/assets/policies/privacy.mdx"
+    }
+  ]
+}

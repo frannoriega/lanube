@@ -1,7 +1,6 @@
-"use client";
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
-import { ResourceType } from "@/types/prisma";
-import { Users } from "lucide-react";
+import { getSpaceBySlug } from "@/lib/db/spaces";
+import { notFound } from "next/navigation";
 
 const EVENT_TYPES = [
   { value: "MEETING", label: "Reunión" },
@@ -10,13 +9,16 @@ const EVENT_TYPES = [
   { value: "OTHER", label: "Otro" },
 ];
 
-export default function MeetingRoomPage() {
+export default async function MeetingRoomPage() {
+  const space = await getSpaceBySlug("meeting-room");
+  if (!space?.fungibleResourceId) notFound();
+
   return (
     <CalendarTemplateClient
-      title="Sala de Reuniones"
+      title={space.name}
       description="Arrastra para seleccionar el horario de tu reunión"
-      icon={Users}
-      apiEndpoint={`/api/resources/${ResourceType.MEETING.toLowerCase()}`}
+      iconName={space.iconName ?? undefined}
+      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="MEETING"
     />

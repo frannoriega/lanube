@@ -1,0 +1,50 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_session_strategy_analysis_sessionstrategyanalysis",
+      "label": "Session Strategy Analysis: JWT vs Database",
+      "file_type": "document",
+      "source_file": "docs/changes/SESSION_STRATEGY_ANALYSIS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_database_session_strategy",
+      "label": "Database Session Strategy",
+      "file_type": "concept",
+      "source_file": "docs/changes/SESSION_STRATEGY_ANALYSIS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Recommended over JWT for La Nube main app: supports instant role revocation, real-time permission changes, and full session audit. Coworking scale does not require JWT's horizontal scalability benefits."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_session_strategy_analysis_sessionstrategyanalysis",
+      "target": "concept_jwt_strategy",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/SESSION_STRATEGY_ANALYSIS.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_session_strategy_analysis_sessionstrategyanalysis",
+      "target": "concept_database_session_strategy",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/SESSION_STRATEGY_ANALYSIS.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

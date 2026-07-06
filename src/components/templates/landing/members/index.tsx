@@ -1,12 +1,11 @@
 "use client";
 
+import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
+import { LogoCard } from "@/components/molecules/logo-card";
 import { Marquee } from "@/components/molecules/marquee";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useViewportWidth } from "@/hooks/use-viewport-width";
-import { Member, members } from "@/lib/constants/members";
-import Link from "next/link";
-import Image from "next/image";
+import { members } from "@/lib/constants/members";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -20,53 +19,44 @@ export default function MembersSection() {
       : 120;
 
   return (
-    <section className="w-full flex flex-col items-center">
-      <Container className="px-8 py-16 gap-8 flex flex-col">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-5xl font-bold text-center md:text-left">
-            Miembros
-          </h2>
-          <h3 className="text-2xl text-slate-500">
-            Conoce a los profesionales que hacen posible la innovación en
-            nuestro polo tecnológico
-          </h3>
-        </div>
-        <div className="w-full flex flex-row">
-          <Marquee
-            gradientWidth={gradientWidth}
-            speed={50}
-            pauseOnHover
-            className="py-4"
-          >
-            {members.map((member) => (
-              <MemberCard key={member.id} member={member} />
-            ))}
-          </Marquee>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-function MemberCard({ member }: { member: Member }) {
-  return (
-    <div className="mx-2">
-      <Link href={member.url} target="_blank" className="block">
-        <Card className="flex flex-col gap-4 bg-slate-50 grayscale transition-all duration-300 hover:grayscale-0 hover:scale-105">
-          <CardHeader className="sr-only text-center w-full">
-            <CardTitle className="text-2xl">{member.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[200px] flex flex-col items-center justify-center rounded-md">
-            <Image
-              src={member.img}
-              alt={member.name}
-              width={200}
-              height={200}
-              className="object-contain h-full rounded-md"
-            />
-          </CardContent>
-        </Card>
-      </Link>
-    </div>
+    <Breakout>
+      <section className="w-full flex flex-col items-center">
+        <Container className="px-8 py-16 gap-8 flex flex-col">
+          <div className="flex flex-col gap-3">
+            <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
+              ~/ miembros
+              <span className="animate-blink">▌</span>
+            </span>
+            <h2 id="nuestros-miembros" className="text-5xl font-bold">
+              Nuestros{" "}
+              <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
+                miembros
+              </span>
+            </h2>
+            <p className="max-w-prose text-lg text-muted-foreground">
+              Conoce a los profesionales que hacen posible la innovación en
+              nuestro polo tecnológico
+            </p>
+          </div>
+          <div className="w-full flex flex-row">
+            <Marquee
+              gradientWidth={gradientWidth}
+              speed={50}
+              pauseOnHover
+              className="py-4"
+            >
+              {members.map((member) => (
+                <LogoCard
+                  key={member.id}
+                  name={member.name}
+                  img={member.img}
+                  url={member.url}
+                />
+              ))}
+            </Marquee>
+          </div>
+        </Container>
+      </section>
+    </Breakout>
   );
 }

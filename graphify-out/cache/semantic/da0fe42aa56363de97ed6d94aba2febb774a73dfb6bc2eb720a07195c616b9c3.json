@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_6_report_resourcecalendardb",
+      "label": "Task 6 Report: ResourceCalendar DB Layer Refactor (COMPLETE)",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-6-report.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_6_report_resourcecalendardb",
+      "target": "src_lib_db_resourcecalendar_ts_resourcecalendar",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-6-report.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "target": "superpowers_sdd_task_6_report_resourcecalendardb",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": ".superpowers/sdd/task-6-report.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

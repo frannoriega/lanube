@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_9_review_pkg_bookingpages",
+      "label": "Task 9 Review Package: Diff of booking pages and calendar-template-client.tsx",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-9-review-pkg.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_9_report_bookingpages",
+      "target": "superpowers_sdd_task_9_review_pkg_bookingpages",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": ".superpowers/sdd/task-9-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

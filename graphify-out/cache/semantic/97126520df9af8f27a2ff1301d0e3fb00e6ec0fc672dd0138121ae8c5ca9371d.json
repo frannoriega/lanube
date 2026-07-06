@@ -1,0 +1,141 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_8_brief_apiroutes",
+      "label": "Task 8 Brief: Create [fungibleResourceId]/route.ts, delete [type]/route.ts, update admin routes",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_app_api_resources_fungibleresourceid_route_ts_handler",
+      "label": "src/app/api/resources/[fungibleResourceId]/route.ts \u2014 GET/POST/DELETE handlers (new, Task 8)",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_app_api_admin_reservations_route_ts_handler",
+      "label": "src/app/api/admin/reservations/route.ts \u2014 updated to use fungibleResourceId DB lookup",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_app_api_admin_reservations_days_route_ts_handler",
+      "label": "src/app/api/admin/reservations/days/route.ts \u2014 updated to use fungibleResourceId DB lookup",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_8_brief_apiroutes",
+      "target": "src_app_api_resources_fungibleresourceid_route_ts_handler",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_8_brief_apiroutes",
+      "target": "src_app_api_admin_reservations_route_ts_handler",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_8_brief_apiroutes",
+      "target": "src_app_api_admin_reservations_days_route_ts_handler",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_8_brief_apiroutes",
+      "target": "src_lib_db_resourcecalendar_ts_resourcecalendar",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_8_brief_apiroutes",
+      "target": "src_lib_db_adminreservations_ts_adminreservations",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_8_brief_apiroutes",
+      "target": "concept_resource_type_removal",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_7_brief_admindblayer",
+      "target": "superpowers_sdd_task_8_brief_apiroutes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_resources_fungibleresourceid_route_ts_handler",
+      "target": "src_lib_db_resourcecalendar_ts_resourcecalendar",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_resources_fungibleresourceid_route_ts_handler",
+      "target": "src_lib_db_reservations_ts_reservations",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-8-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

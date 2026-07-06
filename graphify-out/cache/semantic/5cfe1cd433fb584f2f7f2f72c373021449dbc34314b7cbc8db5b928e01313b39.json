@@ -1,0 +1,182 @@
+{
+  "nodes": [
+    {
+      "id": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "label": "Plan: Spaces & Resources Redesign (ResourceType Removal)",
+      "file_type": "document",
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_space_model",
+      "label": "Space Prisma Model",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Replaces the hardcoded ResourceType enum with a DB-driven model holding name, slug, description, imageUrl, iconName, isReservable, isFeatured, displayOrder, metadata, and optional FK to FungibleResource. Enables dynamic landing page content and removes the need to deploy code for space configuration changes."
+    },
+    {
+      "id": "concept_resource_type_enum",
+      "label": "ResourceType Enum (Deprecated)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Hardcoded MEETING/AUDITORIUM/COWORKING/LAB enum being removed from schema, SQL functions, and all application code. Replaced by Space model + FungibleResource FK to enable dynamic, DB-driven space configuration."
+    },
+    {
+      "id": "concept_resources_fungibleresourceid_api_route",
+      "label": "API Route: /api/resources/[fungibleResourceId] (New)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_spaces_section_landing",
+      "label": "SpacesSection Landing Component (DB-driven)",
+      "file_type": "concept",
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Replaces static ServicesSection; fetches spaces from DB at SSR time via getPublicSpaces(). Featured space renders as full-width card; remaining spaces in 3-column grid. Returns null when no spaces exist."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "concept_space_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "concept_resource_type_enum",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "concept_fungible_resource_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "concept_resources_fungibleresourceid_api_route",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "concept_week_calendar_component",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "concept_spaces_section_landing",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+      "target": "docs_db_diagram_dbdiagram",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_resources_type_api_route",
+      "target": "concept_resources_fungibleresourceid_api_route",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_space_model",
+      "target": "concept_resource_type_enum",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_space_model",
+      "target": "concept_fungible_resource_model",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_spaces_resources_migration",
+      "label": "Spaces & ResourceType Removal Migration",
+      "nodes": [
+        "docs_superpowers_plans_2026_07_04_spaces_resources_spacesresourcesplan",
+        "concept_space_model",
+        "concept_resource_type_enum",
+        "concept_resources_type_api_route",
+        "concept_resources_fungibleresourceid_api_route",
+        "concept_spaces_section_landing"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-07-04-spaces-resources.md"
+    }
+  ]
+}

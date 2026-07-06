@@ -1,0 +1,135 @@
+{
+  "nodes": [
+    {
+      "id": "sdd_progress_overview",
+      "label": "SDD Progress Ledger \u2014 Spaces & Resources Redesign",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_resource_type_removal",
+      "label": "ResourceType Enum Removal \u2014 Spaces & Resources Redesign refactor",
+      "file_type": "concept",
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "sdd_progress_overview",
+      "target": "concept_resource_type_removal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task1_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task2_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task3_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task4_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task10_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task11_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_progress_overview",
+      "target": "sdd_task12_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_space_model",
+      "target": "concept_resource_type_removal",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_space_model_introduction",
+      "label": "Space Model Introduction \u2014 Tasks 1-4 collectively introduce the Space Prisma model replacing ResourceType",
+      "nodes": [
+        "sdd_task1_brief",
+        "sdd_task2_brief",
+        "sdd_task3_brief",
+        "sdd_task4_brief",
+        "concept_space_model"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/progress.md"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_msi",
+      "label": "MSI Partner Logo",
+      "file_type": "image",
+      "source_file": "public/images/partners/msi.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Logo of MSI, a partner organization. The logo features an abstract blue symbol consisting of five circular nodes connected by curved flowing paths arranged symmetrically, suggesting interconnection or community. The design uses a solid navy/cobalt blue color on a white background. MSI is a partner/sponsor displayed on the lanube coworking space platform.",
+      "confidence_score": 0.85,
+      "tags": [
+        "partner",
+        "logo",
+        "MSI",
+        "organization",
+        "blue",
+        "abstract",
+        "nodes",
+        "interconnection"
+      ]
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

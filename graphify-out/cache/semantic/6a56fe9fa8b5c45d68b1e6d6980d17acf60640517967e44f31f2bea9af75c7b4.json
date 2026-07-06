@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_5_brief_reservationsdb",
+      "label": "Task 5 Brief: Replace ResourceType with fungibleResourceId in reservations.ts",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_lib_db_reservations_ts_reservations",
+      "label": "src/lib/db/reservations.ts \u2014 createReservation, getUnavailableSlots, getUserNextReservations",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_resource_type_removal",
+      "label": "ResourceType Enum Removal Refactor",
+      "file_type": "rationale",
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_fungible_resource_id_identifier",
+      "label": "FungibleResource.id as DB-driven service identifier (replaces ResourceType enum)",
+      "file_type": "concept",
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_5_brief_reservationsdb",
+      "target": "src_lib_db_reservations_ts_reservations",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_5_brief_reservationsdb",
+      "target": "concept_resource_type_removal",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_5_brief_reservationsdb",
+      "target": "concept_fungible_resource_id_identifier",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_resource_type_removal",
+      "target": "concept_fungible_resource_id_identifier",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-5-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "sdd_spaces_resource_type_removal_refactor",
+      "label": "SDD Tasks 4-9: Spaces/ResourceType Removal Refactor (sequential pipeline)",
+      "nodes": [
+        "superpowers_sdd_task_4_review_pkg_spacesdb",
+        "superpowers_sdd_task_5_brief_reservationsdb",
+        "superpowers_sdd_task_6_brief_resourcecalendardb",
+        "superpowers_sdd_task_7_brief_admindblayer",
+        "superpowers_sdd_task_8_brief_apiroutes",
+        "superpowers_sdd_task_9_brief_bookingpages"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-5-brief.md"
+    }
+  ]
+}

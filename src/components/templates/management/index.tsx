@@ -6,17 +6,20 @@ import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
-import { getServiceIcon } from "@/lib/constants/services";
-import { ResourceType, UserRole } from "@/types/prisma";
+import { UserRole } from "@/types/prisma";
 import {
   BarChart3,
+  Building2,
   Calendar,
   CalendarDays,
   ChevronDown,
   FileText,
+  FlaskConical,
   LayoutDashboard,
   LucideProps,
   Menu,
+  MessagesSquare,
+  Presentation,
   Users,
   X,
 } from "lucide-react";
@@ -48,22 +51,22 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
     {
       name: "Coworking",
       href: "/user/coworking",
-      icon: getServiceIcon(ResourceType.COWORKING),
+      icon: Building2,
     },
     {
       name: "Laboratorio",
       href: "/user/lab",
-      icon: getServiceIcon(ResourceType.LAB),
+      icon: FlaskConical,
     },
     {
       name: "Auditorio",
       href: "/user/auditorium",
-      icon: getServiceIcon(ResourceType.AUDITORIUM),
+      icon: Presentation,
     },
     {
       name: "Sala de reuniones",
       href: "/user/meeting-room",
-      icon: getServiceIcon(ResourceType.MEETING),
+      icon: MessagesSquare,
     },
     {
       name: "Mis eventos",
