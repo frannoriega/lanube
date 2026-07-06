@@ -16,59 +16,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
+import { useAdminStats } from "@/hooks/api";
+import { apiErrorMessage } from "@/lib/api/client";
+import { reviewAdminReservation } from "@/lib/api/mutations";
 import {
   Building2,
   Calendar,
   Clock,
   Eye,
   FlaskConical,
+  Loader2,
   MessagesSquare,
   Presentation,
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
-
-interface AdminStats {
-  todayUsers: number;
-  weekUsers: number;
-  monthUsers: number;
-  pendingReservations: number;
-  approvedReservations: number;
-  rejectedReservations: number;
-  currentUsers: {
-    id: string;
-    name: string;
-    lastName: string;
-    checkInTime: number;
-    reservationEndTime: number | null;
-    service: string;
-  }[];
-  recentReservations: {
-    id: string;
-    user: {
-      name: string;
-      lastName: string;
-    };
-    service: string;
-    startTime: number;
-    endTime: number;
-    status: string;
-    reason: string;
-  }[];
-}
 
 export default function AdminDashboard() {
   const { now } = useServerTime();
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<AdminStats | null>(null);
+  const {
+    data: stats,
+    loading,
+    firstTime,
+    refetch: refetchStats,
+  } = useAdminStats();
   const [processing, setProcessing] = useState<string | null>(null);
   const [confirmData, setConfirmData] = useState<{
     reservationId: string;
@@ -79,19 +55,6 @@ export default function AdminDashboard() {
 
   const triggerRefetch = useCallback(() => setRefetchKey((k) => k + 1), []);
 
-  const fetchAdminStats = useCallback(async () => {
-    try {
-      const response = await fetch("/api/admin/stats");
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const handleReservationAction = useCallback(
     async (
       reservationId: string,
@@ -101,100 +64,57 @@ export default function AdminDashboard() {
       setProcessing(reservationId);
       try {
         if (action === "APPROVED") {
-          const previewRes = await fetch(
-            `/api/admin/reservations/${reservationId}`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ status: action, preview: true }),
-            },
-          );
-          if (!previewRes.ok) {
-            const err = await previewRes.json().catch(() => ({}));
-            toast.error(err.message || "No se pudo previsualizar conflictos");
-            setProcessing(null);
-            return;
-          }
-          const previewData = await previewRes.json();
+          const preview = await reviewAdminReservation(reservationId, {
+            status: action,
+            preview: true,
+          });
           setConfirmData({
             reservationId,
-            conflicts: previewData.autoRejectedIds || [],
+            conflicts: preview.autoRejectedIds || [],
           });
         } else {
-          const response = await fetch(
-            `/api/admin/reservations/${reservationId}`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ status: action, deniedReason }),
-            },
-          );
-          if (response.ok) {
-            toast.success("Reserva rechazada exitosamente");
-            fetchAdminStats();
-            triggerRefetch();
-          } else {
-            const error = await response.json();
-            toast.error(error.message || "Error al procesar la reserva");
-          }
+          await reviewAdminReservation(reservationId, {
+            status: action,
+            deniedReason,
+          });
+          toast.success("Reserva rechazada exitosamente");
+          refetchStats();
+          triggerRefetch();
         }
-      } catch {
-        toast.error("Error al procesar la reserva");
+      } catch (err) {
+        toast.error(apiErrorMessage(err, "Error al procesar la reserva"));
       } finally {
         if (action !== "APPROVED") setProcessing(null);
       }
     },
-    [fetchAdminStats, triggerRefetch],
+    [refetchStats, triggerRefetch],
   );
 
   const confirmApprove = useCallback(async () => {
     if (!confirmData) return;
     setConfirming(true);
     try {
-      const res = await fetch(
-        `/api/admin/reservations/${confirmData.reservationId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "APPROVED" }),
-        },
+      const data = await reviewAdminReservation(confirmData.reservationId, {
+        status: "APPROVED",
+      });
+      const count = (data.autoRejectedIds || []).length;
+      toast.success(
+        `Reserva aprobada. ${
+          count > 0
+            ? `${count} reservas rechazadas automáticamente`
+            : "Sin conflictos"
+        }`,
       );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.message || "No se pudo aprobar la reserva");
-      } else {
-        const data = await res.json().catch(() => ({}));
-        const count = (data.autoRejectedIds || []).length;
-        toast.success(
-          `Reserva aprobada. ${
-            count > 0
-              ? `${count} reservas rechazadas automáticamente`
-              : "Sin conflictos"
-          }`,
-        );
-        setConfirmData(null);
-        fetchAdminStats();
-        triggerRefetch();
-      }
-    } catch {
-      toast.error("Error al aprobar la reserva");
+      setConfirmData(null);
+      refetchStats();
+      triggerRefetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al aprobar la reserva"));
     } finally {
       setConfirming(false);
       setProcessing(null);
     }
-  }, [confirmData, fetchAdminStats, triggerRefetch]);
-
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/");
-      return;
-    }
-
-    // TODO: Check if user is admin
-    fetchAdminStats();
-  }, [session, status, router, fetchAdminStats]);
+  }, [confirmData, refetchStats, triggerRefetch]);
 
   const createServiceIcon = (service: string) => {
     const icons: Record<string, React.ElementType> = {
@@ -235,75 +155,55 @@ export default function AdminDashboard() {
     return end.getTime() < t.getTime();
   };
 
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
+  const statCards: { title: string; icon: React.ElementType; value: number }[] =
+    [
+      { title: "Usuarios Hoy", icon: Users, value: stats?.todayUsers || 0 },
+      { title: "Esta Semana", icon: TrendingUp, value: stats?.weekUsers || 0 },
+      { title: "Este Mes", icon: Calendar, value: stats?.monthUsers || 0 },
+      {
+        title: "Reservas Pendientes",
+        icon: Clock,
+        value: stats?.pendingReservations || 0,
+      },
+    ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Panel de Administración
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300">
-          Gestiona reservas, usuarios e incidentes de La Nube
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Panel de Administración
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Gestiona reservas, usuarios e incidentes de La Nube
+          </p>
+        </div>
+        {loading && !firstTime ? (
+          <Loader2
+            className="h-5 w-5 animate-spin text-muted-foreground"
+            aria-label="Actualizando"
+          />
+        ) : null}
       </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Hoy</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.todayUsers || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.weekUsers || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Este Mes</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.monthUsers || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Reservas Pendientes
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.pendingReservations || 0}
-            </div>
-          </CardContent>
-        </Card>
+        {statCards.map(({ title, icon: Icon, value }) => (
+          <Card key={title} className="glass-card dark:glass-card-dark">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{title}</CardTitle>
+              <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {firstTime ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <div className="text-2xl font-bold">{value}</div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Current users */}
@@ -402,63 +302,6 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Quick actions */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                Gestionar Reservas
-              </CardTitle>
-              <CardDescription>
-                Aprobar o rechazar reservas pendientes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                className="w-full"
-                onClick={() => router.push("/admin/reservations")}
-              >
-                Ver Reservas
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-green-500" />
-                Usuarios Actuales
-              </CardTitle>
-              <CardDescription>
-                Ver usuarios actualmente en La Nube
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline">
-                Ver Usuarios
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Reportar Incidente
-              </CardTitle>
-              <CardDescription>
-                Crear un nuevo reporte de incidente
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline" onClick={() => router.push('/admin/incidents')}>
-                Crear Incidente
-              </Button>
-            </CardContent>
-          </Card>
-        </div> */}
     </div>
   );
 }

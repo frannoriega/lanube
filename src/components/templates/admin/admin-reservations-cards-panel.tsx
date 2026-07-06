@@ -4,10 +4,9 @@ import { AdminReservationDetailSheet } from "@/components/organisms/admin/admin-
 import { DayReservationCard } from "@/components/organisms/admin/day-reservation-card";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import {
-  AdminReservationListResult,
-  parseItemsByDateFromApi,
-} from "@/components/templates/admin/dashboard-recent-reservations";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { AdminReservationListResult } from "@/lib/api/admin-reservations";
+import { useAdminReservationsRange } from "@/hooks/api";
 import {
   addDaysToDateKey,
   adminTwoCalendarWeeksRange,
@@ -67,10 +66,6 @@ export function AdminReservationsCardsPanel({
 }) {
   const { now, alignRevision } = useServerTime();
 
-  const [itemsByDate, setItemsByDate] = useState<
-    Record<string, AdminReservationListResult[]>
-  >({});
-  const [loading, setLoading] = useState(true);
   const [pendingOnly, setPendingOnly] = useState(false);
   const [expandedDateKey, setExpandedDateKey] = useState<string | null>(null);
   const [panelReservation, setPanelReservation] =
@@ -110,80 +105,29 @@ export function AdminReservationsCardsPanel({
         ? dashboardRange.toKey
         : endOfIsoWeekDateKey(weekStartKey);
 
-  const prevRefetchKey = useRef(refetchKey);
-
-  const loadRange = useCallback(
-    async (showSpinner: boolean) => {
-      if (!spaceId || !fetchFromKey || !fetchToKey) return;
-      if (showSpinner) setLoading(true);
-      try {
-        const qs = new URLSearchParams({
-          service: spaceId,
-          startDate: String(startOfDateKeyMs(fetchFromKey)),
-          endDate: String(endOfDateKeyMs(fetchToKey)),
-        });
-        const res = await fetch(`/api/admin/reservations?${qs.toString()}`);
-        if (!res.ok) {
-          if (process.env.NODE_ENV === "development") {
-            console.warn(
-              "[AdminCardsPanel] API returned %d for %s",
-              res.status,
-              qs.toString(),
-            );
-          }
-          return;
+  const {
+    data: range,
+    loading,
+    firstTime,
+    refetch,
+  } = useAdminReservationsRange(
+    spaceId && fetchFromKey && fetchToKey
+      ? {
+          spaceId,
+          startMs: startOfDateKeyMs(fetchFromKey),
+          endMs: endOfDateKeyMs(fetchToKey),
         }
-        const data = await res.json();
-        const parsed = parseItemsByDateFromApi(data);
-        if (process.env.NODE_ENV === "development") {
-          const totalItems = Object.values(parsed.itemsByDate).reduce(
-            (sum, arr) => sum + arr.length,
-            0,
-          );
-          const daysWithData = Object.entries(parsed.itemsByDate).filter(
-            ([, arr]) => arr.length > 0,
-          ).length;
-          console.info(
-            "[AdminCardsPanel] fetched service=%s range=[%s,%s] totalItems=%d daysWithData=%d",
-            spaceId,
-            fetchFromKey,
-            fetchToKey,
-            totalItems,
-            daysWithData,
-          );
-          if (totalItems > 0) {
-            const firstDay = Object.entries(parsed.itemsByDate).find(
-              ([, arr]) => arr.length > 0,
-            );
-            if (firstDay) {
-              const sample = firstDay[1][0];
-              console.info(
-                "[AdminCardsPanel] sample: dateKey=%s id=%s start=%d (%s) end=%d (%s) status=%s resource=%s",
-                firstDay[0],
-                sample.id,
-                sample.startTime,
-                new Date(sample.startTime).toISOString(),
-                sample.endTime,
-                new Date(sample.endTime).toISOString(),
-                sample.status,
-                sample.resource.name,
-              );
-            }
-          }
-        }
-        setItemsByDate(parsed.itemsByDate);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [spaceId, fetchFromKey, fetchToKey],
+      : null,
   );
+  const itemsByDate = useMemo(() => range?.itemsByDate ?? {}, [range]);
 
+  // External silent refresh (after approving/rejecting a reservation).
+  const prevRefetchKey = useRef(refetchKey);
   useEffect(() => {
-    const isSilentRefresh = prevRefetchKey.current !== refetchKey;
+    if (prevRefetchKey.current === refetchKey) return;
     prevRefetchKey.current = refetchKey;
-    loadRange(!isSilentRefresh);
-  }, [loadRange, refetchKey]);
+    refetch();
+  }, [refetchKey, refetch]);
 
   useEffect(() => {
     setExpandedDateKey(null);
@@ -212,10 +156,11 @@ export function AdminReservationsCardsPanel({
 
   const headingTitle = `Reservas — ${spaceName}`;
 
-  if (!weekStartKey) {
+  if (!weekStartKey || firstTime) {
     return (
-      <div className="flex h-40 items-center justify-center rounded-md border border-dashed border-border">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-la-nube-primary border-t-transparent" />
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full max-w-sm" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }

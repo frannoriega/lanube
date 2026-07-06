@@ -7,10 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
 import { LayoutGrid } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
 
 interface EventTypeOption {
   value: string;
@@ -33,35 +32,8 @@ export function CalendarTemplateClient({
   defaultEventType: string;
 }) {
   const Icon = iconName ? getSpaceIcon(iconName) : LayoutGrid;
-  const { data: session, status } = useSession();
-  const [userId, setUserId] = useState<string | undefined>(undefined);
-  const [loadingUser, setLoadingUser] = useState(true);
-
-  useEffect(() => {
-    if (status === "loading") return;
-    if (!session || !session.userId) return;
-    setUserId(session.userId);
-    setLoadingUser(false);
-  }, [session, status]);
-
-  // Skeleton while auth/user loads
-  if (status === "loading" || loadingUser) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <div className="h-6 w-56 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-          <div className="mt-2 h-4 w-80 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-        </div>
-        <div className="rounded-lg border p-6">
-          <div className="h-5 w-40 bg-gray-200 dark:bg-gray-800 rounded animate-pulse mb-2" />
-          <div className="h-4 w-60 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-          <div className="mt-6 h-[500px] w-full bg-gray-100 dark:bg-gray-900 rounded animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) return null;
+  // Provided server-side by the layout — available on first render.
+  const user = useUser();
 
   return (
     <div className="space-y-6">
@@ -87,7 +59,7 @@ export function CalendarTemplateClient({
             defaultEventType={defaultEventType}
             title="Nueva Reserva"
             description="Motivo de la reserva"
-            userId={userId}
+            userId={user?.id}
           />
         </CardContent>
       </Card>

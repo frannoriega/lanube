@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIncidents } from "@/hooks/api";
+import { apiErrorMessage } from "@/lib/api/client";
+import { createIncident, updateIncidentStatus } from "@/lib/api/mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -35,29 +37,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface Incident {
-  id: string;
-  subject: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  resolvedAt: string | null;
-  incidentUsers: {
-    user: {
-      name: string;
-      lastName: string;
-      email: string;
-      dni: string;
-    };
-  }[];
-}
-
 export default function IncidentsPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const { data: incidentsData, firstTime, refetch } = useIncidents();
+  const incidents = incidentsData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [creating, setCreating] = useState(false);
@@ -68,30 +50,6 @@ export default function IncidentsPage() {
     description: "",
   });
 
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/");
-      return;
-    }
-
-    fetchIncidents();
-  }, [session, status, router]);
-
-  const fetchIncidents = async () => {
-    try {
-      const response = await fetch("/api/admin/incidents");
-      if (response.ok) {
-        const data = await response.json();
-        setIncidents(data);
-      }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateIncident = async () => {
     if (!newIncident.subject || !newIncident.description) {
       toast.error("Por favor completa todos los campos");
@@ -99,27 +57,14 @@ export default function IncidentsPage() {
     }
 
     setCreating(true);
-
     try {
-      const response = await fetch("/api/admin/incidents", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newIncident),
-      });
-
-      if (response.ok) {
-        toast.success("Incidente creado exitosamente");
-        setNewIncident({ subject: "", description: "" });
-        setShowCreateDialog(false);
-        fetchIncidents();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Error al crear el incidente");
-      }
-    } catch {
-      toast.error("Error al crear el incidente");
+      await createIncident(newIncident);
+      toast.success("Incidente creado exitosamente");
+      setNewIncident({ subject: "", description: "" });
+      setShowCreateDialog(false);
+      refetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al crear el incidente"));
     } finally {
       setCreating(false);
     }
@@ -127,27 +72,14 @@ export default function IncidentsPage() {
 
   const handleStatusChange = async (incidentId: string, newStatus: string) => {
     setProcessing(incidentId);
-
     try {
-      const response = await fetch(`/api/admin/incidents/${incidentId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
-        toast.success(
-          `Incidente ${newStatus === "RESOLVED" ? "resuelto" : newStatus === "CLOSED" ? "cerrado" : "actualizado"} exitosamente`,
-        );
-        fetchIncidents();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Error al actualizar el incidente");
-      }
-    } catch {
-      toast.error("Error al actualizar el incidente");
+      await updateIncidentStatus(incidentId, newStatus);
+      toast.success(
+        `Incidente ${newStatus === "RESOLVED" ? "resuelto" : newStatus === "CLOSED" ? "cerrado" : "actualizado"} exitosamente`,
+      );
+      refetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al actualizar el incidente"));
     } finally {
       setProcessing(null);
     }
@@ -194,16 +126,21 @@ export default function IncidentsPage() {
   ).length;
   const closedIncidents = incidents.filter((i) => i.status === "CLOSED").length;
 
-  if (status === "loading" || loading) {
+  if (firstTime) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-4 w-72" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} className="h-28 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-40 w-full" />
       </div>
     );
-  }
-
-  if (!session) {
-    return null;
   }
 
   return (
