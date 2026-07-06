@@ -85,12 +85,7 @@ export async function getDashboardStatsByUserId(
     prisma.reservation.findMany({
       select: {
         id: true,
-        resource: {
-          select: {
-            name: true,
-            fungibleResource: { select: { name: true } },
-          },
-        },
+        space: { select: { name: true } },
         startTime: true,
         endTime: true,
         status: true,
@@ -112,11 +107,8 @@ export async function getDashboardStatsByUserId(
     totalTimeThisMonth: toHours(reservationsThisMonth),
     recentReservations: recentReservations.map((reservation) => ({
       id: reservation.id,
-      service:
-        reservation.resource?.name ??
-        reservation.resource?.fungibleResource?.name ??
-        "Servicio",
-      serviceType: reservation.resource?.fungibleResource?.name ?? "Unknown",
+      service: reservation.space?.name ?? "Servicio",
+      serviceType: reservation.space?.name ?? "Unknown",
       startTime: Number(reservation.startTime),
       endTime: Number(reservation.endTime),
       status: reservation.status,

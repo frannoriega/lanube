@@ -13,15 +13,11 @@ import {
 
 // Types
 export interface ReservationWithRelations extends Reservation {
-  resource?: {
+  space?: {
     id: string;
     name: string;
-    serialNumber: string | null;
-    fungibleResource: {
-      id: string;
-      name: string;
-      capacity: number;
-    } | null;
+    capacity: number;
+    isExclusive: boolean;
   } | null;
   registeredUser?: {
     id: string;
@@ -39,7 +35,7 @@ export interface ReservationWithRelations extends Reservation {
 export interface CreateReservationInput {
   reservableType: ReservableType;
   reservableId: string;
-  fungibleResourceId: string;
+  spaceId: string;
   eventType: EventType;
   reason: string;
   startTime: Date;
@@ -50,7 +46,7 @@ export interface CreateReservationInput {
 }
 
 export interface UpdateReservationInput {
-  resourceId?: string;
+  spaceId?: string;
   eventType?: EventType;
   reason?: string;
   deniedReason?: string;
@@ -65,7 +61,7 @@ export interface UpdateReservationInput {
 export interface ReservationFilters {
   reservableType?: ReservableType;
   reservableId?: string;
-  resourceId?: string;
+  spaceId?: string;
   status?: ReservationStatus | ReservationStatus[];
   eventType?: EventType;
   startTimeFrom?: Date;
@@ -82,7 +78,7 @@ export interface ExpandedReservationOccurrence {
   occurrenceEndTime: bigint;
   reservableType: ReservableType;
   reservableId: string;
-  resourceId: string | null;
+  spaceId: string | null;
   eventType: EventType;
   reason: string;
   deniedReason: string | null;
@@ -104,7 +100,7 @@ export interface ReservationLedgerRow {
   occurrenceEndTime: bigint;
   reservableType: ReservableType;
   reservableId: string;
-  resourceId: string;
+  spaceId: string;
   eventType: EventType;
   reason: string | null;
   actorSize: number;
@@ -114,7 +110,7 @@ export interface ReservationLedgerRow {
 
 // Unavailable slot type
 export interface UnavailableSlot {
-  resourceId: string;
+  spaceId: string;
   startTime: bigint;
   endTime: bigint;
 }
@@ -171,7 +167,7 @@ export async function createReservation(
         ${reservationId}::text,
         ${data.reservableType}::reservable_types,
         ${data.reservableId}::text,
-        ${data.fungibleResourceId}::text,
+        ${data.spaceId}::text,
         ${data.eventType}::event_types,
         ${data.reason}::text,
         ${startMs}::bigint,
@@ -212,7 +208,7 @@ export async function createReservation(
   const reservation = await prisma.reservation.findUnique({
     where: { id: reservationId },
     include: {
-      resource: { include: { fungibleResource: true } },
+      space: true,
       registeredUser: { select: { id: true, name: true, lastName: true } },
       checkIns: { select: { id: true, checkInTime: true, checkOutTime: true } },
       exceptions: true,
@@ -313,11 +309,7 @@ export async function getReservationById(
   return await prisma.reservation.findUnique({
     where: { id },
     include: {
-      resource: {
-        include: {
-          fungibleResource: true,
-        },
-      },
+      space: true,
       registeredUser: {
         select: {
           id: true,
@@ -358,8 +350,8 @@ export async function listReservations(
     if (filters.reservableId) {
       where.reservableId = filters.reservableId;
     }
-    if (filters.resourceId) {
-      where.resourceId = filters.resourceId;
+    if (filters.spaceId) {
+      where.spaceId = filters.spaceId;
     }
     if (filters.status) {
       where.status = Array.isArray(filters.status)
@@ -407,11 +399,7 @@ export async function listReservations(
     prisma.reservation.findMany({
       where,
       include: {
-        resource: {
-          include: {
-            fungibleResource: true,
-          },
-        },
+        space: true,
         registeredUser: {
           select: {
             id: true,
@@ -474,14 +462,14 @@ export async function getUserReservations(
  * Gets all reservations for a specific resource in a time range
  */
 export async function getResourceReservations(
-  resourceId: string,
+  spaceId: string,
   startTime: Date,
   endTime: Date,
   includeStatuses: ReservationStatus[] = ["PENDING", "APPROVED"],
 ): Promise<ReservationWithRelations[]> {
   const { reservations } = await listReservations(
     {
-      resourceId,
+      spaceId,
       status: includeStatuses,
       startTimeFrom: startTime,
       endTimeTo: endTime,
@@ -561,7 +549,7 @@ export async function updateReservation(
   return await prisma.reservation.update({
     where: { id },
     data: {
-      resourceId: data.resourceId,
+      spaceId: data.spaceId,
       eventType: data.eventType,
       reason: data.reason,
       deniedReason: data.deniedReason,
@@ -580,11 +568,7 @@ export async function updateReservation(
           : undefined,
     },
     include: {
-      resource: {
-        include: {
-          fungibleResource: true,
-        },
-      },
+      space: true,
       registeredUser: {
         select: {
           id: true,
@@ -627,7 +611,7 @@ export async function approveReservation(id: string): Promise<{
   const reservation = await prisma.reservation.findUnique({
     where: { id },
     include: {
-      resource: { include: { fungibleResource: true } },
+      space: true,
       registeredUser: { select: { id: true, name: true, lastName: true } },
       checkIns: { select: { id: true, checkInTime: true, checkOutTime: true } },
       exceptions: true,
@@ -721,7 +705,7 @@ export async function getReservationStats(
   filters?: {
     reservableType?: ReservableType;
     eventType?: EventType;
-    resourceId?: string;
+    spaceId?: string;
   },
 ): Promise<{
   total: number;
@@ -742,8 +726,8 @@ export async function getReservationStats(
   if (filters?.eventType) {
     where.eventType = filters.eventType;
   }
-  if (filters?.resourceId) {
-    where.resourceId = filters.resourceId;
+  if (filters?.spaceId) {
+    where.spaceId = filters.spaceId;
   }
 
   const [total, byStatus, byEventType, byReservableType] = await Promise.all([
@@ -803,13 +787,13 @@ export async function hasActiveReservations(userId: string): Promise<boolean> {
  * Gets conflicting reservations for a given time range and resource
  */
 export async function getConflictingReservations(
-  resourceId: string,
+  spaceId: string,
   startTime: Date,
   endTime: Date,
   excludeReservationId?: string,
 ): Promise<ReservationWithRelations[]> {
   const whereClause: Prisma.ReservationWhereInput = {
-    resourceId,
+    spaceId,
     status: {
       in: ["APPROVED", "PENDING"],
     },
@@ -830,11 +814,7 @@ export async function getConflictingReservations(
   return await prisma.reservation.findMany({
     where: whereClause,
     include: {
-      resource: {
-        include: {
-          fungibleResource: true,
-        },
-      },
+      space: true,
       registeredUser: {
         select: {
           id: true,
@@ -866,7 +846,7 @@ export async function getConflictingReservations(
  */
 export async function getUserNextReservations(
   userId: string,
-  fungibleResourceId?: string,
+  spaceId?: string,
   limit: number = 10,
   offset: number = 0,
 ): Promise<ReservationLedgerRow[]> {
@@ -878,7 +858,7 @@ export async function getUserNextReservations(
       occurrence_end_time: bigint;
       reservable_type: ReservableType;
       reservable_id: string;
-      resource_id: string;
+      space_id: string;
       event_type: EventType;
       reason: string | null;
       actor_size: number;
@@ -888,7 +868,7 @@ export async function getUserNextReservations(
   >`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
-      ${fungibleResourceId ?? null}::text,
+      ${spaceId ?? null}::text,
       ${limit}::int,
       ${offset}::int
     )
@@ -901,7 +881,7 @@ export async function getUserNextReservations(
     occurrenceEndTime: row.occurrence_end_time,
     reservableType: row.reservable_type as ReservableType,
     reservableId: row.reservable_id,
-    resourceId: row.resource_id,
+    spaceId: row.space_id,
     eventType: row.event_type as EventType,
     reason: row.reason ?? null,
     actorSize: Number(row.actor_size),
@@ -915,7 +895,7 @@ export async function getUserNextReservations(
  * (slots that are fully booked or exclusive by OTHER users)
  */
 export async function getUnavailableSlots(
-  fungibleResourceId: string,
+  spaceId: string,
   startTime: Date,
   endTime: Date,
   excludeUserId?: string,
@@ -924,13 +904,13 @@ export async function getUnavailableSlots(
   const toMs = dateToUnixMs(endTime);
   const rows = await prisma.$queryRaw<
     {
-      resource_id: string;
+      space_id: string;
       start_time: bigint;
       end_time: bigint;
     }[]
   >`
     SELECT * FROM get_unavailable_slots(
-      ${fungibleResourceId}::text,
+      ${spaceId}::text,
       ${fromMs}::bigint,
       ${toMs}::bigint,
       ${excludeUserId || null}::text
@@ -938,7 +918,7 @@ export async function getUnavailableSlots(
   `;
 
   return rows.map((row) => ({
-    resourceId: row.resource_id,
+    spaceId: row.space_id,
     startTime: row.start_time,
     endTime: row.end_time,
   }));

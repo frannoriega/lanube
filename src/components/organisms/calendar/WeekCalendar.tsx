@@ -64,7 +64,7 @@ function isBookableReservationDay(day: Date, clock: Date): boolean {
 export type UnavailableSlotKind = "resource_full" | "cross_resource";
 
 export interface UnavailableSlot {
-  resourceId?: string;
+  spaceId?: string;
   startTime: number;
   endTime: number;
   kind?: UnavailableSlotKind;

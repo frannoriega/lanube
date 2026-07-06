@@ -30,7 +30,7 @@ import { Suspense } from "react";
 interface EventsSearchParams {
   page?: string;
   status?: string;
-  fungibleResourceId?: string;
+  spaceId?: string;
   from?: string;
   to?: string;
 }
@@ -46,24 +46,22 @@ export default async function EventsPage({
     listEvents({
       page,
       status: sp.status,
-      fungibleResourceId: sp.fungibleResourceId,
+      spaceId: sp.spaceId,
       from: sp.from,
       to: sp.to,
     }),
     getPublicSpaces(),
   ]);
   const spaceOptions = spaces
-    .filter((s) => s.isReservable && s.fungibleResourceId)
-    .map((s) => ({ id: s.fungibleResourceId!, name: s.name }));
+    .filter((s) => s.isReservable)
+    .map((s) => ({ id: s.id, name: s.name }));
   const totalPages = Math.ceil(total / pageSize);
   const now = nowMs();
-  const hasFilters = Boolean(
-    sp.status || sp.fungibleResourceId || sp.from || sp.to,
-  );
+  const hasFilters = Boolean(sp.status || sp.spaceId || sp.from || sp.to);
   // Preserve active filters across pagination.
   const filterQuery = {
     status: sp.status,
-    fungibleResourceId: sp.fungibleResourceId,
+    spaceId: sp.spaceId,
     from: sp.from,
     to: sp.to,
   };
@@ -80,7 +78,7 @@ export default async function EventsPage({
       <Suspense>
         <EventFilters
           status={sp.status}
-          fungibleResourceId={sp.fungibleResourceId}
+          spaceId={sp.spaceId}
           spaceOptions={spaceOptions}
           from={sp.from}
           to={sp.to}
@@ -147,7 +145,7 @@ export default async function EventsPage({
                       <StatusBadge status={status} />
                     </div>
                     <CardTitle>{event.name}</CardTitle>
-                    <CardDescription>{event.resource.name}</CardDescription>
+                    <CardDescription>{event.space.name}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-1.5 text-sm text-muted-foreground">
                     {weekdays.length > 0 && (

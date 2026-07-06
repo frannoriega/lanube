@@ -5,7 +5,7 @@ model Event {
   location      String?
   eventType     EventType          @map("event_type")
   status        EventStatus        @default(DRAFT)
-  resourceId    String             @map("resource_id")
+  spaceId       String             @map("space_id")
   // First occurrence's time-of-day window. Recurrence (cadence + span) is encoded
   // in rrule + recurrenceEnd, mirroring how recurring Reservations are stored.
   startTime     BigInt             @map("start_time")
@@ -20,11 +20,11 @@ model Event {
   deletedAt     BigInt?            @map("deleted_at")
   createdAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  resource      Resource           @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  space         Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   form          EventForm?
   participants  EventParticipant[]
 
-  @@index([resourceId])
+  @@index([spaceId])
   @@index([startTime, endTime])
   @@map("events")
 }
