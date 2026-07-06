@@ -1,6 +1,6 @@
-"use client";
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
-import { FlaskConical } from "lucide-react";
+import { getSpaceBySlug } from "@/lib/db/spaces";
+import { notFound } from "next/navigation";
 
 const EVENT_TYPES = [
   { value: "WORKSHOP", label: "Taller" },
@@ -8,13 +8,16 @@ const EVENT_TYPES = [
   { value: "OTHER", label: "Otro" },
 ];
 
-export default function LabPage() {
+export default async function LabPage() {
+  const space = await getSpaceBySlug("lab");
+  if (!space?.fungibleResourceId) notFound();
+
   return (
     <CalendarTemplateClient
-      title="Laboratorio"
+      title={space.name}
       description="Reserva el laboratorio para tus proyectos tecnológicos"
-      icon={FlaskConical}
-      apiEndpoint="/api/resources/lab"
+      iconName={space.iconName ?? undefined}
+      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="WORKSHOP"
     />

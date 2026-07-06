@@ -64,15 +64,6 @@ enum ReservationStatus {
   @@map("reservation_statuses")
 }
 
-enum ResourceType {
-  MEETING
-  AUDITORIUM
-  COWORKING
-  LAB
-
-  @@map("resource_types")
-}
-
 enum FormFieldType {
   SHORT_TEXT
   LONG_TEXT

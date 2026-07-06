@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "sdd_task3_review",
+      "label": "Task 3 Review Package \u2014 Types + Constants",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-3-review-pkg.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "sdd_task3_review",
+      "target": "sdd_task3_report",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-3-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

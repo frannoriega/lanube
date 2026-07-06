@@ -1,0 +1,50 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_week_navigation_fix_weeknavigationfix",
+      "label": "Week Navigation Fix: Centralized State Management",
+      "file_type": "document",
+      "source_file": "docs/changes/WEEK_NAVIGATION_FIX.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_week_calendar_component",
+      "label": "WeekCalendar Component",
+      "file_type": "concept",
+      "source_file": "docs/changes/WEEK_NAVIGATION_FIX.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "WeekCalendar owns all calendar state (currentWeekStart, occurrences, loading) as single source of truth to prevent synchronization bugs; pages become thin configuration wrappers. Self-contained component fetches own data via useEffect triggered on week changes."
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_week_navigation_fix_weeknavigationfix",
+      "target": "concept_week_calendar_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/WEEK_NAVIGATION_FIX.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_week_navigation_fix_weeknavigationfix",
+      "target": "docs_changes_meeting_room_feature_meetingroomfeature",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/changes/WEEK_NAVIGATION_FIX.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

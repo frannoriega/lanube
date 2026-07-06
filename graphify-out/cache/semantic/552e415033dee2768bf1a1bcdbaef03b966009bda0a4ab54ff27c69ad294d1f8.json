@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_stock_coworking",
+      "label": "Stock photo: La Nube coworking space in use \u2014 multiple people working at open-plan desks with laptops, modern white ergonomic chairs, desk dividers, exposed brick walls, large windows, indoor plants, and a projector screen displaying Spanish-language content ('minutos'); warm natural daylight; lively but focused atmosphere",
+      "file_type": "image",
+      "source_file": "public/images/stock/coworking.webp",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "confidence_score": 1.0,
+      "tags": [
+        "coworking",
+        "open-plan",
+        "laptops",
+        "ergonomic chairs",
+        "exposed brick",
+        "natural light",
+        "projector screen",
+        "Spanish-language",
+        "shared workspace",
+        "La Nube",
+        "real photo",
+        "marketing asset"
+      ],
+      "visual_description": "Photograph taken inside a coworking space. Six or more people \u2014 men and women of various ages \u2014 are seated at rows of long white desks separated by low grey dividers, each working on a laptop. The furniture is modern: white frame ergonomic mesh chairs with tan seat cushions. Walls are exposed brick; tall glass windows fill the left side with bright natural daylight. A large projector screen on the back wall shows a slide with the word 'minutos' and other Spanish text, suggesting a training session or workshop is in progress. A green tropical plant adds a natural accent near the windows. A fire extinguisher and emergency-exit sign are visible. The overall atmosphere is professional, productive, and community-oriented."
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

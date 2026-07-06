@@ -1,0 +1,79 @@
+{
+  "nodes": [
+    {
+      "id": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "label": "Task 6 Brief: Replace ResourceType with fungibleResourceId in resourceCalendar.ts",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "src_lib_db_resourcecalendar_ts_resourcecalendar",
+      "label": "src/lib/db/resourceCalendar.ts \u2014 getCalendarDataByFungibleResource, getEventOccurrencesForFungibleResource",
+      "file_type": "code",
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "target": "src_lib_db_resourcecalendar_ts_resourcecalendar",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "target": "src_lib_db_reservations_ts_reservations",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "target": "concept_resource_type_removal",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "superpowers_sdd_task_5_brief_reservationsdb",
+      "target": "superpowers_sdd_task_6_brief_resourcecalendardb",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_db_resourcecalendar_ts_resourcecalendar",
+      "target": "src_lib_db_reservations_ts_reservations",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-6-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

@@ -3,7 +3,6 @@ import {
   PrismaClient,
   ReservableType,
   ReservationStatus,
-  ResourceType,
   UserRole,
 } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -442,51 +441,137 @@ async function main() {
 
   const meetingRoom =
     (await prisma.resource.findFirst({
-      where: { type: ResourceType.MEETING },
+      where: { fungibleResourceId: meetingRoomFR.id },
     })) ??
     (await prisma.resource.create({
       data: {
         name: "Sala de reuniones",
-        type: ResourceType.MEETING,
         fungibleResourceId: meetingRoomFR.id,
       },
     }));
 
   const laboratory =
-    (await prisma.resource.findFirst({ where: { type: ResourceType.LAB } })) ??
+    (await prisma.resource.findFirst({
+      where: { fungibleResourceId: laboratoryFR.id },
+    })) ??
     (await prisma.resource.create({
       data: {
         name: "Laboratorio",
-        type: ResourceType.LAB,
         fungibleResourceId: laboratoryFR.id,
       },
     }));
 
   const auditorium =
     (await prisma.resource.findFirst({
-      where: { type: ResourceType.AUDITORIUM },
+      where: { fungibleResourceId: auditoriumFR.id },
     })) ??
     (await prisma.resource.create({
       data: {
         name: "Auditorio",
-        type: ResourceType.AUDITORIUM,
         fungibleResourceId: auditoriumFR.id,
       },
     }));
 
   const coworking =
     (await prisma.resource.findFirst({
-      where: { type: ResourceType.COWORKING },
+      where: { fungibleResourceId: coworkingFR.id },
     })) ??
     (await prisma.resource.create({
       data: {
         name: "Coworking",
-        type: ResourceType.COWORKING,
         fungibleResourceId: coworkingFR.id,
       },
     }));
 
   console.log("[seed] Resources ready");
+
+  // ── Spaces ────────────────────────────────────────────────────────────────────
+  await prisma.space.upsert({
+    where: { slug: "coworking" },
+    create: {
+      name: "Coworking",
+      slug: "coworking",
+      description:
+        "Espacio flexible para trabajo individual y colaborativo.\n\nMesas compartidas y livings con puntos de energía y conectividad de alta velocidad. Ideal para programar, diseñar, investigar, atender reuniones breves y avanzar proyectos tecnológicos.",
+      imageUrl: "/images/services/coworking.jpg",
+      iconName: "Building2",
+      isReservable: true,
+      isFeatured: false,
+      displayOrder: 0,
+      metadata: [
+        { type: "stat", label: "Mesas compartidas", value: "12 puestos" },
+        { type: "stat", label: "Conectividad", value: "Alta velocidad" },
+      ],
+      fungibleResourceId: coworkingFR.id,
+    },
+    update: { fungibleResourceId: coworkingFR.id },
+  });
+
+  await prisma.space.upsert({
+    where: { slug: "lab" },
+    create: {
+      name: "Laboratorio",
+      slug: "lab",
+      description:
+        "Ámbito técnico para 6–10 personas (según montaje).\n\nMesa de trabajo en configuración colaborativa. Pensado para hackathones, workshops prácticos y sesiones de trabajo en equipo.",
+      imageUrl: "/images/services/laboratorio.jpg",
+      iconName: "FlaskConical",
+      isReservable: true,
+      isFeatured: false,
+      displayOrder: 1,
+      metadata: [
+        { type: "fraction", label: "Capacidad", numerator: 8, denominator: 10 },
+        { type: "stat", label: "Configuración", value: "Colaborativa" },
+      ],
+      fungibleResourceId: laboratoryFR.id,
+    },
+    update: { fungibleResourceId: laboratoryFR.id },
+  });
+
+  await prisma.space.upsert({
+    where: { slug: "meeting-room" },
+    create: {
+      name: "Sala de reuniones",
+      slug: "meeting-room",
+      description:
+        "Ámbito reservado para 6–10 personas (según montaje).\n\nMesa de trabajo, pantalla y pizarra digital. Pensada para planificaciones, presentaciones a equipos y entrevistas.",
+      imageUrl: "/images/services/sala-de-reuniones.jpg",
+      iconName: "MessagesSquare",
+      isReservable: true,
+      isFeatured: false,
+      displayOrder: 2,
+      metadata: [
+        { type: "fraction", label: "Capacidad", numerator: 6, denominator: 10 },
+        { type: "stat", label: "Equipamiento", value: "Pizarra digital" },
+      ],
+      fungibleResourceId: meetingRoomFR.id,
+    },
+    update: { fungibleResourceId: meetingRoomFR.id },
+  });
+
+  await prisma.space.upsert({
+    where: { slug: "auditorium" },
+    create: {
+      name: "Auditorio",
+      slug: "auditorium",
+      description:
+        "Ambiente amplio y modular para charlas, talleres y presentaciones.\n\nSoporte de proyección y sonido con posibilidad de transmisión en línea. Apto para actividades académicas, empresariales y comunitarias.",
+      imageUrl: "/images/services/auditorio.jpg",
+      iconName: "Presentation",
+      isReservable: true,
+      isFeatured: true,
+      displayOrder: 3,
+      metadata: [
+        { type: "stat", label: "Capacidad", value: "50 personas" },
+        { type: "stat", label: "Equipamiento", value: "Proyección · Sonido" },
+        { type: "stat", label: "Streaming", value: "Transmisión en línea" },
+      ],
+      fungibleResourceId: auditoriumFR.id,
+    },
+    update: { fungibleResourceId: auditoriumFR.id },
+  });
+
+  console.log("[seed] Spaces ready");
 
   await seedExampleUsers();
 

@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_asociacion",
+      "label": "Asociaci\u00f3n Educacionista \"La Fraternidad\" (partner logo)",
+      "file_type": "image",
+      "source_file": "public/images/partners/asociacion.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Logo of 'Asociaci\u00f3n Educacionista La Fraternidad', an Argentine educational association. The logo features a grey silhouette of two people standing side by side, one holding a torch, alongside the organization name in grey text. Used as a partner/sponsor image on the lanube platform.",
+      "organization_name": "Asociaci\u00f3n Educacionista \"La Fraternidad\"",
+      "organization_type": "educational_association",
+      "language": "es",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

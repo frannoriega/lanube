@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_keadesign",
+      "label": "KEA DESIGN S.R.L. \u2013 Ingenier\u00eda Electr\u00f3nica partner logo",
+      "file_type": "image",
+      "source_file": "public/images/partners/keadesign.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Logo for KEA DESIGN S.R.L., an electronic engineering company (Ingenier\u00eda Electr\u00f3nica). Features a circular outline enclosing the monogram initials 'KD' rendered in a salmon-to-coral gradient. Below the emblem the full company name 'KEA DESIGN S.R.L.' appears in bold, followed by the subtitle 'INGENIER\u00cdA ELECTR\u00d3NICA' in lighter weight. Overall color palette is salmon/coral-to-orange gradient on a white background.",
+      "confidence_score": 1.0,
+      "tags": [
+        "partner",
+        "logo",
+        "electronic-engineering",
+        "Argentina",
+        "SRL",
+        "KEA Design",
+        "brand-identity"
+      ]
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

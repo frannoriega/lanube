@@ -6,7 +6,7 @@ import { nowMs } from "@/lib/clock";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
-import { ReservableType, ResourceType } from "@/generated/prisma/client";
+import { ReservableType } from "@/generated/prisma/client";
 
 export interface ReservationOccurrence {
   reservationId: string;
@@ -56,11 +56,11 @@ interface EventOccurrenceRow {
 }
 
 /**
- * APPROVED EVENT occurrences for a resource type in a window. These render on the calendar
+ * APPROVED EVENT occurrences for a fungible resource in a window. These render on the calendar
  * as named, read-only cards (with a form link) rather than anonymous unavailable blocks.
  */
-export async function getEventOccurrencesForType(
-  resourceType: ResourceType,
+export async function getEventOccurrencesForFungibleResource(
+  fungibleResourceId: string,
   startDate: Date,
   endDate: Date,
 ): Promise<ReservationOccurrence[]> {
@@ -74,7 +74,7 @@ export async function getEventOccurrencesForType(
     JOIN resources r ON r.id = l.resource_id
     WHERE l.reservable_type = 'EVENT'
       AND l.status = 'APPROVED'
-      AND r.type = ${resourceType}::resource_types
+      AND r.fungible_resource_id = ${fungibleResourceId}
       AND l.occurrence_start_time < ${rangeEndMs}::bigint
       AND l.occurrence_end_time > ${rangeStartMs}::bigint
   `;
@@ -172,8 +172,8 @@ export async function getEventOccurrencesForType(
 }
 
 /** Fetches calendar data: unavailable slots (by other users) and user's own reservations. */
-export async function getCalendarDataByType(
-  resourceType: ResourceType,
+export async function getCalendarDataByFungibleResource(
+  fungibleResourceId: string,
   userId: string,
   startDate: Date,
   endDate: Date,
@@ -186,9 +186,13 @@ export async function getCalendarDataByType(
 
   const [unavailableSlotsRaw, allUserReservations, eventOccurrences] =
     await Promise.all([
-      getUnavailableSlots(resourceType, startDate, endDate, userId),
+      getUnavailableSlots(fungibleResourceId, startDate, endDate, userId),
       getUserNextReservations(userId, undefined, 100, 0),
-      getEventOccurrencesForType(resourceType, startDate, endDate),
+      getEventOccurrencesForFungibleResource(
+        fungibleResourceId,
+        startDate,
+        endDate,
+      ),
     ]);
 
   // Resolve each reservation's resource type so we can split:
@@ -201,14 +205,14 @@ export async function getCalendarDataByType(
         .filter((id): id is string => id !== null),
     ),
   ];
-  const resourceTypeMap = new Map<string, ResourceType>();
+  const resourceFungibleMap = new Map<string, string>();
   if (uniqueResourceIds.length > 0) {
     const resources = await prisma.resource.findMany({
       where: { id: { in: uniqueResourceIds } },
-      select: { id: true, type: true },
+      select: { id: true, fungibleResourceId: true },
     });
     for (const r of resources) {
-      resourceTypeMap.set(r.id, r.type);
+      resourceFungibleMap.set(r.id, r.fungibleResourceId);
     }
   }
 
@@ -219,11 +223,11 @@ export async function getCalendarDataByType(
     const ms = Number(res.occurrenceStartTime);
     if (ms < rangeStartMs || ms > rangeEndMs) continue;
 
-    const resType = res.resourceId
-      ? resourceTypeMap.get(res.resourceId)
+    const resFungibleId = res.resourceId
+      ? resourceFungibleMap.get(res.resourceId)
       : undefined;
 
-    if (resType === resourceType) {
+    if (resFungibleId === fungibleResourceId) {
       userReservations.push({
         reservationId: res.id,
         occurrenceStartTime: Number(res.occurrenceStartTime),
@@ -234,7 +238,7 @@ export async function getCalendarDataByType(
         reservableId: res.reservableId,
       });
     } else if (
-      resType !== undefined &&
+      resFungibleId !== undefined &&
       (res.status === "PENDING" || res.status === "APPROVED")
     ) {
       crossResourceSlots.push({

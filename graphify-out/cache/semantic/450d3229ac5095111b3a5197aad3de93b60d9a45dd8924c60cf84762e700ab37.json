@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "sdd_task1_review",
+      "label": "Task 1 Review Package \u2014 Schema + Migration",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-1-review-pkg.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "sdd_task1_review",
+      "target": "sdd_task1_report",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-1-review-pkg.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

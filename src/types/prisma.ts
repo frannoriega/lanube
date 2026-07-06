@@ -23,13 +23,6 @@ export enum UserRole {
   ADMIN = "ADMIN",
 }
 
-export const ResourceType = {
-  MEETING: "MEETING",
-  AUDITORIUM: "AUDITORIUM",
-  COWORKING: "COWORKING",
-  LAB: "LAB",
-} as const;
-
 export enum IncidentStatus {
   OPEN = "OPEN",
   RESOLVED = "RESOLVED",

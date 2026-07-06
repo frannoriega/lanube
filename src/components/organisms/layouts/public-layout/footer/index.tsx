@@ -26,14 +26,14 @@ export default function Footer({ className }: { className?: string }) {
   return (
     <footer className={cns}>
       <Container>
-        <div className="dark text-[#fafafa] p-8 flex flex-col md:flex-row gap-16">
+        <div className="dark text-foreground p-8 flex flex-col md:flex-row gap-16">
           <section className="flex flex-col gap-2 w-fit md:max-w-1/3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2">
-                <h1 className="text-xl font-bold">La Nube</h1>
+                <h2 className="text-xl font-bold">La Nube</h2>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="cursor-default">
+                    <Badge variant="outline" className="cursor-help">
                       Beta
                     </Badge>
                   </TooltipTrigger>
@@ -66,71 +66,79 @@ export default function Footer({ className }: { className?: string }) {
           </section>
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 w-fit">
             <div className="flex flex-col gap-2 w-fit">
-              <h1 className="text-xl font-bold">Enlaces Rápidos</h1>
+              <h2 className="text-xl font-bold">Enlaces Rápidos</h2>
               <nav>
-                <ul className="text-foreground flex flex-col gap-1">
+                <ul className="text-foreground flex flex-col">
                   {links.map((item) => (
                     <li key={item.name}>
-                      <Link href={item.href}>{item.name}</Link>
+                      <Link
+                        href={item.href}
+                        className="block py-2 hover:underline"
+                      >
+                        {item.name}
+                      </Link>
                     </li>
                   ))}
                 </ul>
               </nav>
             </div>
             <div className="flex flex-col gap-2 w-fit">
-              <h1 className="text-xl font-bold">Políticas</h1>
+              <h2 className="text-xl font-bold">Políticas</h2>
               <nav>
-                <ul className="text-foreground flex flex-col gap-1">
+                <ul className="text-foreground flex flex-col">
                   <li>
-                    <Link href="/policies/privacy">Política de Privacidad</Link>
+                    <Link
+                      href="/policies/privacy"
+                      className="block py-2 hover:underline"
+                    >
+                      Política de Privacidad
+                    </Link>
                   </li>
                 </ul>
               </nav>
             </div>
             <div className="flex flex-col gap-2 max-w-100 w-fit">
-              <h1 className="text-xl font-bold">Contacto</h1>
-              <ul className="text-foreground flex flex-col gap-1">
-                <li className="flex flex-row gap-2 items-start justify-start">
-                  <div className="flex items-center justify-center w-[16px] h-[16px] mt-[4px]">
-                    <MapPin size={16} />
-                  </div>
+              <h2 className="text-xl font-bold">Contacto</h2>
+              <ul className="text-foreground flex flex-col">
+                <li className="flex flex-row gap-2 items-center py-1.5">
+                  <MapPin size={16} className="shrink-0" />
                   <span>
                     {address.street}, {address.city}, {address.state}
                   </span>
                 </li>
-                <li className="flex flex-row gap-2 items-start justify-start">
+                <li>
                   <a
                     href={`mailto:${email}`}
-                    className="flex flex-row gap-2 items-start justify-start"
+                    className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
-                    <Mail size={16} className="mt-[4px]" />
+                    <Mail size={16} className="shrink-0" />
                     <span>{email}</span>
                   </a>
                 </li>
-                <li className="flex flex-row gap-2 items-start justify-start">
+                <li>
                   <a
                     href={`tel:${clickablePhone}`}
-                    className="flex flex-row gap-2 items-start justify-start"
+                    className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
-                    <Phone size={16} className="mt-[4px]" />
+                    <Phone size={16} className="shrink-0" />
                     <span>{phone}</span>
                   </a>
                 </li>
-                <li className="flex flex-row gap-2 items-start justify-start">
+                <li>
                   <a
                     href={socialMedia.instagram.url}
-                    className="flex flex-row gap-2 items-start justify-start"
+                    className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
-                    <Instagram size={16} className="mt-[4px]" />
+                    <Instagram size={16} className="shrink-0" />
                     <span>{socialMedia.instagram.text}</span>
                   </a>
                 </li>
-                <li className="flex flex-row gap-2 items-start justify-start">
+                <li>
                   <a
                     href={socialMedia.github.url}
-                    className="flex flex-row gap-2 items-start justify-start"
+                    className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
-                    <Github size={16} className="mt-[4px]" />
+                    <Github size={16} className="shrink-0" />
                     <span>{socialMedia.github.text}</span>
                   </a>
                 </li>
