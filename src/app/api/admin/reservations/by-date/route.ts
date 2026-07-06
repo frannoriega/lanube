@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import {
   isAdminUser,
-  listAdminReservationsByRange,
+  listAdminReservationsAllServicesByRange,
 } from "@/lib/db/adminReservations";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       Math.max(1, parseInt(pageSizeRaw ?? "50", 10) || 50),
     );
 
-    const { items, total } = await listAdminReservationsByRange(
+    const { items, total } = await listAdminReservationsAllServicesByRange(
       startDate,
       endDate,
       { page, pageSize },

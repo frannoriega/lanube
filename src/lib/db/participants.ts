@@ -34,9 +34,9 @@ function toPublicFields(
 
 async function resolveCapacity(event: {
   capacity: number | null;
-  resource: { fungibleResource: { capacity: number } | null };
+  space: { capacity: number } | null;
 }): Promise<number> {
-  return event.capacity ?? event.resource.fungibleResource?.capacity ?? 0;
+  return event.capacity ?? event.space?.capacity ?? 0;
 }
 
 export interface PublicFormView {
@@ -70,9 +70,7 @@ export async function getPublicForm(
           deletedAt: true,
           endTime: true,
           recurrenceEnd: true,
-          resource: {
-            select: { fungibleResource: { select: { capacity: true } } },
-          },
+          space: { select: { capacity: true } },
           _count: { select: { participants: { where: { cancelled: false } } } },
         },
       },
@@ -142,9 +140,7 @@ export async function submitForm(
             deletedAt: true,
             endTime: true,
             recurrenceEnd: true,
-            resource: {
-              select: { fungibleResource: { select: { capacity: true } } },
-            },
+            space: { select: { capacity: true } },
             _count: {
               select: { participants: { where: { cancelled: false } } },
             },
@@ -347,7 +343,7 @@ export async function getUserEvents(email: string) {
           startTime: true,
           endTime: true,
           recurrenceEnd: true,
-          resource: { select: { name: true } },
+          space: { select: { name: true } },
         },
       },
     },

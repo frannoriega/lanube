@@ -2,7 +2,7 @@ model Reservation {
   id             String                 @id @default(cuid())
   reservableType ReservableType         @map("reservable_type")
   reservableId   String                 @map("reservable_id")
-  resourceId     String                 @map("resource_id")
+  spaceId        String?                @map("space_id")
   eventType      EventType              @map("event_type")
   reason         String
   deniedReason   String?                @map("denied_reason")
@@ -17,10 +17,10 @@ model Reservation {
   checkIns       CheckIn[]
   exceptions     ReservationException[]
   registeredUser RegisteredUser         @relation(fields: [reservableId], references: [id], onDelete: Cascade)
-  resource       Resource               @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  space          Space?                 @relation(fields: [spaceId], references: [id], onDelete: SetNull)
 
   @@index([reservableType, reservableId])
-  @@index([resourceId])
+  @@index([spaceId])
   @@index([status])
   @@index([startTime, endTime])
   @@map("reservations")
@@ -49,7 +49,7 @@ model ReservationLedger {
   occurrenceEndTime   BigInt            @map("occurrence_end_time")
   reservableType      ReservableType    @map("reservable_type")
   reservableId        String            @map("reservable_id")
-  resourceId          String            @map("resource_id")
+  spaceId             String            @map("space_id")
   eventType           EventType         @map("event_type")
   reason              String?
   actorSize           Int               @map("actor_size")

@@ -46,7 +46,7 @@ const CLOSED_ACCORDION_VALUE = "__none__";
 
 export function AdminReservationsCardsPanel({
   variant,
-  fungibleResourceId,
+  spaceId,
   spaceName,
   showHeading = true,
   onAction,
@@ -54,7 +54,7 @@ export function AdminReservationsCardsPanel({
   refetchKey = 0,
 }: {
   variant: "admin" | "dashboard";
-  fungibleResourceId: string;
+  spaceId: string;
   spaceName: string;
   showHeading?: boolean;
   onAction: (
@@ -114,11 +114,11 @@ export function AdminReservationsCardsPanel({
 
   const loadRange = useCallback(
     async (showSpinner: boolean) => {
-      if (!fetchFromKey || !fetchToKey) return;
+      if (!spaceId || !fetchFromKey || !fetchToKey) return;
       if (showSpinner) setLoading(true);
       try {
         const qs = new URLSearchParams({
-          service: fungibleResourceId,
+          service: spaceId,
           startDate: String(startOfDateKeyMs(fetchFromKey)),
           endDate: String(endOfDateKeyMs(fetchToKey)),
         });
@@ -145,7 +145,7 @@ export function AdminReservationsCardsPanel({
           ).length;
           console.info(
             "[AdminCardsPanel] fetched service=%s range=[%s,%s] totalItems=%d daysWithData=%d",
-            fungibleResourceId,
+            spaceId,
             fetchFromKey,
             fetchToKey,
             totalItems,
@@ -176,7 +176,7 @@ export function AdminReservationsCardsPanel({
         setLoading(false);
       }
     },
-    [fungibleResourceId, fetchFromKey, fetchToKey],
+    [spaceId, fetchFromKey, fetchToKey],
   );
 
   useEffect(() => {
@@ -188,7 +188,7 @@ export function AdminReservationsCardsPanel({
   useEffect(() => {
     setExpandedDateKey(null);
     setPanelReservation(null);
-  }, [fungibleResourceId, fetchFromKey, fetchToKey]);
+  }, [spaceId, fetchFromKey, fetchToKey]);
 
   const orderedDays = useMemo(() => {
     if (!fetchFromKey || !fetchToKey) return [];

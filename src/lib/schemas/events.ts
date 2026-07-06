@@ -59,7 +59,7 @@ export const eventInputSchema = z
     eventType: z.enum(EventType),
     // Lifecycle state set by the admin. ENDED is derived, so it's not a valid input.
     status: z.enum(EventStatus),
-    resourceId: z.string().min(1, { message: "Elegí un recurso" }),
+    spaceId: z.string().min(1, { message: "Elegí un espacio" }),
     startDate: dateKeySchema,
     endDate: dateKeySchema,
     weekdays: z
