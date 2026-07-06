@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-03T00:00:00Z",
+  "title": "Design System: La Nube — Polo Tecnológico",
+  "extensions": {
+    "colorMeta": {
+      "observatory-blue": {
+        "role": "primary",
+        "displayName": "Observatory Blue",
+        "canonical": "#4e87c2",
+        "tonalRamp": [
+          "#0d1e34",
+          "#1a3252",
+          "#274d76",
+          "#33699b",
+          "#4e87c2",
+          "#6fa1d5",
+          "#95bce5",
+          "#cce0f5"
+        ]
+      },
+      "deep-sky": {
+        "role": "primary",
+        "displayName": "Deep Sky",
+        "canonical": "#2a6297",
+        "tonalRamp": [
+          "#0a1a28",
+          "#143347",
+          "#1e4d68",
+          "#256688",
+          "#2a6297",
+          "#4a7eae",
+          "#7aa0c7",
+          "#b5cfe4"
+        ]
+      },
+      "signal-cyan": {
+        "role": "secondary",
+        "displayName": "Signal Cyan",
+        "canonical": "#75e3f1",
+        "tonalRamp": [
+          "#0c2e33",
+          "#1a4e56",
+          "#257080",
+          "#36a0b0",
+          "#56ceda",
+          "#75e3f1",
+          "#a4edf5",
+          "#d5f8fc"
+        ]
+      },
+      "ice-haze": {
+        "role": "secondary",
+        "displayName": "Ice Haze",
+        "canonical": "#c8f1fc",
+        "tonalRamp": [
+          "#1a4d5c",
+          "#286070",
+          "#3e8090",
+          "#5aaab8",
+          "#80ccd8",
+          "#a8e5ef",
+          "#c8f1fc",
+          "#ebfafd"
+        ]
+      },
+      "cloud-surface": {
+        "role": "neutral",
+        "displayName": "Cloud Surface",
+        "canonical": "oklch(92.9% 0.013 255.508)",
+        "tonalRamp": [
+          "#1c2238",
+          "#2d3550",
+          "#424d6a",
+          "#5d6b8a",
+          "#7f8fad",
+          "#a4b3cc",
+          "#c7d2e4",
+          "#e8ecf2"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#303030",
+        "tonalRamp": [
+          "#0a0a0a",
+          "#161616",
+          "#222222",
+          "#303030",
+          "#424242",
+          "#616161",
+          "#9e9e9e",
+          "#e0e0e0"
+        ]
+      },
+      "carbon": {
+        "role": "neutral",
+        "displayName": "Carbon",
+        "canonical": "#424242",
+        "tonalRamp": [
+          "#0a0a0a",
+          "#1a1a1a",
+          "#2a2a2a",
+          "#3a3a3a",
+          "#424242",
+          "#616161",
+          "#9e9e9e",
+          "#e0e0e0"
+        ]
+      },
+      "night-station": {
+        "role": "neutral",
+        "displayName": "Night Station",
+        "canonical": "oklch(20.8% 0.042 265.755)",
+        "tonalRamp": [
+          "#060a12",
+          "#0d1220",
+          "#131a30",
+          "#1c2238",
+          "#262d47",
+          "#3a4260",
+          "#5a6080",
+          "#8a90b0"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing hero heading only — 'La Nube' as primary mark."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings on landing and dashboards. One gradient highlight word allowed."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card headings, dialog titles, admin sidebar section labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All prose, form labels, table cells. Max 65–75ch."
+      },
+      "label": {
+        "displayName": "Mono Label",
+        "purpose": "System-voiced content: section kickers, status labels, timestamps, identifiers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-rest",
+        "value": "0 1px 3px 0 rgba(0,0,0,0.08)",
+        "purpose": "Default card resting shadow — barely perceptible."
+      },
+      {
+        "name": "card-hover",
+        "value": "0 4px 16px 0 rgba(78,135,194,0.2)",
+        "purpose": "Interactive card hover — Observatory Blue tint."
+      },
+      {
+        "name": "card-hover-strong",
+        "value": "0 6px 20px 0 rgba(78,135,194,0.3)",
+        "purpose": "Admin list cards, more prominent hover."
+      },
+      {
+        "name": "glass-panel",
+        "value": "0 4px 16px 0 rgba(0,0,0,0.2)",
+        "purpose": "Public navigation header glass panel."
+      },
+      {
+        "name": "sidebar",
+        "value": "4px 0 24px 0 rgba(31,38,135,0.15)",
+        "purpose": "Admin sidebar lateral shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "blink",
+        "value": "blink 1s step-end infinite",
+        "purpose": "Mono kicker cursor — `▌` animate-blink."
+      },
+      {
+        "name": "typewriter",
+        "value": "JS interval: 100ms type / 50ms delete",
+        "purpose": "Hero display text cycling through community keywords."
+      },
+      {
+        "name": "bounce",
+        "value": "animate-bounce",
+        "purpose": "Scroll-down arrow in hero — single, purposeful."
+      },
+      {
+        "name": "transition-colors",
+        "value": "transition-colors 150ms ease",
+        "purpose": "Default state transitions on buttons, links, badges."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default action button. Dark charcoal at rest; Observatory Blue on hover.",
+      "html": "<button class=\"ds-btn-primary\">Reservar espacio</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 8px 16px; background: #303030; color: #ffffff; font-family: Roboto, sans-serif; font-size: 0.875rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: background-color 150ms ease, box-shadow 150ms ease; outline: none; } .ds-btn-primary:hover { background: #4e87c2; } .ds-btn-primary:focus-visible { border: 1px solid #c8f1fc; box-shadow: 0 0 0 3px rgba(200,241,252,0.5); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action. Transparent with hairline border; whisper fill on hover.",
+      "html": "<button class=\"ds-btn-outline\">Ver disponibilidad</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 8px 16px; background: transparent; color: #424242; font-family: Roboto, sans-serif; font-size: 0.875rem; font-weight: 500; border: 1px solid #eaeaea; border-radius: 8px; cursor: pointer; transition: background-color 150ms ease; outline: none; } .ds-btn-outline:hover { background: #f7f7f7; } .ds-btn-outline:focus-visible { border-color: #c8f1fc; box-shadow: 0 0 0 3px rgba(200,241,252,0.5); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Tertiary action in dense admin contexts. No border, hairline fill on hover.",
+      "html": "<button class=\"ds-btn-ghost\">Cancelar</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 8px 16px; background: transparent; color: #424242; font-family: Roboto, sans-serif; font-size: 0.875rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: background-color 150ms ease; outline: none; } .ds-btn-ghost:hover { background: #eaeaea; } .ds-btn-ghost:focus-visible { border: 1px solid #c8f1fc; box-shadow: 0 0 0 3px rgba(200,241,252,0.5); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "description": "Standard form input. Stroked border, focus glow in Ice Haze.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Tu email\" />",
+      "css": ".ds-input { display: block; width: 100%; height: 36px; padding: 4px 12px; background: transparent; color: #424242; font-family: Roboto, sans-serif; font-size: 0.875rem; border: 1px solid #eaeaea; border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; } .ds-input::placeholder { color: #888282; } .ds-input:focus-visible { border-color: #c8f1fc; box-shadow: 0 0 0 3px rgba(200,241,252,0.5); } .ds-input[aria-invalid=\"true\"] { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Content Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard container card. Flat at rest; Observatory Blue shadow on hover.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Sala de Reuniones</div><div class=\"ds-card-body\">Disponible de lunes a viernes, 9–18 h. Capacidad: 8 personas.</div></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #eaeaea; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.06); transition: box-shadow 200ms ease; } .ds-card:hover { box-shadow: 0 4px 16px 0 rgba(78,135,194,0.2); } .ds-card-title { font-family: Roboto, sans-serif; font-size: 1.125rem; font-weight: 600; color: #303030; line-height: 1.4; } .ds-card-body { font-family: Roboto, sans-serif; font-size: 0.875rem; font-weight: 400; color: #888282; line-height: 1.6; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-default",
+      "description": "Compact status or type label.",
+      "html": "<div style=\"display:flex;gap:8px;align-items:center\"><span class=\"ds-badge ds-badge-default\">Aprobada</span><span class=\"ds-badge ds-badge-outline\">Coworking</span><span class=\"ds-badge ds-badge-secondary\">Pendiente</span></div>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; font-family: Roboto, sans-serif; font-size: 0.75rem; font-weight: 500; border-radius: 8px; border: 1px solid transparent; white-space: nowrap; overflow: hidden; } .ds-badge-default { background: #303030; color: #ffffff; } .ds-badge-outline { background: transparent; color: #424242; border-color: #eaeaea; } .ds-badge-secondary { background: #f7f7f7; color: #424242; border-color: #eaeaea; }"
+    },
+    {
+      "name": "Mono Kicker",
+      "kind": "custom",
+      "description": "Section label voiced as a terminal path. One per screen. Deep Sky in light mode.",
+      "html": "<span class=\"ds-kicker\">~/ eventos<span class=\"ds-kicker-cursor\">▌</span></span>",
+      "css": ".ds-kicker { display: inline-flex; align-items: center; font-family: 'Roboto Mono', monospace; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.2em; color: #2a6297; } .ds-kicker-cursor { margin-left: 1px; animation: ds-blink 1s step-end infinite; } @keyframes ds-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } } @media (prefers-reduced-motion: reduce) { .ds-kicker-cursor { animation: none; opacity: 1; } }"
+    },
+    {
+      "name": "Event Card",
+      "kind": "card",
+      "description": "Landing event card. Full-bleed cover image, stretched-link overlay at z-[1], CTA wrapper at z-[2].",
+      "html": "<article class=\"ds-event-card\"><div class=\"ds-event-card-cover\"><div class=\"ds-event-card-cover-placeholder\"></div></div><div class=\"ds-event-card-body\"><div class=\"ds-event-card-meta\">MAR · JUE</div><div class=\"ds-event-card-title\">Taller de Arduino</div><div class=\"ds-event-card-cta\"><button class=\"ds-btn-primary\" style=\"width:100%;font-size:0.8rem;height:32px\">Inscribirme</button></div></div><a href=\"#\" class=\"ds-event-card-link\" aria-label=\"Ver detalles: Taller de Arduino\"></a></article>",
+      "css": ".ds-event-card { position: relative; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; border: 1px solid #eaeaea; background: #ffffff; transition: box-shadow 200ms ease; } .ds-event-card:hover { box-shadow: 0 4px 16px 0 rgba(78,135,194,0.2); } .ds-event-card-cover { position: relative; } .ds-event-card-cover-placeholder { aspect-ratio: 16/10; background: linear-gradient(135deg, #e8ecf2 0%, #c8f1fc 100%); } .ds-event-card-body { display: flex; flex-direction: column; gap: 8px; padding: 20px; flex: 1; } .ds-event-card-meta { font-family: 'Roboto Mono', monospace; font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.15em; color: #2a6297; } .ds-event-card-title { font-family: Roboto, sans-serif; font-size: 1rem; font-weight: 600; color: #303030; line-height: 1.4; } .ds-event-card-cta { position: relative; z-index: 2; margin-top: auto; padding-top: 4px; } .ds-event-card-link { position: absolute; inset: 0; z-index: 1; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Local Observatory",
+    "overview": "La Nube is a place where a community gathers to observe, explore, and build. The design system carries that identity: it is precise without being cold, local without being parochial, technical without being intimidating. Every surface should feel like it belongs to the people who use it — not to a vendor who packaged it for them.\n\nThe palette draws from the actual sky — a cornflower blue that reads as daytime, a signal cyan that hints at screens and broadcasts, a cool cloud-surface background that places you outdoors rather than inside a data centre. The system lives in both light and dark modes; dark mode shifts the metaphor from cloud to night sky, the night-station background anchoring an observatory aesthetic.\n\nTypography is Roboto across the board — a humanist geometric sans-serif that carries both the warmth the community expects and the technical crispness the product needs. Roboto Mono plays a distinct role as the voice of the system itself: section kickers, timestamps, status labels, and the blinking cursor that greets visitors in the hero.",
+    "keyCharacteristics": [
+      "Warm and local, but not folksy — confident and community-made",
+      "Blue carries identity, not just function — present at 30–50% of the surface, not decorative",
+      "The mono typeface is the system speaking; Roboto is the content speaking",
+      "Flat by default, alive on interaction — depth through state, not decoration",
+      "Admin surfaces are never punishing — the same visual warmth applies everywhere"
+    ],
+    "rules": [
+      {
+        "name": "The Observatory Rule",
+        "body": "Observatory Blue must appear on every screen. It is the brand signal. A screen without it looks unbranded; a screen where it appears only in the footer has failed.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signal Cyan Rule",
+        "body": "Signal Cyan is never used alone; it always appears in relation to Observatory Blue — as a gradient partner, a dark-mode counterpart, or a supporting accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Muted Floor",
+        "body": "#888282 is the floor for secondary text. Nothing dimmer on body copy.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Voice Rule",
+        "body": "Roboto Mono is the system speaking. It appears on section kickers, status labels, form IDs, and timestamps — never on user-authored content.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Gradient Word Rule",
+        "body": "In any given heading, at most one word or phrase receives the primary-to-secondary gradient. The gradient marks the concept — not the whole sentence.",
+        "section": "typography"
+      },
+      {
+        "name": "The Blue Shadow Rule",
+        "body": "When a card or interactive element is the primary content, its hover shadow is tinted Observatory Blue — not generic gray. The shadow carries the brand, not just depth.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glass Boundary Rule",
+        "body": "Glassmorphism is permitted only on the public navigation header. Nowhere else.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Use Observatory Blue on every screen, in at least one prominent element.",
+      "Tint hover shadows with Observatory Blue (rgba(78,135,194,…)) on primary content cards.",
+      "Use Roboto Mono exclusively for system-generated, machine-voiced content.",
+      "Maintain 4.5:1 contrast for all body text.",
+      "Keep line length at 65–75ch for body copy.",
+      "Use text-wrap: balance on headings and text-wrap: pretty on multi-line paragraph copy.",
+      "Confine glassmorphism to the public navigation header."
+    ],
+    "donts": [
+      "Don't build a WeWork or Regus surface — stock-photography hero, enterprise coldness, brand-as-status.",
+      "Don't build a university admin portal — no circa-2015 table-heavy UIs, no forms that feel punitive.",
+      "Don't use gradient text anywhere outside the Display hero heading and the one Headline highlight word.",
+      "Don't add a side-stripe border (colored border-left > 1px) to cards, alerts, or list items.",
+      "Don't use Muted (#888282) for body text below 18px.",
+      "Don't use box shadows as decoration at rest — shadow-sm is the max for resting admin cards.",
+      "Don't put a mono kicker above every section — one per screen.",
+      "Don't use generic dark-gray box shadows on interactive cards — tint with Observatory Blue."
+    ]
+  }
+}

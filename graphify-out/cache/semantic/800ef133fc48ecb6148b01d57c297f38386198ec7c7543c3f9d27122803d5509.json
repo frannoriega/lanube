@@ -1,0 +1,69 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_calendar_refactor_complete_statemanagement",
+      "label": "Calendar Refactor Complete: Centralized state in WeekCalendar, auto-refetch on week navigation",
+      "file_type": "document",
+      "source_file": "docs/changes/CALENDAR_REFACTOR_COMPLETE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_weekcalendar_internal_state",
+      "label": "WeekCalendar Internal State Pattern \u2014 centralized fetch + auto-refetch on week change",
+      "file_type": "concept",
+      "source_file": "docs/changes/CALENDAR_REFACTOR_COMPLETE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_calendar_refactor_complete_statemanagement",
+      "target": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_REFACTOR_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_calendar_refactor_complete_statemanagement",
+      "target": "concept_weekcalendar_internal_state",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_REFACTOR_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_calendar_refactor_complete_statemanagement",
+      "target": "docs_changes_calendar_improvements_v3_weekcalendar",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/changes/CALENDAR_REFACTOR_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_weekcalendar_internal_state",
+      "target": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_REFACTOR_COMPLETE.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

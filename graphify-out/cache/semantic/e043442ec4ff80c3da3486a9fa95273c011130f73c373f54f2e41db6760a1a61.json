@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_meeting",
+      "label": "Meeting Room \u2014 La Nube Polo Tecnol\u00f3gico",
+      "file_type": "image",
+      "source_file": "public/images/meeting.jpg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Interior photograph of the La Nube Polo Tecnol\u00f3gico meeting room. Features a rectangular light-wood conference table with 6 mesh-back chairs (white frames). A large wall-mounted display shows the La Nube Polo Tecnol\u00f3gico branded logo screen. A webcam/video-conferencing camera is mounted above the display. On the table: a tablet control panel, a wireless keyboard, and a conference speakerphone/microphone; an in-table cable management tray is visible. Natural light enters from a window on the left. Tile floor. A door is visible on the right. The setup is clean, modern, and technology-equipped for video conferencing and in-person meetings.",
+      "room_type": "meeting_room",
+      "estimated_capacity": 6,
+      "technology": [
+        "wall-mounted display",
+        "video-conferencing camera",
+        "conference speakerphone",
+        "tablet control panel",
+        "in-table cable management"
+      ],
+      "branding": "La Nube Polo Tecnol\u00f3gico",
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

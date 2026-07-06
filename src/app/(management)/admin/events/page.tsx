@@ -22,6 +22,7 @@ import {
   WEEKDAY_SHORT_LABELS,
 } from "@/lib/constants/events";
 import { listEvents, weekdaysFromRrule } from "@/lib/db/events";
+import { getPublicSpaces } from "@/lib/db/spaces";
 import { CalendarDays, Clock, Ticket, Users } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -29,7 +30,7 @@ import { Suspense } from "react";
 interface EventsSearchParams {
   page?: string;
   status?: string;
-  resource?: string;
+  fungibleResourceId?: string;
   from?: string;
   to?: string;
 }
@@ -41,20 +42,28 @@ export default async function EventsPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const { events, total, pageSize } = await listEvents({
-    page,
-    status: sp.status,
-    resourceType: sp.resource,
-    from: sp.from,
-    to: sp.to,
-  });
+  const [{ events, total, pageSize }, spaces] = await Promise.all([
+    listEvents({
+      page,
+      status: sp.status,
+      fungibleResourceId: sp.fungibleResourceId,
+      from: sp.from,
+      to: sp.to,
+    }),
+    getPublicSpaces(),
+  ]);
+  const spaceOptions = spaces
+    .filter((s) => s.isReservable && s.fungibleResourceId)
+    .map((s) => ({ id: s.fungibleResourceId!, name: s.name }));
   const totalPages = Math.ceil(total / pageSize);
   const now = nowMs();
-  const hasFilters = Boolean(sp.status || sp.resource || sp.from || sp.to);
+  const hasFilters = Boolean(
+    sp.status || sp.fungibleResourceId || sp.from || sp.to,
+  );
   // Preserve active filters across pagination.
   const filterQuery = {
     status: sp.status,
-    resource: sp.resource,
+    fungibleResourceId: sp.fungibleResourceId,
     from: sp.from,
     to: sp.to,
   };
@@ -71,7 +80,8 @@ export default async function EventsPage({
       <Suspense>
         <EventFilters
           status={sp.status}
-          resourceType={sp.resource}
+          fungibleResourceId={sp.fungibleResourceId}
+          spaceOptions={spaceOptions}
           from={sp.from}
           to={sp.to}
         />

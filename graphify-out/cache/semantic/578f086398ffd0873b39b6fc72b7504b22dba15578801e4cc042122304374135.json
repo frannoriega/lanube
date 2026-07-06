@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_members_ciscu",
+      "label": "CISCU Member Logo",
+      "file_type": "image",
+      "source_file": "public/images/members/ciscu.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "SVG logo for CISCU, a member/partner organization of lanube coworking space. Square format (363x363px) with a dark navy/blue background (#364462) and white stylized letterforms spelling 'CISCU'. The logo uses geometric vector paths to render the acronym in a clean, modern typographic style. Used as a member institution logo on the landing page.",
+      "visual_identity": {
+        "background_color": "#364462",
+        "foreground_color": "#FDFDFD",
+        "shape": "square",
+        "dimensions": "363x363",
+        "style": "typographic_acronym",
+        "text": "CISCU"
+      },
+      "entity_type": "member_organization_logo",
+      "confidence_score": 0.95
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

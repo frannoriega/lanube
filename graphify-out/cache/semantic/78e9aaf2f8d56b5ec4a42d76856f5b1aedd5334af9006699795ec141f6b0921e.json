@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_fixes_async_params_and_timestamp_asyncparamstimestampfix",
+      "label": "Fixes: Async Params & Timestamp Type Issue",
+      "file_type": "document",
+      "source_file": "docs/changes/FIXES_ASYNC_PARAMS_AND_TIMESTAMP.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_resources_type_api_route",
+      "label": "API Route: /api/resources/[type] (Deprecated)",
+      "file_type": "concept",
+      "source_file": "docs/changes/FIXES_ASYNC_PARAMS_AND_TIMESTAMP.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_fixes_async_params_and_timestamp_asyncparamstimestampfix",
+      "target": "concept_resources_type_api_route",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FIXES_ASYNC_PARAMS_AND_TIMESTAMP.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_fixes_async_params_and_timestamp_asyncparamstimestampfix",
+      "target": "concept_expand_recurring_reservations_fn",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/FIXES_ASYNC_PARAMS_AND_TIMESTAMP.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

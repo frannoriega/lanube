@@ -1,0 +1,59 @@
+{
+  "nodes": [
+    {
+      "id": "docs_changes_calendar_or_logic_orlogic",
+      "label": "Calendar OR Logic: Show approved reservations OR user's own pending/approved",
+      "file_type": "document",
+      "source_file": "docs/changes/CALENDAR_OR_LOGIC.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_calendar_or_logic",
+      "label": "Calendar OR Logic \u2014 show APPROVED OR user's own PENDING/APPROVED reservations",
+      "file_type": "concept",
+      "source_file": "docs/changes/CALENDAR_OR_LOGIC.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "docs_changes_calendar_or_logic_orlogic",
+      "target": "concept_calendar_or_logic",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_OR_LOGIC.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "docs_changes_calendar_or_logic_orlogic",
+      "target": "src_components_organisms_calendar_weekcalendar_tsx_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_OR_LOGIC.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_calendar_or_logic",
+      "target": "src_lib_db_reservations_ts_reservations",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/changes/CALENDAR_OR_LOGIC.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

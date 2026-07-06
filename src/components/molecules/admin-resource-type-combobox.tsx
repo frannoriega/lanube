@@ -14,29 +14,30 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  ADMIN_RESOURCE_SERVICE_OPTIONS,
-  type AdminResourceServiceSlug,
-} from "@/lib/admin/admin-resource-service-slug";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 
+export interface SpaceOption {
+  id: string;
+  name: string;
+}
+
 export function AdminResourceTypeCombobox({
   value,
   onChange,
+  options,
   className,
   disabled,
 }: {
-  value: AdminResourceServiceSlug;
-  onChange: (v: AdminResourceServiceSlug) => void;
+  value: string;
+  onChange: (v: string) => void;
+  options: SpaceOption[];
   className?: string;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const label =
-    ADMIN_RESOURCE_SERVICE_OPTIONS.find((o) => o.slug === value)?.label ??
-    value;
+  const label = options.find((o) => o.id === value)?.name ?? value;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -58,26 +59,26 @@ export function AdminResourceTypeCombobox({
         align="start"
       >
         <Command>
-          <CommandInput placeholder="Buscar tipo…" />
+          <CommandInput placeholder="Buscar espacio…" />
           <CommandList>
             <CommandEmpty>Sin resultados.</CommandEmpty>
             <CommandGroup>
-              {ADMIN_RESOURCE_SERVICE_OPTIONS.map((opt) => (
+              {options.map((opt) => (
                 <CommandItem
-                  key={opt.slug}
-                  value={`${opt.label} ${opt.slug}`}
+                  key={opt.id}
+                  value={`${opt.name} ${opt.id}`}
                   onSelect={() => {
-                    onChange(opt.slug);
+                    onChange(opt.id);
                     setOpen(false);
                   }}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === opt.slug ? "opacity-100" : "opacity-0",
+                      value === opt.id ? "opacity-100" : "opacity-0",
                     )}
                   />
-                  {opt.label}
+                  {opt.name}
                 </CommandItem>
               ))}
             </CommandGroup>

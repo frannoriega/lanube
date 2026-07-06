@@ -1,0 +1,48 @@
+{
+  "nodes": [
+    {
+      "id": "sdd_task11_brief",
+      "label": "Task 11 Brief \u2014 Landing Spaces Section (SSR, replaces static Services)",
+      "file_type": "document",
+      "source_file": ".superpowers/sdd/task-11-brief.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "sdd_task11_brief",
+      "target": "concept_space_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-11-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_task11_brief",
+      "target": "sdd_task4_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-11-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "sdd_task11_brief",
+      "target": "sdd_task3_brief",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".superpowers/sdd/task-11-brief.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

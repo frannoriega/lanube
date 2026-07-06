@@ -7,6 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getSpaceIcon } from "@/lib/constants/spaces";
+import { LayoutGrid } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
@@ -18,18 +20,19 @@ interface EventTypeOption {
 export function CalendarTemplateClient({
   title,
   description,
-  icon: Icon,
+  iconName,
   apiEndpoint,
   eventTypes,
   defaultEventType,
 }: {
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  iconName?: string;
   apiEndpoint: string;
   eventTypes: EventTypeOption[];
   defaultEventType: string;
 }) {
+  const Icon = iconName ? getSpaceIcon(iconName) : LayoutGrid;
   const { data: session, status } = useSession();
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [loadingUser, setLoadingUser] = useState(true);

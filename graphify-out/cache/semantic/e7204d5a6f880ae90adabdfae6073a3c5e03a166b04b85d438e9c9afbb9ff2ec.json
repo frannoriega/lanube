@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "traduccion_completa_overview",
+      "label": "TRADUCCION_COMPLETA \u2014 Spanish L10n Completion Log",
+      "file_type": "document",
+      "source_file": "TRADUCCION_COMPLETA.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "traduccion_completa_overview",
+      "target": "concept_la_nube_project",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "TRADUCCION_COMPLETA.md",
+      "source_location": null,
+      "weight": 0.95
+    }
+  ],
+  "hyperedges": []
+}

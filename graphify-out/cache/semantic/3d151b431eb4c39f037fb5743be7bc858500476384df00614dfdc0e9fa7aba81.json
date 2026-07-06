@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_members_uader",
+      "label": "UADER Logo (Universidad Aut\u00f3noma de Entre R\u00edos)",
+      "file_type": "image",
+      "source_file": "public/images/members/uader.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "SVG wordmark/logotype for UADER (Universidad Aut\u00f3noma de Entre R\u00edos), an Argentine public university located in Entre R\u00edos province. The logo renders the acronym 'UADER' in a bold custom typeface using the institution's brand colors: dark blue (#005385 / #005485) for the letter forms and a crimson/deep red (#AB152B) as an accent element. The SVG is 788\u00d7160px, a wide horizontal format typical of a text-only wordmark. Used in the landing page members/partners section of the La Nube coworking platform.",
+      "entity_type": "institution_logo",
+      "institution_name": "Universidad Aut\u00f3noma de Entre R\u00edos",
+      "institution_acronym": "UADER",
+      "institution_country": "Argentina",
+      "institution_type": "public_university",
+      "primary_color": "#005385",
+      "secondary_color": "#AB152B",
+      "logo_format": "SVG",
+      "logo_style": "wordmark",
+      "dimensions": "788x160",
+      "confidence_score": 0.95
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}

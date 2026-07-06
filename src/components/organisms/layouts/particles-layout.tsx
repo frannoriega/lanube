@@ -69,13 +69,15 @@ export default function ParticlesLayout({
           className,
         )}
       >
-        <Particles
-          options={options}
-          className={cn(
-            "absolute inset-0 z-0 h-full w-full pointer-events-none",
-            backgroundClass,
-          )}
-        />
+        {!prefersReducedMotion && (
+          <Particles
+            options={options}
+            className={cn(
+              "absolute inset-0 z-0 h-full w-full pointer-events-none",
+              backgroundClass,
+            )}
+          />
+        )}
         <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
       </div>
     </ParticlesProvider>

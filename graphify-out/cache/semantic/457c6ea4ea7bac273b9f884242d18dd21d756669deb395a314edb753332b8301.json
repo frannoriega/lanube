@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {
+      "id": "public_images_partners_tecso",
+      "label": "Tecso \u2013 Partner Logo",
+      "file_type": "image",
+      "source_file": "public/images/partners/tecso.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Logo of Tecso, a technology company. Displayed as the wordmark '.tecso' in bold rounded sans-serif typography, rendered in solid orange (#E8621A). The leading dot before the 't' is a distinctive brand element. Used as a partner logo on the lanube platform.",
+      "tags": [
+        "partner",
+        "logo",
+        "technology-company",
+        "tecso",
+        "orange",
+        "wordmark"
+      ],
+      "confidence_score": 1.0
+    }
+  ],
+  "edges": [],
+  "hyperedges": []
+}
