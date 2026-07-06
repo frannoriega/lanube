@@ -10,14 +10,14 @@ const EVENT_TYPES = [
 
 export default async function LabPage() {
   const space = await getSpaceBySlug("lab");
-  if (!space?.fungibleResourceId) notFound();
+  if (!space) notFound();
 
   return (
     <CalendarTemplateClient
       title={space.name}
       description="Reserva el laboratorio para tus proyectos tecnológicos"
       iconName={space.iconName ?? undefined}
-      apiEndpoint={`/api/resources/${space.fungibleResourceId}`}
+      apiEndpoint={`/api/resources/${space.id}`}
       eventTypes={EVENT_TYPES}
       defaultEventType="WORKSHOP"
     />

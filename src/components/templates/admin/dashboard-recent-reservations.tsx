@@ -102,7 +102,7 @@ export function DashboardRecentReservations({
       <CardContent>
         <AdminReservationsCardsPanel
           variant="dashboard"
-          fungibleResourceId={service}
+          spaceId={service}
           spaceName={spaceOptions.find((o) => o.id === service)?.name ?? ""}
           showHeading={false}
           onAction={onAction}

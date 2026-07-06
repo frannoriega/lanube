@@ -33,16 +33,15 @@ import { Event, EventType, Prisma } from "@/generated/prisma/client";
 
 export { planEventOccurrences } from "@/lib/events/plan";
 
-async function getResourceCapacity(
+async function getSpaceCapacity(
   tx: Prisma.TransactionClient,
-  resourceId: string,
+  spaceId: string,
 ): Promise<number | null> {
-  const resource = await tx.resource.findUnique({
-    where: { id: resourceId },
-    include: { fungibleResource: { select: { capacity: true } } },
+  const space = await tx.space.findUnique({
+    where: { id: spaceId },
+    select: { capacity: true },
   });
-  if (!resource) return null;
-  return resource.fungibleResource?.capacity ?? 1;
+  return space?.capacity ?? null;
 }
 
 async function insertEventReservations(
@@ -51,14 +50,14 @@ async function insertEventReservations(
   eventType: EventType,
   reason: string,
   plans: OccurrencePlan[],
-  resourceId: string,
+  spaceId: string,
 ): Promise<void> {
   for (const p of plans) {
     await tx.$executeRaw`
       SELECT create_event_reservation(
         ${p.reservationId}::text,
         ${eventId}::text,
-        ${resourceId}::text,
+        ${spaceId}::text,
         ${eventType}::event_types,
         ${reason}::text,
         ${p.startMs}::bigint,
@@ -116,7 +115,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
   try {
     return await prisma.$transaction(async (tx) => {
       const capacity =
-        input.capacity ?? (await getResourceCapacity(tx, input.resourceId));
+        input.capacity ?? (await getSpaceCapacity(tx, input.spaceId));
       if (capacity === null) {
         throw new Error("El recurso seleccionado no existe");
       }
@@ -128,7 +127,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
           description: input.description ?? null,
           eventType: input.eventType,
           status: input.status,
-          resourceId: input.resourceId,
+          spaceId: input.spaceId,
           startTime: earliest.startMs,
           endTime: earliest.endMs,
           rrule: `FREQ=WEEKLY;BYDAY=${byDay}`,
@@ -144,7 +143,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
         input.eventType,
         input.name,
         plans,
-        input.resourceId,
+        input.spaceId,
       );
 
       if (input.form) {
@@ -392,7 +391,7 @@ export async function updateEvent(
       if (!existing) throw new Error("Evento no encontrado");
 
       const capacity =
-        input.capacity ?? (await getResourceCapacity(tx, input.resourceId));
+        input.capacity ?? (await getSpaceCapacity(tx, input.spaceId));
       if (capacity === null) {
         throw new Error("El recurso seleccionado no existe");
       }
@@ -401,7 +400,7 @@ export async function updateEvent(
         where: { reservableType: "EVENT", reservableId: id },
         include: { exceptions: true },
       });
-      const resourceChanged = existing.resourceId !== input.resourceId;
+      const resourceChanged = existing.spaceId !== input.spaceId;
 
       const rawExisting = existingRes.map(toRawReservation);
 
@@ -423,7 +422,7 @@ export async function updateEvent(
           input.eventType,
           input.name,
           plans,
-          input.resourceId,
+          input.spaceId,
         );
       } else {
         const byWeekday = new Map<number, (typeof existingRes)[number]>();
@@ -466,7 +465,7 @@ export async function updateEvent(
               input.eventType,
               input.name,
               [p],
-              input.resourceId,
+              input.spaceId,
             );
           } else {
             await tx.reservation.update({
@@ -491,7 +490,7 @@ export async function updateEvent(
           description: input.description ?? null,
           eventType: input.eventType,
           status: input.status,
-          resourceId: input.resourceId,
+          spaceId: input.spaceId,
           capacity: input.capacity ?? null,
           imageUrl: input.imageUrl ?? null,
           // Editing + saving revives a cancelled event.
@@ -654,7 +653,7 @@ export async function getEvent(id: string) {
   return prisma.event.findUnique({
     where: { id },
     include: {
-      resource: {
+      space: {
         select: { id: true, name: true },
       },
       form: {
@@ -711,8 +710,8 @@ export interface EventListFilters {
   pageSize?: number;
   /** Display status: DRAFT | PUBLISHED | PAUSED | ENDED | CANCELLED. */
   status?: string;
-  /** Filter by the resource's FungibleResource id. */
-  fungibleResourceId?: string;
+  /** Filter by space id. */
+  spaceId?: string;
   /** Date range (admin-tz "yyyy-MM-dd" keys); an event matches if it overlaps the range. */
   from?: string;
   to?: string;
@@ -752,8 +751,8 @@ function buildEventListWhere(
       break;
   }
 
-  if (filters.fungibleResourceId) {
-    and.push({ resource: { fungibleResourceId: filters.fungibleResourceId } });
+  if (filters.spaceId) {
+    and.push({ spaceId: filters.spaceId });
   }
 
   // Overlap with [from, to]: starts on/before `to` AND last occurrence on/after `from`.
@@ -785,7 +784,7 @@ export async function listEvents(filters: EventListFilters = {}) {
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
-        resource: { select: { id: true, name: true } },
+        space: { select: { id: true, name: true } },
         form: {
           select: {
             id: true,
@@ -833,7 +832,7 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
     description: event.description ?? "",
     eventType: event.eventType,
     status: event.status,
-    resourceId: event.resourceId,
+    spaceId: event.spaceId,
     startDate: startKey,
     endDate: endKey,
     weekdays,
@@ -910,12 +909,7 @@ export async function getUpcomingPublicEvents(
     orderBy: { startTime: "desc" },
     take: limit,
     include: {
-      resource: {
-        select: {
-          name: true,
-          fungibleResource: { select: { capacity: true } },
-        },
-      },
+      space: { select: { name: true, capacity: true } },
       form: {
         select: {
           slug: true,
@@ -929,7 +923,7 @@ export async function getUpcomingPublicEvents(
   });
 
   return events.map((e) => {
-    const cap = e.capacity ?? e.resource.fungibleResource?.capacity ?? null;
+    const cap = e.capacity ?? e.space.capacity ?? null;
     const isFull = cap !== null && e._count.participants >= cap;
     const opensAt = e.form ? Number(e.form.opensAt) : null;
     const closesAt = e.form ? Number(e.form.closesAt) : null;
@@ -948,7 +942,7 @@ export async function getUpcomingPublicEvents(
       eventType: e.eventType,
       startMs: Number(e.startTime),
       recurrenceEndMs: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
-      resourceName: e.resource.name,
+      resourceName: e.space.name,
       weekdays: weekdaysFromRrule(e.rrule),
       formSlug: e.form?.slug ?? null,
       registration,
@@ -991,12 +985,7 @@ export async function getUpcomingPublicEventsPage(
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
-        resource: {
-          select: {
-            name: true,
-            fungibleResource: { select: { capacity: true } },
-          },
-        },
+        space: { select: { name: true, capacity: true } },
         form: {
           select: {
             slug: true,
@@ -1026,7 +1015,7 @@ export async function getUpcomingPublicEventsPage(
   );
 
   const events: UpcomingEventCard[] = rawEvents.map((e) => {
-    const cap = e.capacity ?? e.resource.fungibleResource?.capacity ?? null;
+    const cap = e.capacity ?? e.space.capacity ?? null;
     const isFull = cap !== null && e._count.participants >= cap;
     const opensAt = e.form ? Number(e.form.opensAt) : null;
     const closesAt = e.form ? Number(e.form.closesAt) : null;
@@ -1045,7 +1034,7 @@ export async function getUpcomingPublicEventsPage(
       eventType: e.eventType,
       startMs: Number(e.startTime),
       recurrenceEndMs: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
-      resourceName: e.resource.name,
+      resourceName: e.space.name,
       weekdays: weekdaysFromRrule(e.rrule),
       formSlug: e.form?.slug ?? null,
       registration,
@@ -1089,12 +1078,7 @@ export async function getPublicEventDetail(
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
-      resource: {
-        select: {
-          name: true,
-          fungibleResource: { select: { capacity: true } },
-        },
-      },
+      space: { select: { name: true, capacity: true } },
       form: {
         select: {
           slug: true,
@@ -1116,8 +1100,7 @@ export async function getPublicEventDetail(
     include: { exceptions: true },
   });
 
-  const cap =
-    event.capacity ?? event.resource.fungibleResource?.capacity ?? null;
+  const cap = event.capacity ?? event.space.capacity ?? null;
   const isFull = cap !== null && event._count.participants >= cap;
   const opensAt = event.form ? Number(event.form.opensAt) : null;
   const closesAt = event.form ? Number(event.form.closesAt) : null;
@@ -1144,7 +1127,7 @@ export async function getPublicEventDetail(
     endTime: Number(event.endTime),
     recurrenceEnd: event.recurrenceEnd ? Number(event.recurrenceEnd) : null,
     weekdays: weekdaysFromRrule(event.rrule),
-    resourceName: event.resource.name,
+    resourceName: event.space.name,
     registration,
     formSlug: event.form?.slug ?? null,
     formOpensAt: opensAt,

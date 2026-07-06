@@ -6,8 +6,8 @@ import { Suspense } from "react";
 export default async function AdminReservationsPage() {
   const spaces = await getPublicSpaces();
   const spaceOptions: SpaceOption[] = spaces
-    .filter((s) => s.isReservable && s.fungibleResourceId)
-    .map((s) => ({ id: s.fungibleResourceId!, name: s.name }));
+    .filter((s) => s.isReservable)
+    .map((s) => ({ id: s.id, name: s.name }));
 
   return (
     <Suspense

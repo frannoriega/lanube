@@ -12,7 +12,7 @@ type ReservationRow = {
   startTime: bigint;
   endTime: bigint;
   status: string;
-  resource: { fungibleResource: { name: string } | null } | null;
+  space: { name: string } | null;
 };
 
 function durationStats(
@@ -49,7 +49,7 @@ async function fetchRangeData(fromMs: number, toMs: number) {
         startTime: true,
         endTime: true,
         status: true,
-        resource: { select: { fungibleResource: { select: { name: true } } } },
+        space: { select: { name: true } },
       },
     }),
   ]);
@@ -69,7 +69,7 @@ function buildPeriodSummary(
   const byType = new Map<string, TypeBucket>();
 
   for (const r of reservations) {
-    const type = r.resource?.fungibleResource?.name ?? "Unknown";
+    const type = r.space?.name ?? "Unknown";
     if (!byType.has(type))
       byType.set(type, { approved: [], pending: [], rejected: [] });
     const bucket = byType.get(type)!;
