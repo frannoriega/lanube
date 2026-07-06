@@ -11,6 +11,10 @@ package-lock.json
 yarn.lock
 vercel.json
 
+# Claude related
+.impeccable
+.superpowers
+graphify-out
 
 
 
