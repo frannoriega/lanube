@@ -3,7 +3,8 @@ import ManagementLayout from "@/components/templates/management";
 import { auth } from "@/lib/auth";
 import { getRegisteredUserById } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
-import { UserRole, type RegisteredUser } from "@/types/prisma";
+import { isAdminRole } from "@/lib/rbac";
+import { type RegisteredUser } from "@/types/prisma";
 import { ThemeProvider } from "next-themes";
 import { redirect } from "next/navigation";
 
@@ -16,12 +17,13 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   if (!session?.userId) {
     redirect("/auth/signin");
   }
-  if (session.role !== UserRole.ADMIN) {
-    redirect("/user/dashboard");
-  }
   const registeredUser = await getRegisteredUserById(session.userId);
   if (!registeredUser) {
     redirect("/auth/signup");
+  }
+  // Check the DB role (not the JWT) so a demotion applies immediately.
+  if (!isAdminRole(registeredUser.role)) {
+    redirect("/user/dashboard");
   }
   // serializeJson turns BigInt timestamps into numbers, matching the client type
   const user = serializeJson(registeredUser) as unknown as RegisteredUser;

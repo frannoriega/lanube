@@ -29,7 +29,10 @@ import {
 } from "@/lib/schemas/events";
 import { createId } from "@paralleldrive/cuid2";
 import { TZDate } from "@date-fns/tz";
-import { Event, EventType, Prisma } from "@/generated/prisma/client";
+import { Event, Prisma } from "@/generated/prisma/client";
+
+/** Code of a ReservationType row (was the `event_types` enum before the catalog table). */
+type EventType = string;
 
 export { planEventOccurrences } from "@/lib/events/plan";
 
@@ -58,7 +61,7 @@ async function insertEventReservations(
         ${p.reservationId}::text,
         ${eventId}::text,
         ${spaceId}::text,
-        ${eventType}::event_types,
+        ${eventType}::text,
         ${reason}::text,
         ${p.startMs}::bigint,
         ${p.endMs}::bigint,
@@ -785,6 +788,7 @@ export async function listEvents(filters: EventListFilters = {}) {
       take: pageSize,
       include: {
         space: { select: { id: true, name: true } },
+        type: { select: { name: true } },
         form: {
           select: {
             id: true,
@@ -871,6 +875,8 @@ export interface UpcomingEventCard {
   description: string | null;
   imageUrl: string | null;
   eventType: EventType;
+  /** Display name of the reservation type (from the catalog table). */
+  eventTypeName: string;
   startMs: number;
   recurrenceEndMs: number | null;
   resourceName: string;
@@ -910,6 +916,7 @@ export async function getUpcomingPublicEvents(
     take: limit,
     include: {
       space: { select: { name: true, capacity: true } },
+      type: { select: { name: true } },
       form: {
         select: {
           slug: true,
@@ -940,6 +947,7 @@ export async function getUpcomingPublicEvents(
       description: e.description,
       imageUrl: e.imageUrl,
       eventType: e.eventType,
+      eventTypeName: e.type.name,
       startMs: Number(e.startTime),
       recurrenceEndMs: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
       resourceName: e.space.name,
@@ -986,6 +994,7 @@ export async function getUpcomingPublicEventsPage(
       take: pageSize,
       include: {
         space: { select: { name: true, capacity: true } },
+        type: { select: { name: true } },
         form: {
           select: {
             slug: true,
@@ -1032,6 +1041,7 @@ export async function getUpcomingPublicEventsPage(
       description: e.description,
       imageUrl: e.imageUrl,
       eventType: e.eventType,
+      eventTypeName: e.type.name,
       startMs: Number(e.startTime),
       recurrenceEndMs: e.recurrenceEnd ? Number(e.recurrenceEnd) : null,
       resourceName: e.space.name,
@@ -1053,6 +1063,8 @@ export interface PublicEventDetail {
   description: string | null;
   imageUrl: string | null;
   eventType: EventType;
+  /** Display name of the reservation type (from the catalog table). */
+  eventTypeName: string;
   startTime: number;
   endTime: number;
   recurrenceEnd: number | null;
@@ -1079,6 +1091,7 @@ export async function getPublicEventDetail(
     where: { id },
     include: {
       space: { select: { name: true, capacity: true } },
+      type: { select: { name: true } },
       form: {
         select: {
           slug: true,
@@ -1123,6 +1136,7 @@ export async function getPublicEventDetail(
     description: event.description,
     imageUrl: event.imageUrl,
     eventType: event.eventType,
+    eventTypeName: event.type.name,
     startTime: Number(event.startTime),
     endTime: Number(event.endTime),
     recurrenceEnd: event.recurrenceEnd ? Number(event.recurrenceEnd) : null,

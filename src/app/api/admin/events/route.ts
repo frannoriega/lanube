@@ -1,27 +1,11 @@
-import { auth } from "@/lib/auth";
-import { isAdminUser } from "@/lib/db/adminReservations";
+import { requirePermission } from "@/lib/api-auth";
 import { createEvent, listEvents } from "@/lib/db/events";
 import { eventInputSchema } from "@/lib/schemas/events";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 
-async function requireAdmin() {
-  const session = await auth();
-  if (!session?.userId) {
-    return {
-      error: NextResponse.json({ message: "No autorizado" }, { status: 401 }),
-    };
-  }
-  if (!(await isAdminUser(session.userId))) {
-    return {
-      error: NextResponse.json({ message: "Acceso denegado" }, { status: 403 }),
-    };
-  }
-  return { session };
-}
-
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission("events:manage");
   if (error) return error;
 
   const events = await listEvents();
@@ -29,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission("events:manage");
   if (error) return error;
 
   const body = await request.json().catch(() => null);

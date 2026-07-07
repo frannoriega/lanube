@@ -5,7 +5,7 @@ import {
 } from "@/lib/admin/admin-timezone";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { ReservationStatus, UserRole } from "@/generated/prisma/client";
+import { ReservationStatus } from "@/generated/prisma/client";
 
 const MAX_PAGE_SIZE = 100;
 const RANGE_FETCH_MAX = 3000;
@@ -92,11 +92,6 @@ async function mapRowsToAdminResults(
     rows.map((r) => ({ id: r.id, startTime: r.startTime })),
   );
   return rows.map((r) => toAdminReservationListResult(r, sizes.get(r.id) ?? 1));
-}
-
-export async function isAdminUser(id: string): Promise<boolean> {
-  const user = await prisma.registeredUser.findUnique({ where: { id } });
-  return !!user && user.role === UserRole.ADMIN;
 }
 
 export async function approveReservationAndRejectConflicts(

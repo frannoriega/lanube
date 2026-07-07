@@ -21,6 +21,7 @@ export type RegisteredUser = {
 export enum UserRole {
   USER = "USER",
   ADMIN = "ADMIN",
+  SUPERADMIN = "SUPERADMIN",
 }
 
 export enum IncidentStatus {
@@ -48,12 +49,19 @@ export enum ReservableType {
   TEAM = "TEAM",
 }
 
-export enum EventType {
-  MEETING = "MEETING",
-  WORKSHOP = "WORKSHOP",
-  CONFERENCE = "CONFERENCE",
-  OTHER = "OTHER",
-}
+/**
+ * Reservation/event types now live in the `reservation_types` DB table (managed by
+ * superadmins). This mirrors that row for client components; `code` is what
+ * events/reservations store in their `eventType` field.
+ */
+export type ReservationType = {
+  id: string;
+  code: string;
+  name: string;
+  displayOrder: number;
+  createdAt: number;
+  updatedAt: number;
+};
 
 export enum EventStatus {
   DRAFT = "DRAFT",

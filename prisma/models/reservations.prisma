@@ -3,7 +3,8 @@ model Reservation {
   reservableType ReservableType         @map("reservable_type")
   reservableId   String                 @map("reservable_id")
   spaceId        String?                @map("space_id")
-  eventType      EventType              @map("event_type")
+  // Code of a ReservationType row (FK on `code`, not `id`).
+  eventType      String                 @map("event_type")
   reason         String
   deniedReason   String?                @map("denied_reason")
   status         ReservationStatus      @default(PENDING)
@@ -18,11 +19,13 @@ model Reservation {
   exceptions     ReservationException[]
   registeredUser RegisteredUser         @relation(fields: [reservableId], references: [id], onDelete: Cascade)
   space          Space?                 @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  type           ReservationType        @relation(fields: [eventType], references: [code], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([reservableType, reservableId])
   @@index([spaceId])
   @@index([status])
   @@index([startTime, endTime])
+  @@index([eventType])
   @@map("reservations")
 }
 
@@ -50,7 +53,8 @@ model ReservationLedger {
   reservableType      ReservableType    @map("reservable_type")
   reservableId        String            @map("reservable_id")
   spaceId             String            @map("space_id")
-  eventType           EventType         @map("event_type")
+  // Snapshot of the reservation's type code (derived data — no FK; rebuilt from reservations).
+  eventType           String            @map("event_type")
   reason              String?
   actorSize           Int               @map("actor_size")
   status              ReservationStatus

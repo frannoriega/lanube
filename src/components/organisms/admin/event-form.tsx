@@ -39,13 +39,13 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/hooks/use-api";
 import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
-import { EVENT_STATUS_LABELS, EVENT_TYPE_LABELS } from "@/lib/constants/events";
+import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
 import type {
   ExistingException,
   SessionAction,
 } from "@/lib/events/occurrences";
 import { EventInput, eventInputSchema } from "@/lib/schemas/events";
-import { EventStatus, EventType } from "@/types/prisma";
+import { EventStatus, type ReservationType } from "@/types/prisma";
 
 /** A per-session change the edit would drop (mirrors the API's 409 payload). */
 interface DroppedSession {
@@ -83,7 +83,6 @@ const WEEKDAYS: Array<{ value: string; label: string }> = [
 interface ResourceOption {
   id: string;
   name: string;
-  type: string;
   capacity: number;
 }
 
@@ -113,7 +112,7 @@ export interface EventFormDefaults {
 const EMPTY_DEFAULTS: EventInput = {
   name: "",
   description: "",
-  eventType: EventType.WORKSHOP,
+  eventType: "",
   status: EventStatus.DRAFT,
   spaceId: "",
   startDate: "",
@@ -143,9 +142,13 @@ export function EventForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: resourcesData } = useApi<ResourceOption[]>(
-    "/api/admin/resources",
+    "/api/admin/spaces?reservable=1",
   );
   const resources = useMemo(() => resourcesData ?? [], [resourcesData]);
+  const { data: typesData } = useApi<ReservationType[]>(
+    "/api/reservation-types",
+  );
+  const reservationTypes = typesData ?? [];
   const { data: templatesData } =
     useApi<FormPickerTemplate[]>("/api/admin/forms");
   const templates = templatesData ?? [];
@@ -349,17 +352,15 @@ export function EventForm({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Elegí un tipo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(EVENT_TYPE_LABELS).map(
-                        ([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ),
-                      )}
+                      {reservationTypes.map((t) => (
+                        <SelectItem key={t.code} value={t.code}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -382,7 +383,7 @@ export function EventForm({
                     <SelectContent>
                       {resources.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
-                          {r.name} ({r.type})
+                          {r.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -1,15 +1,16 @@
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
+import {
+  listReservationTypeOptions,
+  preferredTypeCode,
+} from "@/lib/db/reservationTypes";
 import { getSpaceBySlug } from "@/lib/db/spaces";
 import { notFound } from "next/navigation";
 
-const EVENT_TYPES = [
-  { value: "MEETING", label: "Reunión" },
-  { value: "WORKSHOP", label: "Taller" },
-  { value: "OTHER", label: "Trabajo individual" },
-];
-
 export default async function CoworkingPage() {
-  const space = await getSpaceBySlug("coworking");
+  const [space, eventTypes] = await Promise.all([
+    getSpaceBySlug("coworking"),
+    listReservationTypeOptions(),
+  ]);
   if (!space) notFound();
 
   return (
@@ -18,8 +19,8 @@ export default async function CoworkingPage() {
       description="Reserva un espacio de trabajo colaborativo en La Nube"
       iconName={space.iconName ?? undefined}
       apiEndpoint={`/api/resources/${space.id}`}
-      eventTypes={EVENT_TYPES}
-      defaultEventType="OTHER"
+      eventTypes={eventTypes}
+      defaultEventType={preferredTypeCode(eventTypes, "OTHER")}
     />
   );
 }

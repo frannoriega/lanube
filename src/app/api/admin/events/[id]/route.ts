@@ -1,5 +1,4 @@
-import { auth } from "@/lib/auth";
-import { isAdminUser } from "@/lib/db/adminReservations";
+import { requirePermission } from "@/lib/api-auth";
 import {
   deleteEvent,
   EventEditDropWarning,
@@ -15,26 +14,11 @@ import { serializeJson } from "@/lib/json-bigint";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
-async function requireAdmin() {
-  const session = await auth();
-  if (!session?.userId) {
-    return {
-      error: NextResponse.json({ message: "No autorizado" }, { status: 401 }),
-    };
-  }
-  if (!(await isAdminUser(session.userId))) {
-    return {
-      error: NextResponse.json({ message: "Acceso denegado" }, { status: 403 }),
-    };
-  }
-  return { session };
-}
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission("events:manage");
   if (error) return error;
 
   const { id } = await params;
@@ -52,7 +36,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission("events:manage");
   if (error) return error;
 
   const { id } = await params;
@@ -115,7 +99,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission("events:manage");
   if (error) return error;
 
   const { id } = await params;
