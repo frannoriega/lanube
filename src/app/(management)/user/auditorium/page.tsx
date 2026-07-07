@@ -1,16 +1,16 @@
 import { CalendarTemplateClient } from "@/components/templates/user/calendar-template-client";
+import {
+  listReservationTypeOptions,
+  preferredTypeCode,
+} from "@/lib/db/reservationTypes";
 import { getSpaceBySlug } from "@/lib/db/spaces";
 import { notFound } from "next/navigation";
 
-const EVENT_TYPES = [
-  { value: "CONFERENCE", label: "Conferencia" },
-  { value: "WORKSHOP", label: "Taller" },
-  { value: "MEETING", label: "Reunión" },
-  { value: "OTHER", label: "Otro" },
-];
-
 export default async function AuditoriumPage() {
-  const space = await getSpaceBySlug("auditorium");
+  const [space, eventTypes] = await Promise.all([
+    getSpaceBySlug("auditorium"),
+    listReservationTypeOptions(),
+  ]);
   if (!space) notFound();
 
   return (
@@ -19,8 +19,8 @@ export default async function AuditoriumPage() {
       description="Reserva el auditorio para eventos y presentaciones"
       iconName={space.iconName ?? undefined}
       apiEndpoint={`/api/resources/${space.id}`}
-      eventTypes={EVENT_TYPES}
-      defaultEventType="CONFERENCE"
+      eventTypes={eventTypes}
+      defaultEventType={preferredTypeCode(eventTypes, "CONFERENCE")}
     />
   );
 }

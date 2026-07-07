@@ -3,13 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import { createId } from "@paralleldrive/cuid2";
 import {
-  EventType,
   Prisma,
   ReservableType,
   Reservation,
   ReservationException,
   ReservationStatus,
 } from "@/generated/prisma/client";
+
+/** Code of a ReservationType row (was the `event_types` enum before the catalog table). */
+type EventType = string;
 
 // Types
 export interface ReservationWithRelations extends Reservation {
@@ -168,7 +170,7 @@ export async function createReservation(
         ${data.reservableType}::reservable_types,
         ${data.reservableId}::text,
         ${data.spaceId}::text,
-        ${data.eventType}::event_types,
+        ${data.eventType}::text,
         ${data.reason}::text,
         ${startMs}::bigint,
         ${endMs}::bigint,

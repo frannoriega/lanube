@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
 import { createReservation } from "@/lib/db/reservations";
 import { getCalendarDataBySpace } from "@/lib/db/resourceCalendar";
+import { getReservationTypeByCode } from "@/lib/db/reservationTypes";
 import { getRegisteredUserById } from "@/lib/db/users";
 import { getSpaceById } from "@/lib/db/spaces";
 import { serializeJson } from "@/lib/json-bigint";
@@ -90,6 +91,14 @@ export async function POST(
         { status: 400 },
       );
 
+    const typeCode =
+      typeof eventType === "string" && eventType ? eventType : "MEETING";
+    if (!(await getReservationTypeByCode(typeCode)))
+      return NextResponse.json(
+        { error: "Tipo de reserva inválido" },
+        { status: 400 },
+      );
+
     const startMs =
       typeof startTime === "number" ? startTime : Number(startTime);
     const endMs = typeof endTime === "number" ? endTime : Number(endTime);
@@ -145,7 +154,7 @@ export async function POST(
       reservableType: "USER",
       reservableId: user.id,
       spaceId,
-      eventType: eventType || "MEETING",
+      eventType: typeCode,
       reason,
       startTime: startDateTime,
       endTime: endDateTime,

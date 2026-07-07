@@ -1,6 +1,6 @@
 import { DATETIME_LOCAL_RE } from "@/lib/events/datetime";
 import { registerEmailSchema } from "@/lib/schemas/auth";
-import { EventStatus, EventType, FormFieldType } from "@/types/prisma";
+import { EventStatus, FormFieldType } from "@/types/prisma";
 import z from "zod";
 
 /** YYYY-MM-DD calendar date key (interpreted in the admin timezone). */
@@ -56,7 +56,8 @@ export const eventInputSchema = z
         message: "La descripción debe tener al menos 100 caracteres",
       })
       .max(2000),
-    eventType: z.enum(EventType),
+    // Code of a ReservationType row; existence is validated server-side (FK).
+    eventType: z.string().trim().min(1, { message: "Elegí un tipo de evento" }),
     // Lifecycle state set by the admin. ENDED is derived, so it's not a valid input.
     status: z.enum(EventStatus),
     spaceId: z.string().min(1, { message: "Elegí un espacio" }),

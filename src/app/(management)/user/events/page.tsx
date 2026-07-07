@@ -45,7 +45,7 @@ export default async function UserEventsPage() {
                   variant="secondary"
                   className="w-fit font-normal text-la-nube-selected dark:text-la-nube-secondary"
                 >
-                  {eventTypeLabel(event.eventType)}
+                  {event.type?.name ?? eventTypeLabel(event.eventType)}
                 </Badge>
                 <CardTitle>{event.name}</CardTitle>
               </CardHeader>

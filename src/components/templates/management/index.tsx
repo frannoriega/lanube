@@ -6,7 +6,7 @@ import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
-import { UserRole } from "@/types/prisma";
+import { hasPermission, isAdminRole } from "@/lib/rbac";
 import {
   BarChart3,
   Building2,
@@ -20,12 +20,22 @@ import {
   Menu,
   MessagesSquare,
   Presentation,
+  Settings,
+  Shield,
+  Tags,
+  User,
   Users,
+  Wrench,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ForwardRefExoticComponent, RefAttributes, useState } from "react";
+import {
+  ForwardRefExoticComponent,
+  RefAttributes,
+  useMemo,
+  useState,
+} from "react";
 
 interface ManagementLayoutProps {
   children: React.ReactNode;
@@ -84,6 +94,17 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
   ],
 };
 
+/** Superadmin-only configuration section (requires the *:manage config permissions). */
+const configNavigation: NavigationItem = {
+  name: "Configuración",
+  icon: Settings,
+  children: [
+    { name: "Espacios", href: "/admin/spaces", icon: Building2 },
+    { name: "Recursos", href: "/admin/resources", icon: Wrench },
+    { name: "Tipos de reserva", href: "/admin/reservation-types", icon: Tags },
+  ],
+};
+
 export default function ManagementLayout({
   children,
   userType,
@@ -91,7 +112,12 @@ export default function ManagementLayout({
   const user = useUser();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  // Groups whose child is the current page start expanded.
+  const [expandedItems, setExpandedItems] = useState<string[]>(() =>
+    configNavigation.children?.some((c) => c.href && pathname === c.href)
+      ? [configNavigation.name]
+      : [],
+  );
   const toggleExpanded = (itemName: string) => {
     setExpandedItems((prev) =>
       prev.includes(itemName)
@@ -174,6 +200,14 @@ export default function ManagementLayout({
     }
   };
 
+  const navItems = useMemo(() => {
+    if (userType !== "admin") return navigation.user;
+    const canConfigure = hasPermission(user?.role, "spaces:manage");
+    return canConfigure
+      ? [...navigation.admin, configNavigation]
+      : navigation.admin;
+  }, [userType, user?.role]);
+
   if (!user) {
     return <ManagementLayoutSkeleton />;
   }
@@ -208,7 +242,7 @@ export default function ManagementLayout({
               </Button>
             </div>
             <nav className="flex-1 space-y-1 px-2 py-4">
-              {navigation[userType].map((item) => {
+              {navItems.map((item) => {
                 return recursiveRender(item);
               })}
             </nav>
@@ -228,7 +262,7 @@ export default function ManagementLayout({
               </div>
             </div>
             <nav className="flex-1 space-y-1 px-2 py-4">
-              {navigation[userType].map((item) => {
+              {navItems.map((item) => {
                 return recursiveRender(item);
               })}
             </nav>
@@ -252,16 +286,36 @@ export default function ManagementLayout({
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1" />
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                {userType === "user" && user.role === UserRole.ADMIN ? (
-                  <Link href="/admin/dashboard">
-                    <Button>Panel de administrador</Button>
-                  </Link>
-                ) : (
-                  userType === "admin" && (
-                    <Link href="/user/dashboard">
-                      <Button>Panel de usuario</Button>
+                {isAdminRole(user.role) && (
+                  <nav
+                    aria-label="Cambiar de vista"
+                    className="flex items-center gap-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-slate-900/60 p-0.5 text-sm font-medium"
+                  >
+                    <Link
+                      href="/user/dashboard"
+                      aria-current={userType === "user" ? "page" : undefined}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                        userType === "user"
+                          ? "bg-la-nube-primary text-white shadow-sm"
+                          : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <User className="h-4 w-4" />
+                      <span className="hidden sm:inline">Usuario</span>
                     </Link>
-                  )
+                    <Link
+                      href="/admin/dashboard"
+                      aria-current={userType === "admin" ? "page" : undefined}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                        userType === "admin"
+                          ? "bg-la-nube-primary text-white shadow-sm"
+                          : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span className="hidden sm:inline">Administración</span>
+                    </Link>
+                  </nav>
                 )}
                 {/* Theme toggle */}
                 <div className="flex items-center gap-x-2">

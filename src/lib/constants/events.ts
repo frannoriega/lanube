@@ -7,7 +7,11 @@ import {
   Wrench,
 } from "lucide-react";
 
-/** Human-readable (Spanish) labels for each event type. */
+/**
+ * Fallback labels for the built-in reservation-type codes. Types now live in the
+ * `reservation_types` table (superadmin-managed) — prefer the DB `name` when the
+ * query provides it; these only cover surfaces without the joined name.
+ */
 export const EVENT_TYPE_LABELS: Record<string, string> = {
   WORKSHOP: "Taller",
   MEETING: "Reunión",
