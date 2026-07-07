@@ -3,7 +3,7 @@
 import { ThemeToggle } from "@/components/molecules/theme";
 import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
-import { UserRole } from "@/types/prisma";
+import { isAdminRole } from "@/lib/rbac";
 import {
   Building2,
   LayoutDashboard,
@@ -141,7 +141,7 @@ export default function UserLayout({ children }: UserLayoutProps) {
                 <ThemeToggle />
               </div>
 
-              {session?.role === UserRole.ADMIN && (
+              {isAdminRole(session?.role) && (
                 <Button
                   variant="ghost"
                   className="relative h-8 w-8 rounded-full"

@@ -1,5 +1,4 @@
-import { auth } from "@/lib/auth";
-import { isAdminUser } from "@/lib/db/adminReservations";
+import { requirePermission } from "@/lib/api-auth";
 import { getEventFormFields } from "@/lib/db/forms";
 import { listEventParticipants } from "@/lib/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
@@ -20,13 +19,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.userId) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
-  if (!(await isAdminUser(session.userId))) {
-    return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-  }
+  const { error } = await requirePermission("events:manage");
+  if (error) return error;
 
   const { id } = await params;
   const [participants, fields] = await Promise.all([

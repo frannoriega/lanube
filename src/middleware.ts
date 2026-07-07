@@ -1,6 +1,17 @@
-import { UserRole } from "@/types/prisma";
+import { hasPermission, isAdminRole, type Permission } from "@/lib/rbac";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+
+/**
+ * Path prefixes inside /admin that need a specific permission beyond admin:access.
+ * The JWT role can lag a promotion/demotion; API routes re-check against the DB.
+ */
+const ADMIN_PATH_PERMISSIONS: Array<[prefix: string, permission: Permission]> =
+  [
+    ["/admin/spaces", "spaces:manage"],
+    ["/admin/resources", "resources:manage"],
+    ["/admin/reservation-types", "reservation-types:manage"],
+  ];
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({
@@ -11,7 +22,7 @@ export async function middleware(request: NextRequest) {
   const isAuth = !!token;
   const isSignedUp = isAuth && token?.signedUp;
   const isBanned = isAuth && token?.banned;
-  const role = token?.role;
+  const role = token?.role as string | undefined;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
 
   const requiresSession =
@@ -37,8 +48,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/signup", request.url));
   }
 
-  if (isSignedUp && requiresAdmin && role !== UserRole.ADMIN) {
+  if (isSignedUp && requiresAdmin && !isAdminRole(role)) {
     return NextResponse.redirect(new URL("/user/dashboard", request.url));
+  }
+
+  if (isSignedUp && requiresAdmin) {
+    const required = ADMIN_PATH_PERMISSIONS.find(([prefix]) =>
+      request.nextUrl.pathname.startsWith(prefix),
+    );
+    if (required && !hasPermission(role, required[1])) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
   }
 
   return NextResponse.next();

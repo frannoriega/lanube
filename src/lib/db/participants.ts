@@ -340,6 +340,7 @@ export async function getUserEvents(email: string) {
           id: true,
           name: true,
           eventType: true,
+          type: { select: { name: true } },
           startTime: true,
           endTime: true,
           recurrenceEnd: true,

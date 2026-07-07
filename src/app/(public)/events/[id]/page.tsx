@@ -1,7 +1,7 @@
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { LocalDate, LocalDateTime } from "@/components/molecules/local-date";
 import { RegistrationCta } from "@/components/molecules/registration-cta";
-import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
+import { WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
 import { getPublicEventDetail } from "@/lib/db/events";
 import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { nowMs } from "@/lib/clock";
@@ -38,7 +38,7 @@ export default async function EventDetailPage({
       {/* Meta row */}
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-full border border-border px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-la-nube-selected dark:text-la-nube-secondary">
-          {eventTypeLabel(event.eventType)}
+          {event.eventTypeName}
         </span>
         <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4 shrink-0" />
