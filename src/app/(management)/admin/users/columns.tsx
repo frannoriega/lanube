@@ -1,6 +1,15 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ROLE_LABELS } from "@/lib/rbac";
+import { UserRole } from "@/types/prisma";
 import { type Column, type ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
@@ -19,18 +28,8 @@ const formatDate = (value: string | Date | number) => {
   });
 };
 
-const resolveRoleLabel = (role?: string | null) => {
-  switch (role) {
-    case "ADMIN":
-      return "Administrador";
-    case "STAFF":
-      return "Equipo";
-    case "USER":
-      return "Usuario";
-    default:
-      return role ?? "Sin rol";
-  }
-};
+const resolveRoleLabel = (role?: string | null) =>
+  (role && ROLE_LABELS[role as UserRole]) || role || "Sin rol";
 
 const resolveStatusBadge = (status?: string | null) => {
   if (!status) {
@@ -91,7 +90,63 @@ function DataTableColumnHeader<TData>({
   );
 }
 
-export const adminUsersColumns: ColumnDef<AdminUser>[] = [
+export interface AdminUsersColumnsOptions {
+  /** Show the role selector (superadmins with users:roles:manage). */
+  canManageRoles: boolean;
+  /** The viewer's RegisteredUser id — own role is never editable. */
+  currentUserId: string | null;
+  onRoleChange: (user: AdminUser, role: UserRole) => void;
+}
+
+export function buildAdminUsersColumns({
+  canManageRoles,
+  currentUserId,
+  onRoleChange,
+}: AdminUsersColumnsOptions): ColumnDef<AdminUser>[] {
+  const roleColumn: ColumnDef<AdminUser> = {
+    accessorKey: "role",
+    header: () => (
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+        Rol
+      </span>
+    ),
+    enableSorting: false,
+    cell: ({ row }) => {
+      const user = row.original;
+      if (!canManageRoles || user.id === currentUserId) {
+        return <Badge variant="secondary">{resolveRoleLabel(user.role)}</Badge>;
+      }
+      return (
+        <Select
+          value={user.role}
+          onValueChange={(value) => onRoleChange(user, value as UserRole)}
+        >
+          <SelectTrigger
+            className="h-8 w-fit min-w-[150px]"
+            aria-label={`Rol de ${user.name ?? user.email}`}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(UserRole).map((role) => (
+              <SelectItem key={role} value={role}>
+                {ROLE_LABELS[role]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    },
+  };
+
+  return adminUsersBaseColumns.map((column) =>
+    "accessorKey" in column && column.accessorKey === "role"
+      ? roleColumn
+      : column,
+  );
+}
+
+const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (

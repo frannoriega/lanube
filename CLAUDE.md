@@ -171,8 +171,9 @@ src/
 - `ReservationException`: Overrides for a single occurrence of a recurring reservation
 - `ReservationLedger`: Expanded bookings by 15-min bucket (used for capacity/availability checks)
 - `CheckIn`: User entry/exit records (linked to reservation)
-- `Resource`: Physical/digital resource (coworking desk, auditorium seat, lab, meeting room)
-- `FungibleResource`: Resource category (capacity, exclusive flag)
+- `Space`: Reservable space (coworking, lab, auditorium, meeting room) with capacity/exclusive/reservable flags — superadmin CRUD at `/admin/spaces`
+- `Resource`: Physical equipment inventory (superadmin CRUD at `/admin/resources`)
+- `ReservationType`: Catalog of reservation/event types (was the `event_types` Postgres enum). `code` is the stable identifier stored on `Event.eventType` / `Reservation.eventType` (text FK, `ON UPDATE CASCADE`, delete restricted while in use); `name` is the display name. Superadmin CRUD at `/admin/reservation-types`; public read at `GET /api/reservation-types`. Migration `20260706110000` seeded MEETING/WORKSHOP/CONFERENCE/OTHER and recreated the SQL functions with `text` params.
 - `Ban`: User suspension record (time-bounded)
 
 **Features** (expanding):
@@ -229,7 +230,11 @@ src/
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
 4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status checked in `jwt()` callback
-6. **Role-based**: `session.role` populated from `RegisteredUser.role` in `jwt()` callback; admin pages guarded client-side
+6. **Role-based (RBAC)**: `session.role` populated from `RegisteredUser.role` in `jwt()` callback. Roles: **USER / ADMIN / SUPERADMIN**; permissions are code-defined per role in `src/lib/rbac.ts` (`ROLE_PERMISSIONS`, `hasPermission()`, `isAdminRole()`). Enforcement layers:
+   - **Middleware** (JWT role, fast path): `/admin` needs `admin:access`; config paths (`/admin/spaces|resources|reservation-types`) need their `*:manage` permission.
+   - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) re-reads the role from the DB (fresh after promotions/demotions) and returns 401/403.
+   - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`) for the superadmin config pages; the admin layout checks the DB role.
+   - Superadmin extras: manage spaces/resources/reservation-types + change user roles (`PATCH /api/admin/users/[id]`; never your own role). Seed superadmins: `sa1`/`sa2@lanube.local`.
 
 **Special Cases**:
 

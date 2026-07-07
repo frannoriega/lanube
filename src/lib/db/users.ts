@@ -2,7 +2,13 @@
 import { now, nowMs } from "@/lib/clock";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
-import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
+import {
+  Ban,
+  Prisma,
+  RegisteredUser,
+  User,
+  UserRole,
+} from "@/generated/prisma/client";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import bcrypt from "bcryptjs";
 import { startOfMonth } from "date-fns";
@@ -74,6 +80,17 @@ export async function getRegisteredUserById(
 ): Promise<RegisteredUser | null> {
   return prisma.registeredUser.findUnique({
     where: { id },
+  });
+}
+
+/** RBAC role assignment (superadmin-only; guarded at the API layer). */
+export async function updateUserRole(
+  id: string,
+  role: UserRole,
+): Promise<RegisteredUser> {
+  return prisma.registeredUser.update({
+    where: { id },
+    data: { role },
   });
 }
 

@@ -1,5 +1,4 @@
 import {
-  EventType,
   PrismaClient,
   ReservableType,
   ReservationStatus,
@@ -12,6 +11,16 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 const BCRYPT_ROUNDS = 12;
+
+// Base reservation-type codes (seeded into reservation_types by the
+// 20260706110000_reservation_types_table migration).
+const EventType = {
+  MEETING: "MEETING",
+  WORKSHOP: "WORKSHOP",
+  CONFERENCE: "CONFERENCE",
+  OTHER: "OTHER",
+} as const;
+type EventType = (typeof EventType)[keyof typeof EventType];
 
 // ── Seeded PRNG (Mulberry32) ──────────────────────────────────────────────────
 // Fixed seed ensures the same reservations are generated every time the seed
@@ -81,6 +90,19 @@ function generateUsers(): Array<{
       institution: "La Nube (desarrollo)",
       reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
       role: UserRole.ADMIN,
+    });
+  }
+
+  for (let i = 1; i <= 2; i++) {
+    users.push({
+      email: `sa${i}@lanube.local`,
+      password: "123123123",
+      name: `Superadmin ${i}`,
+      lastName: "Ejemplo",
+      dni: `4000000${i}`,
+      institution: "La Nube (desarrollo)",
+      reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
+      role: UserRole.SUPERADMIN,
     });
   }
 

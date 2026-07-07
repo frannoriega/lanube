@@ -140,7 +140,7 @@ export default async function EventsPage({
                         variant="secondary"
                         className="font-normal text-la-nube-selected dark:text-la-nube-secondary"
                       >
-                        {eventTypeLabel(event.eventType)}
+                        {event.type?.name ?? eventTypeLabel(event.eventType)}
                       </Badge>
                       <StatusBadge status={status} />
                     </div>

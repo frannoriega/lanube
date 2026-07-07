@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
-import { isAdminUser } from "@/lib/db/adminReservations";
+import { requirePermission } from "@/lib/api-auth";
 import {
   type GetUsersOptions,
   type UsersOrderableField,
@@ -28,16 +27,8 @@ const DEFAULT_PAGE_SIZE = 10;
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.userId) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
-
-    const admin = await isAdminUser(session.userId);
-    if (!admin) {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-    }
+    const { error } = await requirePermission("users:manage");
+    if (error) return error;
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(

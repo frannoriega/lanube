@@ -16,6 +16,8 @@ export interface UpcomingEventCardData {
   description: string | null;
   imageUrl: string | null;
   eventType: string;
+  /** Display name of the reservation type (from the catalog table). */
+  eventTypeName?: string;
   /** UNIX ms (UTC); formatted to the viewer's local date in the card. */
   startMs: number;
   recurrenceEndMs: number | null;
@@ -57,7 +59,7 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide text-la-nube-selected shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-la-nube-secondary">
-          {eventTypeLabel(event.eventType)}
+          {event.eventTypeName ?? eventTypeLabel(event.eventType)}
         </span>
         {event.hasExceptions && (
           <span className="absolute right-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-700 shadow-sm backdrop-blur dark:bg-amber-900/80 dark:text-amber-300">

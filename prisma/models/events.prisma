@@ -3,7 +3,8 @@ model Event {
   name          String
   description   String?
   location      String?
-  eventType     EventType          @map("event_type")
+  // Code of a ReservationType row (FK on `code`, not `id`).
+  eventType     String             @map("event_type")
   status        EventStatus        @default(DRAFT)
   spaceId       String             @map("space_id")
   // First occurrence's time-of-day window. Recurrence (cadence + span) is encoded
@@ -21,11 +22,13 @@ model Event {
   createdAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   space         Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  type          ReservationType    @relation(fields: [eventType], references: [code], onDelete: Restrict, onUpdate: Cascade)
   form          EventForm?
   participants  EventParticipant[]
 
   @@index([spaceId])
   @@index([startTime, endTime])
+  @@index([eventType])
   @@map("events")
 }
 

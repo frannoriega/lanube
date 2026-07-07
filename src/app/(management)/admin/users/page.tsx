@@ -27,7 +27,11 @@ import { RefreshCw, Search, Users as UsersIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useApi } from "@/hooks/use-api";
-import { adminUsersColumns } from "./columns";
+import useUser from "@/hooks/use-user";
+import { apiErrorMessage, apiSend } from "@/lib/api/client";
+import { hasPermission, ROLE_LABELS } from "@/lib/rbac";
+import { toast } from "sonner";
+import { buildAdminUsersColumns } from "./columns";
 import { type AdminUser } from "./types";
 
 type UsersResponse = {
@@ -223,9 +227,32 @@ export default function AdminUsersPage() {
     void refetch();
   };
 
+  const currentUser = useUser();
+  const canManageRoles = hasPermission(currentUser?.role, "users:roles:manage");
+  const columns = useMemo(
+    () =>
+      buildAdminUsersColumns({
+        canManageRoles,
+        currentUserId: currentUser?.id ?? null,
+        onRoleChange: async (user, role) => {
+          try {
+            await apiSend(`/api/admin/users/${user.id}`, "PATCH", { role });
+            toast.success(
+              `${user.name ?? user.email} ahora es ${ROLE_LABELS[role]}`,
+            );
+          } catch (err) {
+            toast.error(apiErrorMessage(err, "No se pudo cambiar el rol"));
+          } finally {
+            void refetch();
+          }
+        },
+      }),
+    [canManageRoles, currentUser?.id, refetch],
+  );
+
   const table = useReactTable<AdminUser>({
     data: users,
-    columns: adminUsersColumns,
+    columns,
     pageCount: totalPages,
     state: {
       pagination,

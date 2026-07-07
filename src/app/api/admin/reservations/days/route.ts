@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/api-auth";
 import {
   endOfDateKeyMs,
   startOfDateKeyMs,
@@ -6,7 +6,6 @@ import {
 } from "@/lib/admin/admin-timezone";
 import {
   ADMIN_RESERVATION_FORWARD_DAYS,
-  isAdminUser,
   listDaysWithPendingReservationsAllServices,
   listReservationDayCountsInRange,
 } from "@/lib/db/adminReservations";
@@ -22,16 +21,8 @@ function parseTimestamp(raw: string | null): number | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.email || !session?.userId) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
-
-    const isAdmin = await isAdminUser(session.userId);
-    if (!isAdmin) {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-    }
+    const { error } = await requirePermission("reservations:manage");
+    if (error) return error;
 
     const { searchParams } = new URL(request.url);
     const service = searchParams.get("service");

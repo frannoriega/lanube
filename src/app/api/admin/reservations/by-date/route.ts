@@ -1,8 +1,5 @@
-import { auth } from "@/lib/auth";
-import {
-  isAdminUser,
-  listAdminReservationsAllServicesByRange,
-} from "@/lib/db/adminReservations";
+import { requirePermission } from "@/lib/api-auth";
+import { listAdminReservationsAllServicesByRange } from "@/lib/db/adminReservations";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -15,16 +12,8 @@ function parseTimestamp(raw: string | null): number | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.email || !session?.userId) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
-
-    const isAdmin = await isAdminUser(session.userId);
-    if (!isAdmin) {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-    }
+    const { error } = await requirePermission("reservations:manage");
+    if (error) return error;
 
     const { searchParams } = new URL(request.url);
     const startDate = parseTimestamp(searchParams.get("startDate"));

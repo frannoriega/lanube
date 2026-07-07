@@ -1,33 +1,42 @@
-import { auth } from "@/lib/auth";
-import { isAdminUser } from "@/lib/db/adminReservations";
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { requirePermission } from "@/lib/api-auth";
+import { createResource, listResources } from "@/lib/db/resources";
+import { serializeJson } from "@/lib/json-bigint";
+import { resourceInputSchema } from "@/lib/schemas/config";
+import { NextRequest, NextResponse } from "next/server";
 
-// GET: list all reservable spaces (for the admin event space picker).
+// Physical resources (equipment inventory). The event-form space picker moved to
+// /api/admin/spaces?reservable=1.
 export async function GET() {
-  const session = await auth();
-  if (!session?.userId) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-  }
-  if (!(await isAdminUser(session.userId))) {
-    return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
+  const { error } = await requirePermission("admin:access");
+  if (error) return error;
+
+  const resources = await listResources();
+  return NextResponse.json(serializeJson(resources));
+}
+
+export async function POST(request: NextRequest) {
+  const { error } = await requirePermission("resources:manage");
+  if (error) return error;
+
+  const body = await request.json().catch(() => null);
+  const parsed = resourceInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        message: parsed.error.issues[0]?.message ?? "Datos inválidos",
+        issues: parsed.error.issues,
+      },
+      { status: 400 },
+    );
   }
 
-  const spaces = await prisma.space.findMany({
-    where: { isReservable: true },
-    orderBy: [{ displayOrder: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      capacity: true,
-    },
-  });
-
-  return NextResponse.json(
-    spaces.map((s) => ({
-      id: s.id,
-      name: s.name,
-      capacity: s.capacity,
-    })),
-  );
+  try {
+    const resource = await createResource(parsed.data);
+    return NextResponse.json(serializeJson(resource), { status: 201 });
+  } catch {
+    return NextResponse.json(
+      { message: "Ya existe un recurso con ese número de serie" },
+      { status: 400 },
+    );
+  }
 }

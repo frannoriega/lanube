@@ -1,22 +1,6 @@
-import { auth } from "@/lib/auth";
-import { isAdminUser } from "@/lib/db/adminReservations";
+import { requirePermission } from "@/lib/api-auth";
 import { getStorage } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
-
-async function requireAdmin() {
-  const session = await auth();
-  if (!session?.userId) {
-    return {
-      error: NextResponse.json({ message: "No autorizado" }, { status: 401 }),
-    };
-  }
-  if (!(await isAdminUser(session.userId))) {
-    return {
-      error: NextResponse.json({ message: "Acceso denegado" }, { status: 403 }),
-    };
-  }
-  return { session };
-}
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -29,7 +13,7 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
 /** Uploads an event image through the active storage provider, returning its public URL. */
 export async function POST(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission("events:manage");
   if (error) return error;
 
   const formData = await request.formData().catch(() => null);

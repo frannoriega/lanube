@@ -1,0 +1,15 @@
+// Catalog of reservation/event types (Reunión, Taller, …), managed by superadmins.
+// `code` is the stable app-facing identifier stored on events/reservations (the values of
+// the old `event_types` enum live on as codes); `name` is the display name shown in the UI.
+model ReservationType {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  name         String
+  displayOrder Int           @default(0) @map("display_order")
+  createdAt    BigInt        @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt    BigInt        @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  events       Event[]
+  reservations Reservation[]
+
+  @@map("reservation_types")
+}

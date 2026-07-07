@@ -1,7 +1,6 @@
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/api-auth";
 import {
   approveReservationAndRejectConflicts,
-  isAdminUser,
   previewConflictingPending,
   setReservationStatus,
 } from "@/lib/db/adminReservations";
@@ -14,17 +13,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.email || !session?.userId) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const isAdmin = await isAdminUser(session.userId);
-    if (!isAdmin) {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-    }
+    const { error } = await requirePermission("reservations:manage");
+    if (error) return error;
 
     const { status, deniedReason, preview } = await request.json();
 

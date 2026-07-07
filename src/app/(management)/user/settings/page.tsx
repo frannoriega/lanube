@@ -8,6 +8,8 @@ import z from "zod";
 
 import { useUserProfile } from "@/hooks/api";
 import { apiErrorMessage } from "@/lib/api/client";
+import { ROLE_LABELS } from "@/lib/rbac";
+import type { UserRole } from "@/types/prisma";
 import { updateUserProfile } from "@/lib/api/mutations";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -266,7 +268,9 @@ export default function SettingsPage() {
             <div>
               <Label>Rol</Label>
               <Input
-                value={user?.role === "ADMIN" ? "Administrador" : "Usuario"}
+                value={
+                  user ? (ROLE_LABELS[user.role as UserRole] ?? user.role) : ""
+                }
                 disabled
                 className="bg-gray-50"
               />

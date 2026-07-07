@@ -1,6 +1,7 @@
 enum UserRole {
   USER
   ADMIN
+  SUPERADMIN
 }
 
 enum IncidentStatus {
@@ -34,15 +35,6 @@ enum ReservableType {
   TEAM
 
   @@map("reservable_types")
-}
-
-enum EventType {
-  MEETING
-  WORKSHOP
-  CONFERENCE
-  OTHER
-
-  @@map("event_types")
 }
 
 // Lifecycle of an event. ENDED is NOT stored — it's derived when the last occurrence has
