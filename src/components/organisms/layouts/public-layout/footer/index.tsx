@@ -30,7 +30,9 @@ export default function Footer({ className }: { className?: string }) {
           <section className="flex flex-col gap-2 w-fit md:max-w-1/3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2">
-                <h2 className="text-xl font-bold">La Nube</h2>
+                <h2 className="text-xl font-bold">
+                  La Nube - Polo Tecnológico
+                </h2>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Badge variant="outline" className="cursor-help">
@@ -46,9 +48,9 @@ export default function Footer({ className }: { className?: string }) {
                 </Tooltip>
               </div>
               <p className="text-foreground max-w-prose">
-                Impulsamos la Economía del Conocimiento en nuestra ciudad,
-                conectando empresas, universidades, emprendedores y sector
-                público para transformar el futuro.
+                Impulsamos la Economía del Conocimiento en Concepción del
+                Uruguay, Entre Ríos, conectando empresas, universidades,
+                emprendedores y sector público para transformar el futuro.
               </p>
             </div>
             <div className="flex flex-row flex-wrap w-full items-center gap-4 justify-center md:justify-start">
@@ -100,11 +102,22 @@ export default function Footer({ className }: { className?: string }) {
             <div className="flex flex-col gap-2 max-w-100 w-fit">
               <h2 className="text-xl font-bold">Contacto</h2>
               <ul className="text-foreground flex flex-col">
-                <li className="flex flex-row gap-2 items-center py-1.5">
-                  <MapPin size={16} className="shrink-0" />
-                  <span>
-                    {address.street}, {address.city}, {address.state}
-                  </span>
+                <li>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-row gap-2 items-center py-1.5 hover:underline"
+                    title="Cómo llegar (Google Maps)"
+                  >
+                    <MapPin size={16} className="shrink-0" />
+                    <span>
+                      {address.street}, {address.city}, {address.state}{" "}
+                      {address.zip}, {address.country}
+                    </span>
+                  </a>
                 </li>
                 <li>
                   <a

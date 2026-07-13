@@ -1,19 +1,20 @@
-import { prisma } from "@/lib/prisma";
 import { nowMs } from "@/lib/clock";
+import { siteUrl as BASE_URL } from "@/lib/constants/site";
+import { prisma } from "@/lib/prisma";
 import type { MetadataRoute } from "next";
 
-const BASE_URL = process.env.NEXTAUTH_URL ?? "https://lanube-gules.vercel.app";
-
 /**
- * Static pages: lastmod reflects the date of the last meaningful content
+ * Static pages: lastModified reflects the date of the last meaningful content
  * update to the landing/about/services/policies pages.
  * Update this list whenever a new static public route is added.
  */
 const STATIC_PAGES: MetadataRoute.Sitemap = [
-  { url: `${BASE_URL}/`, lastmod: "2026-07-07" },
-  { url: `${BASE_URL}/about`, lastmod: "2026-07-07" },
-  { url: `${BASE_URL}/services`, lastmod: "2026-07-07" },
-  { url: `${BASE_URL}/policies/privacy`, lastmod: "2026-07-07" },
+  { url: `${BASE_URL}/`, lastModified: "2026-07-07" },
+  { url: `${BASE_URL}/about`, lastModified: "2026-07-07" },
+  { url: `${BASE_URL}/services`, lastModified: "2026-07-07" },
+  { url: `${BASE_URL}/events`, lastModified: "2026-07-07" },
+  { url: `${BASE_URL}/contact`, lastModified: "2026-07-07" },
+  { url: `${BASE_URL}/policies/privacy`, lastModified: "2026-07-07" },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -48,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const eventEntries: MetadataRoute.Sitemap = events.map((e) => ({
     url: `${BASE_URL}/events/${e.id}`,
-    lastmod: new Date(Number(e.updatedAt)).toISOString().split("T")[0],
+    lastModified: new Date(Number(e.updatedAt)).toISOString().split("T")[0],
   }));
 
   /**
@@ -67,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
     .map((e) => ({
       url: `${BASE_URL}/forms/${e.form!.slug}`,
-      lastmod: new Date(Number(e.updatedAt)).toISOString().split("T")[0],
+      lastModified: new Date(Number(e.updatedAt)).toISOString().split("T")[0],
     }));
 
   return [...STATIC_PAGES, ...eventEntries, ...formEntries];

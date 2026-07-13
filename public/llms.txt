@@ -1,0 +1,22 @@
+# La Nube - Polo Tecnológico
+
+> La Nube es el Polo Tecnológico de Concepción del Uruguay (Entre Ríos, Argentina): un espacio público de coworking, innovación y Economía del Conocimiento impulsado por el Gobierno Municipal junto a universidades (UNER, UTN, UADER, UCU), la CISCU y el sector privado. Ofrece puestos de coworking, sala de reuniones, sala de conferencias y laboratorio, además de talleres y eventos abiertos a la comunidad.
+
+Datos clave:
+- Dirección: Posadas 1150, Concepción del Uruguay, Entre Ríos (CP 3260), Argentina
+- Email: polotecnologicolanube@gmail.com
+- Teléfono: (+54) 9 3442 550836
+- Instagram: https://www.instagram.com/lanubepolotec
+- Idioma del sitio: español (Argentina)
+
+## Páginas principales
+
+- [Inicio](https://lanube.cdeluruguay.gob.ar/): presentación del polo, espacios reservables y próximos eventos
+- [Servicios](https://lanube.cdeluruguay.gob.ar/services): coworking (12 puestos), sala de reuniones con videoconferencia Poly Studio R30, sala de conferencias para ~50 personas y laboratorio
+- [Eventos](https://lanube.cdeluruguay.gob.ar/events): talleres, charlas y capacitaciones abiertas con inscripción online
+- [Quiénes somos](https://lanube.cdeluruguay.gob.ar/about): historia, misión, visión y valores; instituciones que acompañan
+- [Contacto](https://lanube.cdeluruguay.gob.ar/contact): dirección, teléfono, correo y mapa
+
+## Opcional
+
+- [Política de privacidad](https://lanube.cdeluruguay.gob.ar/policies/privacy)

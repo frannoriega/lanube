@@ -1,11 +1,9 @@
-"use client";
-
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import Typewriter from "./typewriter";
 
 const keywords = [
   "innovación",
@@ -17,36 +15,6 @@ const keywords = [
 ];
 
 export default function HeroSection() {
-  const [keywordIndex, setKeywordIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const currentKeyword = keywords[keywordIndex];
-
-    const timeout = setTimeout(
-      () => {
-        if (!isDeleting) {
-          if (displayedText.length < currentKeyword.length) {
-            setDisplayedText(currentKeyword.slice(0, displayedText.length + 1));
-          } else {
-            setTimeout(() => setIsDeleting(true), 3000);
-          }
-        } else {
-          if (displayedText.length > 0) {
-            setDisplayedText(displayedText.slice(0, -1));
-          } else {
-            setIsDeleting(false);
-            setKeywordIndex((prevIndex) => (prevIndex + 1) % keywords.length);
-          }
-        }
-      },
-      isDeleting ? 50 : 100,
-    );
-
-    return () => clearTimeout(timeout);
-  }, [displayedText, isDeleting, keywordIndex]);
-
   return (
     <Breakout>
       <Container>
@@ -59,17 +27,14 @@ export default function HeroSection() {
               <div className="lg:text-6xl md:text-5xl text-3xl font-bold text-center">
                 <h1 className="lg:text-7xl md:text-6xl text-4xl">La Nube</h1>
                 <h2 className="text-balance">
-                  un espacio de{" "}
-                  <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary text-transparent bg-clip-text">
-                    {displayedText}
-                    <span className="animate-blink">|</span>
-                  </span>
+                  un espacio de <span className="sr-only">{keywords[0]}</span>
+                  <Typewriter keywords={keywords} />
                 </h2>
               </div>
               <p className="text-center max-w-prose lg:text-xl text-base text-pretty">
-                Impulsamos la Economía del Conocimiento en nuestra ciudad,
-                conectando empresas, universidades, emprendedores y sector
-                público para transformar el futuro.
+                Impulsamos la Economía del Conocimiento en Concepción del
+                Uruguay, conectando empresas, universidades, emprendedores y
+                sector público para transformar el futuro.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <Button asChild size="lg">
@@ -80,7 +45,7 @@ export default function HeroSection() {
                 </Button>
                 <Link
                   href="#nuestros-espacios"
-                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex min-h-11 items-center gap-1.5 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Conocer más
                   <ChevronDown className="h-4 w-4" />

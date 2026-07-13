@@ -1,10 +1,10 @@
 const links = [
   { name: "Inicio", href: "/" },
   { name: "Servicios", href: "/services" },
+  { name: "Eventos", href: "/events" },
   // { name: "Noticias", href: "/news" },
-  // { name: "Eventos", href: "/events" },
-  // { name: "Contacto", href: "/contact" },
   { name: "Quienes Somos", href: "/about" },
+  { name: "Contacto", href: "/contact" },
 ];
 
 export { links };

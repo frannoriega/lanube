@@ -1,6 +1,5 @@
+import { siteUrl as BASE_URL } from "@/lib/constants/site";
 import type { MetadataRoute } from "next";
-
-const BASE_URL = process.env.NEXTAUTH_URL ?? "https://lanube-gules.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -1,13 +1,56 @@
+import JsonLd from "@/components/atoms/json-ld";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { LocalDate, LocalDateTime } from "@/components/molecules/local-date";
 import { RegistrationCta } from "@/components/molecules/registration-cta";
+import { address } from "@/lib/constants/contact";
 import { WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
+import { siteName, siteUrl } from "@/lib/constants/site";
 import { getPublicEventDetail } from "@/lib/db/events";
 import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { nowMs } from "@/lib/clock";
 import { MapPin } from "lucide-react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ScrollToTop } from "./scroll-to-top";
+
+/** Strips markdown syntax to build a plain-text meta description. */
+function plainDescription(markdown: string | null, max = 155): string {
+  const text = (markdown ?? "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#*_>`~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
+/** Argentina has a fixed UTC-3 offset (no DST). */
+function toArgentinaIso(ms: number): string {
+  return new Date(ms - 3 * 3_600_000)
+    .toISOString()
+    .replace(/\.\d{3}Z$/, "-03:00");
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getPublicEventDetail(id);
+  if (!event) return {};
+
+  return {
+    title: event.name,
+    description: plainDescription(event.description),
+    alternates: { canonical: `/events/${event.id}` },
+    openGraph: {
+      title: event.name,
+      description: plainDescription(event.description),
+      url: `/events/${event.id}`,
+      ...(event.imageUrl ? { images: [event.imageUrl] } : {}),
+    },
+  };
+}
 
 export default async function EventDetailPage({
   params,
@@ -26,8 +69,58 @@ export default async function EventDetailPage({
     (o) => o.status !== "cancelled" && o.startMs > now,
   );
 
+  const place = {
+    "@type": "Place",
+    name: `${event.resourceName} — ${siteName}`,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: address.street,
+      addressLocality: address.city,
+      addressRegion: address.state,
+      postalCode: address.zip,
+      addressCountry: "AR",
+    },
+  };
+  const eventJsonLd = occurrences
+    .filter((o) => o.status !== "cancelled" && o.endMs > now)
+    .slice(0, 20)
+    .map((o) => ({
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: event.name,
+      description: plainDescription(event.description, 300),
+      startDate: toArgentinaIso(o.startMs),
+      endDate: toArgentinaIso(o.endMs),
+      eventStatus:
+        o.status === "rescheduled"
+          ? "https://schema.org/EventRescheduled"
+          : "https://schema.org/EventScheduled",
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      location: place,
+      organizer: { "@type": "Organization", name: siteName, url: siteUrl },
+      isAccessibleForFree: true,
+      url: `${siteUrl}/events/${event.id}`,
+      ...(event.imageUrl ? { image: [event.imageUrl] } : {}),
+    }));
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: siteUrl },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Eventos",
+        item: `${siteUrl}/events`,
+      },
+      { "@type": "ListItem", position: 3, name: event.name },
+    ],
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-4 py-10">
+      {eventJsonLd.length > 0 && <JsonLd data={eventJsonLd} />}
+      <JsonLd data={breadcrumbJsonLd} />
       <ScrollToTop />
       <EventHero
         name={event.name}

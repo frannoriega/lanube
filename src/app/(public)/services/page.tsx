@@ -5,15 +5,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "Servicios: coworking, salas y laboratorio",
+  description:
+    "Espacios y servicios de La Nube en Concepción del Uruguay: coworking con 12 puestos, sala de reuniones con videoconferencia Poly Studio R30, sala de conferencias para 50 personas y laboratorio.",
+  alternates: { canonical: "/services" },
+};
 
 export default function ServicesPage() {
   return (
@@ -107,9 +109,9 @@ export default function ServicesPage() {
           equipments={() => (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <h2 className="text-lg font-bold">
+                <h3 className="text-lg font-bold">
                   Pantalla táctil interactiva
-                </h2>
+                </h3>
                 <ul className="list-disc list-inside">
                   <li>
                     <b>Resolución:</b> 3840 x 2160 píxeles (UHD)
@@ -140,9 +142,9 @@ export default function ServicesPage() {
                 </ul>
               </div>
               <div className="flex flex-col gap-2">
-                <h2 className="text-lg font-bold">
+                <h3 className="text-lg font-bold">
                   Sistema de videoconferencia Poly Studio R30
-                </h2>
+                </h3>
                 <ul className="list-disc list-inside">
                   <li>
                     <b>Altavoz integrado omnidireccional</b>, que mejora la
@@ -163,7 +165,7 @@ export default function ServicesPage() {
                 </ul>
               </div>
               <div className="flex flex-col gap-2">
-                <h2 className="text-lg font-bold">Isla de trabajo</h2>
+                <h3 className="text-lg font-bold">Isla de trabajo</h3>
                 <ul className="list-disc list-inside">
                   <li>
                     <b>Mesa central</b> con capacidad para 6 a 8 personas,
@@ -304,10 +306,6 @@ function ServiceCard({
 }) {
   return (
     <Card className="h-fit w-full flex flex-col gap-4 glass-card dark:glass-card-dark">
-      <CardHeader>
-        <CardTitle className="sr-only">{title}</CardTitle>
-        <CardDescription className="sr-only">{description()}</CardDescription>
-      </CardHeader>
       <CardContent className="h-fit w-full flex flex-col gap-4">
         <div className="h-fit w-full space-y-4">
           <ImageWithTitle
@@ -364,7 +362,7 @@ function ImageWithTitle({
   return (
     <div className={cns}>
       <div className="w-full h-full text-center text-white font-bold sm:font-normal sm:hidden bg-la-nube-primary sm:bg-opacity-50 sm:backdrop-blur-xs py-2">
-        <h3>{title}</h3>
+        <h2>{title}</h2>
       </div>
       <Image
         src={image}
@@ -377,7 +375,7 @@ function ImageWithTitle({
       <div
         className={`hidden sm:block absolute py-2 lg:py-8 px-8 lg:px-24 bg-la-nube-primary/50 backdrop-blur-xs top-4 ${pos === "left" ? "left-0 rounded-r-full" : "right-0 rounded-l-full"}`}
       >
-        <h3 className="text-2xl font-bold text-white">{title}</h3>
+        <h2 className="text-2xl font-bold text-white">{title}</h2>
       </div>
     </div>
   );

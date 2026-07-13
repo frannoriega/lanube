@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   images: { remotePatterns: imageRemotePatterns },
+  poweredByHeader: false,
   async headers() {
     return [
       {
@@ -29,11 +30,21 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: `
               script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com${__impeccableLiveDev};
-              frame-src 'self' https://challenges.cloudflare.com;
+              frame-src 'self' https://challenges.cloudflare.com https://www.google.com;
               connect-src 'self' https://challenges.cloudflare.com${__impeccableLiveDev};
             `
               .replace(/\s{2,}/g, " ")
               .trim(),
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
           },
         ],
       },

@@ -1,7 +1,15 @@
 import Container from "@/components/atoms/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, Heart, Target } from "lucide-react";
+import type { Metadata } from "next";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "Quiénes somos",
+  description:
+    "Conocé al Polo Tecnológico La Nube: una iniciativa del Gobierno Municipal de Concepción del Uruguay junto a universidades, CISCU y el sector privado para impulsar la Economía del Conocimiento en Entre Ríos.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (
@@ -105,7 +113,7 @@ export default function AboutPage() {
       <section className="w-full h-full bg-slate-400/60 flex flex-col items-center justify-center">
         <Container className="h-fit flex flex-col py-16 gap-8 w-full">
           <div className="flex flex-row items-center justify-center w-full py-8">
-            <h1 className="text-4xl font-bold">Misión, Visión y Valores</h1>
+            <h2 className="text-4xl font-bold">Misión, Visión y Valores</h2>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <Card className="w-full">
@@ -113,7 +121,7 @@ export default function AboutPage() {
                 <CardTitle className="text-3xl font-semibold">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Target size={48} />
-                    <h2>Nuestra misión</h2>
+                    <h3>Nuestra misión</h3>
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -135,7 +143,7 @@ export default function AboutPage() {
                 <CardTitle className="text-3xl font-semibold">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Eye size={48} />
-                    <h2>Nuestra visión</h2>
+                    <h3>Nuestra visión</h3>
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -153,16 +161,17 @@ export default function AboutPage() {
                 <CardTitle className="text-3xl font-semibold">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Heart size={48} />
-                    <h2>Nuestros valores</h2>
+                    <h3>Nuestros valores</h3>
                   </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p>
-                  Ser reconocidos como el polo tecnológico de referencia del
-                  litoral argentino, caracterizado por su capacidad de
-                  innovación, la calidad de su talento humano y su contribución
-                  al desarrollo económico y social regional.
+                  <b>Colaboración, innovación y compromiso local</b>: creemos en
+                  el trabajo articulado entre lo público, lo privado y lo
+                  académico, en la apertura al conocimiento y en apostar al
+                  talento de nuestra región para generar oportunidades con
+                  impacto social real.
                 </p>
               </CardContent>
             </Card>

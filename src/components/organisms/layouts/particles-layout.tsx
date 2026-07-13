@@ -62,14 +62,17 @@ export default function ParticlesLayout({
   }, [themeToUse, isCoarsePointer, prefersReducedMotion]);
 
   return (
-    <ParticlesProvider init={loadSlim}>
-      <div
-        className={cn(
-          "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
-          className,
-        )}
-      >
-        {!prefersReducedMotion && (
+    <div
+      className={cn(
+        "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
+        className,
+      )}
+    >
+      {/* ParticlesProvider renders its children as `null` until the engine loads
+          client-side, so only the decorative canvas may live inside it — page
+          content must stay outside or the whole tree SSRs empty. */}
+      {!prefersReducedMotion && (
+        <ParticlesProvider init={loadSlim}>
           <Particles
             options={options}
             className={cn(
@@ -77,9 +80,9 @@ export default function ParticlesLayout({
               backgroundClass,
             )}
           />
-        )}
-        <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
-      </div>
-    </ParticlesProvider>
+        </ParticlesProvider>
+      )}
+      <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
+    </div>
   );
 }
