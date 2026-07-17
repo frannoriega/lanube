@@ -49,6 +49,11 @@ interface DateRangePickerProps {
   id?: string;
   ariaLabel?: string;
   className?: string;
+  /**
+   * Server-aligned "today" so the calendar's highlight + the empty-state default month match
+   * the server clock (matters under faketime, where the browser is on the real date).
+   */
+  today?: Date;
 }
 
 /**
@@ -65,6 +70,7 @@ export function DateRangePicker({
   id,
   ariaLabel,
   className,
+  today,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -120,7 +126,8 @@ export function DateRangePicker({
           mode="range"
           showOutsideDays={false}
           numberOfMonths={numberOfMonths}
-          defaultMonth={keyToDate(value.from)}
+          today={today}
+          defaultMonth={keyToDate(value.from) ?? today}
           selected={selected}
           onSelect={handleSelect}
           autoFocus
