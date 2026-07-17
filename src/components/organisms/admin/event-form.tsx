@@ -6,6 +6,7 @@ import {
   FormPickerTemplate,
 } from "@/components/organisms/admin/form-picker";
 import { DateRangePicker } from "@/components/molecules/date-range-picker";
+import { DateTimePicker } from "@/components/molecules/date-time-picker";
 import { ImageUpload } from "@/components/molecules/image-upload";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { TimeSelect } from "@/components/molecules/time-select";
@@ -61,6 +62,7 @@ const SELECTABLE_STATUSES: EventStatus[] = [
   EventStatus.PAUSED,
 ];
 import { EventSessions } from "@/components/organisms/admin/event-sessions";
+import { useServerTime } from "@/components/providers/server-time";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarCog } from "lucide-react";
 import { createId } from "@paralleldrive/cuid2";
@@ -141,6 +143,13 @@ export function EventForm({
 }: EventFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Server-aligned "today" so the date pickers highlight/default to the server clock (faketime).
+  const { now, alignRevision } = useServerTime();
+  const serverToday = useMemo(
+    () => now(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [alignRevision],
+  );
   const { data: resourcesData } = useApi<ResourceOption[]>(
     "/api/admin/spaces?reservable=1",
   );
@@ -408,6 +417,7 @@ export function EventForm({
                   shouldDirty: true,
                 });
               }}
+              today={serverToday}
               ariaLabel="Fechas del evento"
             />
             {(formState.errors.startDate || formState.errors.endDate) && (
@@ -539,10 +549,12 @@ export function EventForm({
                       <FormItem>
                         <FormLabel>Apertura de inscripción</FormLabel>
                         <FormControl>
-                          <Input
-                            type="datetime-local"
-                            lang="es-AR"
-                            {...field}
+                          <DateTimePicker
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            today={serverToday}
+                            defaultTime="09:00"
+                            ariaLabel="Apertura de inscripción"
                           />
                         </FormControl>
                         <FormMessage />
@@ -556,10 +568,12 @@ export function EventForm({
                       <FormItem>
                         <FormLabel>Cierre de inscripción</FormLabel>
                         <FormControl>
-                          <Input
-                            type="datetime-local"
-                            lang="es-AR"
-                            {...field}
+                          <DateTimePicker
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            today={serverToday}
+                            defaultTime="18:00"
+                            ariaLabel="Cierre de inscripción"
                           />
                         </FormControl>
                         <FormMessage />
