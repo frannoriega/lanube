@@ -5,8 +5,11 @@ import {
   RegistrationCta,
   type RegistrationCtaProps,
 } from "@/components/molecules/registration-cta";
-import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
-import type { RegistrationPhase } from "@/lib/db/events";
+import {
+  eventTypeLabel,
+  WEEKDAY_SHORT_LABELS,
+} from "@/modules/events/constants";
+import type { RegistrationPhase } from "@/modules/events/db/events";
 import { MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import { LandingCard } from "../shared/landing-card";
@@ -62,7 +65,7 @@ export function EventCard({
       }}
       className={
         isFeatured
-          ? "border-la-nube-primary/40 ring-2 ring-la-nube-primary/40 shadow-md"
+          ? "border-brand-primary/40 ring-2 ring-brand-primary/40 shadow-md"
           : undefined
       }
     >
@@ -75,11 +78,11 @@ export function EventCard({
           className="aspect-16/10 w-full"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide text-la-nube-selected shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-la-nube-secondary">
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide text-brand-selected shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-brand-secondary">
           {event.eventTypeName ?? eventTypeLabel(event.eventType)}
         </span>
         {isFeatured && (
-          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-la-nube-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm">
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-brand-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm">
             <Star className="h-3 w-3 fill-current" />
             Destacado
           </span>
@@ -97,7 +100,7 @@ export function EventCard({
           <LocalDateRange
             startMs={event.startMs}
             endMs={event.recurrenceEndMs}
-            className="font-mono text-sm font-medium text-la-nube-selected before:content-['▸_'] dark:text-la-nube-secondary"
+            className="font-mono text-sm font-medium text-brand-selected before:content-['▸_'] dark:text-brand-secondary"
           />
           {event.weekdays.length > 0 && (
             <span className="flex gap-1">

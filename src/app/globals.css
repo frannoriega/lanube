@@ -42,11 +42,12 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* La Nube brand colors */
-  --color-la-nube-primary: #4e87c2;
-  --color-la-nube-selected: #2a6297;
-  --color-la-nube-secondary: #75e3f1;
-  --color-la-nube-accent: #c8f1fc;
+  /* Brand colors — defaults; overridden at runtime from app.config.ts
+     via <BrandThemeStyle/> (see src/components/providers/brand-theme-style.tsx). */
+  --color-brand-primary: #4e87c2;
+  --color-brand-selected: #2a6297;
+  --color-brand-secondary: #75e3f1;
+  --color-brand-accent: #c8f1fc;
 
   /* Container configuration */
   --container-center: true;

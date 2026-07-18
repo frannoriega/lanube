@@ -4,8 +4,8 @@ import {
   deleteFormTemplate,
   getFormTemplate,
   updateFormTemplate,
-} from "@/lib/db/forms";
-import { formTemplateSchema } from "@/lib/schemas/events";
+} from "@/modules/events/db/forms";
+import { formTemplateSchema } from "@/modules/events/schema";
 import { NextRequest } from "next/server";
 
 export async function GET(

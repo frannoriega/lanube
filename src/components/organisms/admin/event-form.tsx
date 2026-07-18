@@ -42,12 +42,12 @@ import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/hooks/use-api";
 import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
-import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
+import { EVENT_STATUS_LABELS } from "@/modules/events/constants";
 import type {
   ExistingException,
   SessionAction,
-} from "@/lib/events/occurrences";
-import { EventInput, eventInputSchema } from "@/lib/schemas/events";
+} from "@/modules/events/lib/occurrences";
+import { EventInput, eventInputSchema } from "@/modules/events/schema";
 import { EventStatus, type ReservationType } from "@/types/prisma";
 
 /** A per-session change the edit would drop (mirrors the API's 409 payload). */

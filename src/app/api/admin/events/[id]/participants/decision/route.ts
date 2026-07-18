@@ -1,9 +1,9 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
-import { decideParticipants } from "@/lib/db/participants";
+import { decideParticipants } from "@/modules/events/db/participants";
 import { notifyParticipantsDecision } from "@/lib/email/event-decision";
 import { logger } from "@/lib/logger";
-import { participantDecisionSchema } from "@/lib/schemas/events";
+import { participantDecisionSchema } from "@/modules/events/schema";
 import { NextRequest } from "next/server";
 
 export async function POST(

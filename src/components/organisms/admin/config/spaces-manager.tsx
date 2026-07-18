@@ -159,7 +159,7 @@ export function SpacesManager() {
                       {(() => {
                         const Icon = getSpaceIcon(space.iconName);
                         return (
-                          <Icon className="h-4 w-4 shrink-0 text-la-nube-selected dark:text-la-nube-secondary" />
+                          <Icon className="h-4 w-4 shrink-0 text-brand-selected dark:text-brand-secondary" />
                         );
                       })()}
                       {space.name}

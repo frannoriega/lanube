@@ -2,8 +2,8 @@ import {
   cancelParticipant,
   getParticipantByToken,
   updateParticipantAnswers,
-} from "@/lib/db/participants";
-import { participantEditSchema } from "@/lib/schemas/events";
+} from "@/modules/events/db/participants";
+import { participantEditSchema } from "@/modules/events/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(

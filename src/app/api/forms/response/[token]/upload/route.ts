@@ -1,5 +1,5 @@
-import { getParticipantByToken } from "@/lib/db/participants";
-import { handleParticipantUpload } from "@/lib/events/participant-upload";
+import { getParticipantByToken } from "@/modules/events/db/participants";
+import { handleParticipantUpload } from "@/modules/events/lib/participant-upload";
 import { ParticipantStatus } from "@/types/prisma";
 import { NextRequest, NextResponse } from "next/server";
 

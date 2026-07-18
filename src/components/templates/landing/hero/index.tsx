@@ -4,18 +4,13 @@ import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { Button } from "@/components/ui/button";
+import { getCopy } from "@/config";
 import { ArrowDown, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const keywords = [
-  "innovación",
-  "talento",
-  "conocimiento",
-  "aprendizaje",
-  "colaboración",
-  "creación",
-];
+const { hero } = getCopy();
+const keywords = hero.keywords;
 
 export default function HeroSection() {
   const [keywordIndex, setKeywordIndex] = useState(0);
@@ -57,14 +52,16 @@ export default function HeroSection() {
         >
           <div className="flex flex-col items-center justify-center gap-8 flex-1">
             <div className="flex flex-col items-center justify-center gap-3">
-              <p className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-la-nube-primary dark:text-la-nube-secondary text-center text-balance">
+              <p className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-brand-primary dark:text-brand-secondary text-center text-balance">
                 Una iniciativa de Concepción del Uruguay
               </p>
               <div className="lg:text-6xl md:text-5xl text-3xl font-bold text-center">
-                <h1 className="lg:text-7xl md:text-6xl text-4xl">La Nube</h1>
+                <h1 className="lg:text-7xl md:text-6xl text-4xl">
+                  {hero.title}
+                </h1>
                 <h2 className="text-balance">
-                  un espacio de{" "}
-                  <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary text-transparent bg-clip-text">
+                  {hero.subtitlePrefix}{" "}
+                  <span className="bg-linear-to-r from-brand-primary to-brand-secondary text-transparent bg-clip-text">
                     {displayedText}
                     <span className="animate-blink">|</span>
                   </span>
@@ -73,9 +70,7 @@ export default function HeroSection() {
             </div>
             <div className="flex flex-col items-center justify-center gap-8">
               <p className="text-center max-w-prose lg:text-xl text-base text-pretty">
-                Impulsamos la Economía del Conocimiento en Concepción del
-                Uruguay, conectando empresas, universidades, emprendedores y
-                sector público para transformar el futuro.
+                {hero.description}
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <Button asChild size="lg">
@@ -95,8 +90,8 @@ export default function HeroSection() {
             </div>
           </div>
           <div className="flex flex-col items-center w-full pb-2">
-            <div className="animate-float rounded-full p-3 bg-la-nube-accent/50 dark:bg-la-nube-selected/20">
-              <ArrowDown className="h-4 w-4 text-la-nube-primary dark:text-la-nube-secondary" />
+            <div className="animate-float rounded-full p-3 bg-brand-accent/50 dark:bg-brand-selected/20">
+              <ArrowDown className="h-4 w-4 text-brand-primary dark:text-brand-secondary" />
             </div>
           </div>
         </section>

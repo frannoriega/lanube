@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getUserEvents } from "@/lib/db/participants";
+import { getUserEvents } from "@/modules/events/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextResponse } from "next/server";
 

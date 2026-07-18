@@ -287,7 +287,7 @@ export default function AdminReport({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <h4 className="text-3xl font-bold text-la-nube-primary print:text-black">
+              <h4 className="text-3xl font-bold text-brand-primary print:text-black">
                 {data.users.newRegistrations}
               </h4>
               <p className="text-xs text-muted-foreground">en el período</p>
@@ -319,7 +319,7 @@ export default function AdminReport({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <h4 className="text-3xl font-bold text-la-nube-primary print:text-black">
+              <h4 className="text-3xl font-bold text-brand-primary print:text-black">
                 {data.reservations.total}
               </h4>
               <p className="text-xs text-muted-foreground">en el período</p>
@@ -567,7 +567,7 @@ export default function AdminReport({
                 <TableBody>
                   <TableRow className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
                     <TableCell className="py-2 font-medium">General</TableCell>
-                    <TableCell className="py-2 text-right font-semibold text-la-nube-primary print:text-black">
+                    <TableCell className="py-2 text-right font-semibold text-brand-primary print:text-black">
                       {minutesToDisplay(
                         data.reservations.durationStats.overall.total,
                       )}

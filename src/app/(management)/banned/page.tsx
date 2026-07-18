@@ -1,6 +1,6 @@
 "use client";
 
-import LogoLaNube from "@/components/atoms/logos/lanube";
+import LogoLaNube from "@/components/atoms/logos/brand";
 import LoadingLogo from "@/components/molecules/loading/loading-logo";
 import { useServerTime } from "@/components/providers/server-time";
 import {

@@ -2,7 +2,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Menu } from "lucide-react";
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
-import LogoLaNube from "@/components/atoms/logos/lanube";
+import LogoLaNube from "@/components/atoms/logos/brand";
 import LogoMunicipioCrest from "@/components/atoms/logos/municipio/crest";
 import { ThemeToggle } from "@/components/molecules/theme";
 import { Separator } from "@/components/ui/separator";

@@ -1,5 +1,5 @@
 import { PublicForm } from "@/components/organisms/forms/public-form";
-import { getParticipantByToken } from "@/lib/db/participants";
+import { getParticipantByToken } from "@/modules/events/db/participants";
 import { ParticipantStatus } from "@/types/prisma";
 
 export default async function ResponsePage({

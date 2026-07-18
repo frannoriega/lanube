@@ -2,7 +2,7 @@
 
 import { LocalDate } from "@/components/molecules/local-date";
 import { Button } from "@/components/ui/button";
-import type { RegistrationPhase } from "@/lib/db/events";
+import type { RegistrationPhase } from "@/modules/events/db/events";
 import { ArrowUpRight, CalendarClock } from "lucide-react";
 import Link from "next/link";
 

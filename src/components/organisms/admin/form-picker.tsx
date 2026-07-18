@@ -133,7 +133,7 @@ export function FormPicker({ templates, value, onSelect }: FormPickerProps) {
                         )}
                       </div>
                       {value === tpl.id && (
-                        <Check className="h-4 w-4 shrink-0 text-la-nube-primary" />
+                        <Check className="h-4 w-4 shrink-0 text-brand-primary" />
                       )}
                     </div>
                     <FieldPreview fields={tpl.fields} />

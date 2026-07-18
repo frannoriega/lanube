@@ -3,7 +3,7 @@
 import { InlineRichText } from "@/components/molecules/inline-rich-text";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { INLINE_DELIMITERS, type InlineMark } from "@/lib/events/inline-format";
+import { INLINE_DELIMITERS, type InlineMark } from "@/modules/events/lib/inline-format";
 import { Bold, Italic, Underline } from "lucide-react";
 import { useEffect, useRef } from "react";
 

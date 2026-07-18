@@ -625,7 +625,7 @@ export function WeekCalendar({
   if (!currentWeekStart) {
     return (
       <div className="flex h-[500px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-la-nube-primary border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
       </div>
     );
   }
@@ -685,7 +685,7 @@ export function WeekCalendar({
                   key={idx}
                   className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
                     isSameDay(day, now())
-                      ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
+                      ? "bg-brand-primary/10 text-brand-primary font-bold"
                       : "text-gray-700 dark:text-gray-300"
                   }`}
                 >
@@ -731,7 +731,7 @@ export function WeekCalendar({
 
             {/* {loading && (
               <div className="absolute inset-0 left-14 flex items-center justify-center z-50 bg-black/20 dark:bg-white/20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
               </div>
             )} */}
 
@@ -833,7 +833,7 @@ export function WeekCalendar({
                               ? "bg-gray-500"
                               : isOwnReservation
                                 ? "bg-green-600"
-                                : "bg-la-nube-primary";
+                                : "bg-brand-primary";
 
                       return (
                         <div

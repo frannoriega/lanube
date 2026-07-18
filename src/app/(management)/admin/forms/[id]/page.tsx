@@ -1,6 +1,6 @@
 import { FormTemplateBuilder } from "@/components/organisms/admin/form-template-builder";
 import { DeleteFormButton } from "@/components/organisms/admin/delete-form-button";
-import { getFormTemplate } from "@/lib/db/forms";
+import { getFormTemplate } from "@/modules/events/db/forms";
 import { notFound } from "next/navigation";
 
 export default async function EditFormPage({

@@ -20,8 +20,8 @@ import {
   eventTypeLabel,
   formatEventTimeRange,
   WEEKDAY_SHORT_LABELS,
-} from "@/lib/constants/events";
-import { listEvents, weekdaysFromRrule } from "@/lib/db/events";
+} from "@/modules/events/constants";
+import { listEvents, weekdaysFromRrule } from "@/modules/events/db/events";
 import { getPublicSpaces } from "@/lib/db/spaces";
 import { CalendarDays, Clock, Ticket, Users } from "lucide-react";
 import Link from "next/link";
@@ -138,7 +138,7 @@ export default async function EventsPage({
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
                         variant="secondary"
-                        className="font-normal text-la-nube-selected dark:text-la-nube-secondary"
+                        className="font-normal text-brand-selected dark:text-brand-secondary"
                       >
                         {event.type?.name ?? eventTypeLabel(event.eventType)}
                       </Badge>

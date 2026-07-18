@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { getPublicForm } from "@/lib/db/participants";
+import { getPublicForm } from "@/modules/events/db/participants";
 import { CheckCircle2, Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -14,7 +14,7 @@ export default async function SubmittedPage({
 
   return (
     <div className="flex flex-col items-center gap-4 py-6 text-center">
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-la-nube-accent text-la-nube-selected dark:bg-la-nube-selected/30 dark:text-la-nube-secondary">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-accent text-brand-selected dark:bg-brand-selected/30 dark:text-brand-secondary">
         {requiresApproval ? (
           <Clock className="h-7 w-7" />
         ) : (

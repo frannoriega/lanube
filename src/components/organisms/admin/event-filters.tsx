@@ -14,7 +14,7 @@ import {
 import {
   EVENT_STATUS_LABELS,
   type EventDisplayStatus,
-} from "@/lib/constants/events";
+} from "@/modules/events/constants";
 import { X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 

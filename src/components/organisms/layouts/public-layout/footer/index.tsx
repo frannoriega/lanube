@@ -1,7 +1,7 @@
 import Container from "@/components/atoms/container";
 import Github from "@/components/atoms/icons/github";
 import Instagram from "@/components/atoms/icons/instagram";
-import LogoLaNube from "@/components/atoms/logos/lanube";
+import Brand from "@/components/atoms/logos/brand";
 import LogoMunicipio from "@/components/atoms/logos/municipio";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getBrand, getCopy } from "@/config";
 import { getSiteConfig } from "@/lib/db/siteConfig";
 import { links } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,8 @@ import Link from "next/link";
 
 export default async function Footer({ className }: { className?: string }) {
   const contact = await getSiteConfig();
+  const brand = getBrand();
+  const copy = getCopy();
   const cns = cn(`w-full h-fit bg-slate-950 dark:bg-slate-950/80`, className);
   return (
     <footer className={cns}>
@@ -25,7 +28,7 @@ export default async function Footer({ className }: { className?: string }) {
           <section className="flex flex-col gap-2 w-fit md:max-w-1/3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2">
-                <h2 className="text-xl font-bold">La Nube</h2>
+                <h2 className="text-xl font-bold">{brand.name}</h2>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Badge variant="outline" className="cursor-help">
@@ -41,14 +44,12 @@ export default async function Footer({ className }: { className?: string }) {
                 </Tooltip>
               </div>
               <p className="text-foreground max-w-prose">
-                Impulsamos la Economía del Conocimiento en nuestra ciudad,
-                conectando empresas, universidades, emprendedores y sector
-                público para transformar el futuro.
+                {copy.hero.description}
               </p>
             </div>
             <div className="flex flex-row flex-wrap w-full items-center gap-4 justify-center md:justify-start">
               <div>
-                <LogoLaNube />
+                <Brand />
               </div>
               <Link
                 href="https://www.cdeluruguay.gob.ar/"

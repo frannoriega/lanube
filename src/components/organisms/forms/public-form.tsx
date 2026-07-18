@@ -26,14 +26,14 @@ import {
   isVisible,
   repeatCount,
   validateForm,
-} from "@/lib/events/form-engine";
+} from "@/modules/events/lib/form-engine";
 import {
   type FormNode,
   type FormSchema,
   type InputNode,
   isGroupNode,
   type UploadedFile,
-} from "@/lib/events/form-schema";
+} from "@/modules/events/lib/form-schema";
 import { registerEmailSchema } from "@/lib/schemas/auth";
 import { FormFieldType } from "@/types/prisma";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -362,7 +362,7 @@ function NodeRenderer({
                       href={node.constraints.attachmentUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm font-medium text-la-nube-selected underline dark:text-la-nube-secondary"
+                      className="flex items-center gap-1 text-sm font-medium text-brand-selected underline dark:text-brand-secondary"
                     >
                       <FileText className="h-4 w-4" />
                       {node.constraints.attachmentName ?? "Ver documento"}

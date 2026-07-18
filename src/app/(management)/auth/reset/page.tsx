@@ -1,6 +1,7 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Logo from "@/components/atoms/logos/lanube";
+import Logo from "@/components/atoms/logos/brand";
+import { getBrand } from "@/config";
 import { redirect, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { newPasswordSchema } from "@/lib/schemas/auth";
@@ -65,7 +66,7 @@ export default function ResetPage() {
               <Logo size={200} />
             </div>
             <CardTitle className="text-3xl font-bold sr-only">
-              La Nube
+              {getBrand().name}
             </CardTitle>
             <p>Espacio de Coworking e Innovación</p>
           </CardHeader>

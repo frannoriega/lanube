@@ -74,13 +74,13 @@ export default function MagicLinkPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-800">
         <Card className="glass-card dark:glass-card-dark max-w-md w-full">
           <CardHeader className="text-center">
-            <div className="mx-auto h-16 w-16 rounded-full bg-la-nube-primary flex items-center justify-center mb-4">
+            <div className="mx-auto h-16 w-16 rounded-full bg-brand-primary flex items-center justify-center mb-4">
               <div className="text-2xl">🌩️</div>
             </div>
             <CardTitle className="text-2xl">Validando enlace...</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
             <p className="text-muted-foreground mt-4">
               Por favor espera mientras validamos tu enlace de acceso.
             </p>

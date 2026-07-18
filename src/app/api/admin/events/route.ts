@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
-import { createEvent, listEvents } from "@/lib/db/events";
-import { eventInputSchema } from "@/lib/schemas/events";
+import { createEvent, listEvents } from "@/modules/events/db/events";
+import { eventInputSchema } from "@/modules/events/schema";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 

@@ -32,7 +32,7 @@ export function SpaceImagePanel({
           onError={() => setImgError(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-la-nube-primary to-la-nube-secondary">
+        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-primary to-brand-secondary">
           {Icon && (
             <Icon className="h-14 w-14 text-white/90" strokeWidth={1.5} />
           )}

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-const TINT = "bg-la-nube-accent/40 dark:bg-la-nube-selected/15";
+const TINT = "bg-brand-accent/40 dark:bg-brand-selected/15";
 
 const VALORES = [
   "Innovación",
@@ -122,7 +122,7 @@ const OBJETIVOS: { icon: LucideIcon; title: string; description: string }[] = [
 /** Brand gradient accent word — the landing's signature heading treatment. */
 function GradientWord({ children }: { children: React.ReactNode }) {
   return (
-    <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
+    <span className="bg-linear-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
       {children}
     </span>
   );
@@ -130,7 +130,7 @@ function GradientWord({ children }: { children: React.ReactNode }) {
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-la-nube-primary/30 bg-la-nube-accent/40 px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-la-nube-selected dark:bg-la-nube-selected/20 dark:text-la-nube-secondary">
+    <span className="rounded-full border border-brand-primary/30 bg-brand-accent/40 px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-brand-selected dark:bg-brand-selected/20 dark:text-brand-secondary">
       {children}
     </span>
   );
@@ -150,7 +150,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
+      <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-brand-selected dark:text-brand-secondary">
         ~/ {eyebrow}
         <span className="animate-blink">▌</span>
       </span>
@@ -198,7 +198,7 @@ export default function AboutPage() {
       </section>
 
       {/* Qué es La Nube */}
-      <section className="flex flex-col gap-8 border-t border-la-nube-primary/15 py-16 md:py-20">
+      <section className="flex flex-col gap-8 border-t border-brand-primary/15 py-16 md:py-20">
         <SectionHeader
           eyebrow="institución"
           heading={
@@ -273,7 +273,7 @@ export default function AboutPage() {
       </Breakout>
 
       {/* La Nube en números */}
-      <section className="flex flex-col gap-8 border-t border-la-nube-primary/15 py-16 md:py-20">
+      <section className="flex flex-col gap-8 border-t border-brand-primary/15 py-16 md:py-20">
         <SectionHeader
           eyebrow="cifras"
           heading={
@@ -311,11 +311,11 @@ export default function AboutPage() {
               </p>
               <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
                 El primer trazo nació cuando el{" "}
-                <b className="font-semibold text-la-nube-primary">Estado</b>{" "}
-                dijo «hagámoslo posible». El segundo, cuando la{" "}
-                <b className="font-semibold text-la-nube-primary">Academia</b>{" "}
+                <b className="font-semibold text-brand-primary">Estado</b> dijo
+                «hagámoslo posible». El segundo, cuando la{" "}
+                <b className="font-semibold text-brand-primary">Academia</b>{" "}
                 dijo «hagámoslo saber». El tercero, cuando la{" "}
-                <b className="font-semibold text-la-nube-primary">
+                <b className="font-semibold text-brand-primary">
                   Industria y el emprendimiento
                 </b>{" "}
                 dijeron «hagámoslo realidad».
@@ -336,7 +336,7 @@ export default function AboutPage() {
       </Breakout>
 
       {/* Un ecosistema de cuatro hélices */}
-      <section className="flex flex-col gap-8 border-t border-la-nube-primary/15 py-16 md:py-20">
+      <section className="flex flex-col gap-8 border-t border-brand-primary/15 py-16 md:py-20">
         <SectionHeader
           eyebrow="ecosistema"
           heading={
@@ -354,7 +354,7 @@ export default function AboutPage() {
       </section>
 
       {/* Plan 2026–2030 */}
-      <section className="flex flex-col gap-10 border-t border-la-nube-primary/15 py-16 md:py-20">
+      <section className="flex flex-col gap-10 border-t border-brand-primary/15 py-16 md:py-20">
         <SectionHeader
           eyebrow="hoja de ruta"
           heading={
@@ -414,7 +414,7 @@ export default function AboutPage() {
                 <ul className="flex flex-col gap-2">
                   {VALORES.map((valor) => (
                     <li key={valor} className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-la-nube-primary" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-primary" />
                       {valor}
                     </li>
                   ))}
@@ -431,11 +431,11 @@ export default function AboutPage() {
 /** Terminal-style stat tile — echoes the landing space-card's capacity box. */
 function StatTile({ data, title }: { data: string; title: string }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-la-nube-primary/20 bg-card/60 p-6">
-      <span className="text-4xl font-black text-la-nube-primary md:text-6xl">
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-primary/20 bg-card/60 p-6">
+      <span className="text-4xl font-black text-brand-primary md:text-6xl">
         {data}
       </span>
-      <div className="h-px w-full bg-la-nube-primary/15" />
+      <div className="h-px w-full bg-brand-primary/15" />
       <span className="text-sm font-semibold text-foreground/80">{title}</span>
     </div>
   );
@@ -454,7 +454,7 @@ function HelixCard({
   return (
     <LandingCard>
       <div className="flex h-full flex-col gap-3 p-6">
-        <Icon className="size-10 stroke-2 stroke-la-nube-secondary" />
+        <Icon className="size-10 stroke-2 stroke-brand-secondary" />
         <h3 className="text-2xl font-bold leading-snug">[ {title} ]</h3>
         <div className="h-px w-full bg-muted-foreground/30" />
         <p className="text-sm text-foreground/80">{description}</p>
@@ -479,10 +479,10 @@ function HorizonCard({
     <LandingCard>
       <div className="flex h-full flex-col gap-3 p-6">
         <div className="flex items-baseline justify-between">
-          <span className="font-mono text-sm font-medium uppercase tracking-wide text-la-nube-selected dark:text-la-nube-secondary">
+          <span className="font-mono text-sm font-medium uppercase tracking-wide text-brand-selected dark:text-brand-secondary">
             {phase}
           </span>
-          <span className="font-mono text-2xl font-black text-la-nube-primary/30">
+          <span className="font-mono text-2xl font-black text-brand-primary/30">
             {step}
           </span>
         </div>
@@ -505,8 +505,8 @@ function ObjetivoCard({
   description: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border-2 border-la-nube-primary/20 bg-card/60 p-5">
-      <Icon className="size-6 shrink-0 stroke-2 stroke-la-nube-secondary" />
+    <div className="flex items-start gap-3 rounded-2xl border-2 border-brand-primary/20 bg-card/60 p-5">
+      <Icon className="size-6 shrink-0 stroke-2 stroke-brand-secondary" />
       <div className="flex flex-col gap-1">
         <h4 className="font-bold leading-snug">{title}</h4>
         <p className="text-sm text-foreground/80">{description}</p>
@@ -529,7 +529,7 @@ function InfoTile({
     <LandingCard>
       <div className="flex h-full w-full flex-col gap-4 p-6">
         <div className="flex items-center gap-3">
-          <Icon className="size-8 stroke-2 stroke-la-nube-secondary" />
+          <Icon className="size-8 stroke-2 stroke-brand-secondary" />
           <h3 className="text-2xl font-bold">[ {title} ]</h3>
         </div>
         <div className="h-px w-full bg-muted-foreground/30" />

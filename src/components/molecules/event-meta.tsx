@@ -1,4 +1,4 @@
-import { WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
+import { WEEKDAY_SHORT_LABELS } from "@/modules/events/constants";
 import { cn } from "@/lib/utils";
 import { CalendarDays, MapPin } from "lucide-react";
 
@@ -30,7 +30,7 @@ export function EventMeta({
         className,
       )}
     >
-      <span className="inline-flex items-center rounded-full border border-la-nube-primary/30 bg-la-nube-primary/5 px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-la-nube-selected dark:border-la-nube-secondary/30 dark:bg-la-nube-secondary/10 dark:text-la-nube-secondary">
+      <span className="inline-flex items-center rounded-full border border-brand-primary/30 bg-brand-primary/5 px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-brand-selected dark:border-brand-secondary/30 dark:bg-brand-secondary/10 dark:text-brand-secondary">
         {eventTypeName}
       </span>
       {weekdays.length > 0 && (

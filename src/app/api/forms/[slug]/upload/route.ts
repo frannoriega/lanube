@@ -1,5 +1,5 @@
-import { getPublicForm } from "@/lib/db/participants";
-import { handleParticipantUpload } from "@/lib/events/participant-upload";
+import { getPublicForm } from "@/modules/events/db/participants";
+import { handleParticipantUpload } from "@/modules/events/lib/participant-upload";
 import { NextRequest, NextResponse } from "next/server";
 
 /** Uploads a file for a FILE field while filling out a form (submit flow). */

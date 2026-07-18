@@ -1,7 +1,10 @@
 import { requirePermission } from "@/lib/api-auth";
-import { createFormTemplate, listFormTemplates } from "@/lib/db/forms";
+import {
+  createFormTemplate,
+  listFormTemplates,
+} from "@/modules/events/db/forms";
 import { serializeJson } from "@/lib/json-bigint";
-import { formTemplateSchema } from "@/lib/schemas/events";
+import { formTemplateSchema } from "@/modules/events/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {

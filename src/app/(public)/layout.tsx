@@ -1,4 +1,5 @@
 import PublicLayout from "@/components/organisms/layouts/public-layout";
+import { getThemeStorageKey } from "@/config";
 import { ThemeProvider } from "next-themes";
 
 export default function RootLayout({
@@ -11,7 +12,7 @@ export default function RootLayout({
       attribute="class"
       defaultTheme="system"
       enableSystem
-      storageKey="la-nube-theme"
+      storageKey={getThemeStorageKey()}
     >
       <PublicLayout>{children}</PublicLayout>
     </ThemeProvider>

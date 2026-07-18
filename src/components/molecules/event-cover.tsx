@@ -1,4 +1,4 @@
-import { eventTypeIcon } from "@/lib/constants/events";
+import { eventTypeIcon } from "@/modules/events/constants";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -36,7 +36,7 @@ export function EventCover({
         />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center bg-gradient-to-br from-la-nube-primary to-la-nube-secondary"
+          className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-primary to-brand-secondary"
           aria-hidden="true"
         >
           <Icon className="h-10 w-10 text-white/85" />

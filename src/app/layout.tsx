@@ -1,4 +1,6 @@
 import { ServerTimeProvider } from "@/components/providers/server-time";
+import BrandThemeStyle from "@/components/providers/brand-theme-style";
+import { getBrand } from "@/config";
 import { auth } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
 import { SessionProvider } from "@/components/providers/session";
@@ -19,9 +21,11 @@ const robotoMono = Roboto_Mono({
   weight: ["400", "500", "700"],
 });
 
+const brand = getBrand();
+
 export const metadata: Metadata = {
-  title: "La Nube - Polo Tecnológico",
-  description: 'Espacio de coworking e innovación "La Nube"',
+  title: brand.tagline ? `${brand.name} - ${brand.tagline}` : brand.name,
+  description: brand.description,
 };
 
 export default async function RootLayout({
@@ -38,6 +42,7 @@ export default async function RootLayout({
       <body
         className={`${roboto.variable} ${robotoMono.variable} font-sans flex flex-col min-h-[100svh] antialiased transition-colors`}
       >
+        <BrandThemeStyle />
         <ServerTimeProvider serverNowMs={serverNowMs}>
           <SessionProvider session={session}>{children}</SessionProvider>
         </ServerTimeProvider>

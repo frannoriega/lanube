@@ -56,7 +56,7 @@ export function DataTable<TData>({
                   className="h-32 text-center text-sm text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-3">
-                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-la-nube-primary" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-primary" />
                     <span>{loadingMessage}</span>
                   </div>
                 </TableCell>
@@ -150,7 +150,7 @@ export function DataTablePagination<TData>({
       </div>
       {isLoading && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-4 w-4 animate-spin rounded-full border-b border-la-nube-primary" />
+          <div className="h-4 w-4 animate-spin rounded-full border-b border-brand-primary" />
           {loadingLabel}
         </div>
       )}

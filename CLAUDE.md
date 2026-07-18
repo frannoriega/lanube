@@ -155,6 +155,64 @@ src/
     └── policies/                 # Policy content (markdown/mdx)
 ```
 
+### Whitelabel & Module System (non-obvious — read before touching branding or events)
+
+The app is **whitelabeled** and **module-based**. Two systems govern this:
+
+**1. Whitelabel config** — all brand identity lives in the root **`app.config.ts`** (the
+single file an integrator edits), resolved through **`src/config/`**:
+
+- `app.config.ts` — brand (name, tagline, description, `logo` component, `theme` colors,
+  `themeStorageKey`), contact + social, `copy` strings, and the `modules` enable map.
+- `src/config/index.ts` — `appConfig` with `NEXT_PUBLIC_*` env overrides applied; exports
+  `getBrand()`, `getContact()`, `getCopy()`, `getThemeStorageKey()`, `getModuleSettings()`.
+- **Colors**: `app.config.ts › brand.theme` is injected as `--color-brand-*` CSS variables
+  by `<BrandThemeStyle/>` (root layout), overriding the defaults in `globals.css`. Tailwind
+  utilities are `bg-brand-primary` / `text-brand-secondary` / `brand-selected` / `brand-accent`
+  (the old `la-nube-*` tokens were renamed). Change a hex in the config → whole app recolors.
+- **Logo**: `<Brand/>` (`src/components/atoms/logos/brand.tsx`) renders `brand.logo`.
+  Components never import a specific logo. `logos/lanube` is just the default example.
+- Metadata (`src/app/layout.tsx`), footer, hero, forms shell, and contacts all read config.
+- See `docs/WHITELABEL.md`.
+
+**2. Modules** — features are self-contained under **`src/modules/<id>/`**, split across the
+server/client boundary (module data is server-only; nav is client-safe):
+
+- `manifest.ts` (client-safe: id, name, nav, config schema) vs `index.ts` (server: manifest
+  - `operations`). Two registries mirror this: `src/modules/manifests.ts` (client — `getModuleNav`,
+    `isModuleEnabled`) and `src/modules/registry.ts` + `src/modules/index.ts` (server —
+    `getModule`, `getModuleConfig`, and the typed **`modules`** accessor).
+- **Modules expose operations, not routes.** A module ships plain server functions (reads _and_
+  writes) as `operations`; it does **not** own HTTP routes. Route files live in `src/app/**`
+  (integrator-owned, filesystem routing) and are thin **delegates** that call a module operation
+  via the `modules` accessor — so modules never collide on endpoints. See `docs/MODULES.md`.
+- **Standardized data retrieval**: frontends/route delegates call `modules.events?.getUpcoming(...)`
+  (returns `undefined` when disabled → degrade gracefully). The landing (`templates/landing/events`)
+  and `/api/events` consume events this way — **not** via a direct db import.
+- Enable/disable per deployment in `app.config.ts › modules`. Disabling removes the module's
+  nav + data + graceful-null everywhere. Built-ins: **events** (`src/modules/events`) and
+  **news** (`src/modules/news`, a disabled scaffold). See `docs/MODULES.md`.
+- **Events moved into its module** (was under `src/lib`): `db/events.ts`, `db/forms.ts`,
+  `db/participants.ts` → `src/modules/events/db/*`; `lib/events/*` → `src/modules/events/lib/*`;
+  `schemas/events.ts` → `src/modules/events/schema.ts`; `constants/events.ts` →
+  `src/modules/events/constants.ts`; `email/event-*.ts` → `src/modules/events/email/*`.
+  Prisma models stay app-wide in `prisma/models` (a module owns queries, not schema).
+- The management sidebar (`templates/management`) aggregates module admin/user nav via
+  `getModuleNav()`; events/forms/`Mis eventos` entries come from the events manifest.
+
+**3. Booking core** (`src/core/booking/`) — the baseline reservation domain (reservations, the
+15-min `ReservationLedger`, capacity/conflict checks, resources) exposed as a single **operations
+port** (`booking.*`). Modules must **not** touch `reservation`/`reservation_ledger`/
+`reservation_exceptions` or the reservation SQL functions directly — they call the port
+(owner-scoped ops keyed by an opaque `{ type, id }` `OwnerRef`; the events module uses
+`type:"EVENT"`). Errors are language-neutral `BookingError` codes (`ALREADY_BOOKED`,
+`RESOURCE_NOT_FOUND`, `RESCHEDULE_CONFLICT`); callers map codes → messages. The events module was
+refactored onto this port (only `events/db/events.ts` was coupled). **End-goal**: lift
+`src/core/booking` into an independently-versioned, cross-repo package — the remaining seams
+(actor/identity resolver for `get_actor_size`/`registered_users`, SQL+migration ownership,
+transaction boundary, and the residual `Space`/`ReservationType` display joins in events) are
+documented in `src/core/booking/README.md`.
+
 ### Database Model Overview
 
 **Auth Models** (NextAuth-compatible via PrismaAdapter):

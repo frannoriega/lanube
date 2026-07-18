@@ -216,7 +216,7 @@ export function AdminReservationsCardsPanel({
 
       {loading && daysWithReservations.length === 0 ? (
         <div className="flex h-40 items-center justify-center rounded-md border border-dashed border-border">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-la-nube-primary border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
         </div>
       ) : !loading && daysWithReservations.length === 0 ? (
         <p className="text-sm text-muted-foreground">

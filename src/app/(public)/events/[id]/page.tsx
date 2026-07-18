@@ -2,8 +2,8 @@ import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { LocalDate, LocalDateTime } from "@/components/molecules/local-date";
 import { RegistrationCta } from "@/components/molecules/registration-cta";
-import { getPublicEventDetail } from "@/lib/db/events";
-import { expandAllEventOccurrences } from "@/lib/events/occurrences";
+import { getPublicEventDetail } from "@/modules/events/db/events";
+import { expandAllEventOccurrences } from "@/modules/events/lib/occurrences";
 import { nowMs } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { notFound } from "next/navigation";
@@ -74,7 +74,7 @@ export default async function EventDetailPage({
                     // Every session gets the same solid surface so it always reads clearly.
                     "flex flex-col gap-1 rounded-lg border bg-card px-4 py-3 text-sm",
                     isNext
-                      ? "border-la-nube-primary/50 bg-la-nube-primary/5 ring-1 ring-la-nube-primary/20 dark:bg-la-nube-primary/10"
+                      ? "border-brand-primary/50 bg-brand-primary/5 ring-1 ring-brand-primary/20 dark:bg-brand-primary/10"
                       : "border-border",
                     // Past sessions are de-emphasized by text color, not transparency.
                     isPast &&
@@ -85,7 +85,7 @@ export default async function EventDetailPage({
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     {isNext && (
-                      <span className="rounded-full bg-la-nube-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-la-nube-primary">
+                      <span className="rounded-full bg-brand-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-primary">
                         Próxima
                       </span>
                     )}

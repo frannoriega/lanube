@@ -1,6 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
-import { listEventParticipants } from "@/lib/db/participants";
-import { collectUploadedFiles } from "@/lib/events/form-files";
+import { listEventParticipants } from "@/modules/events/db/participants";
+import { collectUploadedFiles } from "@/modules/events/lib/form-files";
 import { getStorage } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
 
