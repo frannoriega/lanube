@@ -109,7 +109,7 @@ export function ImageUpload({
           disabled={disabled || uploading}
           onClick={() => inputRef.current?.click()}
           className={cn(
-            "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/40 text-muted-foreground transition-colors hover:border-la-nube-primary hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60",
+            "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/40 text-muted-foreground transition-colors hover:border-brand-primary hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60",
             containerClassName,
           )}
         >

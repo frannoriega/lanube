@@ -86,7 +86,7 @@ export function DayReservationCard({
         className={cn(
           "glass-card dark:glass-card-dark overflow-hidden transition-all duration-150 p-0",
           open
-            ? "ring-1 ring-la-nube-primary/40 shadow-lg"
+            ? "ring-1 ring-brand-primary/40 shadow-lg"
             : "hover:shadow-md hover:bg-slate-300/60 dark:hover:bg-slate-600/60 hover:-translate-y-px",
           className,
         )}

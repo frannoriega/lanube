@@ -25,12 +25,12 @@ import {
   expandEventOccurrences,
   utcDateKey,
   weekdayOfRrule,
-} from "@/lib/events/occurrences";
+} from "@/modules/events/lib/occurrences";
 import {
   EventRecipe,
   dateKeyTimeToMs,
   planEventOccurrences,
-} from "@/lib/events/plan";
+} from "@/modules/events/lib/plan";
 import { cn } from "@/lib/utils";
 import {
   CalendarClock,

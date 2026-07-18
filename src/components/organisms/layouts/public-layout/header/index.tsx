@@ -1,5 +1,5 @@
 import Container from "@/components/atoms/container";
-import LogoLaNube from "@/components/atoms/logos/lanube";
+import LogoLaNube from "@/components/atoms/logos/brand";
 import LogoMunicipioCrest from "@/components/atoms/logos/municipio/crest";
 import { ThemeToggle } from "@/components/molecules/theme";
 import { links } from "@/lib/constants/nav";

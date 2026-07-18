@@ -27,7 +27,7 @@ export default async function SpacesPage() {
     <Container className="h-fit">
       <div className="mx-4 my-12 flex h-fit flex-col gap-10 sm:mx-8">
         <header className="flex flex-col gap-3">
-          <span className="font-mono text-xs uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
+          <span className="font-mono text-xs uppercase tracking-[0.2em] text-brand-selected dark:text-brand-secondary">
             ~/ espacios
           </span>
           <h1 className="text-4xl font-bold text-balance sm:text-5xl">
@@ -118,13 +118,13 @@ function SpaceImage({ space, pos }: { space: Space; pos: "left" | "right" }) {
   const TitleOverlay = (
     <>
       {/* Mobile: solid title bar under/over the visual */}
-      <div className="w-full bg-la-nube-primary py-2 text-center font-bold text-white sm:hidden">
+      <div className="w-full bg-brand-primary py-2 text-center font-bold text-white sm:hidden">
         <h2>{space.name}</h2>
       </div>
       {/* Desktop: floating glass label */}
       <div
         className={cn(
-          "absolute top-4 hidden bg-la-nube-primary/60 px-8 py-2 backdrop-blur-sm sm:block lg:px-16 lg:py-6",
+          "absolute top-4 hidden bg-brand-primary/60 px-8 py-2 backdrop-blur-sm sm:block lg:px-16 lg:py-6",
           pos === "left" ? "left-0 rounded-r-full" : "right-0 rounded-l-full",
         )}
       >
@@ -154,9 +154,9 @@ function SpaceImage({ space, pos }: { space: Space; pos: "left" | "right" }) {
   return (
     <div className={floatCns}>
       {TitleOverlay}
-      <div className="flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-la-nube-primary/15 to-la-nube-secondary/15">
+      <div className="flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-brand-primary/15 to-brand-secondary/15">
         <Icon
-          className="size-20 text-la-nube-selected dark:text-la-nube-secondary"
+          className="size-20 text-brand-selected dark:text-brand-secondary"
           strokeWidth={1.5}
           aria-hidden
         />

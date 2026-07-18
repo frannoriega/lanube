@@ -4,12 +4,12 @@ import {
   EventEditDropWarning,
   getEvent,
   updateEvent,
-} from "@/lib/db/events";
+} from "@/modules/events/db/events";
 import {
   eventInputSchema,
   sessionActionSchema,
   sessionActionsNeedReason,
-} from "@/lib/schemas/events";
+} from "@/modules/events/schema";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { z } from "zod";
 import { NextRequest } from "next/server";

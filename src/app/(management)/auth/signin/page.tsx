@@ -1,6 +1,7 @@
 "use client";
 
-import Logo from "@/components/atoms/logos/lanube";
+import Logo from "@/components/atoms/logos/brand";
+import { getBrand } from "@/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
@@ -496,7 +497,7 @@ export default function LandingPage() {
               <Logo size={200} />
             </div>
             <CardTitle className="text-3xl font-bold sr-only">
-              La Nube
+              {getBrand().name}
             </CardTitle>
             <p>Espacio de Coworking e Innovación</p>
           </CardHeader>

@@ -1,8 +1,8 @@
 import { ParticipantsTable } from "@/components/organisms/admin/participants-table";
 import { Button } from "@/components/ui/button";
-import { getEvent } from "@/lib/db/events";
-import { getEventFormColumns } from "@/lib/db/forms";
-import { listEventParticipants } from "@/lib/db/participants";
+import { getEvent } from "@/modules/events/db/events";
+import { getEventFormColumns } from "@/modules/events/db/forms";
+import { listEventParticipants } from "@/modules/events/db/participants";
 import { ParticipantStatus } from "@/types/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";

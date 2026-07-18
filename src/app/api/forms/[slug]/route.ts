@@ -1,8 +1,8 @@
 import { nowMs } from "@/lib/clock";
-import { getPublicForm, submitForm } from "@/lib/db/participants";
-import { sendEventRegistrationEmail } from "@/lib/email/event-registration";
+import { getPublicForm, submitForm } from "@/modules/events/db/participants";
+import { sendEventRegistrationEmail } from "@/modules/events/email/registration";
 import { checkRateLimit } from "@/lib/ratelimit";
-import { participantSubmitSchema } from "@/lib/schemas/events";
+import { participantSubmitSchema } from "@/modules/events/schema";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 

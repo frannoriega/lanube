@@ -1,12 +1,12 @@
 import { requirePermission } from "@/lib/api-auth";
 import { PARTICIPANT_STATUS_LABEL } from "@/lib/constants/participants";
-import { getEventFormColumns } from "@/lib/db/forms";
+import { getEventFormColumns } from "@/modules/events/db/forms";
 import {
   cellFiles,
   type ExportColumn,
   exportCell,
-} from "@/lib/events/form-export";
-import { listEventParticipants } from "@/lib/db/participants";
+} from "@/modules/events/lib/form-export";
+import { listEventParticipants } from "@/modules/events/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
 import { ParticipantStatus } from "@/types/prisma";
 import { NextRequest, NextResponse } from "next/server";

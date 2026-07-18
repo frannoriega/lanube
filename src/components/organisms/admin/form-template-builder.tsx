@@ -34,13 +34,13 @@ import {
   CONDITION_OPS,
   opNeedsValue,
   parseVisibleWhen,
-} from "@/lib/events/builder-conditions";
+} from "@/modules/events/lib/builder-conditions";
 import {
   type FormNode,
   type FormSchema,
   isGroupNode,
   type InputNode,
-} from "@/lib/events/form-schema";
+} from "@/modules/events/lib/form-schema";
 import { FormFieldType } from "@/types/prisma";
 import { createId } from "@paralleldrive/cuid2";
 import { zodResolver } from "@hookform/resolvers/zod";

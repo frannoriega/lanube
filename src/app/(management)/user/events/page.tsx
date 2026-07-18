@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import { eventTypeLabel } from "@/lib/constants/events";
-import { getUserEvents } from "@/lib/db/participants";
+import { eventTypeLabel } from "@/modules/events/constants";
+import { getUserEvents } from "@/modules/events/db/participants";
 import { CalendarDays, MapPin } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -43,7 +43,7 @@ export default async function UserEventsPage() {
               <CardHeader>
                 <Badge
                   variant="secondary"
-                  className="w-fit font-normal text-la-nube-selected dark:text-la-nube-secondary"
+                  className="w-fit font-normal text-brand-selected dark:text-brand-secondary"
                 >
                   {event.type?.name ?? eventTypeLabel(event.eventType)}
                 </Badge>

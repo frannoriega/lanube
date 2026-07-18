@@ -49,7 +49,7 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
           aria-label="Elegir icono del espacio"
         >
           <span className="flex items-center gap-2">
-            <Selected className="h-4 w-4 text-la-nube-selected dark:text-la-nube-secondary" />
+            <Selected className="h-4 w-4 text-brand-selected dark:text-brand-secondary" />
             <span className={hasIcon ? "" : "text-muted-foreground"}>
               {hasIcon ? (value as string) : "Sin icono (por defecto)"}
             </span>
@@ -68,13 +68,13 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
             className={cn(
               "relative flex aspect-square items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
               !hasIcon
-                ? "border-la-nube-primary bg-la-nube-primary/10"
+                ? "border-brand-primary bg-brand-primary/10"
                 : "border-transparent",
             )}
           >
             <FALLBACK_SPACE_ICON className="h-4 w-4" />
             {!hasIcon && (
-              <Check className="absolute right-0.5 top-0.5 h-3 w-3 text-la-nube-primary" />
+              <Check className="absolute right-0.5 top-0.5 h-3 w-3 text-brand-primary" />
             )}
           </button>
           {SPACE_ICON_OPTIONS.map(([name, Icon]) => {
@@ -90,13 +90,13 @@ export function IconPicker({ value, onChange, disabled }: IconPickerProps) {
                 className={cn(
                   "relative flex aspect-square items-center justify-center rounded-md border transition-colors hover:bg-accent hover:text-accent-foreground",
                   active
-                    ? "border-la-nube-primary bg-la-nube-primary/10 text-la-nube-selected dark:text-la-nube-secondary"
+                    ? "border-brand-primary bg-brand-primary/10 text-brand-selected dark:text-brand-secondary"
                     : "border-transparent text-foreground",
                 )}
               >
                 <Icon className="h-4 w-4" />
                 {active && (
-                  <Check className="absolute right-0.5 top-0.5 h-3 w-3 text-la-nube-primary" />
+                  <Check className="absolute right-0.5 top-0.5 h-3 w-3 text-brand-primary" />
                 )}
               </button>
             );

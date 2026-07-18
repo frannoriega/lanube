@@ -8,4 +8,4 @@
  * reintroduces a phantom parity slot and breaks the alternation.
  */
 export const LANDING_SECTION_BG =
-  "odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15";
+  "odd:bg-transparent even:bg-brand-accent/40 dark:even:bg-brand-selected/15";

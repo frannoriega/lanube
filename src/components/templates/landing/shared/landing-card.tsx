@@ -22,7 +22,7 @@ export function LandingCard({
   return (
     <article
       className={cn(
-        "group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 focus-within:ring-2 focus-within:ring-la-nube-primary hover:-translate-y-1 hover:border-la-nube-primary hover:shadow-md",
+        "group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 focus-within:ring-2 focus-within:ring-brand-primary hover:-translate-y-1 hover:border-brand-primary hover:shadow-md",
         className,
       )}
     >

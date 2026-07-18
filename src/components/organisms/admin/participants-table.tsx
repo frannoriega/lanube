@@ -27,8 +27,8 @@ import {
   type ExportColumn,
   cellFiles,
   exportCell,
-} from "@/lib/events/form-export";
-import type { UploadedFile } from "@/lib/events/form-schema";
+} from "@/modules/events/lib/form-export";
+import type { UploadedFile } from "@/modules/events/lib/form-schema";
 import { ParticipantStatus } from "@/types/prisma";
 import {
   type ColumnDef,

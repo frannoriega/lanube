@@ -15,7 +15,7 @@ export default function RootLayout({
       enableSystem
       forcedTheme="light"
     >
-      <ParticlesLayout backgroundClass="bg-la-nube-primary" forceTheme="dark">
+      <ParticlesLayout backgroundClass="bg-brand-primary" forceTheme="dark">
         <Suspense>{children}</Suspense>
         <Toaster />
       </ParticlesLayout>

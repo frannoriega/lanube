@@ -1,7 +1,7 @@
 import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { PublicForm } from "@/components/organisms/forms/public-form";
-import { getPublicForm } from "@/lib/db/participants";
+import { getPublicForm } from "@/modules/events/db/participants";
 import { Info } from "lucide-react";
 
 const CLOSED_MESSAGES: Record<string, string> = {

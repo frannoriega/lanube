@@ -5,7 +5,7 @@ import {
   RegistrationCta,
   type RegistrationCtaProps,
 } from "@/components/molecules/registration-cta";
-import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
+import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/modules/events/constants";
 import { MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import type { UpcomingEventCardData } from "./event-card";
@@ -24,7 +24,7 @@ export function FeaturedEventCard({ event }: { event: UpcomingEventCardData }) {
   };
 
   return (
-    <article className="group relative flex w-full flex-col overflow-hidden rounded-3xl border-2 border-la-nube-primary/50 bg-card shadow-lg ring-1 ring-la-nube-primary/20 transition-all duration-300 focus-within:ring-2 focus-within:ring-la-nube-primary hover:shadow-xl md:flex-row">
+    <article className="group relative flex w-full flex-col overflow-hidden rounded-3xl border-2 border-brand-primary/50 bg-card shadow-lg ring-1 ring-brand-primary/20 transition-all duration-300 focus-within:ring-2 focus-within:ring-brand-primary hover:shadow-xl md:flex-row">
       {/* Cover */}
       <div className="relative md:w-1/2 lg:w-3/5">
         <EventCover
@@ -35,7 +35,7 @@ export function FeaturedEventCard({ event }: { event: UpcomingEventCardData }) {
           sizes="(max-width: 768px) 100vw, 60vw"
           priority
         />
-        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-la-nube-primary px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
+        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-brand-primary px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
           <Star className="h-3.5 w-3.5 fill-current" />
           Destacado
         </span>
@@ -44,13 +44,13 @@ export function FeaturedEventCard({ event }: { event: UpcomingEventCardData }) {
       {/* Body */}
       <div className="flex flex-1 flex-col gap-4 p-6 md:justify-center md:p-8 lg:p-10">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-la-nube-selected/10 px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-la-nube-selected dark:bg-la-nube-secondary/10 dark:text-la-nube-secondary">
+          <span className="rounded-full bg-brand-selected/10 px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-brand-selected dark:bg-brand-secondary/10 dark:text-brand-secondary">
             {event.eventTypeName ?? eventTypeLabel(event.eventType)}
           </span>
           <LocalDateRange
             startMs={event.startMs}
             endMs={event.recurrenceEndMs}
-            className="font-mono text-sm font-medium text-la-nube-selected before:content-['▸_'] dark:text-la-nube-secondary"
+            className="font-mono text-sm font-medium text-brand-selected before:content-['▸_'] dark:text-brand-secondary"
           />
           {event.hasExceptions && (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 font-mono text-xs font-semibold text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">

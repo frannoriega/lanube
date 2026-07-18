@@ -270,7 +270,7 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-          <UsersIcon className="h-6 w-6 text-la-nube-primary" />
+          <UsersIcon className="h-6 w-6 text-brand-primary" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Usuarios
@@ -291,7 +291,7 @@ export default function AdminUsersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="h-full flex flex-row items-end">
-            <p className="text-3xl font-semibold text-la-nube-primary">
+            <p className="text-3xl font-semibold text-brand-primary">
               {summary.totalUsers}
             </p>
           </CardContent>

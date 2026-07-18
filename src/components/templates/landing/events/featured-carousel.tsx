@@ -88,7 +88,7 @@ export function FeaturedCarousel({
                 className={cn(
                   "h-2 rounded-full transition-all",
                   i === active
-                    ? "w-6 bg-la-nube-primary"
+                    ? "w-6 bg-brand-primary"
                     : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50",
                 )}
               />

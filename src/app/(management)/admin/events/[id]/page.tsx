@@ -5,7 +5,7 @@ import {
   eventToFormDefaults,
   getEvent,
   getEventSessionExceptions,
-} from "@/lib/db/events";
+} from "@/modules/events/db/events";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";

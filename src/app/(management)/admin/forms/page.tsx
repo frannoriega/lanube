@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { listFormTemplatesPage } from "@/lib/db/forms";
+import { listFormTemplatesPage } from "@/modules/events/db/forms";
 import Link from "next/link";
 
 export default async function FormsPage({
@@ -38,7 +38,7 @@ export default async function FormsPage({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {templates.map((tpl) => (
               <Link key={tpl.id} href={`/admin/forms/${tpl.id}`}>
-                <Card className="h-full transition-colors hover:border-la-nube-primary">
+                <Card className="h-full transition-colors hover:border-brand-primary">
                   <CardHeader>
                     <CardTitle>{tpl.name}</CardTitle>
                     {tpl.description && (

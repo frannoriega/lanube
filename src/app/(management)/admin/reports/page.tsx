@@ -212,7 +212,7 @@ export default function AdminReportsPage() {
     <div className="space-y-6">
       {/* Page title — hidden when printing */}
       <div className="flex items-center gap-2 print:hidden">
-        <BarChart3 className="h-6 w-6 text-la-nube-primary" />
+        <BarChart3 className="h-6 w-6 text-brand-primary" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Reportes
@@ -320,7 +320,7 @@ export default function AdminReportsPage() {
       )}
       {loading && !firstTime && (
         <div className="flex h-32 items-center justify-center print:hidden">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-la-nube-primary" />
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-primary" />
         </div>
       )}
 

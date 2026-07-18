@@ -1,5 +1,6 @@
 import UserProvider from "@/components/providers/user";
 import ManagementLayout from "@/components/templates/management";
+import { getThemeStorageKey } from "@/config";
 import { auth } from "@/lib/auth";
 import { getRegisteredUserById } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
@@ -32,7 +33,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
       attribute="class"
       defaultTheme="system"
       enableSystem
-      storageKey="la-nube-theme"
+      storageKey={getThemeStorageKey()}
     >
       <UserProvider user={user}>
         <ManagementLayout userType="admin">{children}</ManagementLayout>

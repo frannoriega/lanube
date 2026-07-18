@@ -1,4 +1,4 @@
-import { type InlineNode, parseInlineMarks } from "@/lib/events/inline-format";
+import { type InlineNode, parseInlineMarks } from "@/modules/events/lib/inline-format";
 import { Fragment } from "react";
 
 /**

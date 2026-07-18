@@ -12,13 +12,13 @@ export default async function SpacesSection() {
   return (
     <Breakout className={LANDING_SECTION_BG}>
       <section
-        className="w-full flex flex-col items-center border-t border-la-nube-primary/15"
+        className="w-full flex flex-col items-center border-t border-brand-primary/15"
         aria-labelledby="nuestros-espacios"
       >
         <Container className="flex flex-col gap-8 px-8 py-16">
           {/* Section header */}
           <div className="flex flex-col gap-3">
-            <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
+            <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-brand-selected dark:text-brand-secondary">
               ~/ espacios
               <span className="animate-blink">▌</span>
             </span>
@@ -28,7 +28,7 @@ export default async function SpacesSection() {
               style={{ textWrap: "balance" } as React.CSSProperties}
             >
               Nuestros{" "}
-              <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
                 espacios
               </span>
             </h2>

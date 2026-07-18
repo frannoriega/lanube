@@ -25,7 +25,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import Logo from "@/components/atoms/logos/lanube";
+import Logo from "@/components/atoms/logos/brand";
+import { getBrand } from "@/config";
 import { z } from "zod";
 import { dniSchema, sanitizeDni } from "@/lib/schemas/profile";
 
@@ -123,7 +124,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl">Completar Perfil</CardTitle>
           <CardDescription className="text-slate-700">
-            Completa tu información para acceder a La Nube
+            Completa tu información para acceder a {getBrand().name}
           </CardDescription>
         </CardHeader>
         <CardContent>

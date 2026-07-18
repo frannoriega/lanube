@@ -1,6 +1,6 @@
 "use client";
 
-import Logo from "@/components/atoms/logos/lanube";
+import Logo from "@/components/atoms/logos/brand";
 import { ThemeToggle } from "@/components/molecules/theme";
 import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,13 @@ import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
 import { hasPermission, isAdminRole } from "@/lib/rbac";
+import { getModuleNav } from "@/modules/manifests";
 import {
   BarChart3,
   Building2,
   Calendar,
-  CalendarDays,
   ChevronDown,
-  FileText,
+  Circle,
   Contact,
   LayoutDashboard,
   LucideProps,
@@ -60,29 +60,44 @@ interface NavigationItem {
 }
 
 const navigation: Record<"user" | "admin", NavigationItem[]> = {
-  // Fixed user items. Space links are inserted between these two from the DB (see navItems),
-  // so a superadmin renaming/adding a space is reflected without touching this file.
+  // Fixed user items. Space links (from the DB) and module-contributed items (e.g. "Mis
+  // eventos") are appended in navItems, so a superadmin renaming/adding a space — or a
+  // module being enabled/disabled — is reflected without touching this file.
   user: [
     {
       name: "Panel de control",
       href: "/user/dashboard",
       icon: LayoutDashboard,
     },
-    {
-      name: "Mis eventos",
-      href: "/user/events",
-      icon: CalendarDays,
-    },
   ],
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Usuarios", href: "/admin/users", icon: Users },
     { name: "Reservas", href: "/admin/reservations", icon: Calendar },
-    { name: "Eventos", href: "/admin/events", icon: CalendarDays },
-    { name: "Formularios", href: "/admin/forms", icon: FileText },
     { name: "Reportes", href: "/admin/reports", icon: BarChart3 },
   ],
 };
+
+/** Map module-contributed nav entries into the sidebar's NavigationItem shape. */
+function moduleNavItems(
+  surface: "admin" | "user",
+  role: string | undefined,
+): NavigationItem[] {
+  return getModuleNav(surface)
+    .filter(
+      (entry) =>
+        !entry.permission ||
+        hasPermission(
+          role,
+          entry.permission as Parameters<typeof hasPermission>[1],
+        ),
+    )
+    .map((entry) => ({
+      name: entry.label,
+      href: entry.href,
+      icon: entry.icon ?? Circle,
+    }));
+}
 
 /** Superadmin-only configuration section (requires the *:manage config permissions). */
 const configNavigation: NavigationItem = {
@@ -144,7 +159,7 @@ export default function ManagementLayout({
             onClick={() => toggleExpanded(item.name)}
             className={`group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium ${
               hasActive && !item.children
-                ? "bg-la-nube-primary text-white"
+                ? "bg-brand-primary text-white"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
@@ -199,14 +214,16 @@ export default function ManagementLayout({
         href: s.href,
         icon: getSpaceIcon(s.iconName ?? ""),
       }));
-      // Panel de control · reservable spaces (from DB) · Mis eventos.
-      const [panel, ...tail] = navigation.user;
-      return [panel, ...spaceItems, ...tail];
+      // Panel de control · reservable spaces (from DB) · module-contributed items (e.g. Mis eventos).
+      return [
+        ...navigation.user,
+        ...spaceItems,
+        ...moduleNavItems("user", user?.role),
+      ];
     }
+    const base = [...navigation.admin, ...moduleNavItems("admin", user?.role)];
     const canConfigure = hasPermission(user?.role, "spaces:manage");
-    return canConfigure
-      ? [...navigation.admin, configNavigation]
-      : navigation.admin;
+    return canConfigure ? [...base, configNavigation] : base;
   }, [userType, user?.role, spaceNav]);
 
   if (!user) {
@@ -228,10 +245,10 @@ export default function ManagementLayout({
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center space-x-2">
                 <Logo />
-                {/* <div className="h-8 w-8 rounded-full bg-la-nube-primary flex items-center justify-center">
+                {/* <div className="h-8 w-8 rounded-full bg-brand-primary flex items-center justify-center">
                   <span className="text-sm">🌩️</span>
                 </div>
-                <span className="text-xl font-bold text-la-nube-primary">La Nube</span> */}
+                <span className="text-xl font-bold text-brand-primary">La Nube</span> */}
               </div>
               <Button
                 variant="ghost"
@@ -256,10 +273,10 @@ export default function ManagementLayout({
             <div className="flex h-16 items-center px-4">
               <div className="flex items-center space-x-2">
                 <Logo />
-                {/* <div className="h-8 w-8 rounded-full bg-la-nube-primary flex items-center justify-center">
+                {/* <div className="h-8 w-8 rounded-full bg-brand-primary flex items-center justify-center">
                   <span className="text-sm">🌩️</span>
                 </div>
-                <span className="text-xl font-bold text-la-nube-primary">La Nube</span> */}
+                <span className="text-xl font-bold text-brand-primary">La Nube</span> */}
               </div>
             </div>
             <nav className="flex-1 space-y-1 px-2 py-4">
@@ -297,7 +314,7 @@ export default function ManagementLayout({
                       aria-current={userType === "user" ? "page" : undefined}
                       className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
                         userType === "user"
-                          ? "bg-la-nube-primary text-white shadow-sm"
+                          ? "bg-brand-primary text-white shadow-sm"
                           : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
@@ -309,7 +326,7 @@ export default function ManagementLayout({
                       aria-current={userType === "admin" ? "page" : undefined}
                       className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
                         userType === "admin"
-                          ? "bg-la-nube-primary text-white shadow-sm"
+                          ? "bg-brand-primary text-white shadow-sm"
                           : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >

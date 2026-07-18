@@ -42,7 +42,7 @@ export function Markdown({
         // First child never gets a top margin (avoids a gap at the top of the block).
         "[&>*:first-child]:mt-0",
         // Inline + block elements.
-        "[&_a]:font-medium [&_a]:text-la-nube-selected [&_a]:underline dark:[&_a]:text-la-nube-secondary",
+        "[&_a]:font-medium [&_a]:text-brand-selected [&_a]:underline dark:[&_a]:text-brand-secondary",
         "[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground",
         "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em]",
         "[&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5",

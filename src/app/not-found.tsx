@@ -1,4 +1,4 @@
-import Logo from "@/components/atoms/logos/lanube";
+import Logo from "@/components/atoms/logos/brand";
 import ParticlesLayout from "@/components/organisms/layouts/particles-layout";
 import {
   Card,

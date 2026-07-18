@@ -172,7 +172,7 @@ export function AdminReservationDetailSheet({
             {!rejectMode ? (
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 text-slate-100 bg-la-nube-primary hover:bg-la-nube-primary/90"
+                  className="flex-1 text-slate-100 bg-brand-primary hover:bg-brand-primary/90"
                   disabled={processing === reservation.id}
                   onClick={() => onAction(reservation.id, "APPROVED")}
                 >

@@ -35,7 +35,7 @@ function buildStats(space: SpaceWithFungible, limit = 4): StatData[] {
 function StatBox({ icon: Icon, value }: StatData) {
   return (
     <div className="flex flex-row gap-2 items-center w-fit p-3 border-2 rounded-md">
-      <Icon className="size-6 stroke-2 stroke-la-nube-secondary" />
+      <Icon className="size-6 stroke-2 stroke-brand-secondary" />
       <span className="sm:block md:hidden lg:block w-full justify-start font-black">
         {value}
       </span>
@@ -91,7 +91,7 @@ export function SpaceCard({ space }: { space: SpaceWithFungible }) {
             <div className="flex flex-row w-full items-start justify-between">
               <span className="text-muted-foreground">[ Capacidad ]</span>
               <div className="justify-end">
-                <Users className="size-10 stroke-2 stroke-la-nube-secondary" />
+                <Users className="size-10 stroke-2 stroke-brand-secondary" />
               </div>
             </div>
             <div className="flex flex-col gap-2 w-full items-center">
