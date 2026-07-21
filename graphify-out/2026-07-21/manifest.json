@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1784635751.1643388,
-    "ast_hash": "867e2652b2d9f34bc8968467053680d7",
+    "mtime": 1784567833.7549987,
+    "ast_hash": "5450861eab68ee9770a28c05179518f3",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -895,13 +895,13 @@
     "semantic_hash": "06ae7c87dc9029ec8a933f93b5682800"
   },
   "src/components/organisms/layouts/public-layout/header/index.tsx": {
-    "mtime": 1784635743.8032508,
-    "ast_hash": "442f686a58f0663193cce99f6e4c6dba",
+    "mtime": 1784567772.088274,
+    "ast_hash": "6e146e1cb30291e45a66075ef23439c5",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/mobile/index.tsx": {
-    "mtime": 1784635751.0312638,
-    "ast_hash": "066f8cc816beed9f4298d13f3d8bb031",
+    "mtime": 1784567782.511429,
+    "ast_hash": "728ac3fa212758c433fb66c72e261974",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/signin/index.tsx": {
@@ -2227,16 +2227,6 @@
   ".impeccable/critique/2026-07-17T20-32-59Z__src-app-public-about-page-tsx.md": {
     "mtime": 1784330982.8372247,
     "ast_hash": "24e173e59141ae7c42eeb536203ae3e6",
-    "semantic_hash": ""
-  },
-  "src/components/atoms/logos/municipio/crest.tsx": {
-    "mtime": 1784635737.2335746,
-    "ast_hash": "6cc383aa72eb22d9e2e0036fe638b373",
-    "semantic_hash": ""
-  },
-  "public/images/logos/municipio-crest.png": {
-    "mtime": 1784635703.6001585,
-    "ast_hash": "d84bc336672a78b6fec16877c88188d4",
     "semantic_hash": ""
   }
 }

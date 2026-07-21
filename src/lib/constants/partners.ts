@@ -25,12 +25,6 @@ export const partners: Partner[] = [
     url: "https://tecso.coop/",
   },
   {
-    id: 4,
-    name: 'Asociación Educacionista "La Fraternidad"',
-    img: "/images/partners/asociacion.png",
-    url: "https://ucu.edu.ar/aelf/",
-  },
-  {
     id: 5,
     name: "Defymotion",
     img: "/images/partners/defymotion.png",
