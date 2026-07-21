@@ -3,6 +3,7 @@ import { Menu } from "lucide-react";
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import LogoLaNube from "@/components/atoms/logos/lanube";
+import LogoMunicipioCrest from "@/components/atoms/logos/municipio/crest";
 import { ThemeToggle } from "@/components/molecules/theme";
 import { Separator } from "@/components/ui/separator";
 import SignIn from "../signin";
@@ -48,6 +49,16 @@ export default function MobileMenu() {
                 className="hover:bg-slate-400 dark:hover:bg-slate-600 rounded-full"
               />
             </div>
+            <Separator orientation="horizontal" className="bg-slate-800" />
+            <Link
+              href="https://www.cdeluruguay.gob.ar/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Municipalidad de Concepción del Uruguay"
+              className="w-fit opacity-90 transition-opacity hover:opacity-100"
+            >
+              <LogoMunicipioCrest size={56} />
+            </Link>
           </div>
         </DrawerContent>
       </Drawer>

@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { useEffect, useRef, useState } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 import {
   Form,
@@ -31,7 +31,8 @@ export default function LandingPage() {
   const [fadeIn, setFadeIn] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [requireCaptcha, setRequireCaptcha] = useState(false);
+  const registerCaptchaRef = useRef<TurnstileInstance>(undefined);
+  const resetCaptchaRef = useRef<TurnstileInstance>(undefined);
   const [screen, setScreen] = useState<"signin" | "register" | "reset">(
     "signin",
   );
@@ -113,12 +114,18 @@ export default function LandingPage() {
       method: "POST",
       body: JSON.stringify(data),
     });
-    registerForm.reset();
     const body = await res.json().catch(() => ({}));
+    // Turnstile tokens are single-use and consumed by this request (the server
+    // verifies before it can fail), so a fresh token is always required for the
+    // next attempt. Reset the captcha field + widget instead of the whole form
+    // so the user keeps their corrected inputs and the button re-enables.
+    registerForm.setValue("captcha", "");
+    registerCaptchaRef.current?.reset();
     if (!res.ok) {
       toast.error(body.message || "Error al crear la cuenta");
       return;
     }
+    registerForm.reset();
     toast.success(
       body.message ??
         "Revisa tu correo para confirmar tu cuenta y continuar con el registro.",
@@ -132,6 +139,10 @@ export default function LandingPage() {
       body: JSON.stringify(data),
     });
     const body = await res.json().catch(() => ({}));
+    // The captcha token is single-use and spent by this request; mint a fresh
+    // one so a retry after a failure isn't stuck with a stale token.
+    resetForm.setValue("captcha", "");
+    resetCaptchaRef.current?.reset();
     if (!res.ok) {
       toast.error(body.message || "Error al enviar el enlace de acceso");
       return;
@@ -324,7 +335,8 @@ export default function LandingPage() {
                     <FormItem>
                       <FormControl>
                         <Turnstile
-                          className={`w-full rounded-md overflow-hidden ${!requireCaptcha && "hidden"}`}
+                          ref={registerCaptchaRef}
+                          className="w-full rounded-md overflow-hidden"
                           siteKey={
                             process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY ??
                             "1x00000000000000000000AA"
@@ -333,17 +345,20 @@ export default function LandingPage() {
                             action: "submit-form",
                             size: "flexible",
                             language: "es",
+                            // Let Cloudflare manage visibility: the widget only
+                            // appears if interaction is required. Never hide it
+                            // with `display:none` (Tailwind `hidden`) — a
+                            // Turnstile iframe inside a hidden container can't
+                            // run its challenge, which made the captcha appear
+                            // to "fail" and only resolve once un-hidden.
+                            appearance: "interaction-only",
                           }}
                           scriptOptions={{
                             appendTo: "body",
                           }}
-                          onBeforeInteractive={() => setRequireCaptcha(true)}
                           onSuccess={(token) => field.onChange(token)}
                           onExpire={() => field.onChange("")}
-                          onError={() => {
-                            field.onChange("");
-                            setRequireCaptcha(true);
-                          }}
+                          onError={() => field.onChange("")}
                         />
                       </FormControl>
                       <FormMessage className="text-red-600" />
@@ -415,6 +430,7 @@ export default function LandingPage() {
                     <FormItem>
                       <FormControl>
                         <Turnstile
+                          ref={resetCaptchaRef}
                           className={`w-full rounded-md overflow-hidden`}
                           siteKey={
                             process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY ??
