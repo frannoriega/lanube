@@ -55,7 +55,10 @@ export default function HeroSection() {
           aria-label="Sección inicial"
         >
           <div className="flex flex-col items-center justify-center gap-8 flex-1">
-            <div className="flex flex-col items-center justify-center gap-8">
+            <div className="flex flex-col items-center justify-center gap-3">
+              <p className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-la-nube-primary dark:text-la-nube-secondary text-center text-balance">
+                Una iniciativa de Concepción del Uruguay
+              </p>
               <div className="lg:text-6xl md:text-5xl text-3xl font-bold text-center">
                 <h1 className="lg:text-7xl md:text-6xl text-4xl">La Nube</h1>
                 <h2 className="text-balance">
@@ -66,10 +69,12 @@ export default function HeroSection() {
                   </span>
                 </h2>
               </div>
+            </div>
+            <div className="flex flex-col items-center justify-center gap-8">
               <p className="text-center max-w-prose lg:text-xl text-base text-pretty">
-                Impulsamos la Economía del Conocimiento en nuestra ciudad,
-                conectando empresas, universidades, emprendedores y sector
-                público para transformar el futuro.
+                Impulsamos la Economía del Conocimiento en Concepción del
+                Uruguay, conectando empresas, universidades, emprendedores y
+                sector público para transformar el futuro.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <Button asChild size="lg">
