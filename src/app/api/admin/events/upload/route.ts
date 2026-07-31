@@ -37,13 +37,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Group each event's images under its id (falls back to a shared bucket pre-creation).
+  const eventId = new URL(request.url).searchParams.get("eventId")?.trim();
+
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
     const { url } = await getStorage().upload({
       buffer,
       contentType: file.type,
       filename: file.name,
-      prefix: "events",
+      folder: ["events", eventId || "misc"],
     });
     return NextResponse.json({ url });
   } catch (e) {
