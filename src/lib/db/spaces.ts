@@ -42,9 +42,13 @@ export interface SpaceInput {
 }
 
 export async function createSpace(input: SpaceInput): Promise<Space> {
+  // New spaces go to the end; ordering is managed via the up/down controls.
+  const last = await prisma.space.aggregate({ _max: { displayOrder: true } });
+  const displayOrder = (last._max.displayOrder ?? -1) + 1;
   return prisma.space.create({
     data: {
       ...input,
+      displayOrder,
       iconName: input.iconName ?? null,
       imageUrl: input.imageUrl ?? null,
     },
@@ -63,6 +67,22 @@ export async function updateSpace(
       imageUrl: input.imageUrl ?? null,
     },
   });
+}
+
+/**
+ * Persists a new ordering for spaces. `orderedIds` is the full list of space ids in the
+ * desired top-to-bottom order; each space's `displayOrder` is rewritten to its index so the
+ * values stay dense (0..n-1). Ids not present in the DB are ignored.
+ */
+export async function reorderSpaces(orderedIds: string[]): Promise<void> {
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.space.update({
+        where: { id },
+        data: { displayOrder: index },
+      }),
+    ),
+  );
 }
 
 /**

@@ -11,9 +11,9 @@ const ALLOWED_TYPES = new Set([
 ]);
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
-/** Uploads an event image through the active storage provider, returning its public URL. */
+/** Uploads a space image through the active storage provider, returning its public URL. */
 export async function POST(request: NextRequest) {
-  const { error } = await requirePermission("events:manage");
+  const { error } = await requirePermission("spaces:manage");
   if (error) return error;
 
   const formData = await request.formData().catch(() => null);
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Group each event's images under its id (falls back to a shared bucket pre-creation).
-  const eventId = new URL(request.url).searchParams.get("eventId")?.trim();
+  // Group each space's images under its slug (falls back to a shared bucket pre-creation).
+  const slug = new URL(request.url).searchParams.get("slug")?.trim();
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       buffer,
       contentType: file.type,
       filename: file.name,
-      folder: ["events", eventId || "misc"],
+      folder: ["spaces", slug || "misc"],
     });
     return NextResponse.json({ url });
   } catch (e) {

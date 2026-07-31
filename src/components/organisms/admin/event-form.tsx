@@ -312,7 +312,7 @@ export function EventForm({
                   <ImageUpload
                     value={field.value ?? null}
                     onChange={field.onChange}
-                    uploadUrl="/api/admin/events/upload"
+                    uploadUrl={`/api/admin/events/upload${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
                     alt={watch("name") || "Imagen del evento"}
                     containerClassName="h-32 w-full max-w-md"
                   />

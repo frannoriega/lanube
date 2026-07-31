@@ -1,11 +1,10 @@
-import { createId } from "@paralleldrive/cuid2";
 import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import {
   StorageProvider,
   StorageUploadInput,
   StorageUploadResult,
-  safeFilename,
+  buildStorageKey,
 } from "@/lib/storage/types";
 
 const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -18,14 +17,14 @@ const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads");
 export class LocalStorage implements StorageProvider {
   async upload({
     buffer,
-    prefix,
+    folder,
     filename,
   }: StorageUploadInput): Promise<StorageUploadResult> {
-    const dir = prefix ? path.join(UPLOAD_ROOT, prefix) : UPLOAD_ROOT;
-    await mkdir(dir, { recursive: true });
-    const name = `${createId()}-${safeFilename(filename)}`;
-    await writeFile(path.join(dir, name), buffer);
-    return { url: `/uploads/${prefix ? `${prefix}/` : ""}${name}` };
+    const key = buildStorageKey(folder, filename);
+    const dest = path.join(UPLOAD_ROOT, key);
+    await mkdir(path.dirname(dest), { recursive: true });
+    await writeFile(dest, buffer);
+    return { url: `/uploads/${key}` };
   }
 
   async remove(url: string): Promise<void> {

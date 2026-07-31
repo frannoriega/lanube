@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageUpload } from "@/components/molecules/image-upload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +43,7 @@ import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import { spaceInputSchema, type SpaceInput } from "@/lib/schemas/config";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -90,6 +91,7 @@ export function SpacesManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState<SpaceRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   const form = useForm<SpaceInput>({
     resolver: zodResolver(spaceInputSchema),
@@ -144,6 +146,26 @@ export function SpacesManager() {
     }
   };
 
+  const move = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= spaces.length) return;
+    const orderedIds = spaces.map((s) => s.id);
+    [orderedIds[index], orderedIds[target]] = [
+      orderedIds[target],
+      orderedIds[index],
+    ];
+    setReordering(true);
+    try {
+      await apiSend("/api/admin/spaces/reorder", "POST", { orderedIds });
+      invalidateApi("/api/admin/spaces");
+      await refetch();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "No se pudo reordenar los espacios"));
+    } finally {
+      setReordering(false);
+    }
+  };
+
   const onDelete = async () => {
     if (!deleting) return;
     setBusy(true);
@@ -185,6 +207,7 @@ export function SpacesManager() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-20">Orden</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead className="w-24">Capacidad</TableHead>
@@ -193,8 +216,32 @@ export function SpacesManager() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {spaces.map((space) => (
+              {spaces.map((space, index) => (
                 <TableRow key={space.id}>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        disabled={reordering || index === 0}
+                        onClick={() => move(index, -1)}
+                        aria-label={`Subir ${space.name}`}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        disabled={reordering || index === spaces.length - 1}
+                        onClick={() => move(index, 1)}
+                        aria-label={`Bajar ${space.name}`}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{space.name}</TableCell>
                   <TableCell className="font-mono text-xs">
                     {space.slug}
@@ -236,7 +283,7 @@ export function SpacesManager() {
               {spaces.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center text-muted-foreground"
                   >
                     No hay espacios definidos.
@@ -309,56 +356,56 @@ export function SpacesManager() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="capacity"
-                  render={({ field }) => (
+              <FormField
+                control={form.control}
+                name="capacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacidad</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={field.value}
+                        onChange={(e) =>
+                          field.onChange(
+                            Number.isNaN(e.target.valueAsNumber)
+                              ? 1
+                              : e.target.valueAsNumber,
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => {
+                  const slug = form.watch("slug");
+                  return (
                     <FormItem>
-                      <FormLabel>Capacidad</FormLabel>
+                      <FormLabel>Imagen</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(
-                              Number.isNaN(e.target.valueAsNumber)
-                                ? 1
-                                : e.target.valueAsNumber,
-                            )
-                          }
+                        <ImageUpload
+                          value={field.value ?? null}
+                          onChange={field.onChange}
+                          uploadUrl={`/api/admin/spaces/upload${slug ? `?slug=${encodeURIComponent(slug)}` : ""}`}
+                          alt={form.getValues("name") || "Espacio"}
+                          disabled={busy}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Se muestra en la página principal y en las páginas del
+                        espacio.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="displayOrder"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Orden</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(
-                              Number.isNaN(e.target.valueAsNumber)
-                                ? 0
-                                : e.target.valueAsNumber,
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  );
+                }}
+              />
               {(
                 [
                   {
