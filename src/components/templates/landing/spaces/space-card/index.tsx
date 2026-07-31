@@ -75,8 +75,8 @@ export function SpaceCard({ space }: { space: SpaceWithFungible }) {
               orientation="horizontal"
               className="h-px bg-muted-foreground"
             />
-            <p className="line-clamp-2 text-lg text-muted-foreground">
-              {space.description.split("\n")}
+            <p className="line-clamp-2 whitespace-pre-line text-lg text-muted-foreground">
+              {space.description}
             </p>
           </div>
           <div className="flex flex-row flex-wrap gap-2 items-center justify-start">
