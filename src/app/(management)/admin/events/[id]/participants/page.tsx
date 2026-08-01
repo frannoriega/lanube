@@ -8,16 +8,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getEvent } from "@/lib/db/events";
-import { getEventFormFields } from "@/lib/db/forms";
+import { getEventFormColumns } from "@/lib/db/forms";
+import { exportCell } from "@/lib/events/form-export";
 import { listEventParticipants } from "@/lib/db/participants";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-function answerToString(value: unknown): string {
-  if (value === undefined || value === null) return "—";
-  if (Array.isArray(value)) return value.join(", ");
-  return String(value);
-}
 
 export default async function ParticipantsPage({
   params,
@@ -28,9 +23,9 @@ export default async function ParticipantsPage({
   const event = await getEvent(id);
   if (!event) notFound();
 
-  const [participants, fields] = await Promise.all([
+  const [participants, columns] = await Promise.all([
     listEventParticipants(id),
-    getEventFormFields(id),
+    getEventFormColumns(id),
   ]);
   const active = participants.filter((p) => !p.cancelled);
 
@@ -63,8 +58,8 @@ export default async function ParticipantsPage({
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                {fields.map((f) => (
-                  <TableHead key={f.id}>{f.label}</TableHead>
+                {columns.map((c) => (
+                  <TableHead key={c.key}>{c.label}</TableHead>
                 ))}
                 <TableHead>Estado</TableHead>
               </TableRow>
@@ -75,9 +70,9 @@ export default async function ParticipantsPage({
                 return (
                   <TableRow key={p.id}>
                     <TableCell>{p.displayEmail ?? p.email}</TableCell>
-                    {fields.map((f) => (
-                      <TableCell key={f.id}>
-                        {answerToString(answers[f.id])}
+                    {columns.map((c) => (
+                      <TableCell key={c.key}>
+                        {exportCell(c, answers) || "—"}
                       </TableCell>
                     ))}
                     <TableCell>
