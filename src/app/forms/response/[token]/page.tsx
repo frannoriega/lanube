@@ -36,7 +36,7 @@ export default async function ResponsePage({
       eventName={participant.eventName}
       eventDescription={participant.eventDescription}
       eventImageUrl={participant.eventImageUrl}
-      fields={participant.fields}
+      schema={participant.schema}
       initialEmail={participant.displayEmail ?? ""}
       initialAnswers={participant.answers}
     />

@@ -48,7 +48,7 @@ export default async function PublicFormPage({
       eventName={form.eventName}
       eventDescription={form.eventDescription}
       eventImageUrl={form.eventImageUrl}
-      fields={form.fields}
+      schema={form.schema}
       notice={
         form.spotsLeft !== null ? (
           <p className="text-sm font-medium text-muted-foreground">

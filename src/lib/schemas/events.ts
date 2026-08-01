@@ -1,4 +1,5 @@
 import { DATETIME_LOCAL_RE } from "@/lib/events/datetime";
+import { conditionSchema, formSchemaZod } from "@/lib/events/form-schema";
 import { registerEmailSchema } from "@/lib/schemas/auth";
 import { EventStatus, FormFieldType } from "@/types/prisma";
 import z from "zod";
@@ -149,11 +150,24 @@ export const SELECT_FIELD_TYPES = [
 
 export const formFieldSchema = z
   .object({
+    // Stable id (kept across edits so intra-form condition references + answers stay valid).
+    id: z.string().optional(),
     type: z.enum(FormFieldType),
     label: z.string().trim().min(1, { message: "La etiqueta es obligatoria" }),
     placeholder: z.string().trim().max(200).optional().nullable(),
     required: z.boolean(),
     options: z.array(z.string().trim().min(1)).optional().nullable(),
+    // Per-type constraints (numeric min/max/step). Stored on the field's node in Form.schema.
+    constraints: z
+      .object({
+        min: z.number().optional().nullable(),
+        max: z.number().optional().nullable(),
+        step: z.number().positive().optional().nullable(),
+      })
+      .optional()
+      .nullable(),
+    // Conditional visibility (branching). Stored on the field's node in Form.schema.
+    visibleWhen: conditionSchema.optional().nullable(),
   })
   .superRefine((field, ctx) => {
     const needsOptions = (SELECT_FIELD_TYPES as readonly string[]).includes(
@@ -170,11 +184,15 @@ export const formFieldSchema = z
 
 export type FormFieldInput = z.infer<typeof formFieldSchema>;
 
-/** Admin form-template builder: the reusable structure (name, description, fields). */
+/**
+ * Admin form-template builder payload: name/description + the form definition as a node tree
+ * (supports branching + repeating groups). The flat `formFieldSchema` above is retained for
+ * reference/reuse but the builder now sends the full schema.
+ */
 export const formTemplateSchema = z.object({
   name: z.string().trim().min(1, { message: "El nombre es obligatorio" }),
   description: z.string().trim().max(2000).optional().nullable(),
-  fields: z.array(formFieldSchema),
+  schema: formSchemaZod,
 });
 
 export type FormTemplateInput = z.infer<typeof formTemplateSchema>;

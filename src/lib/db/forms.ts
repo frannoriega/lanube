@@ -1,33 +1,53 @@
 import { dateTimeLocalToMs } from "@/lib/events/datetime";
+import {
+  cloneSchemaWithNewIds,
+  parseFormSchema,
+  schemaToPublicFields,
+} from "@/lib/events/form-engine";
+import { type ExportColumn, exportColumns } from "@/lib/events/form-export";
+import { type FormSchema, isInputNode } from "@/lib/events/form-schema";
 import { prisma } from "@/lib/prisma";
 import { EventFormBindingInput, FormTemplateInput } from "@/lib/schemas/events";
 import { createId } from "@paralleldrive/cuid2";
 import { Prisma } from "@/generated/prisma/client";
 
-function fieldCreateData(
-  fields: FormTemplateInput["fields"],
+/**
+ * Flattens a schema's input leaves (including group children, in tree order) into legacy
+ * form_fields rows. The rows are a dual-write of the schema's inputs for the picker's field
+ * count/preview; visibleWhen/group structure live only in `Form.schema`.
+ */
+function schemaToRows(
+  schema: FormSchema,
   formId: string,
 ): Prisma.FormFieldCreateManyInput[] {
-  return fields.map((f, index) => ({
-    id: createId(),
+  return schemaToPublicFields(schema).map((f, index) => ({
+    id: f.id,
     formId,
     order: index,
-    type: f.type,
+    type: f.type as Prisma.FormFieldCreateManyInput["type"],
     label: f.label,
     placeholder: f.placeholder ?? null,
     required: f.required,
-    options: f.options && f.options.length > 0 ? f.options : Prisma.JsonNull,
-    config: Prisma.JsonNull,
+    options: (f.options as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+    config: (f.constraints as Prisma.InputJsonValue) ?? Prisma.JsonNull,
   }));
 }
 
-/** Ordered fields of the instance form bound to an event (admin participants view/export). */
-export async function getEventFormFields(eventId: string) {
+/** Serialises a FormSchema for a Prisma Json column. */
+function schemaJson(schema: FormSchema): Prisma.InputJsonValue {
+  return schema as unknown as Prisma.InputJsonValue;
+}
+
+/** Flattened export columns for an event's form (admin participants view/export). */
+export async function getEventFormColumns(
+  eventId: string,
+): Promise<ExportColumn[]> {
   const eventForm = await prisma.eventForm.findUnique({
     where: { eventId },
-    include: { form: { include: { fields: { orderBy: { order: "asc" } } } } },
+    select: { form: { select: { schema: true } } },
   });
-  return eventForm?.form.fields ?? [];
+  if (!eventForm) return [];
+  return exportColumns(parseFormSchema(eventForm.form.schema));
 }
 
 /** Reusable form templates for the admin Forms section + the event form picker. */
@@ -74,6 +94,7 @@ export async function getFormTemplate(id: string) {
 
 export async function createFormTemplate(data: FormTemplateInput) {
   const formId = createId();
+  const rows = schemaToRows(data.schema, formId);
   return prisma.$transaction(async (tx) => {
     await tx.form.create({
       data: {
@@ -81,12 +102,11 @@ export async function createFormTemplate(data: FormTemplateInput) {
         name: data.name,
         description: data.description ?? null,
         isTemplate: true,
+        schema: schemaJson(data.schema),
       },
     });
-    if (data.fields.length > 0) {
-      await tx.formField.createMany({
-        data: fieldCreateData(data.fields, formId),
-      });
+    if (rows.length > 0) {
+      await tx.formField.createMany({ data: rows });
     }
     return tx.form.findUnique({
       where: { id: formId },
@@ -103,13 +123,18 @@ export async function updateFormTemplate(id: string, data: FormTemplateInput) {
     });
     if (!existing) throw new Error("Formulario no encontrado");
 
+    const rows = schemaToRows(data.schema, id);
     await tx.form.update({
       where: { id },
-      data: { name: data.name, description: data.description ?? null },
+      data: {
+        name: data.name,
+        description: data.description ?? null,
+        schema: schemaJson(data.schema),
+      },
     });
     await tx.formField.deleteMany({ where: { formId: id } });
-    if (data.fields.length > 0) {
-      await tx.formField.createMany({ data: fieldCreateData(data.fields, id) });
+    if (rows.length > 0) {
+      await tx.formField.createMany({ data: rows });
     }
 
     return tx.form.findUnique({
@@ -129,8 +154,11 @@ export async function deleteFormTemplate(id: string): Promise<void> {
 }
 
 /**
- * Clones a template into a fresh instance Form (isTemplate=false) with copied fields
- * (new field ids). Runs inside the caller's transaction. Returns the instance form id.
+ * Clones a template into a fresh instance Form (isTemplate=false). The instance is a snapshot: the
+ * template's `schema` is deep-copied with fresh node ids (branching/repeat references remapped), so
+ * later template edits never affect a bound event. The legacy form_fields rows are derived from the
+ * cloned input nodes (flat; visibleWhen has no column — it lives only in the schema).
+ * Runs inside the caller's transaction. Returns the instance form id.
  */
 async function cloneTemplateToInstance(
   tx: Prisma.TransactionClient,
@@ -138,33 +166,35 @@ async function cloneTemplateToInstance(
 ): Promise<string> {
   const template = await tx.form.findFirst({
     where: { id: templateId, isTemplate: true },
-    include: { fields: { orderBy: { order: "asc" } } },
   });
   if (!template) throw new Error("Formulario no encontrado");
 
   const instanceId = createId();
+  const schema = cloneSchemaWithNewIds(parseFormSchema(template.schema));
   await tx.form.create({
     data: {
       id: instanceId,
       name: template.name,
       description: template.description,
       isTemplate: false,
+      schema: schemaJson(schema),
     },
   });
-  if (template.fields.length > 0) {
-    await tx.formField.createMany({
-      data: template.fields.map((f) => ({
-        id: createId(),
-        formId: instanceId,
-        order: f.order,
-        type: f.type,
-        label: f.label,
-        placeholder: f.placeholder,
-        required: f.required,
-        options: f.options ?? Prisma.JsonNull,
-        config: f.config ?? Prisma.JsonNull,
-      })),
-    });
+  const rows: Prisma.FormFieldCreateManyInput[] = schema.nodes
+    .filter(isInputNode)
+    .map((n, index) => ({
+      id: n.id,
+      formId: instanceId,
+      order: index,
+      type: n.type as Prisma.FormFieldCreateManyInput["type"],
+      label: n.label,
+      placeholder: n.placeholder ?? null,
+      required: n.required,
+      options: (n.options as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+      config: (n.constraints as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+    }));
+  if (rows.length > 0) {
+    await tx.formField.createMany({ data: rows });
   }
   return instanceId;
 }

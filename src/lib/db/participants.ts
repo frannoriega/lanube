@@ -1,6 +1,15 @@
 import { nowMs } from "@/lib/clock";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
-import { PublicFormField, validateAnswers } from "@/lib/events/answers";
+import { PublicFormField } from "@/lib/events/answers";
+import {
+  type FlatFieldInput,
+  flatFieldsToSchema,
+  parseFormSchema,
+  pruneAnswers,
+  schemaToPublicFields,
+  validateForm,
+} from "@/lib/events/form-engine";
+import type { FormSchema } from "@/lib/events/form-schema";
 import { prisma } from "@/lib/prisma";
 import { createId } from "@paralleldrive/cuid2";
 import { Prisma } from "@/generated/prisma/client";
@@ -12,7 +21,8 @@ export type FormStatus =
   | "unpublished"
   | "not_found";
 
-function toPublicFields(
+interface FormRow {
+  schema: Prisma.JsonValue | null;
   fields: Array<{
     id: string;
     type: string;
@@ -20,16 +30,36 @@ function toPublicFields(
     placeholder: string | null;
     required: boolean;
     options: unknown;
-  }>,
-): PublicFormField[] {
-  return fields.map((f) => ({
+    config?: unknown;
+  }>;
+}
+
+function rowToFlat(f: FormRow["fields"][number]): FlatFieldInput {
+  return {
     id: f.id,
     type: f.type,
     label: f.label,
     placeholder: f.placeholder,
     required: f.required,
     options: Array.isArray(f.options) ? (f.options as string[]) : null,
-  }));
+    constraints: (f.config as FlatFieldInput["constraints"]) ?? null,
+  };
+}
+
+/**
+ * A form's definition, sourced from `schema` (the source of truth). Falls back to the legacy flat
+ * `fields` only if `schema` is null (e.g. a form created by old code during a deploy window before
+ * the backfill/dual-write applied).
+ */
+function formSchema(form: FormRow): FormSchema {
+  return form.schema != null
+    ? parseFormSchema(form.schema)
+    : flatFieldsToSchema(form.fields.map(rowToFlat));
+}
+
+/** Flat participant-facing field list for the renderer. */
+function formFields(form: FormRow): PublicFormField[] {
+  return schemaToPublicFields(formSchema(form));
 }
 
 async function resolveCapacity(event: {
@@ -48,6 +78,8 @@ export interface PublicFormView {
   eventDescription: string | null;
   eventImageUrl: string | null;
   fields: PublicFormField[];
+  /** Full node tree for the recursive renderer (groups + branching). */
+  schema: FormSchema;
   spotsLeft: number | null;
 }
 
@@ -104,7 +136,8 @@ export async function getPublicForm(
     eventName: eventForm.event.name,
     eventDescription: eventForm.event.description,
     eventImageUrl: eventForm.event.imageUrl,
-    fields: toPublicFields(eventForm.form.fields),
+    fields: formFields(eventForm.form),
+    schema: formSchema(eventForm.form),
     spotsLeft,
   };
 }
@@ -167,15 +200,12 @@ export async function submitForm(
     if (capacity > 0 && eventForm.event._count.participants >= capacity)
       return { ok: false, status: "full" };
 
-    const fields = toPublicFields(eventForm.form.fields);
-    const { ok, errors } = validateAnswers(fields, answers);
+    const schema = formSchema(eventForm.form);
+    const { ok, errors } = validateForm(schema, answers);
     if (!ok) return { ok: false, errors };
 
-    // Keep only known field answers.
-    const cleaned: Record<string, unknown> = {};
-    for (const f of fields) {
-      if (answers[f.id] !== undefined) cleaned[f.id] = answers[f.id];
-    }
+    // Drop answers for hidden branches + unknown fields.
+    const cleaned = pruneAnswers(schema, answers);
 
     const existing = await tx.eventParticipant.findUnique({
       where: { eventId_email: { eventId: eventForm.event.id, email } },
@@ -230,6 +260,7 @@ export async function getParticipantByToken(token: string) {
             select: {
               form: {
                 select: {
+                  schema: true,
                   fields: { orderBy: { order: "asc" } },
                 },
               },
@@ -245,7 +276,10 @@ export async function getParticipantByToken(token: string) {
     eventName: participant.event.name,
     eventDescription: participant.event.description,
     eventImageUrl: participant.event.imageUrl,
-    fields: instance ? toPublicFields(instance.fields) : [],
+    fields: instance ? formFields(instance) : [],
+    schema: instance
+      ? formSchema(instance)
+      : { version: 1 as const, nodes: [] },
     answers: participant.answers as Record<string, unknown>,
     cancelled: participant.cancelled,
     displayEmail: participant.displayEmail,
@@ -263,7 +297,12 @@ export async function updateParticipantAnswers(
         select: {
           form: {
             select: {
-              form: { select: { fields: { orderBy: { order: "asc" } } } },
+              form: {
+                select: {
+                  schema: true,
+                  fields: { orderBy: { order: "asc" } },
+                },
+              },
             },
           },
         },
@@ -274,16 +313,13 @@ export async function updateParticipantAnswers(
   if (participant.cancelled)
     return { ok: false, message: "Inscripción cancelada" };
 
-  const fields = participant.event.form?.form
-    ? toPublicFields(participant.event.form.form.fields)
-    : [];
-  const { ok, errors } = validateAnswers(fields, answers);
+  const schema = participant.event.form?.form
+    ? formSchema(participant.event.form.form)
+    : { version: 1 as const, nodes: [] };
+  const { ok, errors } = validateForm(schema, answers);
   if (!ok) return { ok: false, errors };
 
-  const cleaned: Record<string, unknown> = {};
-  for (const f of fields) {
-    if (answers[f.id] !== undefined) cleaned[f.id] = answers[f.id];
-  }
+  const cleaned = pruneAnswers(schema, answers);
 
   await prisma.eventParticipant.update({
     where: { editToken: token },

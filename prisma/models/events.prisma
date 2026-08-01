@@ -42,6 +42,10 @@ model Form {
   name        String
   description String?
   isTemplate  Boolean     @default(true) @map("is_template")
+  // Source-of-truth form definition as a recursive node tree (see lib/events/form-schema.ts).
+  // Supersedes the flat `fields` relation, which is kept during the transition. Backfilled from
+  // form_fields in migration 20260731000000; created/updated/cloned forms keep it in sync.
+  schema      Json?
   createdAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt   BigInt      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   fields      FormField[]

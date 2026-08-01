@@ -1,5 +1,16 @@
-import { FormFieldType } from "@/types/prisma";
+import { validateScalar } from "@/lib/events/form-engine";
+import type {
+  Condition,
+  FieldConstraints,
+  FieldType,
+} from "@/lib/events/form-schema";
 
+/**
+ * Flat, participant-facing view of a form field — a projection of an `InputNode` (from the schema)
+ * used by the current flat renderer + client validation. Per-field validation delegates to the
+ * engine's `validateScalar`, so there is exactly one implementation of the rules.
+ * (form-engine only *type*-imports PublicFormField, so this import is not a runtime cycle.)
+ */
 export interface PublicFormField {
   id: string;
   type: string;
@@ -7,18 +18,9 @@ export interface PublicFormField {
   placeholder?: string | null;
   required: boolean;
   options?: string[] | null;
-}
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-const PHONE_RE = /^[+]?[\d\s()-]{6,20}$/;
-const DNI_RE = /^\d{7,9}$/;
-
-function isEmpty(value: unknown): boolean {
-  if (value === undefined || value === null) return true;
-  if (typeof value === "string") return value.trim() === "";
-  if (Array.isArray(value)) return value.length === 0;
-  return false;
+  constraints?: FieldConstraints | null;
+  /** Shown only when this condition over earlier answers holds (omitted = always visible). */
+  visibleWhen?: Condition | null;
 }
 
 /** Validates one answer against its field. Returns an error message, or null if valid. */
@@ -26,54 +28,19 @@ export function validateAnswer(
   field: PublicFormField,
   value: unknown,
 ): string | null {
-  if (isEmpty(value)) {
-    return field.required ? "Este campo es obligatorio" : null;
-  }
-
-  switch (field.type) {
-    case FormFieldType.SHORT_TEXT:
-    case FormFieldType.LONG_TEXT:
-      return typeof value === "string" ? null : "Valor inválido";
-
-    case FormFieldType.NUMBER:
-      return Number.isFinite(Number(value)) ? null : "Debe ser un número";
-
-    case FormFieldType.DATE:
-      return typeof value === "string" && DATE_RE.test(value)
-        ? null
-        : "Fecha inválida";
-
-    case FormFieldType.TIME:
-      return typeof value === "string" && TIME_RE.test(value)
-        ? null
-        : "Hora inválida";
-
-    case FormFieldType.PHONE:
-      return typeof value === "string" && PHONE_RE.test(value.trim())
-        ? null
-        : "Teléfono inválido";
-
-    case FormFieldType.DNI:
-      return typeof value === "string" && DNI_RE.test(value.trim())
-        ? null
-        : "DNI inválido";
-
-    case FormFieldType.SINGLE_SELECT:
-      return typeof value === "string" && (field.options ?? []).includes(value)
-        ? null
-        : "Opción inválida";
-
-    case FormFieldType.MULTI_SELECT: {
-      if (!Array.isArray(value)) return "Selección inválida";
-      const allowed = new Set(field.options ?? []);
-      return value.every((v) => typeof v === "string" && allowed.has(v))
-        ? null
-        : "Selección inválida";
-    }
-
-    default:
-      return "Tipo de campo desconocido";
-  }
+  return validateScalar(
+    {
+      kind: "input",
+      id: field.id,
+      type: field.type as FieldType,
+      label: field.label,
+      placeholder: field.placeholder ?? null,
+      required: field.required,
+      options: field.options ?? null,
+      constraints: field.constraints ?? null,
+    },
+    value,
+  );
 }
 
 export interface AnswerValidationResult {
