@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
-import { getEventFormFields } from "@/lib/db/forms";
+import { getEventFormColumns } from "@/lib/db/forms";
+import { exportCell } from "@/lib/events/form-export";
 import { listEventParticipants } from "@/lib/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
@@ -7,12 +8,6 @@ import { NextRequest, NextResponse } from "next/server";
 function csvCell(value: string): string {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
-}
-
-function answerToString(value: unknown): string {
-  if (value === undefined || value === null) return "";
-  if (Array.isArray(value)) return value.join("; ");
-  return String(value);
 }
 
 export async function GET(
@@ -23,9 +18,9 @@ export async function GET(
   if (error) return error;
 
   const { id } = await params;
-  const [participants, fields] = await Promise.all([
+  const [participants, columns] = await Promise.all([
     listEventParticipants(id),
-    getEventFormFields(id),
+    getEventFormColumns(id),
   ]);
 
   const { searchParams } = new URL(request.url);
@@ -34,7 +29,7 @@ export async function GET(
       "Email",
       "Email mostrado",
       "Cancelado",
-      ...fields.map((f) => f.label),
+      ...columns.map((c) => c.label),
     ];
     const lines = [header.map(csvCell).join(",")];
     for (const p of participants) {
@@ -43,7 +38,7 @@ export async function GET(
         p.email,
         p.displayEmail ?? "",
         p.cancelled ? "sí" : "no",
-        ...fields.map((f) => answerToString(answers[f.id])),
+        ...columns.map((c) => exportCell(c, answers)),
       ];
       lines.push(row.map(csvCell).join(","));
     }
@@ -57,7 +52,7 @@ export async function GET(
 
   return NextResponse.json(
     serializeJson({
-      fields: fields.map((f) => ({ id: f.id, label: f.label })),
+      fields: columns.map((c) => ({ id: c.key, label: c.label })),
       participants,
     }),
   );
