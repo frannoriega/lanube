@@ -486,6 +486,8 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
 4. **Raw SQL**: `prisma.$queryRaw` / `prisma.$executeRaw` (see `src/lib/db/reservations.ts` for examples)
 5. **Attach Node debugger** (Docker): VS Code/Cursor → F5 → "Next.js: attach (Docker, port 9229)"
 6. **Log BigInt**: `BigInt(timestamp).toString()` — `JSON.stringify` will throw on BigInt values
+7. **After a Prisma schema change** (local Docker): run `npm run db:generate`, then **restart the app container** (`docker restart lanube-app`) — the running dev server caches the old client, so new columns/enums throw `Unknown field …` until it reloads. Vercel builds regenerate the client fresh, so this only affects local dev.
+8. **Applying migrations locally**: `npm run db:migrate` (`prisma migrate dev`) **hangs** on this repo — it prompts about re-adding the dropped polymorphic `reservable_id` FK. Use `npx prisma migrate deploy` (a.k.a. `npm run db:migrate:deploy`) to apply pending migrations non-interactively; the build (`npm run build`) already uses `migrate deploy`.
 
 ## graphify
 
