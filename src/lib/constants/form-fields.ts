@@ -5,7 +5,6 @@ import {
   CheckSquare,
   Clock,
   DollarSign,
-  Hash,
   IdCard,
   List,
   ListChecks,
@@ -21,7 +20,6 @@ import {
 export const FIELD_TYPE_LABELS: Record<string, string> = {
   SHORT_TEXT: "Texto corto",
   LONG_TEXT: "Párrafo",
-  NUMBER: "Número",
   INTEGER: "Número entero",
   FLOAT: "Número decimal",
   MONEY: "Monto ($)",
@@ -39,7 +37,6 @@ export const FIELD_TYPE_LABELS: Record<string, string> = {
 export const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   SHORT_TEXT: Type,
   LONG_TEXT: AlignLeft,
-  NUMBER: Hash,
   INTEGER: Sigma,
   FLOAT: Ratio,
   MONEY: DollarSign,
@@ -65,7 +62,6 @@ export const SELECT_FIELD_TYPES: string[] = [
 
 /** Numeric field types that accept min/max constraints (need a constraints editor). */
 export const NUMERIC_FIELD_TYPES: string[] = [
-  FormFieldType.NUMBER,
   FormFieldType.INTEGER,
   FormFieldType.FLOAT,
   FormFieldType.MONEY,

@@ -200,11 +200,6 @@ export function validateScalar(node: InputNode, value: unknown): string | null {
     case "LONG_TEXT":
       return typeof value === "string" ? null : "Valor inválido";
 
-    case "NUMBER":
-      return Number.isFinite(toNumber(value))
-        ? numericConstraint(node.constraints, toNumber(value))
-        : "Debe ser un número";
-
     case "INTEGER": {
       const n = toNumber(value);
       if (!Number.isFinite(n)) return "Debe ser un número";
