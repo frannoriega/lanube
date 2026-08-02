@@ -69,6 +69,8 @@ enum FormFieldType {
   TIME
   PHONE
   DNI
+  FILE
+  BOOLEAN
 
   @@map("form_field_types")
 }

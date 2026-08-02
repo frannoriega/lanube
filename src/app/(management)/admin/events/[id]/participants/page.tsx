@@ -1,15 +1,7 @@
+import { ParticipantsTable } from "@/components/organisms/admin/participants-table";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getEvent } from "@/lib/db/events";
 import { getEventFormColumns } from "@/lib/db/forms";
-import { exportCell } from "@/lib/events/form-export";
 import { listEventParticipants } from "@/lib/db/participants";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -28,6 +20,15 @@ export default async function ParticipantsPage({
     getEventFormColumns(id),
   ]);
   const active = participants.filter((p) => !p.cancelled);
+
+  const rows = participants.map((p) => ({
+    id: p.id,
+    email: p.email,
+    displayEmail: p.displayEmail,
+    cancelled: p.cancelled,
+    createdAt: Number(p.createdAt),
+    answers: (p.answers ?? {}) as Record<string, unknown>,
+  }));
 
   return (
     <div className="space-y-6">
@@ -53,37 +54,7 @@ export default async function ParticipantsPage({
       {participants.length === 0 ? (
         <p className="text-muted-foreground">Todavía no hay inscriptos.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                {columns.map((c) => (
-                  <TableHead key={c.key}>{c.label}</TableHead>
-                ))}
-                <TableHead>Estado</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {participants.map((p) => {
-                const answers = (p.answers ?? {}) as Record<string, unknown>;
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell>{p.displayEmail ?? p.email}</TableCell>
-                    {columns.map((c) => (
-                      <TableCell key={c.key}>
-                        {exportCell(c, answers) || "—"}
-                      </TableCell>
-                    ))}
-                    <TableCell>
-                      {p.cancelled ? "Cancelado" : "Activo"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <ParticipantsTable eventId={id} columns={columns} rows={rows} />
       )}
     </div>
   );
