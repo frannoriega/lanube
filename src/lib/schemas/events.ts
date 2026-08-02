@@ -57,6 +57,16 @@ export const eventInputSchema = z
         message: "La descripción debe tener al menos 100 caracteres",
       })
       .max(2000),
+    // Short plain-text blurb for landing/event cards (empty string → stored as null at the DB layer).
+    summary: z
+      .string()
+      .trim()
+      .max(200, { message: "El resumen no puede superar los 200 caracteres" })
+      .optional()
+      .nullable(),
+    // Featured events lead the landing section; featuredOrder sorts them (ascending).
+    isFeatured: z.boolean(),
+    featuredOrder: z.number().int().min(0),
     // Code of a ReservationType row; existence is validated server-side (FK).
     eventType: z.string().trim().min(1, { message: "Elegí un tipo de evento" }),
     // Lifecycle state set by the admin. ENDED is derived, so it's not a valid input.

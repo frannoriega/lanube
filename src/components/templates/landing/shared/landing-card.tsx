@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 export interface LandingCardData {
@@ -12,12 +13,19 @@ export interface LandingCardData {
 export function LandingCard({
   data,
   children,
+  className,
 }: {
   data?: LandingCardData;
   children?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <article className="group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 focus-within:ring-2 focus-within:ring-la-nube-primary hover:-translate-y-1 hover:border-la-nube-primary hover:shadow-md">
+    <article
+      className={cn(
+        "group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 focus-within:ring-2 focus-within:ring-la-nube-primary hover:-translate-y-1 hover:border-la-nube-primary hover:shadow-md",
+        className,
+      )}
+    >
       {children}
       {/* Full-card link — last in DOM so it stacks above the cover, captured by z-[2] CTA above */}
       {data && (

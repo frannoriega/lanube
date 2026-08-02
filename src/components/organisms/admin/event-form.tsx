@@ -37,6 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/hooks/use-api";
 import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
@@ -98,6 +100,9 @@ export interface EventFormBindingDefaults {
 export interface EventFormDefaults {
   name: string;
   description: string;
+  summary: string;
+  isFeatured: boolean;
+  featuredOrder: number;
   eventType: string;
   status: string;
   spaceId: string;
@@ -114,6 +119,9 @@ export interface EventFormDefaults {
 const EMPTY_DEFAULTS: EventInput = {
   name: "",
   description: "",
+  summary: "",
+  isFeatured: false,
+  featuredOrder: 0,
   eventType: "",
   status: EventStatus.DRAFT,
   spaceId: "",
@@ -305,6 +313,33 @@ export function EventForm({
 
           <FormField
             control={control}
+            name="summary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Resumen (opcional)</FormLabel>
+                <FormDescription>
+                  Texto corto que se muestra en las tarjetas del inicio. Sin
+                  formato. Si lo dejás vacío, la tarjeta no muestra descripción.
+                </FormDescription>
+                <FormControl>
+                  <Textarea
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                    rows={2}
+                    maxLength={200}
+                    placeholder="Ej.: Aprendé a modelar e imprimir tus propias piezas en 3D."
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
             name="imageUrl"
             render={({ field }) => (
               <FormItem>
@@ -351,6 +386,59 @@ export function EventForm({
               </FormItem>
             )}
           />
+
+          <div className="space-y-4 rounded-md border p-4">
+            <FormField
+              control={control}
+              name="isFeatured"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between gap-4 space-y-0">
+                  <div className="space-y-1">
+                    <FormLabel>Destacar en el inicio</FormLabel>
+                    <FormDescription>
+                      Los eventos destacados encabezan la sección de eventos con
+                      mayor protagonismo.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {watch("isFeatured") && (
+              <FormField
+                control={control}
+                name="featuredOrder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Orden entre destacados</FormLabel>
+                    <FormDescription>
+                      Menor número aparece primero (0, 1, 2…).
+                    </FormDescription>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={field.value ?? 0}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === "" ? 0 : Number(e.target.value),
+                          )
+                        }
+                        className="max-w-32"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField

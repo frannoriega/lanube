@@ -66,7 +66,7 @@ src/
 │   │   ├── auth/                 # Sign-in, sign-up, password reset, magic-link
 │   │   ├── user/                 # Logged-in user pages
 │   │   │   ├── dashboard/        # User dashboard with stats
-│   │   │   ├── coworking/lab/auditorium/meeting-room/  # Reservation booking UIs
+│   │   │   ├── spaces/[slug]/       # Reservation booking UI (dynamic; resolves Space by slug)
 │   │   │   └── settings/         # User profile configuration
 │   │   ├── admin/                # Admin-only section (guards by role in middleware)
 │   │   │   ├── dashboard/        # Admin overview
@@ -171,7 +171,7 @@ src/
 - `ReservationException`: Overrides for a single occurrence of a recurring reservation
 - `ReservationLedger`: Expanded bookings by 15-min bucket (used for capacity/availability checks)
 - `CheckIn`: User entry/exit records (linked to reservation)
-- `Space`: Reservable space (coworking, lab, auditorium, meeting room) with capacity/exclusive/reservable flags — superadmin CRUD at `/admin/spaces`
+- `Space`: Reservable space (coworking, lab, auditorium, meeting room) with capacity/exclusive/reservable flags — superadmin CRUD at `/admin/spaces`. Booking UI is the single dynamic route `/user/spaces/[slug]` (resolves the Space by its editable `slug`; 404s if missing or not reservable) — there are no per-space hardcoded folders. The user sidebar's space links are built from `getReservableSpaces()` in the user layout and passed to `ManagementLayout` (`spaceNav`), so a renamed/added space stays in sync automatically.
 - `Resource`: Physical equipment inventory (superadmin CRUD at `/admin/resources`)
 - `ReservationType`: Catalog of reservation/event types (was the `event_types` Postgres enum). `code` is the stable identifier stored on `Event.eventType` / `Reservation.eventType` (text FK, `ON UPDATE CASCADE`, delete restricted while in use); `name` is the display name. Superadmin CRUD at `/admin/reservation-types`; public read at `GET /api/reservation-types`. Migration `20260706110000` seeded MEETING/WORKSHOP/CONFERENCE/OTHER and recreated the SQL functions with `text` params.
 - `Ban`: User suspension record (time-bounded)
@@ -404,10 +404,22 @@ An event's description is **markdown**, required (min 100 chars), authored with 
 remark-gfm only — raw HTML is **not** parsed (react-markdown escapes it) and URLs are sanitized
 by react-markdown's default transform, so admin-authored content is safe to show publicly.
 
+### Event card summary + featured
+
+- `Event.summary` (nullable, ≤200 chars, plain text) is the blurb shown on landing/event cards.
+  The markdown `description` is for the detail page only — cards render `summary` (never raw
+  markdown; empty → no blurb). Authored via the "Resumen" field in the event form.
+- `Event.isFeatured` + `Event.featuredOrder` (migration `20260801100000`) mark events that lead
+  the landing "Próximos eventos" section. Featured events sort first (`isFeatured desc`,
+  `featuredOrder asc`, then `startTime desc`) and render in a distinct emphasized row (ring +
+  "Destacado" star badge) above the normal grid (`EventsSection` splits featured vs rest; the
+  `EventCard` `featured` prop drives the emphasis). Set via the "Destacar en el inicio" switch.
+
 ### Landing "Próximos eventos"
 
 `getUpcomingPublicEvents()` (public, auth-free) returns events whose last occurrence hasn't
-passed, newest start first. The landing `EventsSection` (`templates/landing/events/`) renders
+passed, newest start first. Featured events lead (see above); the section renders right after
+the hero on the landing. The landing `EventsSection` (`templates/landing/events/`) renders
 them in a dependency-free scroll-snap `EventsCarousel`; the **section returns `null` when
 there are none** (no empty placeholder). Cards link to `/forms/[slug]` when registration is
 open. The public `/forms` shell (`app/forms/layout.tsx`) is its own branded, chrome-light
