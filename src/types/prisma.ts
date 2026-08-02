@@ -89,4 +89,6 @@ export enum FormFieldType {
   TIME = "TIME",
   PHONE = "PHONE",
   DNI = "DNI",
+  FILE = "FILE",
+  BOOLEAN = "BOOLEAN",
 }

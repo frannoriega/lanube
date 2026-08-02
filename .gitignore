@@ -44,3 +44,4 @@ next-env.d.ts
 
 # Local dev uploads (LocalStorage provider)
 /public/uploads/
+/.private-uploads/

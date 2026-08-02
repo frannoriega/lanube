@@ -295,6 +295,7 @@ export function EventForm({
                     minLength={100}
                     maxLength={2000}
                     placeholder="Contá de qué se trata el evento. Usá la barra de formato para resaltar lo importante."
+                    uploadUrl={`/api/admin/events/attachment${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
                   />
                 </FormControl>
                 <FormMessage />

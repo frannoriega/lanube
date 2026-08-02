@@ -19,17 +19,38 @@ export interface StorageUploadInput {
   folder?: string[];
   /** Original filename — used to derive an extension. */
   filename: string;
+  /**
+   * Access level. "public" (default) → the returned url is directly fetchable. "private" →
+   * the url requires authentication; retrieve the bytes server-side via `fetchPrivate`. Used for
+   * participant-uploaded form files, which must never be publicly linkable.
+   */
+  access?: "public" | "private";
 }
 
 export interface StorageUploadResult {
-  /** Publicly accessible URL for the stored asset. */
+  /**
+   * Locator for the stored asset. For public uploads it's a directly-fetchable URL; for private
+   * uploads it's an opaque handle only `fetchPrivate` (same provider) knows how to read.
+   */
   url: string;
+}
+
+/** A private asset's bytes + metadata, streamed back through an authenticated route. */
+export interface PrivateFetchResult {
+  stream: ReadableStream<Uint8Array>;
+  contentType: string | null;
+  size: number | null;
 }
 
 export interface StorageProvider {
   upload(input: StorageUploadInput): Promise<StorageUploadResult>;
   /** Best-effort deletion of a previously uploaded asset by its URL. */
   remove(url: string): Promise<void>;
+  /**
+   * Streams a private asset previously stored with `access: "private"`. Returns null when the
+   * asset is missing or the url isn't one this provider produced. Callers must authorize first.
+   */
+  fetchPrivate(url: string): Promise<PrivateFetchResult | null>;
 }
 
 /** Lowercased, filesystem/URL-safe version of an uploaded filename. */
