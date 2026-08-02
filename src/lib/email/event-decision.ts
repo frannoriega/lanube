@@ -1,6 +1,7 @@
 "use server";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { logger } from "@/lib/logger";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -116,7 +117,10 @@ export async function notifyParticipantsDecision(
       if (info.rejected.length > 0) failed++;
       else sent++;
     } catch (error) {
-      console.error("Error al notificar decisión a participante", to, error);
+      logger.warn("participant decision notification failed", {
+        to,
+        error: error instanceof Error ? error.message : String(error),
+      });
       failed++;
     }
   }

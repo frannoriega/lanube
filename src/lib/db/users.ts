@@ -1,5 +1,6 @@
 /** User profile helpers */
 import { now, nowMs } from "@/lib/clock";
+import { DomainError } from "@/lib/errors";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -277,7 +278,7 @@ export async function updateRegisteredUserProfileByEmail(
   });
 
   if (!currentUser) {
-    throw new Error("Usuario no encontrado");
+    throw new DomainError("Usuario no encontrado", 404);
   }
 
   // If DNI provided, ensure unique per user (skip same user)
@@ -294,7 +295,7 @@ export async function updateRegisteredUserProfileByEmail(
       select: { id: true },
     });
     if (existing) {
-      throw new Error("DNI ya registrado por otro usuario");
+      throw new DomainError("DNI ya registrado por otro usuario", 409);
     }
   }
 

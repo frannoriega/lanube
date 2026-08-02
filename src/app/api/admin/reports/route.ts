@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { isAdminByEmail } from "@/lib/db/adminStats";
 import { getReportForRange } from "@/lib/db/adminReports";
 import { NextRequest, NextResponse } from "next/server";
+import { apiServerError } from "@/lib/api/response";
 
 const MAX_RANGE_MS = 366 * 24 * 60 * 60 * 1000;
 
@@ -86,10 +87,7 @@ export async function GET(request: NextRequest) {
       compareToMs,
     );
     return NextResponse.json(report);
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("admin/reports", error);
   }
 }
