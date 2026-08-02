@@ -29,19 +29,19 @@ describe("notifyEventParticipantsBatch", () => {
         email: "a@x.com",
         displayEmail: "a@x.com",
         editToken: "t1",
-        cancelled: false,
+        status: "APPROVED",
       },
       {
         email: "b@x.com",
         displayEmail: "b@x.com",
         editToken: "t2",
-        cancelled: false,
+        status: "PENDING",
       },
       {
         email: "c@x.com",
         displayEmail: "c@x.com",
         editToken: "t3",
-        cancelled: true,
+        status: "CANCELLED",
       },
     ]);
 

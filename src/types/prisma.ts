@@ -76,6 +76,13 @@ export enum ReservationStatus {
   CANCELLED = "CANCELLED",
 }
 
+export enum ParticipantStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED",
+}
+
 export enum FormFieldType {
   SHORT_TEXT = "SHORT_TEXT",
   LONG_TEXT = "LONG_TEXT",

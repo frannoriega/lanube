@@ -1,5 +1,6 @@
 import { PublicForm } from "@/components/organisms/forms/public-form";
 import { getParticipantByToken } from "@/lib/db/participants";
+import { ParticipantStatus } from "@/types/prisma";
 
 export default async function ResponsePage({
   params,
@@ -18,7 +19,8 @@ export default async function ResponsePage({
     );
   }
 
-  if (participant.cancelled) {
+  // Terminal states can't be edited — show a status message instead of the form.
+  if (participant.status === ParticipantStatus.CANCELLED) {
     return (
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">{participant.eventName}</h1>
@@ -29,16 +31,41 @@ export default async function ResponsePage({
     );
   }
 
+  if (participant.status === ParticipantStatus.REJECTED) {
+    return (
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold">{participant.eventName}</h1>
+        <p className="text-muted-foreground">
+          Lamentablemente no pudimos confirmar tu lugar en este evento.
+        </p>
+        {participant.decisionReason && (
+          <p className="text-muted-foreground">
+            <strong>Motivo:</strong> {participant.decisionReason}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <PublicForm
-      mode="edit"
-      token={token}
-      eventName={participant.eventName}
-      eventDescription={participant.eventDescription}
-      eventImageUrl={participant.eventImageUrl}
-      schema={participant.schema}
-      initialEmail={participant.displayEmail ?? ""}
-      initialAnswers={participant.answers}
-    />
+    <div className="space-y-4">
+      {participant.status === ParticipantStatus.PENDING && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+          Tu inscripción está <strong>pendiente de aprobación</strong>.
+          Inscribirte no garantiza tu lugar; te avisaremos por email cuando sea
+          revisada.
+        </div>
+      )}
+      <PublicForm
+        mode="edit"
+        token={token}
+        eventName={participant.eventName}
+        eventDescription={participant.eventDescription}
+        eventImageUrl={participant.eventImageUrl}
+        schema={participant.schema}
+        initialEmail={participant.displayEmail ?? ""}
+        initialAnswers={participant.answers}
+      />
+    </div>
   );
 }

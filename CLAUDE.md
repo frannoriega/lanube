@@ -191,6 +191,9 @@ src/
 - `EventParticipant`: A registration, keyed by **normalized email** per event
   (`@@unique([eventId, email])`), with `displayEmail`, a tokenized `editToken` (edit/cancel
   without an account), and a nullable `userId` linked if the participant later registers.
+  A `ParticipantStatus` enum (PENDING/APPROVED/REJECTED/CANCELLED) drives the lifecycle
+  (replaced the old `cancelled` boolean); `decisionReason`/`decidedAt` record an admin's
+  approve/reject. See "Participant approval" below.
 - `Incident`, `IncidentUser`: Incident tracking
 - `Proposal`, `ProposalComment`, `ProposalLike`: Suggestions system
 - `Inventory`, `PurchaseOrder`: Stock management
@@ -403,6 +406,36 @@ An event's description is **markdown**, required (min 100 chars), authored with 
 (`molecules/markdown.tsx`) on the public form (`EventHero`). `Markdown` uses react-markdown +
 remark-gfm only — raw HTML is **not** parsed (react-markdown escapes it) and URLs are sanitized
 by react-markdown's default transform, so admin-authored content is safe to show publicly.
+
+### Participant approval
+
+`Event.requiresApproval` (migration `20260801200000`) toggles per-event whether registrations
+are auto-approved (default `false`) or filtered by an admin.
+
+- **Status model:** `EventParticipant.status` is a `ParticipantStatus` enum
+  (PENDING/APPROVED/REJECTED/CANCELLED) that **replaced the `cancelled` boolean**. PENDING is
+  admin-awaiting; APPROVED is in; REJECTED is admin-declined; CANCELLED is self-cancelled.
+- **The one capacity rule:** a participant "holds a spot" (counts toward capacity/cupo) while
+  **PENDING or APPROVED** — `SPOT_HOLDING_STATUSES` in `src/lib/constants/participants.ts`, used
+  by _every_ count (`getPublicForm`, `submitForm`, `resourceCalendar`, the landing/event cards).
+  So for auto events it equals the old `cancelled=false` count; for manual events the cupo caps
+  **registrations**, not the final approved headcount. Don't reintroduce ad-hoc status filters —
+  reuse `SPOT_HOLDING_STATUSES`.
+- **Registration (`submitForm`):** initial status is PENDING when `requiresApproval`, else
+  APPROVED. Re-registering a REJECTED/CANCELLED row reactivates it (clears the prior decision).
+  The confirmation email (`event-registration.ts`) has a manual-approval variant reinforcing
+  "inscribirte no garantiza tu lugar"; the public form + submitted screen show the same notice.
+- **Admin decisions:** the participants table (`participants-table.tsx`) shows a status column;
+  for manual events it adds row checkboxes + a bulk **Aprobar/Rechazar** bar → a confirm dialog
+  (lists the selected people, optional shared reason, type-**APROBAR**/**RECHAZAR** to arm).
+  `POST /api/admin/events/[id]/participants/decision` → `decideParticipants()` (scoped to the
+  event; approve touches only PENDING, reject touches PENDING+APPROVED — so approving never
+  re-emails the already-approved). **Emails send after the write commits** via
+  `notifyParticipantsDecision` (`event-decision.ts`): approval = "you're in"; rejection = the
+  reason if given, else a neutral generic message. Same synchronous fan-out caveat as
+  `notifyEventParticipantsBatch` (TODO(scale) at ~100+ recipients).
+- **Not supported yet:** re-approving a REJECTED participant in place (freeing→re-occupying a
+  spot needs a capacity recheck); they re-register instead.
 
 ### Event card summary + featured
 

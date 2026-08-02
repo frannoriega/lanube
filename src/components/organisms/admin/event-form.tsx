@@ -112,6 +112,7 @@ export interface EventFormDefaults {
   startTime: string;
   endTime: string;
   capacity: number | null;
+  requiresApproval: boolean;
   imageUrl: string | null;
   form: EventFormBindingDefaults | null;
 }
@@ -131,6 +132,7 @@ const EMPTY_DEFAULTS: EventInput = {
   startTime: "10:00",
   endTime: "13:00",
   capacity: null,
+  requiresApproval: false,
   imageUrl: null,
   form: null,
 };
@@ -610,6 +612,29 @@ export function EventForm({
                   />
                 </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="requiresApproval"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between gap-4 space-y-0 rounded-md border p-4">
+                <div className="space-y-1">
+                  <FormLabel>Requiere aprobación</FormLabel>
+                  <FormDescription>
+                    Las inscripciones quedan pendientes hasta que las apruebes o
+                    rechaces. El cupo limita cuántas personas pueden inscribirse
+                    (los aprobados pueden ser menos).
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
               </FormItem>
             )}
           />
