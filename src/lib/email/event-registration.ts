@@ -18,6 +18,8 @@ export async function sendEventRegistrationEmail(
   email: string,
   eventName: string,
   editToken: string,
+  /** Manual-approval events: reinforce that registering doesn't guarantee a spot. */
+  requiresApproval = false,
 ): Promise<{ success: boolean; error?: string }> {
   const baseUrl =
     process.env.NEXTAUTH_URL ??
@@ -27,11 +29,25 @@ export async function sendEventRegistrationEmail(
   const logoUrl =
     "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
+  const subject = requiresApproval
+    ? `Inscripción recibida: ${eventName} - La Nube`
+    : `Inscripción confirmada: ${eventName} - La Nube`;
+  const heading = requiresApproval
+    ? "¡Inscripción recibida!"
+    : "¡Inscripción confirmada!";
+  const intro = requiresApproval
+    ? `Recibimos tu inscripción a <strong>${eventName}</strong>. Este evento tiene cupos
+       limitados y las inscripciones están sujetas a aprobación, así que
+       <strong>inscribirte no garantiza tu lugar</strong>. Te avisaremos por email cuando
+       tu inscripción sea revisada. Mientras tanto, podés editarla o cancelarla:`
+    : `Te inscribiste a <strong>${eventName}</strong>. Podés editar o cancelar tu
+       inscripción en cualquier momento con el siguiente botón:`;
+
   try {
     const info = await transporter.sendMail({
       from: FROM_EMAIL,
       to: [email],
-      subject: `Inscripción confirmada: ${eventName} - La Nube`,
+      subject,
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -40,10 +56,9 @@ export async function sendEventRegistrationEmail(
         </div>
 
         <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-          <h2 style="color: #333; margin-top: 0;">¡Inscripción confirmada!</h2>
+          <h2 style="color: #333; margin-top: 0;">${heading}</h2>
           <p style="color: #555; line-height: 1.6;">
-            Te inscribiste a <strong>${eventName}</strong>. Podés editar o cancelar tu
-            inscripción en cualquier momento con el siguiente botón:
+            ${intro}
           </p>
 
           <div style="text-align: center; margin: 30px 0;">

@@ -1,4 +1,5 @@
 import { requirePermission } from "@/lib/api-auth";
+import { PARTICIPANT_STATUS_LABEL } from "@/lib/constants/participants";
 import { getEventFormColumns } from "@/lib/db/forms";
 import {
   cellFiles,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/events/form-export";
 import { listEventParticipants } from "@/lib/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
+import { ParticipantStatus } from "@/types/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 function csvCell(value: string): string {
@@ -56,7 +58,7 @@ export async function GET(
     const header = [
       "Email",
       "Email mostrado",
-      "Cancelado",
+      "Estado",
       ...columns.map((c) => c.label),
     ];
     const lines = [header.map(csvCell).join(",")];
@@ -65,7 +67,7 @@ export async function GET(
       const row = [
         p.email,
         p.displayEmail ?? "",
-        p.cancelled ? "sí" : "no",
+        PARTICIPANT_STATUS_LABEL[p.status as ParticipantStatus],
         ...columns.map((c) => csvValue(c, answers, origin, id)),
       ];
       lines.push(row.map(csvCell).join(","));
