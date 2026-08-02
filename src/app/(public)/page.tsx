@@ -11,12 +11,12 @@ export default function Home() {
       <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
         <HeroSection />
       </Breakout>
-      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
-        <SpacesSection />
-      </Breakout>
-      {/* Hidden automatically when there are no upcoming events. */}
+      {/* Right after the hero; hidden automatically when there are no upcoming events. */}
       <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
         <EventsSection />
+      </Breakout>
+      <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
+        <SpacesSection />
       </Breakout>
       <Breakout className=" odd:bg-transparent even:bg-la-nube-accent/40 dark:even:bg-la-nube-selected/15">
         <MembersSection />

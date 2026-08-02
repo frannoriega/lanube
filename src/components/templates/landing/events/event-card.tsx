@@ -6,7 +6,7 @@ import {
 } from "@/components/molecules/registration-cta";
 import { eventTypeLabel, WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
 import type { RegistrationPhase } from "@/lib/db/events";
-import { MapPin } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import { LandingCard } from "../shared/landing-card";
 
@@ -14,6 +14,9 @@ export interface UpcomingEventCardData {
   id: string;
   name: string;
   description: string | null;
+  /** Short plain-text blurb shown on the card (never raw markdown). */
+  summary: string | null;
+  isFeatured: boolean;
   imageUrl: string | null;
   eventType: string;
   /** Display name of the reservation type (from the catalog table). */
@@ -34,7 +37,15 @@ export interface UpcomingEventCardData {
  * Boarding-pass-style tile for an upcoming event: a cover (image or branded gradient with
  * the event type), a mono date chip, weekday badges, and a single registration CTA.
  */
-export function EventCard({ event }: { event: UpcomingEventCardData }) {
+export function EventCard({
+  event,
+  featured = false,
+}: {
+  event: UpcomingEventCardData;
+  /** Renders the card with featured emphasis (badge + ring). Defaults to the event's own flag. */
+  featured?: boolean;
+}) {
+  const isFeatured = featured || event.isFeatured;
   const cta: RegistrationCtaProps = {
     registration: event.registration,
     formSlug: event.formSlug,
@@ -48,6 +59,11 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
         href: `/events/${event.id}`,
         label: `Ver detalles: ${event.name}`,
       }}
+      className={
+        isFeatured
+          ? "border-la-nube-primary/40 ring-2 ring-la-nube-primary/40 shadow-md"
+          : undefined
+      }
     >
       {/* Cover */}
       <div className="relative">
@@ -61,6 +77,12 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide text-la-nube-selected shadow-sm backdrop-blur dark:bg-slate-950/80 dark:text-la-nube-secondary">
           {event.eventTypeName ?? eventTypeLabel(event.eventType)}
         </span>
+        {isFeatured && (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-la-nube-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            <Star className="h-3 w-3 fill-current" />
+            Destacado
+          </span>
+        )}
         {event.hasExceptions && (
           <span className="absolute right-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-700 shadow-sm backdrop-blur dark:bg-amber-900/80 dark:text-amber-300">
             *
@@ -94,9 +116,9 @@ export function EventCard({ event }: { event: UpcomingEventCardData }) {
           {event.name}
         </h3>
 
-        {event.description && (
+        {event.summary && (
           <p className="line-clamp-2 text-sm text-muted-foreground">
-            {event.description}
+            {event.summary}
           </p>
         )}
 

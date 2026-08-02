@@ -2,6 +2,13 @@ model Event {
   id            String             @id @default(cuid())
   name          String
   description   String?
+  // Short plain-text blurb shown on the landing/event cards (the markdown `description` is
+  // for the detail page). NULL => the card shows no blurb (never raw markdown).
+  summary       String?
+  // Featured events lead the landing "Próximos eventos" section with extra emphasis.
+  // featuredOrder sorts featured events among themselves (ascending); ignored when not featured.
+  isFeatured    Boolean            @default(false) @map("is_featured")
+  featuredOrder Int                @default(0) @map("featured_order")
   location      String?
   // Code of a ReservationType row (FK on `code`, not `id`).
   eventType     String             @map("event_type")
@@ -29,6 +36,7 @@ model Event {
   @@index([spaceId])
   @@index([startTime, endTime])
   @@index([eventType])
+  @@index([isFeatured, featuredOrder])
   @@map("events")
 }
 
