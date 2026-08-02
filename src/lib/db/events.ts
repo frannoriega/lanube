@@ -128,6 +128,9 @@ export async function createEvent(input: EventInput): Promise<Event> {
           id: eventId,
           name: input.name,
           description: input.description ?? null,
+          summary: input.summary?.trim() || null,
+          isFeatured: input.isFeatured ?? false,
+          featuredOrder: input.featuredOrder ?? 0,
           eventType: input.eventType,
           status: input.status,
           spaceId: input.spaceId,
@@ -491,6 +494,9 @@ export async function updateEvent(
         data: {
           name: input.name,
           description: input.description ?? null,
+          summary: input.summary?.trim() || null,
+          isFeatured: input.isFeatured ?? false,
+          featuredOrder: input.featuredOrder ?? 0,
           eventType: input.eventType,
           status: input.status,
           spaceId: input.spaceId,
@@ -834,6 +840,9 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
   return {
     name: event.name,
     description: event.description ?? "",
+    summary: event.summary ?? "",
+    isFeatured: event.isFeatured,
+    featuredOrder: event.featuredOrder,
     eventType: event.eventType,
     status: event.status,
     spaceId: event.spaceId,
@@ -873,6 +882,11 @@ export interface UpcomingEventCard {
   id: string;
   name: string;
   description: string | null;
+  /** Short plain-text blurb for the card (never raw markdown). */
+  summary: string | null;
+  /** Featured events lead the landing section with extra emphasis. */
+  isFeatured: boolean;
+  featuredOrder: number;
   imageUrl: string | null;
   eventType: EventType;
   /** Display name of the reservation type (from the catalog table). */
@@ -912,7 +926,11 @@ export async function getUpcomingPublicEvents(
         { recurrenceEnd: null, endTime: { gte: now } },
       ],
     },
-    orderBy: { startTime: "desc" },
+    orderBy: [
+      { isFeatured: "desc" },
+      { featuredOrder: "asc" },
+      { startTime: "desc" },
+    ],
     take: limit,
     include: {
       space: { select: { name: true, capacity: true } },
@@ -945,6 +963,9 @@ export async function getUpcomingPublicEvents(
       id: e.id,
       name: e.name,
       description: e.description,
+      summary: e.summary,
+      isFeatured: e.isFeatured,
+      featuredOrder: e.featuredOrder,
       imageUrl: e.imageUrl,
       eventType: e.eventType,
       eventTypeName: e.type.name,
@@ -989,7 +1010,11 @@ export async function getUpcomingPublicEventsPage(
   const [rawEvents, total] = await prisma.$transaction([
     prisma.event.findMany({
       where,
-      orderBy: { startTime: "desc" },
+      orderBy: [
+        { isFeatured: "desc" },
+        { featuredOrder: "asc" },
+        { startTime: "desc" },
+      ],
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
@@ -1039,6 +1064,9 @@ export async function getUpcomingPublicEventsPage(
       id: e.id,
       name: e.name,
       description: e.description,
+      summary: e.summary,
+      isFeatured: e.isFeatured,
+      featuredOrder: e.featuredOrder,
       imageUrl: e.imageUrl,
       eventType: e.eventType,
       eventTypeName: e.type.name,

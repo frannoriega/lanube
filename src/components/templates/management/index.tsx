@@ -6,6 +6,7 @@ import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
+import { getSpaceIcon } from "@/lib/constants/spaces";
 import { hasPermission, isAdminRole } from "@/lib/rbac";
 import {
   BarChart3,
@@ -14,12 +15,9 @@ import {
   CalendarDays,
   ChevronDown,
   FileText,
-  FlaskConical,
   LayoutDashboard,
   LucideProps,
   Menu,
-  MessagesSquare,
-  Presentation,
   Settings,
   Shield,
   Tags,
@@ -37,9 +35,18 @@ import {
   useState,
 } from "react";
 
+/** A reservable space's sidebar link, resolved from the DB (icon by name) so slugs always match. */
+export interface SpaceNavItem {
+  name: string;
+  href: string;
+  iconName: string | null;
+}
+
 interface ManagementLayoutProps {
   children: React.ReactNode;
   userType: "user" | "admin";
+  /** DB-driven space links for the user sidebar (ignored for admin). */
+  spaceNav?: SpaceNavItem[];
 }
 
 interface NavigationItem {
@@ -52,31 +59,13 @@ interface NavigationItem {
 }
 
 const navigation: Record<"user" | "admin", NavigationItem[]> = {
+  // Fixed user items. Space links are inserted between these two from the DB (see navItems),
+  // so a superadmin renaming/adding a space is reflected without touching this file.
   user: [
     {
       name: "Panel de control",
       href: "/user/dashboard",
       icon: LayoutDashboard,
-    },
-    {
-      name: "Coworking",
-      href: "/user/coworking",
-      icon: Building2,
-    },
-    {
-      name: "Laboratorio",
-      href: "/user/lab",
-      icon: FlaskConical,
-    },
-    {
-      name: "Auditorio",
-      href: "/user/auditorium",
-      icon: Presentation,
-    },
-    {
-      name: "Sala de reuniones",
-      href: "/user/meeting-room",
-      icon: MessagesSquare,
     },
     {
       name: "Mis eventos",
@@ -108,6 +97,7 @@ const configNavigation: NavigationItem = {
 export default function ManagementLayout({
   children,
   userType,
+  spaceNav = [],
 }: ManagementLayoutProps) {
   const user = useUser();
   const pathname = usePathname();
@@ -201,12 +191,21 @@ export default function ManagementLayout({
   };
 
   const navItems = useMemo(() => {
-    if (userType !== "admin") return navigation.user;
+    if (userType !== "admin") {
+      const spaceItems: NavigationItem[] = spaceNav.map((s) => ({
+        name: s.name,
+        href: s.href,
+        icon: getSpaceIcon(s.iconName ?? ""),
+      }));
+      // Panel de control · reservable spaces (from DB) · Mis eventos.
+      const [panel, ...tail] = navigation.user;
+      return [panel, ...spaceItems, ...tail];
+    }
     const canConfigure = hasPermission(user?.role, "spaces:manage");
     return canConfigure
       ? [...navigation.admin, configNavigation]
       : navigation.admin;
-  }, [userType, user?.role]);
+  }, [userType, user?.role, spaceNav]);
 
   if (!user) {
     return <ManagementLayoutSkeleton />;

@@ -9,6 +9,8 @@ export default async function EventsSection() {
   if (total === 0) return null;
 
   const hasAsterisk = events.some((e) => e.hasExceptions);
+  const featured = events.filter((e) => e.isFeatured);
+  const rest = events.filter((e) => !e.isFeatured);
 
   return (
     <Breakout>
@@ -31,11 +33,21 @@ export default async function EventsSection() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {events.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
+          {featured.length > 0 && (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((event) => (
+                <EventCard key={event.id} event={event} featured />
+              ))}
+            </div>
+          )}
+
+          {rest.length > 0 && (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {rest.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          )}
 
           {hasAsterisk && (
             <p className="text-xs text-muted-foreground">
