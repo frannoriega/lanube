@@ -27,8 +27,8 @@ describe("validateAnswer", () => {
   });
 
   it("validates numbers", () => {
-    expect(validateAnswer(field({ type: "NUMBER" }), "12")).toBeNull();
-    expect(validateAnswer(field({ type: "NUMBER" }), "abc")).toBeTruthy();
+    expect(validateAnswer(field({ type: "FLOAT" }), "12")).toBeNull();
+    expect(validateAnswer(field({ type: "FLOAT" }), "abc")).toBeTruthy();
   });
 
   it("validates DNI and phone", () => {
@@ -61,7 +61,7 @@ describe("validateAnswers", () => {
   it("collects errors keyed by field id", () => {
     const fields = [
       field({ id: "name", required: true }),
-      field({ id: "age", type: "NUMBER", required: true }),
+      field({ id: "age", type: "FLOAT", required: true }),
     ];
     const result = validateAnswers(fields, { name: "", age: "x" });
     expect(result.ok).toBe(false);

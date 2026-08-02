@@ -12,14 +12,12 @@
 import { z } from "zod";
 
 /**
- * Every answerable field type. The first nine mirror the legacy `FormFieldType` enum (so existing
- * forms round-trip unchanged); INTEGER/FLOAT/MONEY/FILE are the new types (wired up in later
- * phases — reserved here so the schema shape is stable).
+ * Every answerable field type. Numeric answers are INTEGER (whole numbers) or FLOAT (decimals);
+ * MONEY is a decimal with a currency affordance. FILE holds uploaded file descriptors.
  */
 export const FIELD_TYPES = [
   "SHORT_TEXT",
   "LONG_TEXT",
-  "NUMBER",
   "SINGLE_SELECT",
   "MULTI_SELECT",
   "DATE",
@@ -65,7 +63,6 @@ export const SELECT_FIELD_TYPES: readonly FieldType[] = [
 
 /** Numeric field types that accept min/max/step constraints. */
 export const NUMERIC_FIELD_TYPES: readonly FieldType[] = [
-  "NUMBER",
   "INTEGER",
   "FLOAT",
   "MONEY",

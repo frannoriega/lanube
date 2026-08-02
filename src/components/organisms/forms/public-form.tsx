@@ -444,6 +444,15 @@ function RepeatGroup({
   }, [desired, fields.length, append, remove]);
 
   const min = node.repeat?.min ?? 0;
+
+  // Manual groups: unfold the minimum number of items up-front so the user doesn't have to
+  // click "Agregar" to reach the minimum (confusing). Only for free groups — countFrom groups
+  // are already sized by the effect above. `canRemove` blocks going below min, so this stays put.
+  useEffect(() => {
+    if (desired != null) return; // not a free group
+    if (fields.length < min) append({}, { shouldFocus: false });
+  }, [desired, fields.length, min, append]);
+
   const max = node.repeat?.max ?? undefined;
   const free = desired == null;
   const canAdd = free && (max === undefined || fields.length < max);
@@ -515,19 +524,6 @@ function FieldInput({
           placeholder={field.placeholder ?? ""}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
-        />
-      );
-
-    case FormFieldType.NUMBER:
-      return (
-        <Input
-          type="number"
-          value={str}
-          placeholder={field.placeholder ?? ""}
-          min={c.min ?? undefined}
-          max={c.max ?? undefined}
-          step={c.step ?? undefined}
-          onChange={(e) => onChange(e.target.value)}
         />
       );
 
