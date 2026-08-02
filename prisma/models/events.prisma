@@ -20,8 +20,13 @@ model Event {
   endTime       BigInt             @map("end_time")
   rrule         String?
   recurrenceEnd BigInt?            @map("recurrence_end")
-  // Optional participant cap. NULL => fall back to the resource's capacity.
+  // Optional participant cap. NULL => fall back to the resource's capacity. When
+  // requiresApproval is on, this caps how many can *register* (PENDING+APPROVED), not the
+  // final approved headcount.
   capacity      Int?
+  // When true, registrations land as PENDING and an admin approves/rejects them; when false
+  // (default) they are auto-approved on submit.
+  requiresApproval Boolean         @default(false) @map("requires_approval")
   imageUrl      String?            @map("image_url")
   // Soft delete: set when the event is cancelled. Non-null => excluded from public surfaces
   // and shown as "Cancelado" in admin.
@@ -114,7 +119,12 @@ model EventParticipant {
   userId         String?         @map("user_id")
   // Tokenized link to edit/cancel the registration without an account.
   editToken      String          @unique @map("edit_token")
-  cancelled      Boolean         @default(false)
+  // Registration lifecycle. PENDING/APPROVED hold a spot; REJECTED/CANCELLED free it.
+  status         ParticipantStatus @default(APPROVED)
+  // Admin's optional reason when approving/rejecting (shown to the participant on rejection).
+  decisionReason String?         @map("decision_reason")
+  // When the admin approved/rejected (UNIX ms). NULL until decided.
+  decidedAt      BigInt?         @map("decided_at")
   // Map of fieldId -> answer value.
   answers        Json
   createdAt      BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
@@ -125,5 +135,6 @@ model EventParticipant {
   @@unique([eventId, email])
   @@index([email])
   @@index([userId])
+  @@index([eventId, status])
   @@map("event_participants")
 }

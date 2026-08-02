@@ -1,6 +1,8 @@
 "use server";
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
+import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { listEventParticipants } from "@/lib/db/participants";
+import { ParticipantStatus } from "@/types/prisma";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
@@ -84,8 +86,9 @@ export async function notifyEventParticipantsBatch(
 ): Promise<{ sent: number; failed: number }> {
   if (payload.changes.length === 0) return { sent: 0, failed: 0 };
 
-  const participants = (await listEventParticipants(eventId)).filter(
-    (p) => !p.cancelled,
+  // Only participants who still hold a spot (pending or approved) get session-change notices.
+  const participants = (await listEventParticipants(eventId)).filter((p) =>
+    SPOT_HOLDING_STATUSES.includes(p.status as ParticipantStatus),
   );
   const baseUrl =
     process.env.NEXTAUTH_URL ??

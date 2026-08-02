@@ -102,6 +102,7 @@ export async function POST(
       parsed.data.email,
       result.eventName,
       result.token,
+      result.requiresApproval ?? false,
     );
   }
 
