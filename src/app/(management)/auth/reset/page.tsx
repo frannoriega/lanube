@@ -45,7 +45,6 @@ export default function ResetPage() {
         ...data,
       }),
     });
-    console.log(res);
     if (!res.ok) {
       toast.error("Error al reestablecer la contraseña");
       return;

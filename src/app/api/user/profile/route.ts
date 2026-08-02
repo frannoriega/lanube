@@ -3,6 +3,7 @@ import { updateRegisteredUserProfileByEmail } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { apiCatch, apiServerError } from "@/lib/api/response";
 
 export async function GET() {
   try {
@@ -33,11 +34,8 @@ export async function GET() {
         displayEmail: user.displayEmail,
       }),
     );
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("user/profile GET", error);
   }
 }
 
@@ -58,16 +56,9 @@ export async function PUT(request: NextRequest) {
       );
       return NextResponse.json(serializeJson(updatedUser));
     } catch (error) {
-      const knownError = error as Error;
-      return NextResponse.json(
-        { message: knownError.message },
-        { status: 400 },
-      );
+      return apiCatch("user/profile PUT (update)", error);
     }
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("user/profile PUT", error);
   }
 }

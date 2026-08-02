@@ -6,6 +6,7 @@ import {
   startOfDateKeyMs,
 } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
+import { DomainError } from "@/lib/errors";
 import { bindFormToEvent, unbindFormFromEvent } from "@/lib/db/forms";
 import { dateTimeLocalToMs, msToDateTimeLocal } from "@/lib/events/datetime";
 import { OccurrencePlan, planEventOccurrences } from "@/lib/events/plan";
@@ -93,12 +94,12 @@ async function deleteEventReservations(
 function translateSqlError(error: unknown): never {
   if (error instanceof Error) {
     if (error.message.includes("already booked")) {
-      throw new Error(
+      throw new DomainError(
         "El recurso ya está reservado en alguno de los horarios del evento",
       );
     }
     if (error.message.includes("not found")) {
-      throw new Error("El recurso seleccionado no existe");
+      throw new DomainError("El recurso seleccionado no existe");
     }
   }
   throw error instanceof Error ? error : new Error("Error desconocido");
@@ -107,7 +108,7 @@ function translateSqlError(error: unknown): never {
 export async function createEvent(input: EventInput): Promise<Event> {
   const plans = planEventOccurrences(input);
   if (plans.length === 0) {
-    throw new Error(
+    throw new DomainError(
       "El rango de fechas no contiene ninguno de los días elegidos",
     );
   }
@@ -121,7 +122,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
       const capacity =
         input.capacity ?? (await getSpaceCapacity(tx, input.spaceId));
       if (capacity === null) {
-        throw new Error("El recurso seleccionado no existe");
+        throw new DomainError("El recurso seleccionado no existe");
       }
 
       const event = await tx.event.create({
@@ -192,7 +193,7 @@ async function syncEventForm(
         where: { eventId },
       });
       if (participants > 0) {
-        throw new Error(
+        throw new DomainError(
           "No se puede quitar el formulario de un evento con inscriptos",
         );
       }
@@ -211,7 +212,7 @@ async function syncEventForm(
       where: { eventId },
     });
     if (participants > 0) {
-      throw new Error(
+      throw new DomainError(
         "No se puede cambiar el formulario de un evento con inscriptos",
       );
     }
@@ -305,7 +306,7 @@ async function assertRescheduleFree(
     ) AS conflicts
   `;
   if (rows[0]?.conflicts) {
-    throw new Error(
+    throw new DomainError(
       "El nuevo horario se superpone con otra sesión en ese recurso",
     );
   }
@@ -380,7 +381,7 @@ export async function updateEvent(
   const force = opts.force ?? false;
   const plans = planEventOccurrences(input);
   if (plans.length === 0) {
-    throw new Error(
+    throw new DomainError(
       "El rango de fechas no contiene ninguno de los días elegidos",
     );
   }
@@ -396,12 +397,12 @@ export async function updateEvent(
     const changes: OccurrenceChange[] = [];
     const event = await prisma.$transaction(async (tx) => {
       const existing = await tx.event.findUnique({ where: { id } });
-      if (!existing) throw new Error("Evento no encontrado");
+      if (!existing) throw new DomainError("Evento no encontrado", 404);
 
       const capacity =
         input.capacity ?? (await getSpaceCapacity(tx, input.spaceId));
       if (capacity === null) {
-        throw new Error("El recurso seleccionado no existe");
+        throw new DomainError("El recurso seleccionado no existe");
       }
 
       const existingRes = await tx.reservation.findMany({
@@ -562,7 +563,7 @@ async function applySessionActions(
     (a) => a.kind === "cancel" || a.kind === "reschedule",
   );
   if (needsReason && reason.trim() === "") {
-    throw new Error("El motivo del cambio de sesiones es obligatorio");
+    throw new DomainError("El motivo del cambio de sesiones es obligatorio");
   }
   const batchReason = reason.trim();
 
@@ -651,7 +652,7 @@ export async function deleteEvent(id: string): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const existing = await tx.event.findUnique({ where: { id } });
     if (!existing) {
-      throw new Error("Evento no encontrado");
+      throw new DomainError("Evento no encontrado", 404);
     }
     await deleteEventReservations(tx, id);
     await tx.event.update({

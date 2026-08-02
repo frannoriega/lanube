@@ -1,6 +1,7 @@
 "use server";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { logger } from "@/lib/logger";
 
 const SMTP_SERVER_HOST = process.env.SMTP_SERVER_HOST;
 const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
@@ -26,12 +27,8 @@ export async function sendResetEmail(
   try {
     await transporter.verify();
   } catch (error) {
-    console.error(
-      "Error al verificar el servidor de correo",
-      SMTP_SERVER_USERNAME,
-      SMTP_SERVER_PASSWORD,
-      error,
-    );
+    // Never log SMTP credentials.
+    logger.error("SMTP verify failed (reset email)", error);
     return {
       success: false,
       error: "Error al verificar el servidor de correo",

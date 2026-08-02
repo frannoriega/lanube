@@ -1,4 +1,5 @@
 import { dateTimeLocalToMs } from "@/lib/events/datetime";
+import { DomainError } from "@/lib/errors";
 import {
   cloneSchemaWithNewIds,
   parseFormSchema,
@@ -121,7 +122,7 @@ export async function updateFormTemplate(id: string, data: FormTemplateInput) {
     const existing = await tx.form.findFirst({
       where: { id, isTemplate: true },
     });
-    if (!existing) throw new Error("Formulario no encontrado");
+    if (!existing) throw new DomainError("Formulario no encontrado", 404);
 
     const rows = schemaToRows(data.schema, id);
     await tx.form.update({
@@ -148,7 +149,7 @@ export async function deleteFormTemplate(id: string): Promise<void> {
   const existing = await prisma.form.findFirst({
     where: { id, isTemplate: true },
   });
-  if (!existing) throw new Error("Formulario no encontrado");
+  if (!existing) throw new DomainError("Formulario no encontrado", 404);
   // Fields cascade; bound event instances are independent clones, so they survive.
   await prisma.form.delete({ where: { id } });
 }
@@ -167,7 +168,7 @@ async function cloneTemplateToInstance(
   const template = await tx.form.findFirst({
     where: { id: templateId, isTemplate: true },
   });
-  if (!template) throw new Error("Formulario no encontrado");
+  if (!template) throw new DomainError("Formulario no encontrado", 404);
 
   const instanceId = createId();
   const schema = cloneSchemaWithNewIds(parseFormSchema(template.schema));

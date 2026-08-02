@@ -1,4 +1,5 @@
 import { nowMs } from "@/lib/clock";
+import { DomainError } from "@/lib/errors";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { PublicFormField } from "@/lib/events/answers";
 import {
@@ -417,7 +418,7 @@ export async function decideParticipants(
       where: { id: eventId },
       select: { name: true },
     });
-    if (!event) throw new Error("Evento no encontrado");
+    if (!event) throw new DomainError("Evento no encontrado", 404);
 
     const affected = await tx.eventParticipant.findMany({
       where: {

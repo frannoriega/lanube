@@ -1,3 +1,4 @@
+import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import type { Space } from "@/generated/prisma/client";
 
@@ -99,8 +100,9 @@ export async function deleteSpace(id: string): Promise<void> {
     }),
   ]);
   if (event || reservation) {
-    throw new Error(
+    throw new DomainError(
       "El espacio tiene eventos o reservas asociadas y no puede eliminarse",
+      409,
     );
   }
   await prisma.space.delete({ where: { id } });

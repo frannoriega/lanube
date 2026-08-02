@@ -6,6 +6,7 @@ import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { createEmailVerificationToken } from "@/lib/db/verificationTokens";
 import { sendEmailConfirmation } from "@/lib/email/confirmation";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 import { registerSchema } from "@/lib/schemas/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+    logger.error("auth/register POST", error);
     return NextResponse.json(
       { message: "Error al crear la cuenta" },
       { status: 500 },

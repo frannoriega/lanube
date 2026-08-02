@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { getAdminAggregateStats, isAdminByEmail } from "@/lib/db/adminStats";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextResponse } from "next/server";
+import { apiServerError } from "@/lib/api/response";
 
 export async function GET() {
   try {
@@ -17,10 +18,7 @@ export async function GET() {
     }
     const result = await getAdminAggregateStats();
     return NextResponse.json(serializeJson(result));
-  } catch (ignored) {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("admin/stats GET", error);
   }
 }

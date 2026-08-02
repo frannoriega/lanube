@@ -1,8 +1,10 @@
 import { requirePermission } from "@/lib/api-auth";
+import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { decideParticipants } from "@/lib/db/participants";
 import { notifyParticipantsDecision } from "@/lib/email/event-decision";
+import { logger } from "@/lib/logger";
 import { participantDecisionSchema } from "@/lib/schemas/events";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function POST(
   request: NextRequest,
@@ -15,10 +17,7 @@ export async function POST(
   const body = await request.json().catch(() => null);
   const parsed = participantDecisionSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { message: "Datos inválidos", issues: parsed.error.issues },
-      { status: 400 },
-    );
+    return apiError("Datos inválidos", 400, { issues: parsed.error.issues });
   }
 
   const { participantIds, decision, reason } = parsed.data;
@@ -39,15 +38,22 @@ export async function POST(
       participants,
     );
 
-    return NextResponse.json({
+    if (failed > 0) {
+      logger.warn("participant decision emails partially failed", {
+        eventId: id,
+        decision,
+        sent,
+        failed,
+      });
+    }
+
+    return apiSuccess({
       ok: true,
       decided: participants.length,
       emailed: sent,
       emailFailed: failed,
     });
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "Error interno del servidor";
-    return NextResponse.json({ message }, { status: 400 });
+    return apiCatch("admin/events/[id]/participants/decision POST", e);
   }
 }
