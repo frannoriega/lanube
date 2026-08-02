@@ -23,7 +23,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import {
+  BOOLEAN_FIELD_TYPES,
   FIELD_TYPE_LABELS,
+  FILE_FIELD_TYPES,
   NUMERIC_FIELD_TYPES,
   SELECT_FIELD_TYPES,
 } from "@/lib/constants/form-fields";
@@ -42,14 +44,15 @@ import {
 import { FormFieldType } from "@/types/prisma";
 import { createId } from "@paralleldrive/cuid2";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type Control,
   type FieldValues,
   useFieldArray,
   useForm,
+  useFormContext,
   useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
@@ -77,7 +80,20 @@ const inputShape = {
   minText: z.string(),
   maxText: z.string(),
   stepText: z.string(),
+  // FILE constraints
+  maxSizeText: z.string(),
+  acceptText: z.string(),
+  // BOOLEAN attached document (e.g. terms & conditions)
+  attachmentUrl: z.string(),
+  attachmentName: z.string(),
 };
+
+/** Comma-separated extensions → normalized array (no dot, lowercase). */
+const splitExtensions = (s: string) =>
+  s
+    .split(",")
+    .map((e) => e.trim().replace(/^\./, "").toLowerCase())
+    .filter(Boolean);
 
 function refineInput(
   f: {
@@ -86,6 +102,7 @@ function refineInput(
     minText: string;
     maxText: string;
     stepText: string;
+    maxSizeText: string;
   },
   ctx: z.RefinementCtx,
 ) {
@@ -95,6 +112,15 @@ function refineInput(
         code: "custom",
         message: "Agregá al menos una opción",
         path: ["optionsText"],
+      });
+  }
+  if (FILE_FIELD_TYPES.includes(f.type)) {
+    const size = numOrNull(f.maxSizeText);
+    if (size !== null && (!Number.isFinite(size) || size <= 0 || size > 10))
+      ctx.addIssue({
+        code: "custom",
+        message: "Ingresá un tamaño entre 0 y 10 MB",
+        path: ["maxSizeText"],
       });
   }
   if (NUMERIC_FIELD_TYPES.includes(f.type)) {
@@ -190,6 +216,10 @@ function newChild(): BuilderChild {
     minText: "",
     maxText: "",
     stepText: "",
+    maxSizeText: "",
+    acceptText: "",
+    attachmentUrl: "",
+    attachmentName: "",
   };
 }
 
@@ -214,6 +244,7 @@ function newField(kind: "input" | "group"): BuilderValues["fields"][number] {
 // ---------------------------------------------------------------------------
 
 function inputNodeToEditor(n: InputNode): BuilderChild {
+  const c = n.constraints;
   return {
     id: n.id,
     type: n.type as FormFieldType,
@@ -221,9 +252,13 @@ function inputNodeToEditor(n: InputNode): BuilderChild {
     placeholder: n.placeholder ?? "",
     required: n.required,
     optionsText: Array.isArray(n.options) ? n.options.join("\n") : "",
-    minText: n.constraints?.min != null ? String(n.constraints.min) : "",
-    maxText: n.constraints?.max != null ? String(n.constraints.max) : "",
-    stepText: n.constraints?.step != null ? String(n.constraints.step) : "",
+    minText: c?.min != null ? String(c.min) : "",
+    maxText: c?.max != null ? String(c.max) : "",
+    stepText: c?.step != null ? String(c.step) : "",
+    maxSizeText: c?.maxSizeMb != null ? String(c.maxSizeMb) : "",
+    acceptText: Array.isArray(c?.accept) ? c.accept.join(", ") : "",
+    attachmentUrl: c?.attachmentUrl ?? "",
+    attachmentName: c?.attachmentName ?? "",
   };
 }
 
@@ -255,6 +290,10 @@ function nodeToBuilderField(n: FormNode): BuilderValues["fields"][number] {
     minText: "",
     maxText: "",
     stepText: "",
+    maxSizeText: "",
+    acceptText: "",
+    attachmentUrl: "",
+    attachmentName: "",
     condField: cond.field,
     condOp: cond.op,
     condValue: cond.value,
@@ -267,6 +306,31 @@ function nodeToBuilderField(n: FormNode): BuilderValues["fields"][number] {
       .filter((c): c is InputNode => c.kind === "input")
       .map(inputNodeToEditor),
   };
+}
+
+/** Builds the per-type constraints bag for an input editor (null when the type has none). */
+function editorToConstraints(f: BuilderChild): InputNode["constraints"] {
+  if (NUMERIC_FIELD_TYPES.includes(f.type)) {
+    return {
+      min: numOrNull(f.minText),
+      max: numOrNull(f.maxText),
+      step: numOrNull(f.stepText),
+    };
+  }
+  if (FILE_FIELD_TYPES.includes(f.type)) {
+    const accept = splitExtensions(f.acceptText);
+    return {
+      maxSizeMb: numOrNull(f.maxSizeText),
+      accept: accept.length > 0 ? accept : null,
+    };
+  }
+  if (BOOLEAN_FIELD_TYPES.includes(f.type) && f.attachmentUrl.trim()) {
+    return {
+      attachmentUrl: f.attachmentUrl.trim(),
+      attachmentName: f.attachmentName.trim() || "Documento",
+    };
+  }
+  return null;
 }
 
 function editorToInputNode(
@@ -283,13 +347,7 @@ function editorToInputNode(
     options: SELECT_FIELD_TYPES.includes(f.type)
       ? splitLines(f.optionsText)
       : null,
-    constraints: NUMERIC_FIELD_TYPES.includes(f.type)
-      ? {
-          min: numOrNull(f.minText),
-          max: numOrNull(f.maxText),
-          step: numOrNull(f.stepText),
-        }
-      : null,
+    constraints: editorToConstraints(f),
     visibleWhen: withVisibility
       ? buildVisibleWhen({
           field: f.condField ?? "",
@@ -720,6 +778,43 @@ function InputFieldEditor({
         </div>
       )}
 
+      {FILE_FIELD_TYPES.includes(type as FormFieldType) && (
+        <div className="grid grid-cols-2 gap-2">
+          <FormField
+            control={control}
+            name={`${namePrefix}.maxSizeText`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Tamaño máx. (MB)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="10" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name={`${namePrefix}.acceptText`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">
+                  Extensiones (separadas por coma)
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="pdf, jpg, png" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+
+      {BOOLEAN_FIELD_TYPES.includes(type as FormFieldType) && (
+        <AttachmentUploadField control={control} namePrefix={namePrefix} />
+      )}
+
       <FormField
         control={control}
         name={`${namePrefix}.required`}
@@ -732,6 +827,109 @@ function InputFieldEditor({
           </FormItem>
         )}
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Attachment uploader for a BOOLEAN "acknowledgement" field (e.g. terms & conditions)
+// ---------------------------------------------------------------------------
+
+function AttachmentUploadField({
+  control,
+  namePrefix,
+}: {
+  control: Control<FieldValues>;
+  namePrefix: string;
+}) {
+  const { setValue } = useFormContext();
+  const url = useWatch({
+    control,
+    name: `${namePrefix}.attachmentUrl`,
+  }) as string;
+  const name = useWatch({
+    control,
+    name: `${namePrefix}.attachmentName`,
+  }) as string;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const setField = (key: "attachmentUrl" | "attachmentName", value: string) =>
+    setValue(`${namePrefix}.${key}`, value, { shouldDirty: true });
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/admin/forms/upload", {
+        method: "POST",
+        body,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message ?? "No se pudo subir el archivo");
+        return;
+      }
+      setField("attachmentUrl", data.url as string);
+      setField("attachmentName", file.name);
+      toast.success("Documento subido");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2 rounded-md bg-muted/40 p-3">
+      <p className="text-xs font-medium text-muted-foreground">
+        Documento a aceptar (opcional) — se muestra junto a la casilla
+      </p>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          e.target.value = "";
+        }}
+      />
+      {url ? (
+        <div className="flex items-center gap-2 text-sm">
+          <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate underline"
+          >
+            {name || "Documento"}
+          </a>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              setField("attachmentUrl", "");
+              setField("attachmentName", "");
+            }}
+          >
+            Quitar
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {uploading ? "Subiendo…" : "Subir documento"}
+        </Button>
+      )}
     </div>
   );
 }

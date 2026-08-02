@@ -1,6 +1,10 @@
 import { requirePermission } from "@/lib/api-auth";
 import { getEventFormColumns } from "@/lib/db/forms";
-import { exportCell } from "@/lib/events/form-export";
+import {
+  cellFiles,
+  type ExportColumn,
+  exportCell,
+} from "@/lib/events/form-export";
 import { listEventParticipants } from "@/lib/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,6 +12,30 @@ import { NextRequest, NextResponse } from "next/server";
 function csvCell(value: string): string {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
+}
+
+/**
+ * CSV value for a column: for FILE fields, "filename (download-url)" per file (a bare filename
+ * isn't retrievable from a spreadsheet); otherwise the plain text answer.
+ */
+function csvValue(
+  col: ExportColumn,
+  answers: Record<string, unknown>,
+  origin: string,
+  eventId: string,
+): string {
+  const files = cellFiles(col, answers);
+  if (files.length > 0) {
+    return files
+      .map(
+        (f) =>
+          `${f.name} (${origin}/api/admin/events/${eventId}/participants/file?url=${encodeURIComponent(
+            f.url,
+          )}&download=1)`,
+      )
+      .join(" | ");
+  }
+  return exportCell(col, answers);
 }
 
 export async function GET(
@@ -23,7 +51,7 @@ export async function GET(
     getEventFormColumns(id),
   ]);
 
-  const { searchParams } = new URL(request.url);
+  const { origin, searchParams } = new URL(request.url);
   if (searchParams.get("format") === "csv") {
     const header = [
       "Email",
@@ -38,7 +66,7 @@ export async function GET(
         p.email,
         p.displayEmail ?? "",
         p.cancelled ? "sí" : "no",
-        ...columns.map((c) => exportCell(c, answers)),
+        ...columns.map((c) => csvValue(c, answers, origin, id)),
       ];
       lines.push(row.map(csvCell).join(","));
     }

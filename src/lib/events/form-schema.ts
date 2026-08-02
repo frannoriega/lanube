@@ -30,9 +30,32 @@ export const FIELD_TYPES = [
   "FLOAT",
   "MONEY",
   "FILE",
+  "BOOLEAN",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
+
+/** One uploaded file, as stored in a FILE field's answer (an array of these). */
+export interface UploadedFile {
+  /** Storage URL/key (private — fetched through the admin proxy, never linked directly). */
+  url: string;
+  /** Original filename (shown to admins; also drives extension validation). */
+  name: string;
+  /** Size in bytes. */
+  size: number;
+  /** MIME type reported by the browser at upload time. */
+  type: string;
+}
+
+/** Narrows an unknown value to an UploadedFile descriptor. */
+export function isUploadedFile(value: unknown): value is UploadedFile {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    typeof (value as UploadedFile).url === "string" &&
+    typeof (value as UploadedFile).name === "string"
+  );
+}
 
 /** Field types whose answer is drawn from a fixed option list. */
 export const SELECT_FIELD_TYPES: readonly FieldType[] = [
@@ -57,10 +80,14 @@ export interface FieldConstraints {
   min?: number | null;
   max?: number | null;
   step?: number | null;
-  /** FILE (reserved for the file-upload phase). */
+  /** FILE: how many files (default 1), per-file size cap (MB, hard-capped at 10), allowed
+   * extensions (lowercased, no dot — e.g. ["pdf", "jpg"]; empty/omitted = any). */
   maxFiles?: number | null;
   maxSizeMb?: number | null;
   accept?: string[] | null;
+  /** BOOLEAN: an optional document the participant acknowledges (e.g. terms & conditions). */
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
 }
 
 /**
@@ -168,9 +195,11 @@ const constraintsSchema: z.ZodType<FieldConstraints> = z.object({
   min: z.number().nullable().optional(),
   max: z.number().nullable().optional(),
   step: z.number().positive().nullable().optional(),
-  maxFiles: z.number().int().positive().nullable().optional(),
+  maxFiles: z.number().int().positive().max(20).nullable().optional(),
   maxSizeMb: z.number().positive().max(10).nullable().optional(),
   accept: z.array(z.string()).nullable().optional(),
+  attachmentUrl: z.string().nullable().optional(),
+  attachmentName: z.string().nullable().optional(),
 });
 
 const inputNodeSchema: z.ZodType<InputNode> = z

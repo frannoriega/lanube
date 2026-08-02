@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   type AnswerMap,
+  fileExtension,
   isVisible,
   repeatCount,
   validateForm,
@@ -30,13 +31,21 @@ import {
   type FormSchema,
   type InputNode,
   isGroupNode,
+  type UploadedFile,
 } from "@/lib/events/form-schema";
 import { registerEmailSchema } from "@/lib/schemas/auth";
 import { FormFieldType } from "@/types/prisma";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash2 } from "lucide-react";
+import { FileText, Paperclip, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type Control,
   type FieldValues,
@@ -46,6 +55,16 @@ import {
 } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
+/** Endpoint that FILE fields POST to (fieldId + file → UploadedFile descriptor). */
+const UploadContext = createContext<string | null>(null);
+
+/** Human-readable file size. */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface PublicFormProps {
   schema: FormSchema;
@@ -80,6 +99,16 @@ export function PublicForm({
 }: PublicFormProps) {
   const router = useRouter();
   const [cancelling, setCancelling] = useState(false);
+
+  // Where FILE fields upload to (submit → by slug, edit → by token).
+  const uploadUrl =
+    mode === "submit"
+      ? slug
+        ? `/api/forms/${slug}/upload`
+        : null
+      : token
+        ? `/api/forms/response/${token}/upload`
+        : null;
 
   // Validation delegates to the engine's validateForm (single source, honors branching + groups).
   const zodSchema = useMemo(
@@ -192,12 +221,14 @@ export function PublicForm({
           )}
         />
 
-        <NodeList
-          nodes={schema.nodes}
-          control={form.control}
-          basePath="answers"
-          scopePath={[]}
-        />
+        <UploadContext.Provider value={uploadUrl}>
+          <NodeList
+            nodes={schema.nodes}
+            control={form.control}
+            basePath="answers"
+            scopePath={[]}
+          />
+        </UploadContext.Provider>
 
         <div className="flex justify-between gap-2">
           {mode === "edit" ? (
@@ -287,6 +318,50 @@ function NodeRenderer({
   scopePath: string[];
 }) {
   if (!isGroupNode(node)) {
+    // BOOLEAN renders as a checkbox with the label beside it (not a label above a control).
+    if (node.type === FormFieldType.BOOLEAN) {
+      return (
+        <FormField
+          control={control}
+          name={`${basePath}.${node.id}` as `answers.${string}`}
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-start gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={field.value === true}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                </FormControl>
+                <div className="space-y-1">
+                  <FormLabel className="font-normal">
+                    {node.label}
+                    {node.required && (
+                      <span className="text-destructive"> *</span>
+                    )}
+                  </FormLabel>
+                  {node.constraints?.attachmentUrl && (
+                    <a
+                      href={node.constraints.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-sm font-medium text-la-nube-selected underline dark:text-la-nube-secondary"
+                    >
+                      <FileText className="h-4 w-4" />
+                      {node.constraints.attachmentName ?? "Ver documento"}
+                    </a>
+                  )}
+                </div>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    }
+
     return (
       <FormField
         control={control}
@@ -537,6 +612,9 @@ function FieldInput({
         </Select>
       );
 
+    case FormFieldType.FILE:
+      return <FileField field={field} value={value} onChange={onChange} />;
+
     case FormFieldType.MULTI_SELECT: {
       const selected = Array.isArray(value) ? (value as string[]) : [];
       const toggle = (opt: string) =>
@@ -570,4 +648,126 @@ function FieldInput({
         />
       );
   }
+}
+
+/**
+ * FILE field: uploads each chosen file to the current form's private upload endpoint (via
+ * UploadContext) and stores UploadedFile descriptors in the answer. Enforces the field's
+ * extension + size limits client-side for a friendly error (the server re-validates).
+ */
+function FileField({
+  field,
+  value,
+  onChange,
+}: {
+  field: InputNode;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const uploadUrl = useContext(UploadContext);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const files = Array.isArray(value) ? (value as UploadedFile[]) : [];
+  const c = field.constraints ?? {};
+  const max = c.maxFiles ?? 1;
+  const cap = Math.min(c.maxSizeMb ?? 10, 10);
+  const accept =
+    c.accept && c.accept.length > 0
+      ? c.accept.map((e) => `.${e}`).join(",")
+      : undefined;
+
+  const handleFile = async (file: File) => {
+    if (!uploadUrl) {
+      toast.error("La subida no está disponible");
+      return;
+    }
+    if (
+      c.accept &&
+      c.accept.length > 0 &&
+      !c.accept.map((e) => e.toLowerCase()).includes(fileExtension(file.name))
+    ) {
+      toast.error(`Formato no permitido (${c.accept.join(", ")})`);
+      return;
+    }
+    if (file.size > cap * 1024 * 1024) {
+      toast.error(`El archivo debe pesar menos de ${cap} MB`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("fieldId", field.id);
+      const res = await fetch(uploadUrl, { method: "POST", body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message ?? "No se pudo subir el archivo");
+        return;
+      }
+      onChange([...files, data as UploadedFile].slice(0, max));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {files.map((f, i) => (
+        <div
+          key={`${f.url}-${i}`}
+          className="flex items-center gap-2 rounded-md border p-2 text-sm"
+        >
+          <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">{f.name}</span>
+          <span className="shrink-0 text-muted-foreground">
+            {formatBytes(f.size)}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="ml-auto"
+            aria-label="Quitar archivo"
+            onClick={() => onChange(files.filter((_, j) => j !== i))}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      ))}
+      {files.length < max && (
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+          >
+            {uploading
+              ? "Subiendo…"
+              : files.length > 0
+                ? "Agregar otro archivo"
+                : "Subir archivo"}
+          </Button>
+        </>
+      )}
+      <p className="text-xs text-muted-foreground">
+        {c.accept && c.accept.length > 0
+          ? c.accept.join(", ").toUpperCase()
+          : "Cualquier formato"}{" "}
+        · hasta {cap} MB{max > 1 ? ` · máximo ${max} archivos` : ""}
+      </p>
+    </div>
+  );
 }
