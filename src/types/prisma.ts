@@ -86,7 +86,6 @@ export enum ParticipantStatus {
 export enum FormFieldType {
   SHORT_TEXT = "SHORT_TEXT",
   LONG_TEXT = "LONG_TEXT",
-  NUMBER = "NUMBER",
   INTEGER = "INTEGER",
   FLOAT = "FLOAT",
   MONEY = "MONEY",

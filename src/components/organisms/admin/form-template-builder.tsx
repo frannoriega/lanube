@@ -1003,7 +1003,13 @@ function RepeatConfig({
   index: number;
   namePrefix: string;
 }) {
+  const { setValue } = useFormContext();
   const repeatable = useWatch({ control, name: `${namePrefix}.repeatable` });
+  const countFrom = useWatch({
+    control,
+    name: `${namePrefix}.countFrom`,
+  }) as string;
+  const fieldDriven = !!countFrom; // count comes from another field → no min/max
   const allFields = (useWatch({ control, name: "fields" }) ?? []) as Array<{
     id: string;
     label: string;
@@ -1011,7 +1017,7 @@ function RepeatConfig({
     type: string;
   }>;
   // Only earlier INTEGER fields can drive the count.
-  const integerFields = allFields
+  const countFields = allFields
     .slice(0, index)
     .filter(
       (ff) =>
@@ -1037,30 +1043,6 @@ function RepeatConfig({
           <div className="grid grid-cols-3 gap-2">
             <FormField
               control={control}
-              name={`${namePrefix}.repeatMin`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Mínimo</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="—" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name={`${namePrefix}.repeatMax`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Máximo</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="—" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
               name={`${namePrefix}.countFrom`}
               render={({ field }) => (
                 <FormItem>
@@ -1069,9 +1051,15 @@ function RepeatConfig({
                   </FormLabel>
                   <Select
                     value={field.value || "__none__"}
-                    onValueChange={(v) =>
-                      field.onChange(v === "__none__" ? "" : v)
-                    }
+                    onValueChange={(v) => {
+                      const next = v === "__none__" ? "" : v;
+                      field.onChange(next);
+                      // Field-driven count is exact — drop any min/max that would clamp it.
+                      if (next) {
+                        setValue(`${namePrefix}.repeatMin`, "");
+                        setValue(`${namePrefix}.repeatMax`, "");
+                      }
+                    }}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -1079,8 +1067,8 @@ function RepeatConfig({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="__none__">Manual (+/−)</SelectItem>
-                      {integerFields.map((ff) => (
+                      <SelectItem value="__none__">Manual</SelectItem>
+                      {countFields.map((ff) => (
                         <SelectItem key={ff.id} value={ff.id}>
                           {ff.label}
                         </SelectItem>
@@ -1090,6 +1078,34 @@ function RepeatConfig({
                 </FormItem>
               )}
             />
+            {!fieldDriven && (
+              <>
+                <FormField
+                  control={control}
+                  name={`${namePrefix}.repeatMin`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Mínimo</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="—" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name={`${namePrefix}.repeatMax`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Máximo</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="—" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
           </div>
           <FormField
             control={control}

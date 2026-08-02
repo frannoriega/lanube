@@ -1,7 +1,7 @@
-# Graph Report - lanube  (2026-08-02)
+# Graph Report - lanube  (2026-08-01)
 
 ## Corpus Check
-- 442 files · ~1,197,046 words
+- 442 files · ~1,196,969 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `87f947e9`
+- Built from commit: `500ee9ce`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -398,10 +398,10 @@
   scripts/normalize-user-emails.ts → package.json
 
 ## Import Cycles
-- 3-file cycle: `src/components/organisms/admin/admin-reservation-detail-sheet.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/admin-reservation-detail-sheet.tsx`
 - 3-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
-- 4-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
+- 3-file cycle: `src/components/organisms/admin/admin-reservation-detail-sheet.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/admin-reservation-detail-sheet.tsx`
 - 4-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
+- 4-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
 - 5-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 
 ## Communities (368 total, 180 thin omitted)
@@ -411,8 +411,8 @@ Cohesion: 0.07
 Nodes (35): react, Github(), Instagram(), LogoMunicipio(), LogoProps, Footer(), CardAction(), CardFooter() (+27 more)
 
 ### Community 1 - "Admin API Routes & Export"
-Cohesion: 0.14
-Nodes (19): navigation, UserLayout(), UserLayoutProps, configNavigation, ManagementLayout(), ManagementLayoutProps, navigation, NavigationItem (+11 more)
+Cohesion: 0.13
+Nodes (20): ThemeToggle(), navigation, UserLayout(), UserLayoutProps, configNavigation, ManagementLayout(), ManagementLayoutProps, navigation (+12 more)
 
 ### Community 2 - "Node.js Dependencies"
 Cohesion: 0.04
@@ -428,7 +428,7 @@ Nodes (24): MagicLinkPage(), BannedPage(), getSlotsBetween(), positionOnTimeline
 
 ### Community 5 - "Resource Reservation API"
 Cohesion: 0.14
-Nodes (13): LogoMunicipioCrest(), LogoProps, ThemeToggle(), SignIn(), Drawer(), DrawerContent(), DrawerDescription(), DrawerFooter() (+5 more)
+Nodes (12): LogoMunicipioCrest(), LogoProps, SignIn(), Drawer(), DrawerContent(), DrawerDescription(), DrawerFooter(), DrawerHeader() (+4 more)
 
 ### Community 6 - "Build & Dev Tooling"
 Cohesion: 0.04
@@ -1122,7 +1122,7 @@ Nodes (16): DELETE(), PUT(), POST(), GET(), SpacePage(), createReservationType()
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Admin Pages & Check-In` to `Resource & Form Pickers`, `Forms & Notification Layer`, `Admin Dashboard & Reports`, `Resource Reservation API`, `API Route Handlers`, `Spaces Constants`, `Authentication Pages`, `Admin Event & User Management`, `Navigation Header`, `Public Events Pages`, `index.tsx`, `Admin Service Timeline`, `Event Sessions & Form`, `User Settings & Theming`, `Cron Jobs`, `user-layout.tsx`, `App Layout & Fonts`, `Incident Management`?**
+- **Why does `cn()` connect `Admin Pages & Check-In` to `Admin API Routes & Export`, `Forms & Notification Layer`, `Admin Dashboard & Reports`, `Resource Reservation API`, `Authentication Pages`, `Admin Event & User Management`, `Public Events Pages`, `Admin Service Timeline`, `Event Sessions & Form`, `User Settings & Theming`, `Incident Management`, `Resource & Form Pickers`, `API Route Handlers`, `Navigation Header`, `Cron Jobs`, `user-layout.tsx`, `App Layout & Fonts`, `Spaces Constants`, `index.tsx`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `Node.js Dependencies` to `Admin Pages & Check-In`, `Next.js Wordmark`, `Build & Dev Tooling`, `App Layout & Fonts`, `File Storage & Upload`, `Email Identity Validation`?**
   _High betweenness centrality (0.022) - this node is a cross-community bridge._
@@ -1133,6 +1133,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `Admin Pages & Check-In` be split into smaller, more focused modules?**
   _Cohesion score 0.07246376811594203 - nodes in this community are weakly interconnected._
 - **Should `Admin API Routes & Export` be split into smaller, more focused modules?**
-  _Cohesion score 0.13666666666666666 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13230769230769232 - nodes in this community are weakly interconnected._
 - **Should `Node.js Dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.03508771929824561 - nodes in this community are weakly interconnected._

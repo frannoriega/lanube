@@ -25,7 +25,7 @@ import { describe, expect, it } from "vitest";
 const flatFields: FlatFieldInput[] = [
   { id: "name", type: "SHORT_TEXT", label: "Nombre", required: true },
   { id: "bio", type: "LONG_TEXT", label: "Bio", required: false },
-  { id: "age", type: "NUMBER", label: "Edad", required: true },
+  { id: "age", type: "FLOAT", label: "Edad", required: true },
   { id: "dob", type: "DATE", label: "Nacimiento", required: false },
   { id: "at", type: "TIME", label: "Hora", required: false },
   { id: "tel", type: "PHONE", label: "Teléfono", required: false },
