@@ -1,6 +1,7 @@
 "use server";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { logger } from "@/lib/logger";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -86,7 +87,7 @@ export async function sendEventRegistrationEmail(
     }
     return { success: true };
   } catch (error) {
-    console.error("Error al enviar email de inscripción", error);
+    logger.error("event registration email failed", error);
     return { success: false, error: "Error al enviar el email" };
   }
 }

@@ -1,4 +1,5 @@
 import { requirePermission } from "@/lib/api-auth";
+import { apiServerError } from "@/lib/api/response";
 import { getStorage } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -48,8 +49,6 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ url, name: file.name });
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "No se pudo subir el archivo";
-    return NextResponse.json({ message }, { status: 500 });
+    return apiServerError("admin/forms/upload POST", e);
   }
 }

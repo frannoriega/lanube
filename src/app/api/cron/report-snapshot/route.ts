@@ -8,6 +8,7 @@ import {
   endOfDateKeyMs,
 } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
+import { logger } from "@/lib/logger";
 
 function toDateKey(d: TZDate): string {
   const y = d.getFullYear();
@@ -59,59 +60,68 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const now = new TZDate(nowMs(), ADMIN_TIMEZONE);
-  const snapshots: { key: string; fromMs: number; toMs: number }[] = [];
+  try {
+    const now = new TZDate(nowMs(), ADMIN_TIMEZONE);
+    const snapshots: { key: string; fromMs: number; toMs: number }[] = [];
 
-  // Previous month
-  const prevMonthFirst = new TZDate(
-    now.getFullYear(),
-    now.getMonth() - 1,
-    1,
-    ADMIN_TIMEZONE,
-  );
-  const prevYear = prevMonthFirst.getFullYear();
-  const prevMonth = prevMonthFirst.getMonth() + 1;
-  const monthFromKey = toDateKey(
-    new TZDate(prevYear, prevMonth - 1, 1, ADMIN_TIMEZONE),
-  );
-  const monthToKey = toDateKey(
-    new TZDate(prevYear, prevMonth, 0, ADMIN_TIMEZONE),
-  );
-  const monthKey = `MONTHLY_${prevYear}_${String(prevMonth).padStart(2, "0")}`;
-
-  snapshots.push(
-    await upsertSnapshot({
-      key: monthKey,
-      type: "MONTHLY",
-      year: prevYear,
-      month: prevMonth,
-      fromDate: monthFromKey,
-      toDate: monthToKey,
-      fromMs: startOfDateKeyMs(monthFromKey),
-      toMs: endOfDateKeyMs(monthToKey),
-    }),
-  );
-
-  // Previous year — only when running in January
-  if (now.getMonth() === 0) {
-    const lastYear = now.getFullYear() - 1;
-    const yearFromKey = `${lastYear}-01-01`;
-    const yearToKey = `${lastYear}-12-31`;
-    const yearKey = `YEARLY_${lastYear}`;
+    // Previous month
+    const prevMonthFirst = new TZDate(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+      ADMIN_TIMEZONE,
+    );
+    const prevYear = prevMonthFirst.getFullYear();
+    const prevMonth = prevMonthFirst.getMonth() + 1;
+    const monthFromKey = toDateKey(
+      new TZDate(prevYear, prevMonth - 1, 1, ADMIN_TIMEZONE),
+    );
+    const monthToKey = toDateKey(
+      new TZDate(prevYear, prevMonth, 0, ADMIN_TIMEZONE),
+    );
+    const monthKey = `MONTHLY_${prevYear}_${String(prevMonth).padStart(2, "0")}`;
 
     snapshots.push(
       await upsertSnapshot({
-        key: yearKey,
-        type: "YEARLY",
-        year: lastYear,
-        month: null,
-        fromDate: yearFromKey,
-        toDate: yearToKey,
-        fromMs: startOfDateKeyMs(yearFromKey),
-        toMs: endOfDateKeyMs(yearToKey),
+        key: monthKey,
+        type: "MONTHLY",
+        year: prevYear,
+        month: prevMonth,
+        fromDate: monthFromKey,
+        toDate: monthToKey,
+        fromMs: startOfDateKeyMs(monthFromKey),
+        toMs: endOfDateKeyMs(monthToKey),
       }),
     );
-  }
 
-  return NextResponse.json({ snapshots });
+    // Previous year — only when running in January
+    if (now.getMonth() === 0) {
+      const lastYear = now.getFullYear() - 1;
+      const yearFromKey = `${lastYear}-01-01`;
+      const yearToKey = `${lastYear}-12-31`;
+      const yearKey = `YEARLY_${lastYear}`;
+
+      snapshots.push(
+        await upsertSnapshot({
+          key: yearKey,
+          type: "YEARLY",
+          year: lastYear,
+          month: null,
+          fromDate: yearFromKey,
+          toDate: yearToKey,
+          fromMs: startOfDateKeyMs(yearFromKey),
+          toMs: endOfDateKeyMs(yearToKey),
+        }),
+      );
+    }
+
+    logger.info("cron/report-snapshot done", { count: snapshots.length });
+    return NextResponse.json({ snapshots });
+  } catch (error) {
+    logger.error("cron/report-snapshot failed", error);
+    return NextResponse.json(
+      { message: "Error interno del servidor" },
+      { status: 500 },
+    );
+  }
 }

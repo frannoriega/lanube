@@ -1,12 +1,12 @@
 import { requirePermission } from "@/lib/api-auth";
+import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import {
   deleteFormTemplate,
   getFormTemplate,
   updateFormTemplate,
 } from "@/lib/db/forms";
-import { serializeJson } from "@/lib/json-bigint";
 import { formTemplateSchema } from "@/lib/schemas/events";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function GET(
   _request: NextRequest,
@@ -18,12 +18,9 @@ export async function GET(
   const { id } = await params;
   const template = await getFormTemplate(id);
   if (!template) {
-    return NextResponse.json(
-      { message: "Formulario no encontrado" },
-      { status: 404 },
-    );
+    return apiError("Formulario no encontrado", 404);
   }
-  return NextResponse.json(serializeJson(template));
+  return apiSuccess(template);
 }
 
 export async function PUT(
@@ -37,23 +34,16 @@ export async function PUT(
   const body = await request.json().catch(() => null);
   const parsed = formTemplateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        message: parsed.error.issues[0]?.message ?? "Datos inválidos",
-        issues: parsed.error.issues,
-      },
-      { status: 400 },
-    );
+    return apiError(parsed.error.issues[0]?.message ?? "Datos inválidos", 400, {
+      issues: parsed.error.issues,
+    });
   }
 
   try {
     const template = await updateFormTemplate(id, parsed.data);
-    return NextResponse.json(serializeJson(template));
+    return apiSuccess(template);
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "Error interno del servidor";
-    const status = message.includes("no encontrado") ? 404 : 400;
-    return NextResponse.json({ message }, { status });
+    return apiCatch("admin/forms/[id] PUT", e);
   }
 }
 
@@ -67,11 +57,8 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteFormTemplate(id);
-    return NextResponse.json({ ok: true });
+    return apiSuccess({ ok: true });
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "Error interno del servidor";
-    const status = message.includes("no encontrado") ? 404 : 400;
-    return NextResponse.json({ message }, { status });
+    return apiCatch("admin/forms/[id] DELETE", e);
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 type MaintainRow = {
   deleted_past_ledger: bigint;
@@ -26,20 +27,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rows = await prisma.$queryRaw<MaintainRow[]>`
-    SELECT * FROM maintain_reservations()
-  `;
-  const row = rows[0];
-  if (!row) {
+  try {
+    const rows = await prisma.$queryRaw<MaintainRow[]>`
+      SELECT * FROM maintain_reservations()
+    `;
+    const row = rows[0];
+    if (!row) {
+      logger.error("cron/maintain-reservations returned no result");
+      return NextResponse.json(
+        { message: "No result from maintain_reservations" },
+        { status: 500 },
+      );
+    }
+
+    const result = {
+      deletedPastLedger: Number(row.deleted_past_ledger),
+      rebuiltRecurring: Number(row.rebuilt_recurring),
+      deletedReservations: Number(row.deleted_reservations),
+    };
+    logger.info("cron/maintain-reservations done", result);
+    return NextResponse.json(result);
+  } catch (error) {
+    logger.error("cron/maintain-reservations failed", error);
     return NextResponse.json(
-      { error: "No result from maintain_reservations" },
+      { message: "Error interno del servidor" },
       { status: 500 },
     );
   }
-
-  return NextResponse.json({
-    deletedPastLedger: Number(row.deleted_past_ledger),
-    rebuiltRecurring: Number(row.rebuilt_recurring),
-    deletedReservations: Number(row.deleted_reservations),
-  });
 }

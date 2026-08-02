@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/adminReservations";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { apiServerError } from "@/lib/api/response";
 
 function parseTimestamp(raw: string | null): number | null {
   if (!raw) return null;
@@ -85,10 +86,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json({ items, total });
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("admin/reservations/days GET", error);
   }
 }

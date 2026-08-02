@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
+import { apiServerError } from "@/lib/api/response";
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,10 +49,7 @@ export async function POST(request: NextRequest) {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("auth/signup POST", error);
   }
 }

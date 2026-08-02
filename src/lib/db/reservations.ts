@@ -1,4 +1,5 @@
 import { now, nowMs } from "@/lib/clock";
+import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import { createId } from "@paralleldrive/cuid2";
@@ -181,10 +182,9 @@ export async function createReservation(
     `;
   } catch (error) {
     if (error instanceof Error) {
-      console.error(error);
-      // Parse SQL errors for user-friendly messages
+      // Translate known SQL errors into user-safe DomainErrors (surfaced as 4xx).
       if (error.message?.includes("No available")) {
-        throw new Error(
+        throw new DomainError(
           "No hay recursos disponibles para el horario seleccionado",
         );
       }
@@ -192,17 +192,21 @@ export async function createReservation(
         /Overlap with approved reservation at (.+?) \(/,
       );
       if (overlapMatch) {
-        throw new Error(
+        throw new DomainError(
           `Ya tenés una reserva aprobada en "${overlapMatch[1]}" en ese horario`,
         );
       }
       if (error.message?.includes("Conflict on")) {
-        throw new Error("Conflicto en una de las fechas de la recurrencia");
+        throw new DomainError(
+          "Conflicto en una de las fechas de la recurrencia",
+        );
       }
       if (error.message?.includes("Capacity exceeded")) {
-        throw new Error("Capacidad excedida en una de las fechas");
+        throw new DomainError("Capacidad excedida en una de las fechas");
       }
     }
+    // Unknown SQL/DB failure: let it bubble as an internal error (logged +
+    // generic 500 by the route). Not user-safe.
     throw error;
   }
 

@@ -17,6 +17,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
+import { apiServerError } from "@/lib/api/response";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -134,10 +135,7 @@ export async function GET(request: NextRequest) {
     const itemsByDate = groupAdminReservationsByDateKey(flat, keys);
 
     return NextResponse.json(serializeJson({ itemsByDate, fromKey, toKey }));
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("admin/reservations", error);
   }
 }

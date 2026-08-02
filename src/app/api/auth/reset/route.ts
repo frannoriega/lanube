@@ -7,6 +7,7 @@ import {
   createResetToken,
 } from "@/lib/db/verificationTokens";
 import { sendResetEmail } from "@/lib/email/reset";
+import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { resetSchema } from "@/lib/schemas/auth";
 import { headers } from "next/headers";
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
     const token = await createResetToken(user.id);
     const { error } = await sendResetEmail(user.user.email, token);
     if (error) {
-      console.error(error);
+      logger.warn("reset email failed to send", { error });
     }
   }
   return NextResponse.json(
