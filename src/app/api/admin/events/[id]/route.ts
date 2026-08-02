@@ -10,9 +10,9 @@ import {
   sessionActionSchema,
   sessionActionsNeedReason,
 } from "@/lib/schemas/events";
-import { serializeJson } from "@/lib/json-bigint";
+import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { z } from "zod";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function GET(
   _request: NextRequest,
@@ -24,12 +24,9 @@ export async function GET(
   const { id } = await params;
   const event = await getEvent(id);
   if (!event) {
-    return NextResponse.json(
-      { message: "Evento no encontrado" },
-      { status: 404 },
-    );
+    return apiError("Evento no encontrado", 404);
   }
-  return NextResponse.json(serializeJson(event));
+  return apiSuccess(event);
 }
 
 export async function PUT(
@@ -43,10 +40,7 @@ export async function PUT(
   const body = await request.json().catch(() => null);
   const parsed = eventInputSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { message: "Datos inválidos", issues: parsed.error.issues },
-      { status: 400 },
-    );
+    return apiError("Datos inválidos", 400, { issues: parsed.error.issues });
   }
 
   const force = body?.force === true;
@@ -54,23 +48,16 @@ export async function PUT(
     .array(sessionActionSchema)
     .safeParse(body?.sessionActions ?? []);
   if (!sessionsParsed.success) {
-    return NextResponse.json(
-      {
-        message: "Cambios de sesión inválidos",
-        issues: sessionsParsed.error.issues,
-      },
-      { status: 400 },
-    );
+    return apiError("Cambios de sesión inválidos", 400, {
+      issues: sessionsParsed.error.issues,
+    });
   }
 
   // Single reason shared by every cancel/reschedule in this save (required when any exist).
   const sessionReason =
     typeof body?.sessionReason === "string" ? body.sessionReason.trim() : "";
   if (sessionActionsNeedReason(sessionsParsed.data) && sessionReason === "") {
-    return NextResponse.json(
-      { message: "El motivo del cambio de sesiones es obligatorio" },
-      { status: 400 },
-    );
+    return apiError("El motivo del cambio de sesiones es obligatorio", 400);
   }
 
   try {
@@ -79,19 +66,13 @@ export async function PUT(
       sessionActions: sessionsParsed.data,
       sessionReason,
     });
-    return NextResponse.json(serializeJson(event));
+    return apiSuccess(event);
   } catch (e) {
     // Edit would drop per-session changes → ask the admin to confirm (frontend resends force).
     if (e instanceof EventEditDropWarning) {
-      return NextResponse.json(
-        { message: e.message, dropped: e.dropped },
-        { status: 409 },
-      );
+      return apiError(e.message, 409, { dropped: e.dropped });
     }
-    const message =
-      e instanceof Error ? e.message : "Error interno del servidor";
-    const status = message.includes("no encontrado") ? 404 : 400;
-    return NextResponse.json({ message }, { status });
+    return apiCatch("admin/events/[id] PUT", e);
   }
 }
 
@@ -105,11 +86,8 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteEvent(id);
-    return NextResponse.json({ ok: true });
+    return apiSuccess({ ok: true });
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "Error interno del servidor";
-    const status = message.includes("no encontrado") ? 404 : 400;
-    return NextResponse.json({ message }, { status });
+    return apiCatch("admin/events/[id] DELETE", e);
   }
 }

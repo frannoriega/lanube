@@ -2,6 +2,7 @@
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { listEventParticipants } from "@/lib/db/participants";
+import { logger } from "@/lib/logger";
 import { ParticipantStatus } from "@/types/prisma";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
@@ -159,7 +160,10 @@ export async function notifyEventParticipantsBatch(
       if (info.rejected.length > 0) failed++;
       else sent++;
     } catch (error) {
-      console.error("Error al notificar a participante", to, error);
+      logger.warn("event occurrence notification failed", {
+        to,
+        error: error instanceof Error ? error.message : String(error),
+      });
       failed++;
     }
   }

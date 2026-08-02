@@ -5,6 +5,7 @@ import {
 } from "@/lib/db/adminStats";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
+import { apiServerError } from "@/lib/api/response";
 
 export async function PATCH(
   request: NextRequest,
@@ -38,10 +39,7 @@ export async function PATCH(
       );
     }
     return NextResponse.json(serializeJson(updated));
-  } catch {
-    return NextResponse.json(
-      { message: "Error interno del servidor" },
-      { status: 500 },
-    );
+  } catch (error) {
+    return apiServerError("admin/checkin/[id]", error);
   }
 }
