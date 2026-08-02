@@ -3,19 +3,29 @@
 import { MarkdownMark } from "@/components/atoms/markdown-mark";
 import { Markdown } from "@/components/molecules/markdown";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Bold,
   Code,
   Heading,
+  ImagePlus,
   Italic,
   Link2,
   List,
   ListOrdered,
+  Loader2,
+  Paperclip,
   Quote,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 // External Spanish markdown reference shown by the "Soporta markdown" badge.
 const MARKDOWN_DOCS_URL = "https://markdown.es/sintaxis/";
@@ -31,12 +41,18 @@ interface MarkdownEditorProps {
   minLength?: number;
   maxLength?: number;
   ariaDescribedBy?: string;
+  /**
+   * Endpoint (accepts `multipart/form-data` with a `file` field, returns `{ url }`) enabling the
+   * image + file attachment buttons. Omitted → those buttons are hidden.
+   */
+  uploadUrl?: string;
 }
 
 /**
  * Markdown description editor: a formatting toolbar over a plain textarea (the stored value is
  * markdown), with a "Vista previa" tab that renders it via <Markdown>. The toolbar emits only
- * standard CommonMark/GFM syntax.
+ * standard CommonMark/GFM syntax. When `uploadUrl` is set, image/file buttons upload an asset and
+ * insert the corresponding markdown (`![name](url)` / `[name](url)`).
  */
 export function MarkdownEditor({
   value,
@@ -48,10 +64,16 @@ export function MarkdownEditor({
   minLength,
   maxLength,
   ariaDescribedBy,
+  uploadUrl,
 }: MarkdownEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   // Selection to restore after a toolbar edit re-renders the textarea.
   const pendingSelection = useRef<[number, number] | null>(null);
+  // Selection captured when a file picker opens (async upload may resolve after focus is lost).
+  const uploadSelection = useRef<[number, number] | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (pendingSelection.current && ref.current) {
@@ -121,6 +143,41 @@ export function MarkdownEditor({
     onChange(next);
   };
 
+  /** Remember where to drop the uploaded asset, then open the given picker. */
+  const openPicker = (which: "image" | "file") => {
+    const ta = ref.current;
+    uploadSelection.current = ta ? [ta.selectionStart, ta.selectionEnd] : null;
+    (which === "image" ? imageInputRef : fileInputRef).current?.click();
+  };
+
+  const uploadAndInsert = async (file: File, kind: "image" | "file") => {
+    if (!uploadUrl) return;
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch(uploadUrl, { method: "POST", body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message ?? "No se pudo subir el archivo");
+        return;
+      }
+      const name = file.name.replace(/\.[^.]+$/, "");
+      const snippet =
+        kind === "image" ? `![${name}](${data.url})` : `[${name}](${data.url})`;
+      const [s, e] = uploadSelection.current ?? [value.length, value.length];
+      // A new line before/after keeps a block image/link from gluing onto surrounding text.
+      const before = s > 0 && value[s - 1] !== "\n" ? "\n\n" : "";
+      const next = value.slice(0, s) + before + snippet + "\n" + value.slice(e);
+      const caret = s + before.length + snippet.length + 1;
+      pendingSelection.current = [caret, caret];
+      onChange(next);
+      toast.success(kind === "image" ? "Imagen subida" : "Archivo subido");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Optional character counter — only shown when a min and/or max is configured.
   const length = value.trim().length;
   let counter: { text: string; warn: boolean } | null = null;
@@ -150,9 +207,40 @@ export function MarkdownEditor({
           aria-label="Formato de texto"
           className="flex flex-wrap items-center gap-0.5"
         >
-          <ToolbarButton label="Título" onClick={() => prefixLines("### ")}>
-            <Heading className="h-4 w-4" />
-          </ToolbarButton>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Título"
+                title="Título"
+              >
+                <Heading className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => prefixLines("# ")}
+                className="text-xl font-bold"
+              >
+                Título 1
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => prefixLines("## ")}
+                className="text-lg font-bold"
+              >
+                Título 2
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => prefixLines("### ")}
+                className="text-base font-semibold"
+              >
+                Título 3
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ToolbarButton label="Negrita" onClick={() => surround("**")}>
             <Bold className="h-4 w-4" />
           </ToolbarButton>
@@ -178,6 +266,29 @@ export function MarkdownEditor({
           <ToolbarButton label="Lista" onClick={() => prefixLines("- ")}>
             <List className="h-4 w-4" />
           </ToolbarButton>
+          {uploadUrl && (
+            <>
+              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+              <ToolbarButton
+                label="Imagen"
+                onClick={() => openPicker("image")}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+              </ToolbarButton>
+              <ToolbarButton
+                label="Adjuntar archivo (PDF)"
+                onClick={() => openPicker("file")}
+                disabled={uploading}
+              >
+                <Paperclip className="h-4 w-4" />
+              </ToolbarButton>
+            </>
+          )}
         </div>
         <TabsList className="h-8">
           <TabsTrigger value="write" className="text-xs">
@@ -188,6 +299,33 @@ export function MarkdownEditor({
           </TabsTrigger>
         </TabsList>
       </div>
+
+      {uploadUrl && (
+        <>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadAndInsert(file, "image");
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadAndInsert(file, "file");
+              e.target.value = "";
+            }}
+          />
+        </>
+      )}
 
       <TabsContent value="write" className="m-0">
         <Textarea
@@ -245,10 +383,12 @@ export function MarkdownEditor({
 function ToolbarButton({
   label,
   onClick,
+  disabled,
   children,
 }: {
   label: string;
   onClick: () => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -259,6 +399,7 @@ function ToolbarButton({
       className="h-8 w-8"
       aria-label={label}
       title={label}
+      disabled={disabled}
       onClick={onClick}
     >
       {children}

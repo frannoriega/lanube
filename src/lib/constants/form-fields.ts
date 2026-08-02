@@ -2,6 +2,7 @@ import { FormFieldType } from "@/types/prisma";
 import {
   AlignLeft,
   Calendar,
+  CheckSquare,
   Clock,
   DollarSign,
   Hash,
@@ -9,6 +10,7 @@ import {
   List,
   ListChecks,
   type LucideIcon,
+  Paperclip,
   Phone,
   Ratio,
   Sigma,
@@ -29,6 +31,8 @@ export const FIELD_TYPE_LABELS: Record<string, string> = {
   TIME: "Hora",
   PHONE: "Teléfono",
   DNI: "DNI",
+  FILE: "Archivo",
+  BOOLEAN: "Casilla de aceptación",
 };
 
 /** Icon per field type, for compact previews. */
@@ -45,6 +49,8 @@ export const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   TIME: Clock,
   PHONE: Phone,
   DNI: IdCard,
+  FILE: Paperclip,
+  BOOLEAN: CheckSquare,
 };
 
 export function fieldTypeLabel(type: string): string {
@@ -64,3 +70,9 @@ export const NUMERIC_FIELD_TYPES: string[] = [
   FormFieldType.FLOAT,
   FormFieldType.MONEY,
 ];
+
+/** File-upload field types (need a size/extension constraints editor). */
+export const FILE_FIELD_TYPES: string[] = [FormFieldType.FILE];
+
+/** Checkbox/acknowledgement field types (offer an optional attached document). */
+export const BOOLEAN_FIELD_TYPES: string[] = [FormFieldType.BOOLEAN];

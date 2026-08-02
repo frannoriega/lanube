@@ -5,7 +5,12 @@
  * fully supported; deeper nesting is ignored for columns (the raw answers remain in the DB).
  */
 
-import type { FormSchema } from "@/lib/events/form-schema";
+import { collectUploadedFiles } from "@/lib/events/form-files";
+import {
+  type FormSchema,
+  isUploadedFile,
+  type UploadedFile,
+} from "@/lib/events/form-schema";
 
 export interface ExportColumn {
   /** Dot path key ("fieldId" or "groupId.childId"). */
@@ -17,9 +22,10 @@ export interface ExportColumn {
 /** Renders any answer value to a flat string. */
 export function answerToString(value: unknown): string {
   if (value == null) return "";
+  if (isUploadedFile(value)) return value.name;
   if (Array.isArray(value)) return value.map(answerToString).join(", ");
-  if (typeof value === "object") return JSON.stringify(value);
   if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
 
@@ -67,4 +73,24 @@ export function exportCell(
     return answerToString((group as Record<string, unknown>)[childId]);
   }
   return "";
+}
+
+/** Uploaded files referenced by a column (across repeating-group items). Empty for non-FILE. */
+export function cellFiles(
+  col: ExportColumn,
+  answers: Record<string, unknown>,
+): UploadedFile[] {
+  if (col.path.length === 1) return collectUploadedFiles(answers[col.path[0]]);
+
+  const [groupId, childId] = col.path;
+  const group = answers[groupId];
+  if (Array.isArray(group)) {
+    return group.flatMap((item) =>
+      collectUploadedFiles((item as Record<string, unknown> | null)?.[childId]),
+    );
+  }
+  if (group && typeof group === "object") {
+    return collectUploadedFiles((group as Record<string, unknown>)[childId]);
+  }
+  return [];
 }

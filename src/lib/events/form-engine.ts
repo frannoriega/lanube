@@ -164,8 +164,33 @@ export function repeatCount(
 // Scalar validation
 // ---------------------------------------------------------------------------
 
+/** Lowercased file extension (no dot), or "" if none. */
+export function fileExtension(name: string): string {
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
+}
+
+/** Whether a filename's extension is in the allow-list (list entries normalized: no dot, lower). */
+export function extensionAllowed(
+  name: string,
+  accept: string[] | null | undefined,
+): boolean {
+  if (!accept || accept.length === 0) return true;
+  const ext = fileExtension(name);
+  return accept.some((a) => a.replace(/^\./, "").toLowerCase() === ext);
+}
+
 /** Validates one input node's answer. Returns an error message, or null if valid. */
 export function validateScalar(node: InputNode, value: unknown): string | null {
+  // BOOLEAN is special-cased before the emptiness check: `false` is a valid, non-empty answer,
+  // but a *required* acknowledgement must be explicitly true.
+  if (node.type === "BOOLEAN") {
+    if (value != null && typeof value !== "boolean") return "Valor inválido";
+    return node.required && value !== true
+      ? "Debés marcar esta casilla para continuar"
+      : null;
+  }
+
   if (isEmpty(value)) {
     return node.required ? "Este campo es obligatorio" : null;
   }
@@ -234,12 +259,24 @@ export function validateScalar(node: InputNode, value: unknown): string | null {
     }
 
     case "FILE": {
-      // Reserved: full validation (real size/MIME) lands with the upload phase. Here we only
-      // sanity-check the stored shape (an array of file descriptors) and the count constraint.
       if (!Array.isArray(value)) return "Archivo inválido";
-      const max = node.constraints?.maxFiles;
-      if (typeof max === "number" && value.length > max)
-        return `Máximo ${max} archivo(s)`;
+      const c = node.constraints;
+      const max = c?.maxFiles ?? 1;
+      if (value.length > max) return `Máximo ${max} archivo(s)`;
+      for (const f of value) {
+        if (!f || typeof f !== "object") return "Archivo inválido";
+        const file = f as { url?: unknown; name?: unknown; size?: unknown };
+        if (typeof file.url !== "string" || typeof file.name !== "string")
+          return "Archivo inválido";
+        if (
+          typeof c?.maxSizeMb === "number" &&
+          typeof file.size === "number" &&
+          file.size > c.maxSizeMb * 1024 * 1024
+        )
+          return `Cada archivo debe pesar menos de ${c.maxSizeMb} MB`;
+        if (!extensionAllowed(file.name, c?.accept))
+          return `Formato no permitido (${(c?.accept ?? []).join(", ")})`;
+      }
       return null;
     }
 
