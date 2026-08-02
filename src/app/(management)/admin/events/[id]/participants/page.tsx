@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { getEvent } from "@/lib/db/events";
 import { getEventFormColumns } from "@/lib/db/forms";
 import { listEventParticipants } from "@/lib/db/participants";
+import { ParticipantStatus } from "@/types/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -19,13 +20,21 @@ export default async function ParticipantsPage({
     listEventParticipants(id),
     getEventFormColumns(id),
   ]);
-  const active = participants.filter((p) => !p.cancelled);
+  // "Inscriptos" = spot-holders (pending or approved); rejected/cancelled don't count.
+  const active = participants.filter(
+    (p) =>
+      p.status === ParticipantStatus.PENDING ||
+      p.status === ParticipantStatus.APPROVED,
+  );
+  const pending = participants.filter(
+    (p) => p.status === ParticipantStatus.PENDING,
+  );
 
   const rows = participants.map((p) => ({
     id: p.id,
     email: p.email,
     displayEmail: p.displayEmail,
-    cancelled: p.cancelled,
+    status: p.status as ParticipantStatus,
     createdAt: Number(p.createdAt),
     answers: (p.answers ?? {}) as Record<string, unknown>,
   }));
@@ -37,6 +46,9 @@ export default async function ParticipantsPage({
           <h1 className="text-2xl font-bold">Participantes</h1>
           <p className="text-muted-foreground">
             {event.name} · {active.length} inscriptos
+            {event.requiresApproval && pending.length > 0
+              ? ` · ${pending.length} pendiente${pending.length === 1 ? "" : "s"}`
+              : ""}
           </p>
         </div>
         <div className="flex gap-2">
@@ -54,7 +66,12 @@ export default async function ParticipantsPage({
       {participants.length === 0 ? (
         <p className="text-muted-foreground">Todavía no hay inscriptos.</p>
       ) : (
-        <ParticipantsTable eventId={id} columns={columns} rows={rows} />
+        <ParticipantsTable
+          eventId={id}
+          columns={columns}
+          rows={rows}
+          requiresApproval={event.requiresApproval}
+        />
       )}
     </div>
   );

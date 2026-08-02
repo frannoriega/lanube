@@ -3,6 +3,7 @@ import {
   getUserNextReservations,
 } from "@/lib/db/reservations";
 import { nowMs } from "@/lib/clock";
+import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
@@ -95,7 +96,11 @@ export async function getEventOccurrencesForSpace(
           closesAt: true,
         },
       },
-      _count: { select: { participants: { where: { cancelled: false } } } },
+      _count: {
+        select: {
+          participants: { where: { status: { in: SPOT_HOLDING_STATUSES } } },
+        },
+      },
     },
   });
 

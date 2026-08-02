@@ -56,6 +56,18 @@ enum ReservationStatus {
   @@map("reservation_statuses")
 }
 
+// Lifecycle of an event registration. A participant "holds a spot" (counts toward the event's
+// capacity/cupo) while PENDING or APPROVED; REJECTED (by an admin) and CANCELLED (by the
+// participant) free the spot. Auto-approve events never produce PENDING rows.
+enum ParticipantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@map("participant_statuses")
+}
+
 enum FormFieldType {
   SHORT_TEXT
   LONG_TEXT

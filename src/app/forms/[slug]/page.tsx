@@ -50,11 +50,21 @@ export default async function PublicFormPage({
       eventImageUrl={form.eventImageUrl}
       schema={form.schema}
       notice={
-        form.spotsLeft !== null ? (
-          <p className="text-sm font-medium text-muted-foreground">
-            Cupos disponibles: {form.spotsLeft}
-          </p>
-        ) : undefined
+        <div className="space-y-2">
+          {form.spotsLeft !== null && (
+            <p className="text-sm font-medium text-muted-foreground">
+              Cupos disponibles: {form.spotsLeft}
+            </p>
+          )}
+          {form.requiresApproval && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+              Este evento tiene cupos limitados y las inscripciones están
+              sujetas a aprobación.{" "}
+              <strong>Inscribirte no garantiza tu lugar</strong>: te avisaremos
+              por email cuando tu inscripción sea revisada.
+            </div>
+          )}
+        </div>
       }
     />
   );

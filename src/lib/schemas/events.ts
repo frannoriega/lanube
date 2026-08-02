@@ -85,6 +85,9 @@ export const eventInputSchema = z
       .positive({ message: "La capacidad debe ser positiva" })
       .optional()
       .nullable(),
+    // When true, registrations require admin approval (start PENDING); the capacity then caps
+    // how many can register, not the final approved headcount.
+    requiresApproval: z.boolean(),
     // Optional cover image URL produced by the upload endpoint. Accepts an absolute
     // http(s) URL (Vercel Blob / custom host) or a root-relative path (local dev provider).
     imageUrl: z
@@ -219,3 +222,19 @@ export type ParticipantSubmitInput = z.infer<typeof participantSubmitSchema>;
 export const participantEditSchema = z.object({
   answers: z.record(z.string(), z.unknown()),
 });
+
+/**
+ * Admin bulk approve/reject of registrations. The optional reason is shared by the whole batch
+ * (shown to rejected participants; a blank reason falls back to a neutral generic message).
+ */
+export const participantDecisionSchema = z.object({
+  participantIds: z
+    .array(z.string().min(1))
+    .min(1, { message: "Elegí al menos un participante" }),
+  decision: z.enum(["approve", "reject"]),
+  reason: z.string().trim().max(1000).optional().nullable(),
+});
+
+export type ParticipantDecisionInput = z.infer<
+  typeof participantDecisionSchema
+>;

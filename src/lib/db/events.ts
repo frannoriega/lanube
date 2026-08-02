@@ -22,6 +22,7 @@ import {
   OccurrenceChange,
 } from "@/lib/email/event-occurrence-update";
 import { prisma } from "@/lib/prisma";
+import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import {
   EventInput,
   SessionActionInput,
@@ -139,6 +140,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
           rrule: `FREQ=WEEKLY;BYDAY=${byDay}`,
           recurrenceEnd: earliest.recurrenceEndMs,
           capacity: input.capacity ?? null,
+          requiresApproval: input.requiresApproval ?? false,
           imageUrl: input.imageUrl ?? null,
         },
       });
@@ -501,6 +503,7 @@ export async function updateEvent(
           status: input.status,
           spaceId: input.spaceId,
           capacity: input.capacity ?? null,
+          requiresApproval: input.requiresApproval ?? false,
           imageUrl: input.imageUrl ?? null,
           // Editing + saving revives a cancelled event.
           deletedAt: null,
@@ -852,6 +855,7 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
     startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`,
     endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
     capacity: event.capacity,
+    requiresApproval: event.requiresApproval,
     imageUrl: event.imageUrl ?? null,
     form: event.form
       ? {
@@ -943,7 +947,11 @@ export async function getUpcomingPublicEvents(
           closesAt: true,
         },
       },
-      _count: { select: { participants: { where: { cancelled: false } } } },
+      _count: {
+        select: {
+          participants: { where: { status: { in: SPOT_HOLDING_STATUSES } } },
+        },
+      },
     },
   });
 
@@ -1028,7 +1036,11 @@ export async function getUpcomingPublicEventsPage(
             closesAt: true,
           },
         },
-        _count: { select: { participants: { where: { cancelled: false } } } },
+        _count: {
+          select: {
+            participants: { where: { status: { in: SPOT_HOLDING_STATUSES } } },
+          },
+        },
       },
     }),
     prisma.event.count({ where }),
@@ -1128,7 +1140,11 @@ export async function getPublicEventDetail(
           closesAt: true,
         },
       },
-      _count: { select: { participants: { where: { cancelled: false } } } },
+      _count: {
+        select: {
+          participants: { where: { status: { in: SPOT_HOLDING_STATUSES } } },
+        },
+      },
     },
   });
 
