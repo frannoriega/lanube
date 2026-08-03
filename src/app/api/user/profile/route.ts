@@ -4,6 +4,7 @@ import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { apiCatch, apiServerError } from "@/lib/api/response";
+import { dniInputSchema } from "@/lib/schemas/profile";
 
 export async function GET() {
   try {
@@ -49,10 +50,25 @@ export async function PUT(request: NextRequest) {
 
     const { name, lastName, dni, institution, reasonToJoin } =
       await request.json();
+
+    const parsedDni = dniInputSchema.safeParse(dni);
+    if (!parsedDni.success) {
+      return NextResponse.json(
+        { message: "Ingrese un DNI válido (solo números)" },
+        { status: 400 },
+      );
+    }
+
     try {
       const updatedUser = await updateRegisteredUserProfileByEmail(
         session.user.email,
-        { name, lastName, dni, institution, reasonToJoin },
+        {
+          name,
+          lastName,
+          dni: parsedDni.data.toString(),
+          institution,
+          reasonToJoin,
+        },
       );
       return NextResponse.json(serializeJson(updatedUser));
     } catch (error) {

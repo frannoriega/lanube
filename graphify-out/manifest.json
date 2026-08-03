@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1785679781.4616542,
-    "ast_hash": "ac6d9220b43c0f7ecce420c2edcffec9",
+    "mtime": 1785682836.0507576,
+    "ast_hash": "e50b8e61ea405e9694384914e4b57dab",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -365,9 +365,9 @@
     "semantic_hash": ""
   },
   "src/app/(management)/auth/signup/page.tsx": {
-    "mtime": 1785506761.5906088,
-    "ast_hash": "d32139044286de545cdbde89841eb51b",
-    "semantic_hash": "d32139044286de545cdbde89841eb51b"
+    "mtime": 1785682710.479781,
+    "ast_hash": "0007d05a3bbf686249ae7da78d09a413",
+    "semantic_hash": ""
   },
   "src/app/(management)/banned/layout.tsx": {
     "mtime": 1784314355.7197173,
@@ -395,8 +395,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/user/settings/page.tsx": {
-    "mtime": 1785506761.5929015,
-    "ast_hash": "653c5fc8491d28b80e16bdec660238d2",
+    "mtime": 1785682723.0622883,
+    "ast_hash": "79c6449f6ddf271aa933b39dad08af78",
     "semantic_hash": ""
   },
   "src/app/(public)/about/page.tsx": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "src/app/api/auth/signup/route.ts": {
-    "mtime": 1785638109.153465,
-    "ast_hash": "7fc263d231aec8e02fee8c13cd55ae83",
+    "mtime": 1785682752.0047824,
+    "ast_hash": "c8f3b28665848b599c5155a61d3156e6",
     "semantic_hash": ""
   },
   "src/app/api/cron/maintain-reservations/route.ts": {
@@ -595,8 +595,8 @@
     "semantic_hash": "5362a77c00447096235e73661a41ecb1"
   },
   "src/app/api/user/profile/route.ts": {
-    "mtime": 1785638093.661621,
-    "ast_hash": "e4847bb0483e7d546f03ccc0d7ed6b3d",
+    "mtime": 1785682762.057865,
+    "ast_hash": "bcd5a5c989c24366815e1542c2f03e16",
     "semantic_hash": ""
   },
   "src/app/api/user/stats/route.ts": {
@@ -930,8 +930,8 @@
     "semantic_hash": ""
   },
   "src/components/templates/landing/events/index.tsx": {
-    "mtime": 1785634264.733034,
-    "ast_hash": "09661bf01a820d64538fbc1070f5d106",
+    "mtime": 1785682835.9081218,
+    "ast_hash": "53bb55bed2ed2ae4d7c41cdec31d32cc",
     "semantic_hash": ""
   },
   "src/components/templates/landing/hero/index.tsx": {
@@ -2362,6 +2362,26 @@
   "src/lib/logger.ts": {
     "mtime": 1785638487.5330124,
     "ast_hash": "297d76e3c32150387945ab0494d47afe",
+    "semantic_hash": ""
+  },
+  "src/components/templates/landing/events/events-rail.tsx": {
+    "mtime": 1785682824.881331,
+    "ast_hash": "2f8ccbf0a83165433dc4841a1dba47e1",
+    "semantic_hash": ""
+  },
+  "src/components/templates/landing/events/featured-carousel.tsx": {
+    "mtime": 1785682807.1444216,
+    "ast_hash": "b952814c8e2151d49f2da1d112d3299e",
+    "semantic_hash": ""
+  },
+  "src/components/templates/landing/events/featured-event-card.tsx": {
+    "mtime": 1785682790.7628314,
+    "ast_hash": "444157e06c36790416a7e0416b57e3ba",
+    "semantic_hash": ""
+  },
+  "src/lib/schemas/profile.ts": {
+    "mtime": 1785682739.396987,
+    "ast_hash": "434779deb38bb08119e604f3a2a2eba9",
     "semantic_hash": ""
   }
 }
