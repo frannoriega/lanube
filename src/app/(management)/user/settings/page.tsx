@@ -32,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { dniSchema, sanitizeDni } from "@/lib/schemas/profile";
 
 const formSchema = z.object({
   name: z
@@ -40,10 +41,7 @@ const formSchema = z.object({
   lastName: z
     .string()
     .min(3, { message: "El apellido debe tener al menos 3 caracteres" }),
-  dni: z.coerce
-    .number({ message: "Ingrese su DNI" })
-    .min(0, { message: "El DNI debe ser un número positivo" })
-    .max(999999999, { message: "El DNI debe tener menos de 9 dígitos" }),
+  dni: dniSchema,
   institution: z.string().optional(),
   reasonToJoin: z
     .string()
@@ -171,16 +169,15 @@ export default function SettingsPage() {
                       <FormLabel>DNI</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
                           inputMode="numeric"
                           placeholder="Número de documento"
                           value={
                             Number.isNaN(field.value) ? "" : (field.value ?? "")
                           }
                           onChange={(event) => {
-                            const nextValue = event.target.value;
+                            const digits = sanitizeDni(event.target.value);
                             field.onChange(
-                              nextValue === "" ? Number.NaN : Number(nextValue),
+                              digits === "" ? Number.NaN : Number(digits),
                             );
                           }}
                         />

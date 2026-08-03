@@ -1,6 +1,7 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
-import { EventCard } from "@/components/templates/landing/events/event-card";
+import { EventsRail } from "@/components/templates/landing/events/events-rail";
+import { FeaturedCarousel } from "@/components/templates/landing/events/featured-carousel";
 import { getUpcomingPublicEventsPage } from "@/lib/db/events";
 
 export default async function EventsSection() {
@@ -33,21 +34,9 @@ export default async function EventsSection() {
             </p>
           </div>
 
-          {featured.length > 0 && (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((event) => (
-                <EventCard key={event.id} event={event} featured />
-              ))}
-            </div>
-          )}
+          {featured.length > 0 && <FeaturedCarousel events={featured} />}
 
-          {rest.length > 0 && (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {rest.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          )}
+          {rest.length > 0 && <EventsRail events={rest} />}
 
           {hasAsterisk && (
             <p className="text-xs text-muted-foreground">
