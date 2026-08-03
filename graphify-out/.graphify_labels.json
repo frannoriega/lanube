@@ -354,6 +354,7 @@
   "352": "READ Operations",
   "353": "prisma.ts",
   "354": "route.ts",
+  "355": "admin-reservation-detail-sheet.tsx",
   "356": "Utility Functions",
   "357": "🎉 Success!",
   "358": "🎯 Benefits",
@@ -365,6 +366,10 @@
   "364": "📚 Documentation Updates",
   "365": "🔄 Migration Path",
   "366": "🎯 Success Metrics",
+  "367": "index.tsx",
   "368": "🎉 Success!",
-  "370": "route.ts"
+  "369": "event-decision.ts",
+  "370": "route.ts",
+  "371": "index.ts",
+  "372": "🗄️ Database Requirements"
 }

@@ -27,6 +27,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Logo from "@/components/atoms/logos/lanube";
 import { z } from "zod";
+import { dniSchema, sanitizeDni } from "@/lib/schemas/profile";
 
 const signUpSchema = z.object({
   name: z
@@ -35,10 +36,7 @@ const signUpSchema = z.object({
   lastName: z
     .string()
     .min(3, { message: "El apellido debe tener al menos 3 caracteres" }),
-  dni: z
-    .number({ message: "Ingrese su DNI" })
-    .min(0, { message: "El DNI debe ser un número" })
-    .max(99999999, { message: "El DNI debe tener al menos 8 caracteres" }),
+  dni: dniSchema,
   institution: z.string().optional(),
   reasonToJoin: z
     .string()
@@ -175,10 +173,19 @@ export default function SignUpPage() {
                       <FormLabel>DNI</FormLabel>
                       <FormControl>
                         <Input
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                          inputMode="numeric"
+                          value={
+                            field.value === undefined ||
+                            Number.isNaN(field.value)
+                              ? ""
+                              : field.value
                           }
+                          onChange={(e) => {
+                            const digits = sanitizeDni(e.target.value);
+                            field.onChange(
+                              digits === "" ? undefined : Number(digits),
+                            );
+                          }}
                           className="bg-slate-200"
                         />
                       </FormControl>
