@@ -1,6 +1,8 @@
+import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { PublicForm } from "@/components/organisms/forms/public-form";
 import { getPublicForm } from "@/lib/db/participants";
+import { Info } from "lucide-react";
 
 const CLOSED_MESSAGES: Record<string, string> = {
   closed: "Las inscripciones no están abiertas en este momento.",
@@ -32,11 +34,18 @@ export default async function PublicFormPage({
           name={form.eventName}
           description={form.eventDescription}
           imageUrl={form.eventImageUrl}
-          align="center"
         />
-        <p className="text-center text-muted-foreground">
-          {CLOSED_MESSAGES[form.status] ?? "No disponible."}
-        </p>
+        <EventMeta
+          eventTypeName={form.eventTypeName}
+          resourceName={form.resourceName}
+          weekdays={form.weekdays}
+        />
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-4 text-sm">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-foreground/80">
+            {CLOSED_MESSAGES[form.status] ?? "No disponible."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -48,6 +57,9 @@ export default async function PublicFormPage({
       eventName={form.eventName}
       eventDescription={form.eventDescription}
       eventImageUrl={form.eventImageUrl}
+      eventTypeName={form.eventTypeName}
+      resourceName={form.resourceName}
+      weekdays={form.weekdays}
       schema={form.schema}
       notice={
         <div className="space-y-2">

@@ -1,4 +1,5 @@
 import { EventCover } from "@/components/molecules/event-cover";
+import { InlineRichText } from "@/components/molecules/inline-rich-text";
 import { LocalDateRange } from "@/components/molecules/local-date";
 import {
   RegistrationCta,
@@ -63,9 +64,10 @@ export function FeaturedEventCard({ event }: { event: UpcomingEventCardData }) {
         </h3>
 
         {event.summary && (
-          <p className="line-clamp-3 max-w-prose text-base text-muted-foreground lg:text-lg">
-            {event.summary}
-          </p>
+          <InlineRichText
+            text={event.summary}
+            className="line-clamp-3 max-w-prose text-base text-muted-foreground lg:text-lg"
+          />
         )}
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">

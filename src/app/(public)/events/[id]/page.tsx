@@ -1,11 +1,11 @@
+import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { LocalDate, LocalDateTime } from "@/components/molecules/local-date";
 import { RegistrationCta } from "@/components/molecules/registration-cta";
-import { WEEKDAY_SHORT_LABELS } from "@/lib/constants/events";
 import { getPublicEventDetail } from "@/lib/db/events";
 import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { nowMs } from "@/lib/clock";
-import { MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import { ScrollToTop } from "./scroll-to-top";
 
@@ -35,39 +35,23 @@ export default async function EventDetailPage({
         imageUrl={event.imageUrl}
       />
 
-      {/* Meta row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full border border-border px-3 py-1 font-mono text-xs font-medium uppercase tracking-wide text-la-nube-selected dark:text-la-nube-secondary">
-          {event.eventTypeName}
-        </span>
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4 shrink-0" />
-          {event.resourceName}
-        </span>
-        {event.weekdays.length > 0 && (
-          <span className="flex gap-1">
-            {event.weekdays.map((d) => (
-              <span
-                key={d}
-                className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground"
-              >
-                {WEEKDAY_SHORT_LABELS[d]}
-              </span>
-            ))}
-          </span>
-        )}
-      </div>
-
-      {/* Registration CTA */}
-      <div className="max-w-xs">
-        <RegistrationCta
-          event={{
-            registration: event.registration,
-            formSlug: event.formSlug,
-            formOpensAt: event.formOpensAt,
-            formClosesAt: event.formClosesAt,
-          }}
+      {/* Meta + registration: one clean header bar (stacks on mobile). */}
+      <div className="flex flex-col gap-4 border-y border-border py-5 sm:flex-row sm:items-center sm:justify-between">
+        <EventMeta
+          eventTypeName={event.eventTypeName}
+          resourceName={event.resourceName}
+          weekdays={event.weekdays}
         />
+        <div className="w-full sm:w-auto sm:min-w-[13rem]">
+          <RegistrationCta
+            event={{
+              registration: event.registration,
+              formSlug: event.formSlug,
+              formOpensAt: event.formOpensAt,
+              formClosesAt: event.formClosesAt,
+            }}
+          />
+        </div>
       </div>
 
       {/* Agenda */}
@@ -86,17 +70,18 @@ export default async function EventDetailPage({
               return (
                 <li
                   key={`${occ.reservationId}-${occ.occurrenceDateMs}`}
-                  className={[
-                    "flex flex-col gap-1 rounded-lg border px-4 py-3 text-sm",
-                    isPast && !isCancelled
-                      ? "border-border/50 text-muted-foreground opacity-60"
-                      : "border-border",
+                  className={cn(
+                    // Every session gets the same solid surface so it always reads clearly.
+                    "flex flex-col gap-1 rounded-lg border bg-card px-4 py-3 text-sm",
                     isNext
-                      ? "bg-la-nube-primary/5 dark:bg-la-nube-primary/10"
-                      : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
+                      ? "border-la-nube-primary/50 bg-la-nube-primary/5 ring-1 ring-la-nube-primary/20 dark:bg-la-nube-primary/10"
+                      : "border-border",
+                    // Past sessions are de-emphasized by text color, not transparency.
+                    isPast &&
+                      !isCancelled &&
+                      !isNext &&
+                      "text-muted-foreground",
+                  )}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     {isNext && (
@@ -105,7 +90,7 @@ export default async function EventDetailPage({
                       </span>
                     )}
                     {isCancelled ? (
-                      <span className="line-through opacity-60">
+                      <span className="line-through opacity-70">
                         <LocalDateTime
                           startMs={occ.occurrenceDateMs}
                           endMs={
@@ -116,7 +101,7 @@ export default async function EventDetailPage({
                     ) : isRescheduled ? (
                       <span className="flex flex-wrap items-center gap-2">
                         {/* Only the original date is available for rescheduled (no original end time in EventOccurrence). */}
-                        <span className="line-through opacity-60">
+                        <span className="line-through opacity-70">
                           <LocalDate ms={occ.occurrenceDateMs} />
                         </span>
                         <span className="text-muted-foreground">→</span>
