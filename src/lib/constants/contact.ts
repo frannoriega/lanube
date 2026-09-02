@@ -1,5 +1,5 @@
 const address = {
-  street: "Posadas 1150",
+  street: "Maipú esquina Posadas",
   city: "Concepción del Uruguay",
   state: "Entre Ríos",
   zip: "3260",

@@ -1,5 +1,6 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
+import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { getPublicSpaces } from "@/lib/db/spaces";
 import { SpacesList } from "./spaces-list";
 
@@ -9,7 +10,7 @@ export default async function SpacesSection() {
   if (spaces.length === 0) return null;
 
   return (
-    <Breakout>
+    <Breakout className={LANDING_SECTION_BG}>
       <section
         className="w-full flex flex-col items-center border-t border-la-nube-primary/15"
         aria-labelledby="nuestros-espacios"

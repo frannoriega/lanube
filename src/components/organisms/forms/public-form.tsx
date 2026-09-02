@@ -1,5 +1,6 @@
 "use client";
 
+import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +72,10 @@ interface PublicFormProps {
   eventName: string;
   eventDescription?: string | null;
   eventImageUrl?: string | null;
+  /** Event meta (type/weekdays/location). When all present, an EventMeta row shows under the hero. */
+  eventTypeName?: string;
+  resourceName?: string;
+  weekdays?: number[];
   /** Extra content rendered between the header and the form (e.g. spots left). */
   notice?: React.ReactNode;
   mode: "submit" | "edit";
@@ -90,6 +95,9 @@ export function PublicForm({
   eventName,
   eventDescription,
   eventImageUrl,
+  eventTypeName,
+  resourceName,
+  weekdays,
   notice,
   mode,
   slug,
@@ -203,6 +211,13 @@ export function PublicForm({
           description={eventDescription}
           imageUrl={eventImageUrl}
         />
+        {eventTypeName && resourceName && weekdays && (
+          <EventMeta
+            eventTypeName={eventTypeName}
+            resourceName={resourceName}
+            weekdays={weekdays}
+          />
+        )}
         {notice}
 
         <FormField
