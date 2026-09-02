@@ -1,6 +1,8 @@
 "use client";
 
+import { IconPicker } from "@/components/molecules/icon-picker";
 import { ImageUpload } from "@/components/molecules/image-upload";
+import { getSpaceIcon } from "@/lib/constants/spaces";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -242,7 +244,17 @@ export function SpacesManager() {
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{space.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className="flex items-center gap-2">
+                      {(() => {
+                        const Icon = getSpaceIcon(space.iconName);
+                        return (
+                          <Icon className="h-4 w-4 shrink-0 text-la-nube-selected dark:text-la-nube-secondary" />
+                        );
+                      })()}
+                      {space.name}
+                    </span>
+                  </TableCell>
                   <TableCell className="font-mono text-xs">
                     {space.slug}
                   </TableCell>
@@ -338,6 +350,27 @@ export function SpacesManager() {
                     </FormControl>
                     <FormDescription>
                       Identificador para URLs; único por espacio.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="iconName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icono</FormLabel>
+                    <FormControl>
+                      <IconPicker
+                        value={field.value ?? null}
+                        onChange={field.onChange}
+                        disabled={busy}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Se muestra en el menú lateral, las tarjetas y el
+                      calendario del espacio.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

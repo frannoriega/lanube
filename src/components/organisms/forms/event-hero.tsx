@@ -4,17 +4,19 @@ import Image from "next/image";
 /**
  * Participant-facing header for the public form pages. Shows the event's name,
  * description and (optional) image — never the internal form name.
+ *
+ * Always left-aligned: the description is markdown, and centering it breaks list/heading
+ * layout and hurts readability. Body copy uses near-full foreground contrast (not muted gray)
+ * so it stays legible in dark mode.
  */
 export function EventHero({
   name,
   description,
   imageUrl,
-  align = "left",
 }: {
   name: string;
   description?: string | null;
   imageUrl?: string | null;
-  align?: "left" | "center";
 }) {
   return (
     <div className="space-y-4">
@@ -30,14 +32,14 @@ export function EventHero({
           />
         </div>
       )}
-      <div
-        className={align === "center" ? "space-y-2 text-center" : "space-y-2"}
-      >
+      <div className="space-y-3">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {name}
         </h1>
         {description && (
-          <Markdown className="text-muted-foreground">{description}</Markdown>
+          <Markdown className="text-[0.9375rem] leading-relaxed text-foreground/90">
+            {description}
+          </Markdown>
         )}
       </div>
     </div>

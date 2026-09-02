@@ -11,6 +11,7 @@ import {
   validateForm,
 } from "@/lib/events/form-engine";
 import type { FormSchema } from "@/lib/events/form-schema";
+import { weekdaysFromRrule } from "@/lib/db/events";
 import { prisma } from "@/lib/prisma";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { ParticipantStatus } from "@/types/prisma";
@@ -80,6 +81,12 @@ export interface PublicFormView {
   /** Participant-facing event description. */
   eventDescription: string | null;
   eventImageUrl: string | null;
+  /** Display name of the reservation type (from the catalog table). */
+  eventTypeName: string;
+  /** Name of the space the event runs in (participant-facing location). */
+  resourceName: string;
+  /** Weekday numbers (0=Sun..6=Sat) the event recurs on. */
+  weekdays: number[];
   fields: PublicFormField[];
   /** Full node tree for the recursive renderer (groups + branching). */
   schema: FormSchema;
@@ -108,7 +115,9 @@ export async function getPublicForm(
           deletedAt: true,
           endTime: true,
           recurrenceEnd: true,
-          space: { select: { capacity: true } },
+          rrule: true,
+          type: { select: { name: true } },
+          space: { select: { capacity: true, name: true } },
           _count: {
             select: {
               participants: {
@@ -148,6 +157,9 @@ export async function getPublicForm(
     eventName: eventForm.event.name,
     eventDescription: eventForm.event.description,
     eventImageUrl: eventForm.event.imageUrl,
+    eventTypeName: eventForm.event.type.name,
+    resourceName: eventForm.event.space.name,
+    weekdays: weekdaysFromRrule(eventForm.event.rrule),
     fields: formFields(eventForm.form),
     schema: formSchema(eventForm.form),
     spotsLeft,

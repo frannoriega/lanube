@@ -2,6 +2,7 @@
 
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
+import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { LogoCard } from "@/components/molecules/logo-card";
 import { Marquee } from "@/components/molecules/marquee";
 import { useViewportWidth } from "@/hooks/use-viewport-width";
@@ -19,7 +20,7 @@ export default function MembersSection() {
       : 120;
 
   return (
-    <Breakout>
+    <Breakout className={LANDING_SECTION_BG}>
       <section className="w-full flex flex-col items-center">
         <Container className="px-8 py-16 gap-8 flex flex-col">
           <div className="flex flex-col gap-3">

@@ -2,6 +2,7 @@
 
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
+import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
@@ -48,7 +49,7 @@ export default function HeroSection() {
   }, [displayedText, isDeleting, keywordIndex]);
 
   return (
-    <Breakout>
+    <Breakout className={LANDING_SECTION_BG}>
       <Container>
         <section
           className="px-4 lg:px-0 w-full h-[calc(100vh-var(--spacing)*24)] flex flex-col items-center justify-between py-8"

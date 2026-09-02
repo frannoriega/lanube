@@ -8,6 +8,7 @@ import {
 import { DateRangePicker } from "@/components/molecules/date-range-picker";
 import { DateTimePicker } from "@/components/molecules/date-time-picker";
 import { ImageUpload } from "@/components/molecules/image-upload";
+import { InlineRichTextInput } from "@/components/molecules/inline-rich-text-input";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { TimeSelect } from "@/components/molecules/time-select";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/hooks/use-api";
 import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
@@ -320,16 +320,16 @@ export function EventForm({
               <FormItem>
                 <FormLabel>Resumen (opcional)</FormLabel>
                 <FormDescription>
-                  Texto corto que se muestra en las tarjetas del inicio. Sin
-                  formato. Si lo dejás vacío, la tarjeta no muestra descripción.
+                  Texto corto que se muestra en las tarjetas del inicio. Admite
+                  negrita, cursiva y subrayado. Si lo dejás vacío, la tarjeta no
+                  muestra descripción.
                 </FormDescription>
                 <FormControl>
-                  <Textarea
+                  <InlineRichTextInput
                     value={field.value ?? ""}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     name={field.name}
-                    ref={field.ref}
                     rows={2}
                     maxLength={200}
                     placeholder="Ej.: Aprendé a modelar e imprimir tus propias piezas en 3D."

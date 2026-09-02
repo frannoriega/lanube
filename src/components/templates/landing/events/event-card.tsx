@@ -1,4 +1,5 @@
 import { EventCover } from "@/components/molecules/event-cover";
+import { InlineRichText } from "@/components/molecules/inline-rich-text";
 import { LocalDateRange } from "@/components/molecules/local-date";
 import {
   RegistrationCta,
@@ -117,9 +118,10 @@ export function EventCard({
         </h3>
 
         {event.summary && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {event.summary}
-          </p>
+          <InlineRichText
+            text={event.summary}
+            className="line-clamp-2 text-sm text-muted-foreground"
+          />
         )}
 
         {/* relative z-[2] keeps this above the stretched-link overlay (z-[1]) */}
