@@ -52,8 +52,13 @@ export function Marquee({
     if (contentW <= 0) return;
 
     setContentWidth(contentW);
-    // Clone children until we fill the container width; minimum 2 for seamless infinite loop
-    const fillMultiplier = Math.ceil(containerW / contentW);
+    // The animation translates the track by exactly one content-unit width (`-contentWidth`)
+    // per cycle, then snaps back. For the loop to stay gap-free, the copies that remain after
+    // that translate must still cover the whole container: `(multiplier - 1) * contentW >=
+    // containerW`. With few logos (contentW << containerW) the old `ceil(containerW / contentW)`
+    // fell one copy short, leaving a visible gap at the trailing edge until the track snapped.
+    // `+ 1` guarantees the coverage; `Math.max(2, …)` keeps the minimum for a seamless loop.
+    const fillMultiplier = Math.ceil(containerW / contentW) + 1;
     setMultiplier(Math.max(2, fillMultiplier));
   }, []);
 
