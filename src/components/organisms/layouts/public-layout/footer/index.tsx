@@ -9,19 +9,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  address,
-  clickablePhone,
-  email,
-  phone,
-  socialMedia,
-} from "@/lib/constants/contact";
+import { getSiteConfig } from "@/lib/db/siteConfig";
 import { links } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
-export default function Footer({ className }: { className?: string }) {
+export default async function Footer({ className }: { className?: string }) {
+  const contact = await getSiteConfig();
   const cns = cn(`w-full h-fit bg-slate-950 dark:bg-slate-950/80`, className);
   return (
     <footer className={cns}>
@@ -100,46 +95,55 @@ export default function Footer({ className }: { className?: string }) {
             <div className="flex flex-col gap-2 max-w-100 w-fit">
               <h2 className="text-xl font-bold">Contacto</h2>
               <ul className="text-foreground flex flex-col">
-                <li className="flex flex-row gap-2 items-center py-1.5">
-                  <MapPin size={16} className="shrink-0" />
-                  <span>
-                    {address.street}, {address.city}, {address.state}
-                  </span>
+                <li>
+                  <a
+                    href={contact.addressUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-row gap-2 items-center py-1.5 hover:underline"
+                  >
+                    <MapPin size={16} className="shrink-0" />
+                    <span>{contact.addressText}</span>
+                  </a>
                 </li>
                 <li>
                   <a
-                    href={`mailto:${email}`}
+                    href={`mailto:${contact.email}`}
                     className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
                     <Mail size={16} className="shrink-0" />
-                    <span>{email}</span>
+                    <span>{contact.email}</span>
                   </a>
                 </li>
                 <li>
                   <a
-                    href={`tel:${clickablePhone}`}
+                    href={`tel:${contact.phoneClickable}`}
                     className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
                     <Phone size={16} className="shrink-0" />
-                    <span>{phone}</span>
+                    <span>{contact.phoneText}</span>
                   </a>
                 </li>
                 <li>
                   <a
-                    href={socialMedia.instagram.url}
+                    href={contact.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
                     <Instagram size={16} className="shrink-0" />
-                    <span>{socialMedia.instagram.text}</span>
+                    <span>{contact.instagramText}</span>
                   </a>
                 </li>
                 <li>
                   <a
-                    href={socialMedia.github.url}
+                    href={contact.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex flex-row gap-2 items-center py-1.5 hover:underline"
                   >
                     <Github size={16} className="shrink-0" />
-                    <span>{socialMedia.github.text}</span>
+                    <span>{contact.githubText}</span>
                   </a>
                 </li>
               </ul>

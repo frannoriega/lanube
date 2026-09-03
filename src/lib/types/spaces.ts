@@ -1,3 +1,12 @@
+/**
+ * A single FAQ entry shown on the public "Espacios" page. `answer` is markdown (rendered
+ * with the shared <Markdown> component). Persisted as a JSON array on `Space.faqs`.
+ */
+export type SpaceFaq = {
+  question: string;
+  answer: string;
+};
+
 export type SpaceMetadataItem =
   | {
       type: "stat";
