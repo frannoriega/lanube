@@ -14,6 +14,12 @@ model Space {
   name         String
   slug         String        @unique
   description  String
+  // Rich, long-form description shown on the public "Espacios" page (markdown). The short
+  // `description` above stays the landing/booking overview blurb.
+  longDescription String?    @map("long_description")
+  // Ordered FAQ entries shown on the public "Espacios" page. JSON array of
+  // `{ question: string; answer: string }` (answer is markdown). See lib/types/spaces.ts.
+  faqs         Json?
   imageUrl     String?       @map("image_url")
   iconName     String?       @map("icon_name")
   capacity     Int           @default(1)

@@ -21,6 +21,7 @@ export const PERMISSIONS = [
   "spaces:manage",
   "resources:manage",
   "reservation-types:manage",
+  "site-config:manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -42,6 +43,7 @@ const SUPERADMIN_PERMISSIONS: readonly Permission[] = [
   "spaces:manage",
   "resources:manage",
   "reservation-types:manage",
+  "site-config:manage",
 ];
 
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {

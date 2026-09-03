@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1788354752.6466746,
-    "ast_hash": "80f2fb9c774af21af422cea46643c35a",
+    "mtime": 1788311818.848584,
+    "ast_hash": "75cf6da856e907ed8629c2d918ee2639",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -2145,8 +2145,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/spaces-manager.tsx": {
-    "mtime": 1788354726.9524708,
-    "ast_hash": "a3012f49743f018d00bb1d9dd43eeadf",
+    "mtime": 1788311160.5379179,
+    "ast_hash": "8f270f09f2be312bb97f8a0db4e09e0d",
     "semantic_hash": ""
   },
   "src/lib/api-auth.ts": {
@@ -2452,21 +2452,6 @@
   "src/lib/db/siteConfig.ts": {
     "mtime": 1788311070.7516792,
     "ast_hash": "21f61506d38e7ba3a1940bcf6d26949e",
-    "semantic_hash": ""
-  },
-  "src/app/(management)/admin/spaces/[id]/edit/page.tsx": {
-    "mtime": 1788354767.7157702,
-    "ast_hash": "cf458d2dc96241afa9513888125caabb",
-    "semantic_hash": ""
-  },
-  "src/app/(management)/admin/spaces/new/page.tsx": {
-    "mtime": 1788354743.576262,
-    "ast_hash": "b980db8177828e9ca5b4aa4b25f89106",
-    "semantic_hash": ""
-  },
-  "src/components/organisms/admin/config/space-form.tsx": {
-    "mtime": 1788354688.7250745,
-    "ast_hash": "542430b0f9d2985b371689d31a5287e9",
     "semantic_hash": ""
   }
 }

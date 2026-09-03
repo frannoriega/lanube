@@ -1,8 +1,15 @@
 import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import type { Space } from "@/generated/prisma/client";
+import type { SpaceFaq } from "@/lib/types/spaces";
+import { Prisma } from "@/generated/prisma/client";
 
 export type { Space };
+
+/** Reads the JSON `faqs` column back as a typed array (empty when unset/invalid). */
+export function getSpaceFaqs(space: Pick<Space, "faqs">): SpaceFaq[] {
+  return Array.isArray(space.faqs) ? (space.faqs as unknown as SpaceFaq[]) : [];
+}
 /** Backward-compat alias — Space now includes capacity directly. */
 export type SpaceWithFungible = Space;
 
@@ -33,6 +40,8 @@ export interface SpaceInput {
   name: string;
   slug: string;
   description: string;
+  longDescription?: string | null;
+  faqs?: SpaceFaq[];
   capacity: number;
   isExclusive: boolean;
   isReservable: boolean;
@@ -42,17 +51,24 @@ export interface SpaceInput {
   imageUrl?: string | null;
 }
 
+/** Normalizes the JSON/nullable columns shared by create + update. */
+function toSpaceData(input: SpaceInput) {
+  const { faqs, longDescription, iconName, imageUrl, ...rest } = input;
+  return {
+    ...rest,
+    longDescription: longDescription?.trim() ? longDescription : null,
+    faqs: (faqs ?? []) as unknown as Prisma.InputJsonValue,
+    iconName: iconName ?? null,
+    imageUrl: imageUrl ?? null,
+  };
+}
+
 export async function createSpace(input: SpaceInput): Promise<Space> {
   // New spaces go to the end; ordering is managed via the up/down controls.
   const last = await prisma.space.aggregate({ _max: { displayOrder: true } });
   const displayOrder = (last._max.displayOrder ?? -1) + 1;
   return prisma.space.create({
-    data: {
-      ...input,
-      displayOrder,
-      iconName: input.iconName ?? null,
-      imageUrl: input.imageUrl ?? null,
-    },
+    data: { ...toSpaceData(input), displayOrder },
   });
 }
 
@@ -62,11 +78,7 @@ export async function updateSpace(
 ): Promise<Space> {
   return prisma.space.update({
     where: { id },
-    data: {
-      ...input,
-      iconName: input.iconName ?? null,
-      imageUrl: input.imageUrl ?? null,
-    },
+    data: toSpaceData(input),
   });
 }
 

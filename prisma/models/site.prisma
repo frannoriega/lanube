@@ -1,0 +1,21 @@
+/// Singleton site configuration (superadmin-editable). Exactly one row, id = "site".
+/// Holds the public contact info that used to live in src/lib/constants/contact.ts;
+/// the footer/about pages read it at request time. Seeded from those constant values in
+/// migration 20260901000000_site_config.
+model SiteConfig {
+  id             String @id @default("site")
+  // Address: display text (what the visitor reads) + a map link (Google Maps, etc.).
+  addressText    String @map("address_text")
+  addressUrl     String @map("address_url")
+  email          String
+  // Phone: display text (formatted) + a tel:-safe clickable value.
+  phoneText      String @map("phone_text")
+  phoneClickable String @map("phone_clickable")
+  instagramUrl   String @map("instagram_url")
+  instagramText  String @map("instagram_text")
+  githubUrl      String @map("github_url")
+  githubText     String @map("github_text")
+  updatedAt      BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+
+  @@map("site_config")
+}
