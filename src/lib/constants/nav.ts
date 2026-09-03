@@ -1,6 +1,6 @@
 const links = [
   { name: "Inicio", href: "/" },
-  { name: "Espacios", href: "/services" },
+  { name: "Espacios", href: "/spaces" },
   // { name: "Noticias", href: "/news" },
   // { name: "Eventos", href: "/events" },
   // { name: "Contacto", href: "/contact" },
