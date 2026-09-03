@@ -15,6 +15,7 @@ import {
   CalendarDays,
   ChevronDown,
   FileText,
+  Contact,
   LayoutDashboard,
   LucideProps,
   Menu,
@@ -91,6 +92,7 @@ const configNavigation: NavigationItem = {
     { name: "Espacios", href: "/admin/spaces", icon: Building2 },
     { name: "Recursos", href: "/admin/resources", icon: Wrench },
     { name: "Tipos de reserva", href: "/admin/reservation-types", icon: Tags },
+    { name: "Contacto", href: "/admin/site", icon: Contact },
   ],
 };
 
