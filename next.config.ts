@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   images: { remotePatterns: imageRemotePatterns },
+  async redirects() {
+    return [
+      // "Servicios" was renamed to "Espacios"; keep the old URL working.
+      { source: "/services", destination: "/spaces", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
