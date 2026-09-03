@@ -1,3 +1,4 @@
+import AlliesSection from "@/components/templates/landing/allies";
 import EventsSection from "@/components/templates/landing/events";
 import HeroSection from "@/components/templates/landing/hero";
 import MembersSection from "@/components/templates/landing/members";
@@ -16,6 +17,7 @@ export default function Home() {
       <SpacesSection />
       <MembersSection />
       <PartnersSection />
+      <AlliesSection />
     </div>
   );
 }
