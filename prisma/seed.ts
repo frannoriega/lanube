@@ -440,6 +440,20 @@ async function main() {
       slug: "coworking",
       description:
         "Espacio flexible para trabajo individual y colaborativo.\n\n Ideal para programar, diseñar, investigar, atender reuniones breves y avanzar proyectos tecnológicos.",
+      longDescription:
+        "El espacio de coworking está pensado para que personas y equipos puedan trabajar, estudiar o desarrollar proyectos en un entorno colaborativo orientado a la tecnología.\n\nEs ideal para emprendedores, estudiantes, profesionales independientes y equipos de trabajo que necesitan un lugar tranquilo, cómodo y conectado para sus actividades diarias.",
+      faqs: [
+        {
+          question: "¿Qué ofrecemos?",
+          answer:
+            "- **Puestos de trabajo flexibles** por hora, por día o por proyecto\n- **Conectividad a Internet**\n- **Acompañamiento y orientación básica** en el uso de herramientas tecnológicas",
+        },
+        {
+          question: "¿Qué equipos tenemos disponibles?",
+          answer:
+            "- **3 islas de trabajo** con 4 espacios por mesa, haciendo un total de **12 puestos de trabajo**.\n- **3 livings completos**, cada uno con mesa, sillones y pufs, ideales para reuniones informales o trabajo más distendido.\n- **Proyector y pantalla de alta definición**, que permiten realizar presentaciones, encuentros virtuales o instancias de capacitación.\n- **Conectividad Wi-Fi** de alta velocidad y **tomas eléctricas** para la conexión de notebooks y otros dispositivos.",
+        },
+      ],
       imageUrl: "/images/services/coworking.jpg",
       iconName: "Building2",
       isReservable: true,
@@ -459,6 +473,20 @@ async function main() {
       slug: "lab",
       description:
         "Ámbito técnico para talleres.\n\n Pensado para hackathones, workshops prácticos y sesiones de trabajo en equipo.",
+      longDescription:
+        "El laboratorio es un espacio destinado principalmente a **reuniones de trabajo y actividades en equipo**, pensado como ámbito de apoyo para proyectos, planificación y trabajos colaborativos.",
+      faqs: [
+        {
+          question: "¿Qué ofrecemos?",
+          answer:
+            "- Reuniones de trabajo en equipo y espacios de coordinación\n- Desarrollo de actividades de planificación, diseño de proyectos y trabajo colaborativo\n- Uso como ámbito de apoyo para grupos que requieren un entorno tranquilo y con conectividad",
+        },
+        {
+          question: "¿Qué equipos tenemos disponibles?",
+          answer:
+            "- **Una mesa de trabajo** con capacidad para **8 a 10 personas**.\n- **Tomas corrientes** distribuidas para la conexión de notebooks y dispositivos electrónicos.\n- **Acceso a Wi-Fi**, que permite el trabajo conectado y el uso de herramientas digitales en línea.\n\nNo cuenta con otro tipo de equipamiento específico, lo que lo convierte en un espacio flexible que puede adaptarse a distintas dinámicas de trabajo grupal.",
+        },
+      ],
       imageUrl: "/images/services/laboratorio.jpg",
       iconName: "FlaskConical",
       isReservable: true,
@@ -478,6 +506,20 @@ async function main() {
       slug: "meeting-room",
       description:
         "Ámbito reservado para reuniones privadas.\n\n Pensada para planificaciones, presentaciones a equipos y entrevistas.",
+      longDescription:
+        "La sala de reuniones está diseñada para encuentros de trabajo en grupos reducidos, tutorías, entrevistas, mesas de planificación y reuniones institucionales, tanto presenciales como virtuales o híbridas orientadas a la tecnología.",
+      faqs: [
+        {
+          question: "¿Qué ofrecemos?",
+          answer:
+            "- Realización de reuniones presenciales, virtuales e híbridas con alta calidad de audio y video\n- Presentaciones interactivas sobre la pantalla táctil (anotaciones, gráficos, esquemas, etc.)\n- Espacio confortable y reservado para trabajos que requieren concentración, toma de decisiones y confidencialidad",
+        },
+        {
+          question: "¿Qué equipos tenemos disponibles?",
+          answer:
+            "### Pantalla táctil interactiva\n- **Resolución:** 3840 x 2160 píxeles (UHD)\n- **Tecnología táctil:** multitáctil\n- **Conectividad física:** 1 puerto DisplayPort, 4 puertos HDMI, 1 puerto VGA (D-Sub)\n- **Conectividad inalámbrica:** Bluetooth 5.0 y Wi-Fi\n- **Software:** herramientas para gráficos, anotaciones y exposiciones en reuniones\n\n### Sistema de videoconferencia Poly Studio R30\n- **Altavoz integrado omnidireccional**, para escuchar con claridad a todos los participantes.\n- **Cámara de alta calidad** con campo de visión de **120°** y tecnología **Poly DirectorAI**.\n- **Matriz de 3 micrófonos** con tecnologías de audio que bloquean ruidos.\n\n### Isla de trabajo\n- **Mesa central** con capacidad para 6 a 8 personas.",
+        },
+      ],
       imageUrl: "/images/services/sala-de-reuniones.jpg",
       iconName: "MessagesSquare",
       isReservable: true,
@@ -497,6 +539,20 @@ async function main() {
       slug: "auditorium",
       description:
         "Ambiente amplio y modular para charlas, talleres y presentaciones.\n\n Apto para actividades académicas, empresariales y comunitarias.",
+      longDescription:
+        "La sala de conferencias está pensada para actividades orientadas a la tecnología con mayor cantidad de asistentes: charlas, presentaciones, paneles, jornadas, capacitaciones y eventos institucionales.",
+      faqs: [
+        {
+          question: "¿Qué ofrecemos?",
+          answer:
+            "- Realización de conferencias, charlas, paneles, jornadas y capacitaciones\n- Eventos presenciales e híbridos con soporte de audio, video y proyección\n- Uso del equipamiento para presentaciones multimedia y transmisión de contenidos",
+        },
+        {
+          question: "¿Qué equipos tenemos disponibles?",
+          answer:
+            "- **Capacidad para aproximadamente 50 personas**, con disposición adaptable según el tipo de actividad (filas, aula, trabajo en grupos, etc.).\n- **Pantalla gigante para charlas y conferencias**, integrada al sistema de sonido del espacio.\n- **Sistema de sonido integrado**, adecuado para presentaciones orales, proyecciones y actividades formativas.\n- **Cámara Logitech para conferencias**, que permite transmisiones, videoconferencias y actividades híbridas.\n- Posibilidad de conexión **USB y HDMI** al sistema de pantalla y sonido.",
+        },
+      ],
       imageUrl: "/images/services/auditorio.jpg",
       iconName: "Presentation",
       isReservable: true,
