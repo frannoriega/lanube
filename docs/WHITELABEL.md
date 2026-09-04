@@ -93,3 +93,28 @@ const upcoming = events
 ```
 
 See [MODULES.md](./MODULES.md) for the full module data API.
+
+### Known limitation: this is "restyle", not "replace"
+
+Today "bring your own frontend" means editing/restyling the existing components in place —
+there's no seam that lets a deployment swap in a _different set of public pages_
+(add/remove/rename routes like `/spaces` or `/about`) without forking the app. A component-level
+`<Landing/>` slot (config picks an implementation, same pattern as a module) would only solve
+the "different look" case, not "different pages."
+
+**Planned direction (not started):** split this into two standalone apps — a public marketing
+site (landing + whatever public pages a deployment wants) and a management app (the current
+auth-gated `(management)` section + its API), talking to each other only over the public HTTP
+API. That's the level of flexibility a real integrator needs (delete pages, add pages, use a
+different framework entirely for the landing) and it keeps this project cloud-agnostic (no
+platform-specific multi-zone/microfrontends tooling — deliberately avoided since this is open
+source and shouldn't be tied to one hosting provider). Tradeoff: two apps to run instead of one.
+Also on the table for that same future split: a Rust API backend (this project is likely to be
+mostly self-hosted by individual coworking spaces/municipalities rather than run as a hosted
+SaaS, so a single low-footprint binary is attractive) with a React (Vite or Next.js) management
+frontend — most of the actual domain complexity (RRULE expansion, ledger/capacity checks) already
+lives in Postgres SQL functions, so the app-layer surface to port is smaller than it looks.
+SEO note for that split: as long as the landing keeps rendering API-sourced content (available
+spaces, future opening-hours data) server-side — SSR/SSG/ISR, not a client-side fetch after
+mount — moving the data source from local Prisma calls to a remote API changes nothing for
+crawlers. The risk is only in _how_ the landing renders, not in what serves the JSON.
