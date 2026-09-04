@@ -9,8 +9,17 @@
       {
         "rule": "design-system-color",
         "value": "#777777",
-        "reason": "tsparticles config cannot consume CSS variables; #777777 is intentional neutral gray for decorative background particles",
-        "createdAt": "2026-07-04T00:55:10.454Z"
+        "createdAt": "2026-07-04T00:55:10.454Z",
+        "reason": "tsparticles config cannot consume CSS variables; #777777 is intentional neutral gray for decorative background particles"
+      },
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "files": [
+          "src/modules/events/email/occurrence-update.ts"
+        ],
+        "createdAt": "2026-09-04T23:20:38.547Z",
+        "reason": "transactional HTML email template — Arial/system fonts are required for email client compatibility, not a UI design choice"
       }
     ]
   }
