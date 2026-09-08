@@ -19,6 +19,12 @@ export const members: Member[] = [
     url: "https://uader.edu.ar/",
   },
   {
+    id: 3,
+    name: "UCU",
+    img: "/images/members/ucu.svg",
+    url: "https://ucu.edu.ar/",
+  },
+  {
     id: 4,
     name: "UNER",
     img: "/images/members/uner.png",
