@@ -12,9 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useSpaceOptions } from "@/hooks/api";
+import { ALL_SPACES_ID, useSpaceOptions } from "@/hooks/api";
 import { Calendar } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // Re-exported so existing importers keep working; source of truth moved to lib.
 export {
@@ -38,13 +38,11 @@ export function DashboardRecentReservations({
   refetchKey?: number;
 }) {
   const { data: spaceOptions } = useSpaceOptions();
-  const options: SpaceOption[] = spaceOptions ?? [];
-  const [service, setService] = useState<string>("");
-
-  useEffect(() => {
-    if (!spaceOptions) return;
-    setService((prev) => prev || spaceOptions[0]?.id || "");
-  }, [spaceOptions]);
+  const options: SpaceOption[] = [
+    { id: ALL_SPACES_ID, name: "Todos los espacios" },
+    ...(spaceOptions ?? []),
+  ];
+  const [service, setService] = useState<string>(ALL_SPACES_ID);
 
   return (
     <Card className="glass-card dark:glass-card-dark">
@@ -54,12 +52,12 @@ export function DashboardRecentReservations({
           Reservas recientes
         </CardTitle>
         <CardDescription>
-          Esta semana y la próxima (Argentina). Elegí el tipo de recurso y
-          expandí un día con reservas para ver la grilla y el detalle lateral.
+          Próximas reservas (Argentina). Elegí un espacio y expandí un día con
+          reservas para ver la grilla y el detalle lateral.
         </CardDescription>
         <div className="pt-2">
           <p className="mb-1.5 text-sm font-medium text-muted-foreground">
-            Tipo de recurso
+            Espacio
           </p>
           <AdminResourceTypeCombobox
             value={service}
