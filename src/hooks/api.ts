@@ -34,13 +34,18 @@ export type AdminReservationsRange = {
   toKey: string;
 };
 
+/** Sentinel spaceId meaning "every space", mapped to `allServices=1` server-side. */
+export const ALL_SPACES_ID = "all";
+
 /** Pass `null` while the query params are not ready yet (idle). */
 export function useAdminReservationsRange(
   params: { spaceId: string; startMs: number; endMs: number } | null,
 ): UseApiResult<AdminReservationsRange> {
   const url = params
     ? `/api/admin/reservations?${new URLSearchParams({
-        service: params.spaceId,
+        ...(params.spaceId === ALL_SPACES_ID
+          ? { allServices: "1" }
+          : { service: params.spaceId }),
         startDate: String(params.startMs),
         endDate: String(params.endMs),
       }).toString()}`

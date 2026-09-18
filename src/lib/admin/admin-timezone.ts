@@ -77,30 +77,3 @@ export function adminForwardWindowRange(
   const toKey = addDaysToDateKey(fromKey, dayCount - 1);
   return { fromKey, toKey };
 }
-
-/** Monday (ISO) of the week containing `dateKey`, in admin TZ. */
-export function startOfIsoWeekDateKey(dateKey: string): string {
-  const [y, m, d] = dateKey.split("-").map(Number);
-  const z = new TZDate(y, m - 1, d, 12, 0, 0, 0, ADMIN_TIMEZONE);
-  const dow = z.getDay();
-  const daysFromMonday = dow === 0 ? 6 : dow - 1;
-  z.setDate(z.getDate() - daysFromMonday);
-  const yy = z.getFullYear();
-  const mm = String(z.getMonth() + 1).padStart(2, "0");
-  const dd = String(z.getDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
-}
-
-export function endOfIsoWeekDateKey(weekStartKey: string): string {
-  return addDaysToDateKey(weekStartKey, 6);
-}
-
-/** Current calendar week Monday through the following Sunday (14 days, admin TZ). */
-export function adminTwoCalendarWeeksRange(nowMs?: number): {
-  fromKey: string;
-  toKey: string;
-} {
-  const today = todayDateKeyInAdminTz(nowMs);
-  const mon = startOfIsoWeekDateKey(today);
-  return { fromKey: mon, toKey: addDaysToDateKey(mon, 13) };
-}
