@@ -110,3 +110,67 @@ export const siteConfigInputSchema = z.object({
 });
 
 export type SiteConfigInput = z.infer<typeof siteConfigInputSchema>;
+
+/** "MM-DD", e.g. "09-25". Day-of-month bounds aren't validated per-month (Feb 30 slips
+ * through) — acceptable for a landing decoration, not worth a full calendar check. */
+const monthDaySchema = z
+  .string()
+  .trim()
+  .regex(/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, {
+    message: "Formato MM-DD (ej: 09-25)",
+  });
+
+/** Space-separated emoji, at least one, capped so the shower stays a handful of kinds. */
+const emojiListSchema = z
+  .string()
+  .trim()
+  .min(1, { message: "Agregá al menos un emoji" })
+  .refine((v) => v.trim().split(/\s+/).length <= 12, {
+    message: "Máximo 12 emojis distintos",
+  });
+
+export const landingThemeInputSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, { message: "El nombre es obligatorio" })
+      .max(80),
+    isEnabled: z.boolean(),
+    priority: z.number().int().min(0).max(100),
+    recurring: z.boolean(),
+    startMonthDay: monthDaySchema.optional().nullable(),
+    endMonthDay: monthDaySchema.optional().nullable(),
+    startDate: z.number().int().optional().nullable(),
+    endDate: z.number().int().optional().nullable(),
+    entranceEffect: z.enum(["NONE", "EMOJI_SHOWER"]),
+    emojiList: emojiListSchema.optional().nullable(),
+    particleCount: z.number().int().min(5).max(150).optional().nullable(),
+    heroEyebrowOverride: z.string().trim().max(120).optional().nullable(),
+    heroExtraKeyword: z.string().trim().max(40).optional().nullable(),
+  })
+  .refine((v) => !v.recurring || (!!v.startMonthDay && !!v.endMonthDay), {
+    message: "Definí el inicio y fin del período recurrente",
+    path: ["startMonthDay"],
+  })
+  .refine((v) => v.recurring || (v.startDate != null && v.endDate != null), {
+    message: "Definí el rango de fechas",
+    path: ["startDate"],
+  })
+  .refine(
+    (v) =>
+      v.recurring ||
+      v.startDate == null ||
+      v.endDate == null ||
+      v.startDate <= v.endDate,
+    {
+      message: "La fecha de inicio debe ser anterior a la de fin",
+      path: ["endDate"],
+    },
+  )
+  .refine((v) => v.entranceEffect !== "EMOJI_SHOWER" || !!v.emojiList, {
+    message: "Elegí al menos un emoji para la lluvia",
+    path: ["emojiList"],
+  });
+
+export type LandingThemeInput = z.infer<typeof landingThemeInputSchema>;

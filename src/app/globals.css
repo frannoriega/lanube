@@ -240,6 +240,31 @@
     animation: marquee var(--marquee-duration, 20s) linear infinite;
   }
 
+  /* Landing theme "tada" shower — falls from above the viewport to below it,
+     with a gentle rotation set per-particle via --emoji-rotate. */
+  @keyframes emoji-fall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(120vh) rotate(var(--emoji-rotate, 0deg));
+      opacity: 0;
+    }
+  }
+
+  .animate-emoji-fall {
+    animation-name: emoji-fall;
+    animation-timing-function: ease-in;
+    animation-fill-mode: both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-float {
       animation: none;
@@ -252,6 +277,10 @@
     }
     .animate-fade-up {
       animation: none;
+    }
+    .animate-emoji-fall {
+      animation: none;
+      display: none;
     }
   }
 
