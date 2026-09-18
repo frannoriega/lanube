@@ -22,6 +22,8 @@ export const PERMISSIONS = [
   "resources:manage",
   "reservation-types:manage",
   "site-config:manage",
+  /** View the audit trail (can expose role changes and bans). */
+  "audit:view",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -44,6 +46,7 @@ const SUPERADMIN_PERMISSIONS: readonly Permission[] = [
   "resources:manage",
   "reservation-types:manage",
   "site-config:manage",
+  "audit:view",
 ];
 
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
