@@ -6,17 +6,13 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AdminReservationListResult } from "@/lib/api/admin-reservations";
-import { useAdminReservationsRange } from "@/hooks/api";
+import { ALL_SPACES_ID, useAdminReservationsRange } from "@/hooks/api";
 import {
-  addDaysToDateKey,
-  adminTwoCalendarWeeksRange,
+  adminForwardWindowRange,
   dateKeyFromUnixMs,
   endOfDateKeyMs,
-  endOfIsoWeekDateKey,
   enumerateDateKeysInclusive,
   startOfDateKeyMs,
-  startOfIsoWeekDateKey,
-  todayDateKeyInAdminTz,
 } from "@/lib/admin/admin-timezone";
 import { useServerTime } from "@/components/providers/server-time";
 import { cn } from "@/lib/utils";
@@ -26,22 +22,15 @@ import {
   parseDateStringLocal,
 } from "@/lib/utils/date";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-function weekRangeLabel(weekStartKey: string): string {
-  const end = endOfIsoWeekDateKey(weekStartKey);
-  const d0 = parseDateStringLocal(weekStartKey);
-  const d1 = parseDateStringLocal(end);
-  return `${formatDate(d0)} — ${formatDate(d1)}`;
-}
 const CLOSED_ACCORDION_VALUE = "__none__";
+
+/** Days rendered per page (only counting days that actually have reservations). */
+const DAYS_PER_PAGE = 5;
+
+const WINDOW_OPTIONS = [7, 14, 30, 60] as const;
+const DEFAULT_WINDOW_DAYS = 14;
 
 export function AdminReservationsCardsPanel({
   variant,
@@ -53,6 +42,7 @@ export function AdminReservationsCardsPanel({
   refetchKey = 0,
 }: {
   variant: "admin" | "dashboard";
+  /** A space id, or `ALL_SPACES_ID` ("all") to show every space at once. */
   spaceId: string;
   spaceName: string;
   showHeading?: boolean;
@@ -65,45 +55,30 @@ export function AdminReservationsCardsPanel({
   refetchKey?: number;
 }) {
   const { now, alignRevision } = useServerTime();
+  const isAllSpaces = spaceId === ALL_SPACES_ID;
 
   const [pendingOnly, setPendingOnly] = useState(false);
   const [expandedDateKey, setExpandedDateKey] = useState<string | null>(null);
   const [panelReservation, setPanelReservation] =
     useState<AdminReservationListResult | null>(null);
 
-  // Server-aligned week start — null until the server clock offset is applied.
-  const [weekStartKey, setWeekStartKey] = useState<string | null>(null);
+  // Only the admin (full-page) variant exposes a window-size control; the
+  // dashboard card stays at the default window to keep the widget compact.
+  const [windowDays, setWindowDays] = useState<number>(DEFAULT_WINDOW_DAYS);
+  const [page, setPage] = useState(1);
 
-  useLayoutEffect(() => {
-    setWeekStartKey((prev) => {
-      const today = todayDateKeyInAdminTz(now().getTime());
-      const correct = startOfIsoWeekDateKey(today);
-      if (prev === correct) return prev;
-      return correct;
-    });
-  }, [alignRevision, now]);
+  // Server-aligned "today" — null until the server clock offset is applied.
+  const [rangeAnchorMs, setRangeAnchorMs] = useState<number | null>(null);
 
-  const todayKey = todayDateKeyInAdminTz(now().getTime());
-  const minWeekStart = startOfIsoWeekDateKey(todayKey);
-
-  const dashboardRange = useMemo(
-    () => adminTwoCalendarWeeksRange(now().getTime()),
+  useEffect(() => {
+    setRangeAnchorMs(now().getTime());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [alignRevision],
-  );
+  }, [alignRevision]);
 
-  const fetchFromKey: string | null =
-    weekStartKey === null
-      ? null
-      : variant === "dashboard"
-        ? dashboardRange.fromKey
-        : weekStartKey;
-  const fetchToKey: string | null =
-    weekStartKey === null
-      ? null
-      : variant === "dashboard"
-        ? dashboardRange.toKey
-        : endOfIsoWeekDateKey(weekStartKey);
+  const { fromKey: fetchFromKey, toKey: fetchToKey } = useMemo(() => {
+    if (rangeAnchorMs === null) return { fromKey: null, toKey: null };
+    return adminForwardWindowRange(windowDays, rangeAnchorMs);
+  }, [rangeAnchorMs, windowDays]);
 
   const {
     data: range,
@@ -132,6 +107,7 @@ export function AdminReservationsCardsPanel({
   useEffect(() => {
     setExpandedDateKey(null);
     setPanelReservation(null);
+    setPage(1);
   }, [spaceId, fetchFromKey, fetchToKey]);
 
   const orderedDays = useMemo(() => {
@@ -144,6 +120,20 @@ export function AdminReservationsCardsPanel({
     [orderedDays, itemsByDate],
   );
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(daysWithReservations.length / DAYS_PER_PAGE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pagedDays = useMemo(
+    () =>
+      daysWithReservations.slice(
+        (safePage - 1) * DAYS_PER_PAGE,
+        safePage * DAYS_PER_PAGE,
+      ),
+    [daysWithReservations, safePage],
+  );
+
   const wrappedOnAction = useCallback(
     (id: string, action: "APPROVED" | "REJECTED", reason?: string) => {
       onAction(id, action, reason);
@@ -151,12 +141,11 @@ export function AdminReservationsCardsPanel({
     [onAction],
   );
 
-  const canPrevWeek =
-    variant === "admin" && !!weekStartKey && weekStartKey > minWeekStart;
+  const headingTitle = isAllSpaces
+    ? "Reservas — Todos los espacios"
+    : `Reservas — ${spaceName}`;
 
-  const headingTitle = `Reservas — ${spaceName}`;
-
-  if (!weekStartKey || firstTime) {
+  if (rangeAnchorMs === null || firstTime) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-10 w-full max-w-sm" />
@@ -173,43 +162,31 @@ export function AdminReservationsCardsPanel({
             {headingTitle}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            {variant === "admin"
-              ? "Elegí la semana (actual o futura). Solo se muestran días con reservas; expandí una tarjeta para ver la grilla completa."
-              : "Esta semana y la próxima (Argentina). Expandí un día para ver la grilla."}
+            Próximos {windowDays} días desde hoy (Argentina). Expandí un día con
+            reservas para ver la grilla y el detalle lateral.
           </p>
         </div>
       ) : null}
 
       {variant === "admin" ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={!canPrevWeek || loading}
-              onClick={() =>
-                setWeekStartKey((w) => (w ? addDaysToDateKey(w, -7) : w))
-              }
-              aria-label="Semana anterior"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="min-w-[200px] text-sm font-medium sm:text-base">
-              {loading ? "…" : weekRangeLabel(weekStartKey)}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={loading}
-              onClick={() =>
-                setWeekStartKey((w) => (w ? addDaysToDateKey(w, 7) : w))
-              }
-              aria-label="Semana siguiente"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            Ventana:
+          </span>
+          <div className="flex rounded-md border border-border p-0.5 w-fit">
+            {WINDOW_OPTIONS.map((d) => (
+              <Button
+                key={d}
+                type="button"
+                variant={windowDays === d ? "secondary" : "ghost"}
+                size="sm"
+                className="rounded-sm"
+                disabled={loading}
+                onClick={() => setWindowDays(d)}
+              >
+                {d}d
+              </Button>
+            ))}
           </div>
         </div>
       ) : null}
@@ -223,42 +200,76 @@ export function AdminReservationsCardsPanel({
           No hay reservas en este período.
         </p>
       ) : (
-        <Accordion
-          type="single"
-          collapsible
-          value={expandedDateKey ?? CLOSED_ACCORDION_VALUE}
-          onValueChange={(value) =>
-            setExpandedDateKey(
-              value && value !== CLOSED_ACCORDION_VALUE ? value : null,
-            )
-          }
-          className={cn(
-            "space-y-2",
-            loading && "opacity-60 pointer-events-none",
-          )}
-        >
-          {daysWithReservations.map((d) => {
-            const list = itemsByDate[d] ?? [];
-            const open = expandedDateKey === d;
-            const dayDate = parseDateStringLocal(d);
-            const title = `${formateWeekday(dayDate)} ${formatDate(dayDate)}`;
-            return (
-              <DayReservationCard
-                key={d}
-                value={d}
-                dateKey={d}
-                title={title}
-                count={list.length}
-                open={open}
-                reservationsForDay={list}
-                pendingOnly={pendingOnly}
-                onPendingOnlyChange={setPendingOnly}
-                onSelectReservation={setPanelReservation}
-                disabled={loading}
-              />
-            );
-          })}
-        </Accordion>
+        <>
+          <Accordion
+            type="single"
+            collapsible
+            value={expandedDateKey ?? CLOSED_ACCORDION_VALUE}
+            onValueChange={(value) =>
+              setExpandedDateKey(
+                value && value !== CLOSED_ACCORDION_VALUE ? value : null,
+              )
+            }
+            className={cn(
+              "space-y-2",
+              loading && "opacity-60 pointer-events-none",
+            )}
+          >
+            {pagedDays.map((d) => {
+              const list = itemsByDate[d] ?? [];
+              const open = expandedDateKey === d;
+              const dayDate = parseDateStringLocal(d);
+              const title = `${formateWeekday(dayDate)} ${formatDate(dayDate)}`;
+              return (
+                <DayReservationCard
+                  key={d}
+                  value={d}
+                  dateKey={d}
+                  title={title}
+                  count={list.length}
+                  open={open}
+                  reservationsForDay={list}
+                  pendingOnly={pendingOnly}
+                  onPendingOnlyChange={setPendingOnly}
+                  onSelectReservation={setPanelReservation}
+                  disabled={loading}
+                  showResourceTypeLabels={isAllSpaces}
+                />
+              );
+            })}
+          </Accordion>
+
+          {totalPages > 1 ? (
+            <nav
+              className="flex items-center justify-center gap-3"
+              aria-label="Paginación de días con reservas"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={safePage <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Button>
+              <span className="text-sm tabular-nums text-muted-foreground">
+                Página {safePage} de {totalPages}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={safePage >= totalPages || loading}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </nav>
+          ) : null}
+        </>
       )}
 
       <AdminReservationDetailSheet

@@ -53,6 +53,7 @@ export function DayReservationCard({
   onSelectReservation,
   disabled = false,
   className,
+  showResourceTypeLabels = false,
 }: {
   value: string;
   dateKey: string;
@@ -65,6 +66,8 @@ export function DayReservationCard({
   onSelectReservation: (reservation: AdminReservationListResult) => void;
   disabled?: boolean;
   className?: string;
+  /** Show each row's space name — turn on when the list spans multiple spaces (e.g. "All"). */
+  showResourceTypeLabels?: boolean;
 }) {
   const resourcesMeta = uniqueResourcesMeta(reservationsForDay);
   const pending = reservationsForDay.filter(
@@ -189,7 +192,7 @@ export function DayReservationCard({
               dateKey={dateKey}
               reservationsForCapacity={reservationsForDay}
               pendingOnly={pendingOnly}
-              showResourceTypeLabels={false}
+              showResourceTypeLabels={showResourceTypeLabels}
               onSelectReservation={onSelectReservation}
             />
           </CardContent>

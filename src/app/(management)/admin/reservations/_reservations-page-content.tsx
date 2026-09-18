@@ -13,9 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import { apiErrorMessage } from "@/lib/api/client";
 import { reviewAdminReservation } from "@/lib/api/mutations";
+import { ALL_SPACES_ID } from "@/hooks/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+const ALL_SPACES_OPTION: SpaceOption = {
+  id: ALL_SPACES_ID,
+  name: "Todos los espacios",
+};
 
 export function ReservationsPageContent({
   spaceOptions,
@@ -32,17 +38,21 @@ export function ReservationsPageContent({
   const [confirming, setConfirming] = useState(false);
   const [refetchKey, setRefetchKey] = useState(0);
 
+  const comboOptions: SpaceOption[] = [ALL_SPACES_OPTION, ...spaceOptions];
+
+  // Defaults to "all"; an explicit ?service= (including "all") is honored if valid.
   const paramService = searchParams.get("service");
   const [service, setService] = useState<string>(() => {
-    if (paramService && spaceOptions.some((o) => o.id === paramService))
+    if (paramService && comboOptions.some((o) => o.id === paramService))
       return paramService;
-    return spaceOptions[0]?.id ?? "";
+    return ALL_SPACES_ID;
   });
 
   useEffect(() => {
-    if (paramService && spaceOptions.some((o) => o.id === paramService)) {
+    if (paramService && comboOptions.some((o) => o.id === paramService)) {
       setService(paramService);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramService, spaceOptions]);
 
   const triggerRefetch = useCallback(() => setRefetchKey((k) => k + 1), []);
@@ -109,19 +119,17 @@ export function ReservationsPageContent({
     }
   };
 
-  const spaceName = spaceOptions.find((o) => o.id === service)?.name ?? "";
+  const spaceName = comboOptions.find((o) => o.id === service)?.name ?? "";
 
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">
-            Tipo de recurso
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">Espacio</p>
           <AdminResourceTypeCombobox
             value={service}
             onChange={onServiceChange}
-            options={spaceOptions}
+            options={comboOptions}
           />
         </div>
       </div>

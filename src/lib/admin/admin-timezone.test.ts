@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   addDaysToDateKey,
+  adminForwardWindowRange,
   enumerateDateKeysInclusive,
   isValidDateKey,
+  todayDateKeyInAdminTz,
 } from "./admin-timezone";
 
 describe("admin-timezone", () => {
@@ -27,5 +29,18 @@ describe("admin-timezone", () => {
     expect(isValidDateKey("2025-4-4")).toBe(false);
     expect(isValidDateKey("25-04-04")).toBe(false);
     expect(isValidDateKey("2025-04-04")).toBe(true);
+  });
+
+  it("adminForwardWindowRange starts today and spans dayCount days inclusive", () => {
+    const nowMs = new Date("2025-04-04T15:00:00Z").getTime();
+    const { fromKey, toKey } = adminForwardWindowRange(14, nowMs);
+    expect(fromKey).toBe(todayDateKeyInAdminTz(nowMs));
+    expect(enumerateDateKeysInclusive(fromKey, toKey)).toHaveLength(14);
+  });
+
+  it("adminForwardWindowRange respects an arbitrary window length", () => {
+    const nowMs = new Date("2025-04-04T15:00:00Z").getTime();
+    const { fromKey, toKey } = adminForwardWindowRange(60, nowMs);
+    expect(enumerateDateKeysInclusive(fromKey, toKey)).toHaveLength(60);
   });
 });
