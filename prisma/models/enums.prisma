@@ -2,6 +2,9 @@ enum UserRole {
   USER
   ADMIN
   SUPERADMIN
+  // Can author/manage Noticias posts (news:manage) but not approve them —
+  // see prisma/models/news.prisma and docs/milestones/milestones-4-news-section.md.
+  COMUNICADOR
 }
 
 enum IncidentStatus {
@@ -76,6 +79,17 @@ enum LandingThemeEffect {
   EMOJI_SHOWER
 
   @@map("landing_theme_effects")
+}
+
+// Approval state machine for a Noticias post — see prisma/models/news.prisma.
+enum NewsPostStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  PAUSED
+
+  @@map("news_post_statuses")
 }
 
 enum FormFieldType {

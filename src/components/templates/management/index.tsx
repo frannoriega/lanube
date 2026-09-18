@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
-import { hasPermission, isAdminRole } from "@/lib/rbac";
+import { hasPermission, isAdminRole, type Permission } from "@/lib/rbac";
 import {
   BarChart3,
   Building2,
@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   LucideProps,
   Menu,
+  Newspaper,
   Settings,
   Shield,
   Sparkles,
@@ -59,6 +60,10 @@ interface NavigationItem {
     Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
   >;
   children?: NavigationItem[];
+  /** Admin items only: hidden unless the signed-in role has this permission
+   * (defaults to "admin:access", i.e. shown to any admin-shell role). Lets a
+   * narrow role like Comunicador see only what it can actually use. */
+  permission?: Permission;
 }
 
 const navigation: Record<"user" | "admin", NavigationItem[]> = {
@@ -78,11 +83,42 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
   ],
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Usuarios", href: "/admin/users", icon: Users },
-    { name: "Reservas", href: "/admin/reservations", icon: Calendar },
-    { name: "Eventos", href: "/admin/events", icon: CalendarDays },
-    { name: "Formularios", href: "/admin/forms", icon: FileText },
-    { name: "Reportes", href: "/admin/reports", icon: BarChart3 },
+    {
+      name: "Usuarios",
+      href: "/admin/users",
+      icon: Users,
+      permission: "users:manage",
+    },
+    {
+      name: "Reservas",
+      href: "/admin/reservations",
+      icon: Calendar,
+      permission: "reservations:manage",
+    },
+    {
+      name: "Eventos",
+      href: "/admin/events",
+      icon: CalendarDays,
+      permission: "events:manage",
+    },
+    {
+      name: "Noticias",
+      href: "/admin/news",
+      icon: Newspaper,
+      permission: "news:manage",
+    },
+    {
+      name: "Formularios",
+      href: "/admin/forms",
+      icon: FileText,
+      permission: "forms:manage",
+    },
+    {
+      name: "Reportes",
+      href: "/admin/reports",
+      icon: BarChart3,
+      permission: "reports:view",
+    },
   ],
 };
 
@@ -207,10 +243,13 @@ export default function ManagementLayout({
       const [panel, ...tail] = navigation.user;
       return [panel, ...spaceItems, ...tail];
     }
+    const visibleAdminItems = navigation.admin.filter((item) =>
+      hasPermission(user?.role, item.permission ?? "admin:access"),
+    );
     const canConfigure = hasPermission(user?.role, "spaces:manage");
     return canConfigure
-      ? [...navigation.admin, configNavigation]
-      : navigation.admin;
+      ? [...visibleAdminItems, configNavigation]
+      : visibleAdminItems;
   }, [userType, user?.role, spaceNav]);
 
   if (!user) {

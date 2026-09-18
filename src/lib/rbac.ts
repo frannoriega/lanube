@@ -17,6 +17,10 @@ export const PERMISSIONS = [
   "reports:view",
   "checkin:manage",
   "incidents:manage",
+  /** Author/edit Noticias posts (including one's own drafts and submitting for review). */
+  "news:manage",
+  /** Approve/reject a Noticias post out of PENDING_REVIEW. Not granted to Comunicador. */
+  "news:approve",
   // Configuration (superadmin)
   "spaces:manage",
   "resources:manage",
@@ -38,6 +42,8 @@ const ADMIN_PERMISSIONS: readonly Permission[] = [
   "reports:view",
   "checkin:manage",
   "incidents:manage",
+  "news:manage",
+  "news:approve",
 ];
 
 const SUPERADMIN_PERMISSIONS: readonly Permission[] = [
@@ -51,10 +57,17 @@ const SUPERADMIN_PERMISSIONS: readonly Permission[] = [
   "audit:view",
 ];
 
+/** Narrow role: can author Noticias posts, but every other admin surface stays off-limits. */
+const COMUNICADOR_PERMISSIONS: readonly Permission[] = [
+  "admin:access",
+  "news:manage",
+];
+
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   [UserRole.USER]: [],
   [UserRole.ADMIN]: ADMIN_PERMISSIONS,
   [UserRole.SUPERADMIN]: SUPERADMIN_PERMISSIONS,
+  [UserRole.COMUNICADOR]: COMUNICADOR_PERMISSIONS,
 };
 
 export function hasPermission(
@@ -66,7 +79,7 @@ export function hasPermission(
   return permissions?.includes(permission) ?? false;
 }
 
-/** Any role that can operate the admin panel (ADMIN or SUPERADMIN). */
+/** Any role that can operate the admin panel (ADMIN, SUPERADMIN, or COMUNICADOR). */
 export function isAdminRole(
   role: UserRole | string | undefined | null,
 ): boolean {
@@ -77,4 +90,5 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.USER]: "Usuario",
   [UserRole.ADMIN]: "Administrador",
   [UserRole.SUPERADMIN]: "Superadministrador",
+  [UserRole.COMUNICADOR]: "Comunicador",
 };
