@@ -68,6 +68,7 @@ model RegisteredUser {
   teamMembers      TeamMember[]
   eventParticipations EventParticipant[]
   PasswordResetToken PasswordResetToken[]
+  newsPosts           NewsPost[]
 
   @@map("registered_users")
 }
