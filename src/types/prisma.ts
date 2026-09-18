@@ -22,6 +22,7 @@ export enum UserRole {
   USER = "USER",
   ADMIN = "ADMIN",
   SUPERADMIN = "SUPERADMIN",
+  COMUNICADOR = "COMUNICADOR",
 }
 
 export enum IncidentStatus {
@@ -107,6 +108,34 @@ export type LandingTheme = {
   accentPresetKey: string | null;
   bannerText: string | null;
   bannerUrl: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export enum NewsPostStatus {
+  DRAFT = "DRAFT",
+  PENDING_REVIEW = "PENDING_REVIEW",
+  PUBLISHED = "PUBLISHED",
+  REJECTED = "REJECTED",
+  PAUSED = "PAUSED",
+}
+
+/** Mirrors the `NewsPost` row for client components (see prisma/models/news.prisma). */
+export type NewsPost = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  body: string;
+  coverImageUrl: string | null;
+  authorId: string | null;
+  authorLabel: string;
+  status: NewsPostStatus;
+  isFeatured: boolean;
+  featuredOrder: number;
+  publishedAt: number | null;
+  decisionReason: string | null;
+  decidedAt: number | null;
   createdAt: number;
   updatedAt: number;
 };

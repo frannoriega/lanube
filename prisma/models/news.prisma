@@ -1,0 +1,47 @@
+/// A "Noticias" post — announcements/updates authored by staff, shown on the landing and
+/// at its own /noticias/[slug] detail page. Mirrors Event's status/summary/featured shape
+/// (see docs/milestones/milestones-4-news-section.md for the precedent this follows).
+///
+/// Approval state machine (NewsPostStatus): DRAFT (being written) -> PENDING_REVIEW (a
+/// Comunicador submitted it) -> PUBLISHED (approved) or REJECTED (sent back, editable and
+/// resubmittable) -> PAUSED (was live, taken down without deleting). Admin/Superadmin skip
+/// review for their own posts (DRAFT -> PUBLISHED directly); only Admin/Superadmin can move
+/// a post out of PENDING_REVIEW (see the news:approve permission in src/lib/rbac.ts).
+model NewsPost {
+  id            String  @id @default(cuid())
+  title         String
+  slug          String  @unique
+  /// Short plain-text blurb for cards (same role as Event.summary) — never raw markdown.
+  summary       String
+  /// Full markdown body, rendered on the detail page via the Markdown component.
+  body          String
+  coverImageUrl String? @map("cover_image_url")
+
+  /// Nullable + SetNull so a deleted author doesn't take their published posts down;
+  /// `authorLabel` is a snapshot of their display name at write time (mirrors AuditLog's
+  /// actorLabel — see prisma/models/audit.prisma) so the byline stays readable regardless.
+  authorId    String?         @map("author_id")
+  author      RegisteredUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorLabel String          @map("author_label")
+
+  status NewsPostStatus @default(DRAFT)
+
+  /// Featured posts lead the landing section — same isFeatured/featuredOrder shape as Event.
+  isFeatured    Boolean @default(false) @map("is_featured")
+  featuredOrder Int     @default(0) @map("featured_order")
+
+  /// Set the moment status first becomes PUBLISHED; drives "newest first" ordering
+  /// independent of createdAt (a post can be drafted long before it's approved).
+  publishedAt BigInt? @map("published_at")
+
+  /// Set by an Admin/Superadmin decision on a PENDING_REVIEW post (approve or reject).
+  decisionReason String? @map("decision_reason")
+  decidedAt      BigInt? @map("decided_at")
+
+  createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+
+  @@index([status])
+  @@index([authorId])
+  @@map("news_posts")
+}

@@ -9,8 +9,14 @@
       {
         "rule": "design-system-color",
         "value": "#777777",
-        "reason": "tsparticles config cannot consume CSS variables; #777777 is intentional neutral gray for decorative background particles",
-        "createdAt": "2026-07-04T00:55:10.454Z"
+        "createdAt": "2026-07-04T00:55:10.454Z",
+        "reason": "tsparticles config cannot consume CSS variables; #777777 is intentional neutral gray for decorative background particles"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "11px",
+        "createdAt": "2026-09-18T23:06:04.689Z",
+        "reason": "matches the existing 'Destacado' badge size already used in event-card.tsx — reusing the established featured-badge pattern, not a new size"
       }
     ]
   }
