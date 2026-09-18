@@ -6,9 +6,9 @@ import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/sectio
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const keywords = [
+const BASE_KEYWORDS = [
   "innovación",
   "talento",
   "conocimiento",
@@ -17,13 +17,25 @@ const keywords = [
   "creación",
 ];
 
-export default function HeroSection() {
+export default function HeroSection({
+  eyebrowOverride,
+  extraKeyword,
+}: {
+  /** Replaces the "Una iniciativa de..." line while a landing theme is active. */
+  eyebrowOverride?: string | null;
+  /** Prepended to the rotating keyword list while a landing theme is active. */
+  extraKeyword?: string | null;
+}) {
+  const keywords = useMemo(
+    () => (extraKeyword ? [extraKeyword, ...BASE_KEYWORDS] : BASE_KEYWORDS),
+    [extraKeyword],
+  );
   const [keywordIndex, setKeywordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const currentKeyword = keywords[keywordIndex];
+    const currentKeyword = keywords[keywordIndex % keywords.length];
 
     const timeout = setTimeout(
       () => {
@@ -46,7 +58,7 @@ export default function HeroSection() {
     );
 
     return () => clearTimeout(timeout);
-  }, [displayedText, isDeleting, keywordIndex]);
+  }, [displayedText, isDeleting, keywordIndex, keywords]);
 
   return (
     <Breakout className={LANDING_SECTION_BG}>
@@ -58,7 +70,7 @@ export default function HeroSection() {
           <div className="flex flex-col items-center justify-center gap-8 flex-1">
             <div className="flex flex-col items-center justify-center gap-3">
               <p className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-la-nube-primary dark:text-la-nube-secondary text-center text-balance">
-                Una iniciativa de Concepción del Uruguay
+                {eyebrowOverride || "Una iniciativa de Concepción del Uruguay"}
               </p>
               <div className="lg:text-6xl md:text-5xl text-3xl font-bold text-center">
                 <h1 className="lg:text-7xl md:text-6xl text-4xl">La Nube</h1>

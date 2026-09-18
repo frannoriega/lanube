@@ -68,6 +68,16 @@ enum ParticipantStatus {
   @@map("participant_statuses")
 }
 
+// Entrance effect a landing theme plays on first visit while its window is active.
+// Kept as a small, developer-owned set (not free-form) so a superadmin can only pick
+// among presets built and vetted in code — see docs/milestones/milestones-3-seasonal-landing-themes.md.
+enum LandingThemeEffect {
+  NONE
+  EMOJI_SHOWER
+
+  @@map("landing_theme_effects")
+}
+
 enum FormFieldType {
   SHORT_TEXT
   LONG_TEXT
