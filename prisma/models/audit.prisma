@@ -1,0 +1,31 @@
+/// Records who did what to which record. `actorUserId` and `entityId` are
+/// intentionally *not* Prisma relations (no FK constraint) — entityId is
+/// polymorphic across many models (mirrors the reservable_id precedent for
+/// Reservation), and actorUserId must survive the actor being deleted.
+model AuditLog {
+  id          String  @id @default(cuid())
+  /// Id of the RegisteredUser who performed the action; null for system/cron actions.
+  actorUserId String? @map("actor_user_id")
+  /// Snapshot of the actor's display name/email at write time, so the log
+  /// stays readable after the user is edited or deleted.
+  actorLabel  String  @map("actor_label")
+  /// Stable action identifier, e.g. "reservation.approve", "user.role.update".
+  action      String
+  /// The kind of record acted on, e.g. "Reservation", "RegisteredUser".
+  entityType  String  @map("entity_type")
+  entityId    String  @map("entity_id")
+  /// Field-level snapshot of only the changed columns, before the write.
+  before      Json?
+  /// Field-level snapshot of only the changed columns, after the write.
+  after       Json?
+  reason      String?
+  /// Correlates entries written by the same HTTP request (e.g. an approval's
+  /// cascaded auto-rejections), so the UI can group them.
+  requestId   String? @map("request_id")
+  createdAt   BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorUserId, createdAt])
+  @@index([requestId])
+  @@map("audit_logs")
+}

@@ -16,6 +16,7 @@ import {
   ChevronDown,
   FileText,
   Contact,
+  History,
   LayoutDashboard,
   LucideProps,
   Menu,
@@ -93,6 +94,7 @@ const configNavigation: NavigationItem = {
     { name: "Recursos", href: "/admin/resources", icon: Wrench },
     { name: "Tipos de reserva", href: "/admin/reservation-types", icon: Tags },
     { name: "Contacto", href: "/admin/site", icon: Contact },
+    { name: "Auditoría", href: "/admin/audit", icon: History },
   ],
 };
 
