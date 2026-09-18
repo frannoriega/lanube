@@ -1,13 +1,13 @@
 # Milestone 3 — Seasonal / date-based landing themes
 
-> **Timing note:** the coworking's anniversary is 2026-09-25 — about a week out from
-> this doc. The full configurable system below is more than a week of work end-to-end
-> (schema, admin UI, public rendering, testing). If the anniversary shower needs to be
-> live for the 25th, the realistic path is: ship a **hard-coded, single-purpose**
-> version for this one date first (a `LANDING_ANNIVERSARY_DATE` constant + the emoji
-> shower component, no admin UI), then generalize it into the configurable system
-> described here afterward. That trade-off needs a decision before work starts — see
-> Open Questions.
+> **Decided scope (2026-09-18):** v1 ships for the 2026-09-25 anniversary with only
+> two of the capabilities below — the **`EMOJI_SHOWER` entrance effect** and a
+> **hero text override** (the headline/subheading area — see the reference
+> screenshot the user provided: the existing hero's "La Nube — un espacio de
+> `<keyword>`" treatment, overridden for the theme window). The activation-window
+> and admin-configuration shape described below is confirmed as the right design —
+> build it — but the **accent-preset swap and the top banner/ribbon are deferred**,
+> not part of v1. See "v1 scope" under "What needs building".
 
 ## Use case
 
@@ -95,13 +95,20 @@ system can't visually break the brand from the admin panel.
 
 ## What needs building
 
+**v1 scope (this pass):** activation window + `EMOJI_SHOWER` effect + hero text
+override, superadmin-configurable. **Deferred to a later pass:** accent-preset
+swap, top banner/ribbon. The schema still has room for the deferred fields (so v2
+doesn't need a breaking migration), but only the v1 fields get admin UI and
+rendering now.
+
 1. **Schema**: a new `LandingTheme` model — name, activation window (recurring vs.
    one-off + priority), `entranceEffect` (enum) + its bounded config (JSON, but
    validated against a per-effect Zod schema server-side, not free JSON), optional
-   hero copy override fields, optional accent-preset key, optional banner
-   text/link, `isEnabled` toggle. Superadmin CRUD at `/admin/themes` (or folded
-   into a "Landing" config section) — same pattern as `spaces-manager.tsx` /
-   `reservation-types-manager.tsx`.
+   hero copy override fields (**v1**), optional accent-preset key (**schema only,
+   no UI/rendering until v2**), optional banner text/link (**schema only, no
+   UI/rendering until v2**), `isEnabled` toggle. Superadmin CRUD at
+   `/admin/themes` (or folded into a "Landing" config section) — same pattern as
+   `spaces-manager.tsx` / `reservation-types-manager.tsx`.
 2. **Resolution logic**: a pure function (`resolveActiveTheme(themes, nowMs)`) that,
    given all enabled themes and the current date (admin-timezone, matching
    `ADMIN_TIMEZONE` elsewhere in the codebase), returns the single active theme (if
@@ -116,9 +123,9 @@ system can't visually break the brand from the admin panel.
      `src/components/templates/landing/theme/emoji-shower.tsx` — mounted once near
      the root of the public layout, inert when no theme is active or the effect
      already played today.
-   - Hero copy overrides and the accent preset flow into `HeroSection` as props
-     rather than the component reaching for global state.
-   - Banner renders in the public layout header area when a theme has one.
+   - Hero copy overrides flow into `HeroSection` as props rather than the
+     component reaching for global state.
+   - Accent preset and banner rendering are **deferred to v2** — not built now.
 4. **Presets as code, config as data**: entrance-effect implementations and accent
    presets are components/constants shipped by a developer (e.g.
    `src/lib/constants/landing-themes.ts` for accent presets); the `LandingTheme`
@@ -127,45 +134,42 @@ system can't visually break the brand from the admin panel.
 
 ## Implementation plan
 
-1. Confirm scope for the Sept 25 deadline (see Open Questions) — this determines
-   whether step 2 happens before or after a hard-coded stopgap.
-2. Schema + migration for `LandingTheme`; seed the anniversary (and optionally a
-   Christmas) row via the seed script or a data migration.
-3. `resolveActiveTheme` pure function + unit tests (recurring window logic,
+1. Schema + migration for `LandingTheme` (v1 fields active; v2 fields present but
+   unused); seed the anniversary (2026-09-25, recurring annual) row via the seed
+   script or a data migration.
+2. `resolveActiveTheme` pure function + unit tests (recurring window logic,
    year-boundary spanning, priority tie-breaking).
-4. Build the `EMOJI_SHOWER` effect component first (the concrete ask); design its
+3. Build the `EMOJI_SHOWER` effect component first (the concrete ask); design its
    size/count/duration bounds so it reads as delightful, not spammy, on mobile too
    (test at ~400px width per the responsive floor).
-5. Superadmin admin UI (`/admin/themes`): list + create/edit form, effect-specific
+4. Superadmin admin UI (`/admin/themes`): list + create/edit form, effect-specific
    sub-form (only show emoji-shower fields when that effect is selected), date
    window picker (reuse `DateRangePicker` for one-off; a lighter month-day picker
    for recurring).
-6. Wire resolution into the public layout/landing page; add the optional banner and
-   hero copy override plumbing.
-7. Tests: `resolveActiveTheme` unit tests; a manual QA pass around the actual
+5. Wire resolution into the public layout/landing page; add the hero copy
+   override plumbing (banner deferred to v2).
+6. Tests: `resolveActiveTheme` unit tests; a manual QA pass around the actual
    anniversary date (and the Dec 31 → Jan 1 boundary case for a Christmas-style
    theme) since date-window logic is exactly the kind of thing that's subtly wrong
    at the edges.
 
+## Resolved (2026-09-18)
+
+- **Sept 25 scope**: v1 is emoji shower + hero text override only. Accent presets
+  and banner are v2, not blocking the anniversary date.
+- **Configuration shape**: the bounded, preset-based approach above (activation
+  window, effect enum with structured config, no free-form CSS/color) is confirmed
+  as the right design.
+- **Scope of "changing text and stuff"**: confirmed to mean the hero
+  headline/subheading text (see the reference screenshot — the "La Nube — un
+  espacio de `<keyword>`" treatment), not a broader visual swap (illustration,
+  layout, etc.). Hero copy override is in scope for v1.
+
 ## Open questions (needs a product decision before/while building)
 
-- **Sept 25 timeline**: given the date is ~1 week out and this system is more than a
-  week of work, do we (a) ship a hard-coded anniversary-only version now and
-  generalize later, (b) accept the anniversary theme lands late/next year, or (c)
-  scope this milestone down to _only_ the emoji shower + activation window (skip
-  hero copy override, accent presets, and banner for v1) to make the full
-  configurable system feasible in time? (c) is my recommendation if the full system
-  is wanted for the 25th.
 - **Effect trigger**: once-per-browser-per-day (localStorage) as proposed, or
   should it replay every visit while the theme is active? Once-per-day matches "the
   first time you get into the page," but a repeat visitor on the day might also
-  enjoy seeing it again — worth confirming.
-- **Accent presets**: is a developer-curated preset list (vs. true color freedom)
-  the right trade-off, or does the superadmin want more visual control even at the
-  risk of off-brand combinations? I'd push back on full freedom given `DESIGN.md`'s
-  explicit restraint rules, but it's worth confirming this is acceptable.
-- **Scope of "changing text and stuff"**: the user's own message flags this as
-  possibly interesting beyond the emoji shower — is hero copy override (as scoped
-  above) sufficient, or is there a concrete second use case in mind (e.g. swapping
-  the whole hero image/illustration, not just text)? If it's bigger than copy
-  swaps, that likely needs its own follow-up milestone rather than folding into v1.
+  enjoy seeing it again — worth confirming. Tracked in `docs/OPEN_QUESTIONS.md`.
+- **Accent presets** (v2) and **banner** (v2): deferred, not blocking v1 — revisit
+  when scheduled. Tracked in `docs/OPEN_QUESTIONS.md`.
