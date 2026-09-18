@@ -12,6 +12,7 @@ const ADMIN_PATH_PERMISSIONS: Array<[prefix: string, permission: Permission]> =
     ["/admin/resources", "resources:manage"],
     ["/admin/reservation-types", "reservation-types:manage"],
     ["/admin/site", "site-config:manage"],
+    ["/admin/audit", "audit:view"],
   ];
 
 export async function middleware(request: NextRequest) {
