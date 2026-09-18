@@ -36,6 +36,23 @@ describe("rbac", () => {
     }
   });
 
+  it("comunicador can author news but nothing else in the admin panel", () => {
+    expect(isAdminRole(UserRole.COMUNICADOR)).toBe(true);
+    expect(hasPermission(UserRole.COMUNICADOR, "news:manage")).toBe(true);
+    expect(hasPermission(UserRole.COMUNICADOR, "news:approve")).toBe(false);
+    expect(hasPermission(UserRole.COMUNICADOR, "reservations:manage")).toBe(
+      false,
+    );
+    expect(hasPermission(UserRole.COMUNICADOR, "events:manage")).toBe(false);
+    expect(hasPermission(UserRole.COMUNICADOR, "checkin:manage")).toBe(false);
+  });
+
+  it("admin and superadmin can both approve news, comunicador cannot", () => {
+    expect(hasPermission(UserRole.ADMIN, "news:approve")).toBe(true);
+    expect(hasPermission(UserRole.SUPERADMIN, "news:approve")).toBe(true);
+    expect(hasPermission(UserRole.COMUNICADOR, "news:approve")).toBe(false);
+  });
+
   it("tolerates unknown/absent roles", () => {
     expect(hasPermission(undefined, "admin:access")).toBe(false);
     expect(hasPermission(null, "admin:access")).toBe(false);

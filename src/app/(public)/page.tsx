@@ -3,6 +3,7 @@ import EventsSection from "@/components/templates/landing/events";
 import HeroSection from "@/components/templates/landing/hero";
 import { EmojiShower } from "@/components/templates/landing/theme/emoji-shower";
 import MembersSection from "@/components/templates/landing/members";
+import NewsSection from "@/components/templates/landing/news";
 import PartnersSection from "@/components/templates/landing/partners";
 import SpacesSection from "@/components/templates/landing/spaces";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
@@ -33,6 +34,7 @@ export default async function Home() {
       />
       {/* Right after the hero; hidden automatically when there are no upcoming events. */}
       <EventsSection />
+      <NewsSection />
       <SpacesSection />
       <MembersSection />
       <PartnersSection />
