@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   "resources:manage",
   "reservation-types:manage",
   "site-config:manage",
+  "landing-themes:manage",
   /** View the audit trail (can expose role changes and bans). */
   "audit:view",
 ] as const;
@@ -46,6 +47,7 @@ const SUPERADMIN_PERMISSIONS: readonly Permission[] = [
   "resources:manage",
   "reservation-types:manage",
   "site-config:manage",
+  "landing-themes:manage",
   "audit:view",
 ];
 

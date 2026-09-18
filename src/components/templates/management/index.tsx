@@ -22,6 +22,7 @@ import {
   Menu,
   Settings,
   Shield,
+  Sparkles,
   Tags,
   User,
   Users,
@@ -94,6 +95,7 @@ const configNavigation: NavigationItem = {
     { name: "Recursos", href: "/admin/resources", icon: Wrench },
     { name: "Tipos de reserva", href: "/admin/reservation-types", icon: Tags },
     { name: "Contacto", href: "/admin/site", icon: Contact },
+    { name: "Temas del landing", href: "/admin/themes", icon: Sparkles },
     { name: "Auditoría", href: "/admin/audit", icon: History },
   ],
 };

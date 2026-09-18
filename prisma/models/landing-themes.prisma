@@ -1,0 +1,46 @@
+/// Superadmin-configurable date-based landing themes (anniversary, Christmas, …).
+/// Only one theme is ever active at a time — see resolveActiveTheme() in
+/// src/lib/landing-themes/resolve.ts, which picks the highest-`priority` theme whose
+/// activation window contains "now" (admin timezone).
+///
+/// v1 (see docs/milestones/milestones-3-seasonal-landing-themes.md) only builds UI/
+/// rendering for the activation window, the EMOJI_SHOWER effect, and the hero copy
+/// override fields. accentPresetKey/bannerText/bannerUrl exist in the schema already
+/// so a v2 pass (accent swap, top banner) doesn't need a breaking migration, but they
+/// are not read or written anywhere yet.
+model LandingTheme {
+  id       String  @id @default(cuid())
+  name     String
+  isEnabled Boolean @default(true) @map("is_enabled")
+  /// Highest priority wins when more than one theme's window is active at once.
+  priority Int     @default(0)
+
+  /// Recurring annual window (`startMonthDay`/`endMonthDay`, "MM-DD"; may wrap the
+  /// year boundary, e.g. "12-20"..."01-06") vs. a one-off `startDate`/`endDate` (ms).
+  /// Exactly one pair is populated, matching `recurring`.
+  recurring     Boolean @default(true)
+  startMonthDay String? @map("start_month_day")
+  endMonthDay   String? @map("end_month_day")
+  startDate     BigInt? @map("start_date")
+  endDate       BigInt? @map("end_date")
+
+  entranceEffect LandingThemeEffect @default(NONE) @map("entrance_effect")
+  /// Space-separated emoji shown by EMOJI_SHOWER (e.g. "🎉 🎊 🥳").
+  emojiList      String?            @map("emoji_list")
+  particleCount  Int?               @map("particle_count")
+
+  /// Replaces the hero's eyebrow line ("Una iniciativa de...") while active.
+  heroEyebrowOverride String? @map("hero_eyebrow_override")
+  /// Prepended to HeroSection's rotating keyword list while active.
+  heroExtraKeyword    String? @map("hero_extra_keyword")
+
+  /// v2 — schema only, no admin UI or public rendering yet.
+  accentPresetKey String? @map("accent_preset_key")
+  bannerText      String? @map("banner_text")
+  bannerUrl       String? @map("banner_url")
+
+  createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+
+  @@map("landing_themes")
+}

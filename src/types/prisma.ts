@@ -83,6 +83,34 @@ export enum ParticipantStatus {
   CANCELLED = "CANCELLED",
 }
 
+export enum LandingThemeEffect {
+  NONE = "NONE",
+  EMOJI_SHOWER = "EMOJI_SHOWER",
+}
+
+/** Mirrors the `LandingTheme` row for client components (see prisma/models/landing-themes.prisma). */
+export type LandingTheme = {
+  id: string;
+  name: string;
+  isEnabled: boolean;
+  priority: number;
+  recurring: boolean;
+  startMonthDay: string | null;
+  endMonthDay: string | null;
+  startDate: number | null;
+  endDate: number | null;
+  entranceEffect: LandingThemeEffect;
+  emojiList: string | null;
+  particleCount: number | null;
+  heroEyebrowOverride: string | null;
+  heroExtraKeyword: string | null;
+  accentPresetKey: string | null;
+  bannerText: string | null;
+  bannerUrl: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export enum FormFieldType {
   SHORT_TEXT = "SHORT_TEXT",
   LONG_TEXT = "LONG_TEXT",
