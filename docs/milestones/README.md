@@ -14,3 +14,5 @@ task list is checked off.
 - [`milestones-2-audit-trail.md`](./milestones-2-audit-trail.md) — record who did what, with a before/after diff and a human-readable timestamp, across admin mutations. **First slice implemented** (schema, write helper, 2 of many routes instrumented, admin view) on branch `milestone-2`.
 - [`milestones-3-seasonal-landing-themes.md`](./milestones-3-seasonal-landing-themes.md) — superadmin-configurable date-based landing themes (anniversary/Christmas/etc.), starting with a first-visit "tada" emoji shower. Planning only — has an open timing question around the Sept 25 anniversary.
 - [`milestones-4-news-section.md`](./milestones-4-news-section.md) — a public "Noticias" section backed by a new `NewsPost` model, a new Comunicador role, and a featured flag. Planning only.
+
+See [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) for the running list of undefined product/design decisions across these milestones.
