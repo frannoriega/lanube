@@ -1,6 +1,8 @@
 import { requirePermission } from "@/lib/api-auth";
 import { updateUserRole } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
+import { prisma } from "@/lib/prisma";
+import { recordAuditFromSession } from "@/lib/audit/record";
 import { UserRole } from "@/types/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -33,7 +35,20 @@ export async function PATCH(
   }
 
   try {
+    const before = await prisma.registeredUser.findUnique({
+      where: { id },
+      select: { role: true },
+    });
     const user = await updateUserRole(id, parsed.data.role);
+    if (before && before.role !== user.role) {
+      await recordAuditFromSession(session, {
+        action: "user.role.update",
+        entityType: "RegisteredUser",
+        entityId: id,
+        before: { role: before.role },
+        after: { role: user.role },
+      });
+    }
     return NextResponse.json(serializeJson(user));
   } catch {
     return NextResponse.json(

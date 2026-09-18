@@ -120,3 +120,36 @@ export function LocalDateTime({
     </time>
   );
 }
+
+/**
+ * A single instant (date + time), e.g. "2 jul 2026, 10:00" — for logs/audit trails where
+ * there's no range, just a moment. Same client-side-only rendering as the rest of this file.
+ */
+export function LocalTimestamp({
+  ms,
+  className,
+}: {
+  ms: number;
+  className?: string;
+}) {
+  const [text, setText] = useState("");
+  useEffect(() => {
+    const opts: Intl.DateTimeFormatOptions = {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+    setText(new Date(ms).toLocaleString(undefined, opts));
+  }, [ms]);
+  return (
+    <time
+      dateTime={new Date(ms).toISOString()}
+      className={className}
+      suppressHydrationWarning
+    >
+      {text || " "}
+    </time>
+  );
+}
