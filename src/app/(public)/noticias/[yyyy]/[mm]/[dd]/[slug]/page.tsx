@@ -3,16 +3,24 @@ import Container from "@/components/atoms/container";
 import { LocalDate } from "@/components/molecules/local-date";
 import { Markdown } from "@/components/molecules/markdown";
 import { getPublishedNewsBySlug } from "@/lib/db/news";
+import { newsDetailPath } from "@/lib/news/url";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+
+interface NoticiaParams {
+  yyyy: string;
+  mm: string;
+  dd: string;
+  slug: string;
+}
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<NoticiaParams>;
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPublishedNewsBySlug(slug);
@@ -26,11 +34,19 @@ export async function generateMetadata({
 export default async function NoticiaDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<NoticiaParams>;
 }) {
-  const { slug } = await params;
+  const { yyyy, mm, dd, slug } = await params;
   const post = await getPublishedNewsBySlug(slug);
   if (!post) notFound();
+
+  // The slug alone is the lookup key; the date segments are cosmetic. Redirect
+  // to the canonical path if they don't match the post's actual publish date,
+  // so there's only ever one reachable URL per post.
+  const canonical = newsDetailPath(post);
+  if (canonical !== `/noticias/${yyyy}/${mm}/${dd}/${slug}`) {
+    redirect(canonical);
+  }
 
   return (
     <Breakout>
