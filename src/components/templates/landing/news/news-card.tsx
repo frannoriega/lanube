@@ -1,4 +1,5 @@
 import { LocalDate } from "@/components/molecules/local-date";
+import { newsDetailPath } from "@/lib/news/url";
 import { Newspaper, Star } from "lucide-react";
 import Image from "next/image";
 import { LandingCard } from "../shared/landing-card";
@@ -22,7 +23,14 @@ export function NewsCard({
   const isFeatured = featured || post.isFeatured;
   return (
     <LandingCard
-      data={{ href: `/noticias/${post.slug}`, label: `Leer: ${post.title}` }}
+      data={{
+        href: newsDetailPath({
+          slug: post.slug,
+          publishedAt: post.publishedAt,
+          createdAt: post.publishedAt,
+        }),
+        label: `Leer: ${post.title}`,
+      }}
       className={
         isFeatured
           ? "border-la-nube-primary/40 ring-2 ring-la-nube-primary/40 shadow-md"
