@@ -147,7 +147,16 @@ export const landingThemeInputSchema = z
     emojiList: emojiListSchema.optional().nullable(),
     particleCount: z.number().int().min(5).max(150).optional().nullable(),
     heroEyebrowOverride: z.string().trim().max(120).optional().nullable(),
-    heroExtraKeyword: z.string().trim().max(40).optional().nullable(),
+    heroKeywords: z
+      .string()
+      .trim()
+      .max(300)
+      .refine((v) => v.split(",").filter((k) => k.trim()).length <= 20, {
+        message: "Máximo 20 palabras/frases",
+      })
+      .optional()
+      .nullable(),
+    heroKeywordsMode: z.enum(["APPEND", "REPLACE"]),
   })
   .refine((v) => !v.recurring || (!!v.startMonthDay && !!v.endMonthDay), {
     message: "Definí el inicio y fin del período recurrente",

@@ -81,6 +81,14 @@ enum LandingThemeEffect {
   @@map("landing_theme_effects")
 }
 
+// How a theme's heroKeywords combine with HeroSection's default rotating keyword list.
+enum LandingThemeKeywordMode {
+  APPEND
+  REPLACE
+
+  @@map("landing_theme_keyword_modes")
+}
+
 // Approval state machine for a Noticias post — see prisma/models/news.prisma.
 enum NewsPostStatus {
   DRAFT

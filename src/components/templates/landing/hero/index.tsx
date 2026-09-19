@@ -6,30 +6,23 @@ import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/sectio
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-
-const BASE_KEYWORDS = [
-  "innovación",
-  "talento",
-  "conocimiento",
-  "aprendizaje",
-  "colaboración",
-  "creación",
-];
+import { BASE_KEYWORDS } from "@/lib/constants/hero";
+import { useEffect, useState } from "react";
 
 export default function HeroSection({
   eyebrowOverride,
-  extraKeyword,
+  keywords = BASE_KEYWORDS,
 }: {
   /** Replaces the "Una iniciativa de..." line while a landing theme is active. */
   eyebrowOverride?: string | null;
-  /** Prepended to the rotating keyword list while a landing theme is active. */
-  extraKeyword?: string | null;
+  /**
+   * The full rotating keyword list — already resolved (defaults, or a theme's
+   * APPEND/REPLACE combination via `resolveHeroKeywords`). Defaults to
+   * `BASE_KEYWORDS` when no theme is active. Never empty in practice (the
+   * resolver falls back to defaults rather than an empty list).
+   */
+  keywords?: string[];
 }) {
-  const keywords = useMemo(
-    () => (extraKeyword ? [extraKeyword, ...BASE_KEYWORDS] : BASE_KEYWORDS),
-    [extraKeyword],
-  );
   const [keywordIndex, setKeywordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);

@@ -72,7 +72,8 @@ const EMPTY: LandingThemeInput = {
   emojiList: "🎉 🎊",
   particleCount: 40,
   heroEyebrowOverride: "",
-  heroExtraKeyword: "",
+  heroKeywords: "",
+  heroKeywordsMode: "APPEND",
 };
 
 function themeToFormValues(t: LandingTheme): LandingThemeInput {
@@ -89,7 +90,8 @@ function themeToFormValues(t: LandingTheme): LandingThemeInput {
     emojiList: t.emojiList ?? "",
     particleCount: t.particleCount ?? 40,
     heroEyebrowOverride: t.heroEyebrowOverride ?? "",
-    heroExtraKeyword: t.heroExtraKeyword ?? "",
+    heroKeywords: t.heroKeywords ?? "",
+    heroKeywordsMode: t.heroKeywordsMode,
   };
 }
 
@@ -524,22 +526,54 @@ export function LandingThemesManager() {
 
               <FormField
                 control={form.control}
-                name="heroExtraKeyword"
+                name="heroKeywords"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Palabra extra en el título (opcional)</FormLabel>
+                    <FormLabel>
+                      Palabras para la rotación del título (opcional)
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="celebración"
+                        placeholder="10 años, celebración, fiesta"
                         {...field}
                         value={field.value ?? ""}
                       />
                     </FormControl>
                     <FormDescription>
-                      Se suma a la rotación de &ldquo;un espacio de …&rdquo; del
-                      inicio.
+                      Separadas por coma. Se combinan con la rotación de
+                      &ldquo;un espacio de …&rdquo; del inicio según la opción
+                      de abajo.
                     </FormDescription>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="heroKeywordsMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cómo combinarlas</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="APPEND">
+                          Agregar a las palabras habituales
+                        </SelectItem>
+                        <SelectItem value="REPLACE">
+                          Reemplazar las palabras habituales
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      &ldquo;Reemplazar&rdquo; solo aplica mientras el tema esté
+                      activo; después vuelven las palabras de siempre.
+                    </FormDescription>
                   </FormItem>
                 )}
               />

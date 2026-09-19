@@ -1,6 +1,7 @@
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 
 export type LandingThemeEffect = "NONE" | "EMOJI_SHOWER";
+export type LandingThemeKeywordMode = "APPEND" | "REPLACE";
 
 /**
  * The subset of `LandingTheme` fields the resolution logic needs. Kept separate
@@ -19,7 +20,9 @@ export interface LandingThemeRecord {
   emojiList: string | null;
   particleCount: number | null;
   heroEyebrowOverride: string | null;
-  heroExtraKeyword: string | null;
+  /** Comma-separated words/phrases, e.g. "10 años, celebración". */
+  heroKeywords: string | null;
+  heroKeywordsMode: LandingThemeKeywordMode;
 }
 
 /** "MM-DD" for the calendar day containing `nowMs`, in the admin timezone. */
@@ -76,4 +79,33 @@ export function resolveActiveTheme(
 export function parseEmojiList(emojiList: string | null): string[] {
   if (!emojiList) return [];
   return [...emojiList.trim().matchAll(/\S+/g)].map((m) => m[0]).slice(0, 12);
+}
+
+/** Parses the admin-authored comma-separated keyword list into a trimmed array. */
+export function parseKeywordsList(heroKeywords: string | null): string[] {
+  if (!heroKeywords) return [];
+  return heroKeywords
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0)
+    .slice(0, 20);
+}
+
+/**
+ * Combines a theme's keywords with the default rotation per `heroKeywordsMode`:
+ * `APPEND` adds them ahead of the defaults, `REPLACE` swaps the defaults out
+ * entirely for the duration of the theme. Falls back to `defaults` unchanged
+ * when the theme has no keywords configured (even in REPLACE mode — an empty
+ * rotation would break the hero's typewriter effect).
+ */
+export function resolveHeroKeywords(
+  defaults: string[],
+  heroKeywords: string | null,
+  heroKeywordsMode: LandingThemeKeywordMode,
+): string[] {
+  const themeKeywords = parseKeywordsList(heroKeywords);
+  if (themeKeywords.length === 0) return defaults;
+  return heroKeywordsMode === "REPLACE"
+    ? themeKeywords
+    : [...themeKeywords, ...defaults];
 }

@@ -3,7 +3,9 @@ import {
   isThemeActive,
   monthDayInRecurringWindow,
   parseEmojiList,
+  parseKeywordsList,
   resolveActiveTheme,
+  resolveHeroKeywords,
   type LandingThemeRecord,
 } from "./resolve";
 
@@ -23,7 +25,8 @@ function baseTheme(
     emojiList: "🎉 🎊",
     particleCount: 40,
     heroEyebrowOverride: null,
-    heroExtraKeyword: null,
+    heroKeywords: null,
+    heroKeywordsMode: "APPEND",
     ...overrides,
   };
 }
@@ -141,5 +144,57 @@ describe("parseEmojiList", () => {
   it("caps the list at 12 entries", () => {
     const many = Array.from({ length: 20 }, () => "🎉").join(" ");
     expect(parseEmojiList(many)).toHaveLength(12);
+  });
+});
+
+describe("parseKeywordsList", () => {
+  it("splits on commas and trims each entry", () => {
+    expect(parseKeywordsList("10 años, celebración,  fiesta ")).toEqual([
+      "10 años",
+      "celebración",
+      "fiesta",
+    ]);
+  });
+
+  it("supports a single keyword with no commas", () => {
+    expect(parseKeywordsList("celebración")).toEqual(["celebración"]);
+  });
+
+  it("drops empty entries from stray/trailing commas", () => {
+    expect(parseKeywordsList("uno,, dos,")).toEqual(["uno", "dos"]);
+  });
+
+  it("returns an empty array for null/blank input", () => {
+    expect(parseKeywordsList(null)).toEqual([]);
+    expect(parseKeywordsList("   ")).toEqual([]);
+  });
+
+  it("caps the list at 20 entries", () => {
+    const many = Array.from({ length: 30 }, (_, i) => `k${i}`).join(",");
+    expect(parseKeywordsList(many)).toHaveLength(20);
+  });
+});
+
+describe("resolveHeroKeywords", () => {
+  const defaults = ["innovación", "talento"];
+
+  it("falls back to defaults when the theme has no keywords", () => {
+    expect(resolveHeroKeywords(defaults, null, "APPEND")).toEqual(defaults);
+    expect(resolveHeroKeywords(defaults, "", "REPLACE")).toEqual(defaults);
+  });
+
+  it("APPEND prepends the theme keywords ahead of the defaults", () => {
+    expect(resolveHeroKeywords(defaults, "10 años, fiesta", "APPEND")).toEqual([
+      "10 años",
+      "fiesta",
+      "innovación",
+      "talento",
+    ]);
+  });
+
+  it("REPLACE swaps the defaults out entirely", () => {
+    expect(resolveHeroKeywords(defaults, "10 años, fiesta", "REPLACE")).toEqual(
+      ["10 años", "fiesta"],
+    );
   });
 });
