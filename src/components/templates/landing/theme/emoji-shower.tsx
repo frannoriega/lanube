@@ -83,7 +83,12 @@ export function EmojiShower({
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
+      // Below the sticky header's z-50: particles fall *behind* the glass nav
+      // pill, same as any other page content. Rendering above it (a higher
+      // z-index) made emoji visibly composite with the header's
+      // backdrop-blur, showing as a mismatched/shifting background tint on
+      // the header for as long as particles were crossing it.
+      className="pointer-events-none fixed inset-0 z-40 overflow-hidden"
     >
       {particles.map((p) => (
         <span
