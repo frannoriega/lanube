@@ -89,6 +89,11 @@ export enum LandingThemeEffect {
   EMOJI_SHOWER = "EMOJI_SHOWER",
 }
 
+export enum LandingThemeKeywordMode {
+  APPEND = "APPEND",
+  REPLACE = "REPLACE",
+}
+
 /** Mirrors the `LandingTheme` row for client components (see prisma/models/landing-themes.prisma). */
 export type LandingTheme = {
   id: string;
@@ -104,7 +109,8 @@ export type LandingTheme = {
   emojiList: string | null;
   particleCount: number | null;
   heroEyebrowOverride: string | null;
-  heroExtraKeyword: string | null;
+  heroKeywords: string | null;
+  heroKeywordsMode: LandingThemeKeywordMode;
   accentPresetKey: string | null;
   bannerText: string | null;
   bannerUrl: string | null;
