@@ -28,10 +28,16 @@ export default async function Home() {
     : BASE_KEYWORDS;
 
   // Each section owns its own <Breakout> and carries the alternating background (see
-  // LANDING_SECTION_BG). Sections that have nothing to show return `null`, so the striping
-  // stays correct — do not wrap them here in an extra always-rendered Breakout.
+  // LANDING_SECTION_BG, which uses real CSS nth-child odd/even). Sections that have
+  // nothing to show return `null`, so the striping stays correct — do not wrap them
+  // here in an extra always-rendered Breakout, and do not add any other conditionally
+  // rendered sibling inside the sections container below: nth-child counts every DOM
+  // child of that container, visible or not (a `position: fixed` overlay still counts),
+  // so an extra sibling shifts every section's parity — including Hero's — for as long
+  // as it's present. EmojiShower is a `position: fixed` full-viewport overlay with no
+  // layout footprint of its own, so it renders as a sibling of (outside) that container.
   return (
-    <div className="flex flex-col w-full">
+    <>
       {theme?.entranceEffect === "EMOJI_SHOWER" && emojis.length > 0 ? (
         <EmojiShower
           emojis={emojis}
@@ -39,17 +45,19 @@ export default async function Home() {
           storageKey={`landing-theme-shown:${theme.id}:${dateKeyFromUnixMs(now)}`}
         />
       ) : null}
-      <HeroSection
-        eyebrowOverride={theme?.heroEyebrowOverride}
-        keywords={heroKeywords}
-      />
-      {/* Right after the hero; hidden automatically when there are no upcoming events. */}
-      <EventsSection />
-      <NewsSection />
-      <SpacesSection />
-      <MembersSection />
-      <PartnersSection />
-      <AlliesSection />
-    </div>
+      <div className="flex flex-col w-full">
+        <HeroSection
+          eyebrowOverride={theme?.heroEyebrowOverride}
+          keywords={heroKeywords}
+        />
+        {/* Right after the hero; hidden automatically when there are no upcoming events. */}
+        <EventsSection />
+        <NewsSection />
+        <SpacesSection />
+        <MembersSection />
+        <PartnersSection />
+        <AlliesSection />
+      </div>
+    </>
   );
 }
