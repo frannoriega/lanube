@@ -113,7 +113,7 @@ export function DayReservationCard({
                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                     Pendientes
                   </p>
-                  <p className="text-[22px] font-semibold tabular-nums mt-1">
+                  <p className="text-lg font-semibold tabular-nums mt-1">
                     {pending}
                   </p>
                 </CardContent>
@@ -123,7 +123,7 @@ export function DayReservationCard({
                   <p className="text-xs text-muted-foreground">
                     Aprobadas (dia)
                   </p>
-                  <p className="text-[22px] font-semibold tabular-nums mt-1">
+                  <p className="text-lg font-semibold tabular-nums mt-1">
                     {approved}
                   </p>
                 </CardContent>
@@ -133,7 +133,7 @@ export function DayReservationCard({
                   <p className="text-xs text-red-700 dark:text-red-300 font-medium">
                     Espacios con conflicto
                   </p>
-                  <p className="text-[22px] font-semibold tabular-nums mt-1">
+                  <p className="text-lg font-semibold tabular-nums mt-1">
                     {conflictSpaces}
                   </p>
                 </CardContent>
@@ -154,7 +154,7 @@ export function DayReservationCard({
                   </p>
                   <p
                     className={cn(
-                      "text-[22px] font-semibold tabular-nums mt-1",
+                      "text-lg font-semibold tabular-nums mt-1",
                       peak > 1 && "text-red-600 dark:text-red-400",
                     )}
                   >

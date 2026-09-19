@@ -117,6 +117,83 @@ export async function getLandingNews(limit = 6): Promise<NewsPost[]> {
   return items;
 }
 
+export interface SearchPublishedNewsOptions {
+  /** Free-text query over title/summary/body, via Postgres full-text search (Spanish). */
+  query?: string;
+  /** Inclusive publish-date range, ms. */
+  fromMs?: number;
+  toMs?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+/**
+ * Public search/filter over published posts, for the full `/noticias` index —
+ * unlike `listPublishedNews` (unfiltered landing preview), this always runs as
+ * raw SQL so the query (Postgres `to_tsvector`/`plainto_tsquery`, ranked by
+ * `ts_rank` when a query is given) and the date range apply together. Column
+ * names are aliased to the model's camelCase field names — `$queryRaw` returns
+ * raw driver rows, not Prisma's usual field mapping.
+ */
+export async function searchPublishedNews(
+  options?: SearchPublishedNewsOptions,
+): Promise<ListNewsResult> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, options?.pageSize ?? 12),
+  );
+  const query = options?.query?.trim() || null;
+  const fromMs = options?.fromMs ?? null;
+  const toMs = options?.toMs ?? null;
+
+  const whereClause = Prisma.sql`
+    status = 'PUBLISHED'
+    AND (
+      ${query}::text IS NULL
+      OR to_tsvector('spanish', title || ' ' || summary || ' ' || body)
+         @@ plainto_tsquery('spanish', ${query})
+    )
+    AND (${fromMs}::bigint IS NULL OR published_at >= ${fromMs}::bigint)
+    AND (${toMs}::bigint IS NULL OR published_at <= ${toMs}::bigint)
+  `;
+
+  const selectColumns = Prisma.sql`
+    id, title, slug, summary, body,
+    cover_image_url AS "coverImageUrl",
+    author_id AS "authorId",
+    author_label AS "authorLabel",
+    status, is_featured AS "isFeatured", featured_order AS "featuredOrder",
+    published_at AS "publishedAt",
+    decision_reason AS "decisionReason", decided_at AS "decidedAt",
+    created_at AS "createdAt", updated_at AS "updatedAt"
+  `;
+
+  const [items, totalRows] = await Promise.all([
+    prisma.$queryRaw<NewsPost[]>`
+      SELECT ${selectColumns}
+      FROM news_posts
+      WHERE ${whereClause}
+      ORDER BY
+        (CASE WHEN ${query}::text IS NULL THEN 0
+          ELSE ts_rank(
+            to_tsvector('spanish', title || ' ' || summary || ' ' || body),
+            plainto_tsquery('spanish', ${query})
+          )
+        END) DESC,
+        is_featured DESC,
+        featured_order ASC,
+        published_at DESC
+      LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+    `,
+    prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) AS count FROM news_posts WHERE ${whereClause}
+    `,
+  ]);
+
+  return { items, total: Number(totalRows[0]?.count ?? 0) };
+}
+
 export async function createNewsPost(
   input: NewsPostInput | NewsPostAdminInput,
   author: NewsAuthor,
