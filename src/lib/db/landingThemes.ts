@@ -21,7 +21,8 @@ function toRecord(t: LandingTheme): LandingThemeRecord {
     emojiList: t.emojiList,
     particleCount: t.particleCount,
     heroEyebrowOverride: t.heroEyebrowOverride,
-    heroExtraKeyword: t.heroExtraKeyword,
+    heroKeywords: t.heroKeywords,
+    heroKeywordsMode: t.heroKeywordsMode,
   };
 }
 
@@ -49,7 +50,8 @@ export interface LandingThemeInput {
   emojiList?: string | null;
   particleCount?: number | null;
   heroEyebrowOverride?: string | null;
-  heroExtraKeyword?: string | null;
+  heroKeywords?: string | null;
+  heroKeywordsMode: "APPEND" | "REPLACE";
 }
 
 /** Normalizes the input so only the fields matching `recurring` are persisted. */
@@ -81,7 +83,8 @@ function toWriteData(input: LandingThemeInput) {
         ? (input.particleCount ?? null)
         : null,
     heroEyebrowOverride: input.heroEyebrowOverride ?? null,
-    heroExtraKeyword: input.heroExtraKeyword ?? null,
+    heroKeywords: input.heroKeywords ?? null,
+    heroKeywordsMode: input.heroKeywordsMode,
   };
 }
 
