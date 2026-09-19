@@ -2,8 +2,11 @@ import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { Pagination } from "@/components/molecules/pagination";
 import { NewsCard } from "@/components/templates/landing/news/news-card";
-import { listPublishedNews } from "@/lib/db/news";
+import { NewsFilters } from "@/components/templates/landing/news/news-filters";
+import { startOfDateKeyMs, endOfDateKeyMs } from "@/lib/admin/admin-timezone";
+import { searchPublishedNews } from "@/lib/db/news";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Noticias — La Nube",
@@ -12,7 +15,12 @@ export const metadata: Metadata = {
 
 interface NoticiasSearchParams {
   page?: string;
+  q?: string;
+  from?: string;
+  to?: string;
 }
+
+const PAGE_SIZE = 12;
 
 export default async function NoticiasIndexPage({
   searchParams,
@@ -21,8 +29,15 @@ export default async function NoticiasIndexPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const { items, total } = await listPublishedNews({ page, pageSize: 12 });
-  const totalPages = Math.max(1, Math.ceil(total / 12));
+  const { items, total } = await searchPublishedNews({
+    query: sp.q,
+    fromMs: sp.from ? startOfDateKeyMs(sp.from) : undefined,
+    toMs: sp.to ? endOfDateKeyMs(sp.to) : undefined,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const hasFilters = Boolean(sp.q || sp.from || sp.to);
 
   return (
     <Breakout>
@@ -40,9 +55,15 @@ export default async function NoticiasIndexPage({
           </h1>
         </div>
 
+        <Suspense>
+          <NewsFilters q={sp.q} from={sp.from} to={sp.to} />
+        </Suspense>
+
         {items.length === 0 ? (
           <p className="text-muted-foreground">
-            Todavía no publicamos ninguna noticia.
+            {hasFilters
+              ? "No encontramos noticias con esos filtros."
+              : "Todavía no publicamos ninguna noticia."}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -62,7 +83,12 @@ export default async function NoticiasIndexPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={totalPages} basePath="/noticias" />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          basePath="/noticias"
+          query={{ q: sp.q, from: sp.from, to: sp.to }}
+        />
       </Container>
     </Breakout>
   );

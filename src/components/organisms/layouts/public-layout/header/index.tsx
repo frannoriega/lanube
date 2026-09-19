@@ -10,7 +10,7 @@ import SignIn from "./signin";
 export default function Header() {
   return (
     <div className="sticky z-50 top-0 w-full flex flex-row items-center justify-center lg:px-16">
-      <div className="px-16 w-fit h-16 bg-slate-300/60 dark:bg-slate-950/60 backdrop-blur-xs flex-row rounded-full my-4 hidden lg:flex">
+      <div className="px-16 w-fit h-16 bg-background/60 backdrop-blur-xs flex-row rounded-full my-4 hidden lg:flex">
         <Container className="flex flex-row items-center justify-between gap-12">
           <LogoLaNube />
           <nav className="w-fit">
