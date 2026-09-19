@@ -31,8 +31,13 @@ model LandingTheme {
 
   /// Replaces the hero's eyebrow line ("Una iniciativa de...") while active.
   heroEyebrowOverride String? @map("hero_eyebrow_override")
-  /// Prepended to HeroSection's rotating keyword list while active.
-  heroExtraKeyword    String? @map("hero_extra_keyword")
+  /// Comma-separated words/phrases for HeroSection's rotating keyword list while
+  /// active (e.g. "10 años, celebración"). Combined with the default list per
+  /// `heroKeywordsMode`.
+  heroKeywords     String?                @map("hero_keywords")
+  /// APPEND adds `heroKeywords` to the default rotation; REPLACE swaps the
+  /// default rotation out entirely for the duration of the theme.
+  heroKeywordsMode LandingThemeKeywordMode @default(APPEND) @map("hero_keywords_mode")
 
   /// v2 — schema only, no admin UI or public rendering yet.
   accentPresetKey String? @map("accent_preset_key")

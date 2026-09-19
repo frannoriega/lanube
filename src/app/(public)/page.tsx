@@ -8,13 +8,24 @@ import PartnersSection from "@/components/templates/landing/partners";
 import SpacesSection from "@/components/templates/landing/spaces";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
+import { BASE_KEYWORDS } from "@/lib/constants/hero";
 import { getActiveLandingTheme } from "@/lib/db/landingThemes";
-import { parseEmojiList } from "@/lib/landing-themes/resolve";
+import {
+  parseEmojiList,
+  resolveHeroKeywords,
+} from "@/lib/landing-themes/resolve";
 
 export default async function Home() {
   const now = nowMs();
   const theme = await getActiveLandingTheme(now);
   const emojis = theme ? parseEmojiList(theme.emojiList) : [];
+  const heroKeywords = theme
+    ? resolveHeroKeywords(
+        BASE_KEYWORDS,
+        theme.heroKeywords,
+        theme.heroKeywordsMode,
+      )
+    : BASE_KEYWORDS;
 
   // Each section owns its own <Breakout> and carries the alternating background (see
   // LANDING_SECTION_BG). Sections that have nothing to show return `null`, so the striping
@@ -30,7 +41,7 @@ export default async function Home() {
       ) : null}
       <HeroSection
         eyebrowOverride={theme?.heroEyebrowOverride}
-        extraKeyword={theme?.heroExtraKeyword}
+        keywords={heroKeywords}
       />
       {/* Right after the hero; hidden automatically when there are no upcoming events. */}
       <EventsSection />
