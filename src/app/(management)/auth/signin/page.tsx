@@ -89,23 +89,37 @@ export default function LandingPage() {
 
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
     setError(false);
-    const res = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-      redirectTo: "/user/dashboard",
-    });
-    if (res?.error) {
-      if (res?.code === "email_not_verified") {
-        toast.error(
-          "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
-        );
-      } else {
-        setError(true);
+    try {
+      const res = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+        redirectTo: "/user/dashboard",
+      });
+      if (res?.error) {
+        if (res?.code === "email_not_verified") {
+          toast.error(
+            "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
+          );
+        } else {
+          setError(true);
+        }
+        return;
       }
-    }
-    if (res?.url) {
-      router.replace(res.url);
+      if (res?.url) {
+        // Hard navigation on purpose: a client-side router.replace() can be
+        // served from Next.js's Router Cache, which may still hold a stale
+        // logged-out redirect for the target route (e.g. from a prefetch
+        // before sign-in) and silently no-op on the first attempt while the
+        // session cookie has actually been set. A full reload always hits
+        // the server fresh with the new cookie.
+        window.location.href = res.url;
+      } else {
+        toast.error("No pudimos iniciar sesión. Intenta de nuevo.");
+      }
+    } catch (err) {
+      console.error("[signin] signIn() failed", err);
+      toast.error("No pudimos iniciar sesión. Intenta de nuevo.");
     }
   };
 
