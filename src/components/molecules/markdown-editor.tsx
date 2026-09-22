@@ -200,7 +200,10 @@ export function MarkdownEditor({
   }
 
   return (
-    <Tabs defaultValue="write" className="rounded-md border gap-0">
+    <Tabs
+      defaultValue="write"
+      className="bg-card text-card-foreground gap-0 rounded-md border"
+    >
       <div className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
         <div
           role="toolbar"

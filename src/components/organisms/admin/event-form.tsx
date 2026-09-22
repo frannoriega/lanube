@@ -352,7 +352,6 @@ export function EventForm({
                     onChange={field.onChange}
                     uploadUrl={`/api/admin/events/upload${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
                     alt={watch("name") || "Imagen del evento"}
-                    containerClassName="h-32 w-full max-w-md"
                   />
                 </FormControl>
                 <FormMessage />
