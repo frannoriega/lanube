@@ -5,16 +5,32 @@ import {
   apiServerError,
   apiSuccess,
 } from "@/lib/api/response";
-import { deleteSpace, updateSpace } from "@/lib/db/spaces";
+import { diffFields } from "@/lib/audit/diff";
+import { recordAuditFromSession } from "@/lib/audit/record";
+import { deleteSpace, getSpaceById, updateSpace } from "@/lib/db/spaces";
 import { Prisma } from "@/generated/prisma/client";
 import { spaceInputSchema } from "@/lib/schemas/config";
 import { NextRequest } from "next/server";
+
+// Fields diffed into the audit trail — excludes free-text (description,
+// longDescription, faqs) to keep entries small and readable.
+const AUDITED_SPACE_FIELDS = [
+  "name",
+  "slug",
+  "capacity",
+  "isExclusive",
+  "isReservable",
+  "isFeatured",
+  "displayOrder",
+  "iconName",
+  "imageUrl",
+] as const;
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("spaces:manage");
+  const { session, error } = await requirePermission("spaces:manage");
   if (error) return error;
 
   const body = await request.json().catch(() => null);
@@ -27,7 +43,19 @@ export async function PUT(
 
   const { id } = await params;
   try {
+    const before = await getSpaceById(id);
     const space = await updateSpace(id, parsed.data);
+    if (before) {
+      const diff = diffFields(before, space, [...AUDITED_SPACE_FIELDS]);
+      if (diff) {
+        await recordAuditFromSession(session, {
+          action: "space.update",
+          entityType: "Space",
+          entityId: id,
+          ...diff,
+        });
+      }
+    }
     return apiSuccess(space);
   } catch (e) {
     if (
@@ -44,12 +72,21 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("spaces:manage");
+  const { session, error } = await requirePermission("spaces:manage");
   if (error) return error;
 
   const { id } = await params;
   try {
+    const before = await getSpaceById(id);
     await deleteSpace(id);
+    if (before) {
+      await recordAuditFromSession(session, {
+        action: "space.delete",
+        entityType: "Space",
+        entityId: id,
+        before: { name: before.name, slug: before.slug },
+      });
+    }
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/spaces/[id] DELETE", e);
