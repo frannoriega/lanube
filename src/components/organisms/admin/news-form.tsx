@@ -3,13 +3,7 @@
 import { ImageUpload } from "@/components/molecules/image-upload";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -113,13 +107,7 @@ export function NewsForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card className="glass-card dark:glass-card-dark">
-          <CardHeader>
-            <CardTitle>{post ? "Editar nota" : "Nueva nota"}</CardTitle>
-            <CardDescription>
-              Título, resumen breve para la tarjeta y el contenido completo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <FormField
               control={form.control}
               name="title"
@@ -259,12 +247,12 @@ export function NewsForm({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 rounded-md border p-4">
               <FormField
                 control={form.control}
                 name="isFeatured"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
+                  <FormItem className="flex items-center justify-between gap-4 space-y-0">
                     <FormLabel className="mb-0">Destacar</FormLabel>
                     <FormControl>
                       <Switch
@@ -275,29 +263,37 @@ export function NewsForm({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="featuredOrder"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Orden entre destacadas</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(
-                            Number.isNaN(e.target.valueAsNumber)
-                              ? 0
-                              : e.target.valueAsNumber,
-                          )
-                        }
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+
+              {form.watch("isFeatured") && (
+                <FormField
+                  control={form.control}
+                  name="featuredOrder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Orden entre destacadas</FormLabel>
+                      <FormDescription>
+                        Menor número aparece primero (0, 1, 2…).
+                      </FormDescription>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(
+                              Number.isNaN(e.target.valueAsNumber)
+                                ? 0
+                                : e.target.valueAsNumber,
+                            )
+                          }
+                          className="max-w-32"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           </CardContent>
         </Card>

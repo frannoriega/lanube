@@ -16,3 +16,12 @@ export function newsDetailPath(post: {
   const [yyyy, mm, dd] = dateKeyFromUnixMs(ms).split("-");
   return `/noticias/${yyyy}/${mm}/${dd}/${post.slug}`;
 }
+
+/**
+ * `NewsPost.authorLabel` is stored as `"Name <email>"` (mirrors AuditLog's
+ * internal actor label — see `prisma/models/news.prisma`). Public surfaces
+ * show the byline but must never leak the author's email, so strip it here.
+ */
+export function authorDisplayName(authorLabel: string): string {
+  return authorLabel.replace(/\s*<[^>]*>\s*$/, "");
+}

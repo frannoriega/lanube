@@ -40,6 +40,16 @@ const STATUS_VARIANTS: Record<
 interface NewsSearchParams {
   page?: string;
   status?: string;
+  mine?: string;
+}
+
+/** Builds an `/admin/news` href, keeping the other active filter and dropping `page`. */
+function newsFilterHref(params: { status?: string; mine?: boolean }): string {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set("status", params.status);
+  if (params.mine) qs.set("mine", "1");
+  const query = qs.toString();
+  return query ? `/admin/news?${query}` : "/admin/news";
 }
 
 export default async function AdminNewsPage({
@@ -53,8 +63,13 @@ export default async function AdminNewsPage({
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
+  const mine = sp.mine === "1";
   const { items, total } = await listAdminNewsPosts({
-    authorId: canApprove ? undefined : session?.userId,
+    authorId: canApprove
+      ? mine
+        ? session?.userId
+        : undefined
+      : session?.userId,
     status: sp.status,
     page,
   });
@@ -82,22 +97,49 @@ export default async function AdminNewsPage({
       </div>
 
       {canApprove ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/news">
-            <Badge variant={!sp.status ? "default" : "outline"}>Todas</Badge>
-          </Link>
-          <Link href="/admin/news?status=PENDING_REVIEW">
-            <Badge
-              variant={sp.status === "PENDING_REVIEW" ? "default" : "outline"}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="inline-flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
+            <Link
+              href={newsFilterHref({ status: sp.status })}
+              className={
+                !mine
+                  ? "rounded-md bg-background px-3 py-1 text-sm font-medium shadow-sm"
+                  : "rounded-md px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+              }
             >
-              En revisión
-            </Badge>
-          </Link>
-          <Link href="/admin/news?status=PUBLISHED">
-            <Badge variant={sp.status === "PUBLISHED" ? "default" : "outline"}>
-              Publicadas
-            </Badge>
-          </Link>
+              Todas las notas
+            </Link>
+            <Link
+              href={newsFilterHref({ status: sp.status, mine: true })}
+              className={
+                mine
+                  ? "rounded-md bg-background px-3 py-1 text-sm font-medium shadow-sm"
+                  : "rounded-md px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+              }
+            >
+              Mis notas
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={newsFilterHref({ mine })}>
+              <Badge variant={!sp.status ? "default" : "outline"}>Todas</Badge>
+            </Link>
+            <Link href={newsFilterHref({ status: "PENDING_REVIEW", mine })}>
+              <Badge
+                variant={sp.status === "PENDING_REVIEW" ? "default" : "outline"}
+              >
+                En revisión
+              </Badge>
+            </Link>
+            <Link href={newsFilterHref({ status: "PUBLISHED", mine })}>
+              <Badge
+                variant={sp.status === "PUBLISHED" ? "default" : "outline"}
+              >
+                Publicadas
+              </Badge>
+            </Link>
+          </div>
         </div>
       ) : null}
 
@@ -152,7 +194,7 @@ export default async function AdminNewsPage({
         page={page}
         totalPages={totalPages}
         basePath="/admin/news"
-        query={{ status: sp.status }}
+        query={{ status: sp.status, mine: mine ? "1" : undefined }}
       />
     </div>
   );
