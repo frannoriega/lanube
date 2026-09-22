@@ -1,6 +1,9 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
+import { recordAuditFromSession } from "@/lib/audit/record";
 import { decideNewsPost } from "@/lib/db/news";
+import { notifyNewsDecision } from "@/lib/email/news-decision";
+import { prisma } from "@/lib/prisma";
 import { newsPostDecisionSchema } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
 
@@ -9,7 +12,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("news:approve");
+  const { session, error } = await requirePermission("news:approve");
   if (error) return error;
 
   const body = await request.json().catch(() => null);
@@ -27,6 +30,33 @@ export async function POST(
       parsed.data.decision,
       parsed.data.reason ?? null,
     );
+
+    await recordAuditFromSession(session, {
+      action: "news.decide",
+      entityType: "NewsPost",
+      entityId: id,
+      before: { status: "PENDING_REVIEW" },
+      after: { status: post.status },
+      reason: parsed.data.reason ?? null,
+    });
+
+    if (post.authorId) {
+      const author = await prisma.registeredUser.findUnique({
+        where: { id: post.authorId },
+        select: { user: { select: { email: true, displayEmail: true } } },
+      });
+      const to = author?.user.displayEmail || author?.user.email;
+      if (to) {
+        await notifyNewsDecision(
+          to,
+          post.title,
+          post.id,
+          parsed.data.decision,
+          parsed.data.reason ?? null,
+        );
+      }
+    }
+
     return apiSuccess(post);
   } catch (err) {
     return apiCatch("admin/news/[id]/decision POST", err);
