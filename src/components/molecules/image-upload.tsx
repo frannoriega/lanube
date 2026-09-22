@@ -14,7 +14,7 @@ interface ImageUploadProps {
   uploadUrl: string;
   /** Accessible alt text / context for the previewed image. */
   alt?: string;
-  /** Sizing for the preview/dropzone box. Defaults to a full-width 16:9 banner. */
+  /** Sizing for the preview/dropzone box. Defaults to a compact banner, not full card width. */
   containerClassName?: string;
   disabled?: boolean;
 }
@@ -29,7 +29,7 @@ export function ImageUpload({
   onChange,
   uploadUrl,
   alt = "Imagen",
-  containerClassName = "aspect-[16/9] w-full",
+  containerClassName = "h-32 w-full max-w-md",
   disabled,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);

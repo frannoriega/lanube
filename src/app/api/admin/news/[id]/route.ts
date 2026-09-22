@@ -1,5 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
+import { diffFields } from "@/lib/audit/diff";
+import { recordAuditFromSession } from "@/lib/audit/record";
 import { deleteNewsPost, getNewsPostById, updateNewsPost } from "@/lib/db/news";
 import { hasPermission } from "@/lib/rbac";
 import {
@@ -7,6 +9,13 @@ import {
   newsPostInputSchema,
 } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
+
+const AUDITED_NEWS_FIELDS = [
+  "title",
+  "status",
+  "isFeatured",
+  "featuredOrder",
+] as const;
 
 async function assertOwnedOrPrivileged(
   id: string,
@@ -48,7 +57,7 @@ export async function PUT(
 
   const { id } = await params;
   const canApprove = hasPermission(session.role, "news:approve");
-  const { error: ownErr } = await assertOwnedOrPrivileged(
+  const { post: before, error: ownErr } = await assertOwnedOrPrivileged(
     id,
     session.userId,
     canApprove,
@@ -66,6 +75,17 @@ export async function PUT(
 
   try {
     const post = await updateNewsPost(id, parsed.data, canApprove);
+    if (before) {
+      const diff = diffFields(before, post, [...AUDITED_NEWS_FIELDS]);
+      if (diff) {
+        await recordAuditFromSession(session, {
+          action: "news.update",
+          entityType: "NewsPost",
+          entityId: id,
+          ...diff,
+        });
+      }
+    }
     return apiSuccess(post);
   } catch (err) {
     return apiCatch("admin/news/[id] PUT", err);
@@ -81,7 +101,7 @@ export async function DELETE(
 
   const { id } = await params;
   const canApprove = hasPermission(session.role, "news:approve");
-  const { error: ownErr } = await assertOwnedOrPrivileged(
+  const { post: before, error: ownErr } = await assertOwnedOrPrivileged(
     id,
     session.userId,
     canApprove,
@@ -90,6 +110,14 @@ export async function DELETE(
 
   try {
     await deleteNewsPost(id);
+    if (before) {
+      await recordAuditFromSession(session, {
+        action: "news.delete",
+        entityType: "NewsPost",
+        entityId: id,
+        before: { title: before.title },
+      });
+    }
     return apiSuccess({ ok: true });
   } catch (err) {
     return apiCatch("admin/news/[id] DELETE", err);

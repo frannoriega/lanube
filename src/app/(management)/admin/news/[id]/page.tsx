@@ -24,7 +24,8 @@ export default async function EditNewsPage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Editar nota</h1>
       <NewsForm
         post={serializeJson(post) as unknown as NewsPost}
         canApprove={canApprove}

@@ -1,5 +1,34 @@
 # Milestone 4 — "Noticias" news section + Comunicador role
 
+> **Progress (2026-09-22):** despite the README/index marking this "Planning
+> only," the feature is substantially built: `NewsPost` model + migration,
+> `news:manage`/`news:approve` in `rbac.ts`, Comunicador-scoped nav, admin
+> CRUD (`/admin/news`, `/admin/news/new`, `/admin/news/[id]`) with an
+> author-scoped "Todas las notas"/"Mis notas" tab selector, a review queue
+> (`?status=PENDING_REVIEW` + a decision route), the public landing section,
+> the `/noticias` index, and `/noticias/[yyyy]/[mm]/[dd]/[slug]` detail pages
+> (date segments cosmetic, slug is the real key; later than this doc's
+> original `/noticias/[slug]` sketch). `rbac.test.ts` and
+> `news/transitions.test.ts` cover the permission/status-transition rules.
+> This pass:
+>
+> - fixed layout bugs in the admin form (looked like a modal), the public
+>   detail page (centered/low-contrast against the particle background,
+>   author email leaking publicly), the markdown editor (invisible in light
+>   mode), and an oversized image-upload dropzone (also fixed in
+>   `event-form.tsx`);
+> - added the "Todas"/"Mis notas" admin tab selector;
+> - added the missing approve/reject **notification email**
+>   (`src/lib/email/news-decision.ts`, item 8 of the plan below);
+> - added **audit trail instrumentation** (`news.update`, `news.delete`,
+>   `news.decide`) per item 10's "connection to milestone 2," now that
+>   milestone 2 has a real rollout pattern to follow.
+>
+> Still open: slug-uniqueness and featured-sort-order tests (DB-bound, not
+> attempted here — see milestone 1's same gap), and the `docs/OPEN_QUESTIONS.md`
+> items (a Comunicador-only nav confirmation, comments/reactions scope) are
+> unresolved product decisions, not code gaps.
+
 ## Use case
 
 La Nube wants a public news/blog section on the landing — announcements, community
