@@ -1,5 +1,15 @@
 # Milestone 1 — Admin reservations browsing: window, pagination, "All spaces" filter
 
+> **Verified implemented (2026-09-22):** both surfaces default to "Todos los
+> espacios", the admin page exposes a 7/14/30/60-day window selector
+> (`AdminReservationsCardsPanel`), and both paginate the resulting days
+> client-side (5 days/page) instead of the old fixed two-week fetch. The
+> implementation paginates days-with-reservations client-side rather than a
+> server-side `page`/`pageSize` query, which differs from the doc's original
+> implementation sketch but satisfies the use case as written. Remaining gap:
+> no unit tests on the "All" aggregation / pagination edge cases (item 6 of
+> the plan below) — not added in this pass.
+
 ## Use case
 
 Admin staff process reservations from two places: the admin dashboard
