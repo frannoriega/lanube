@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
-import { createReservation } from "@/lib/db/reservations";
+import {
+  createReservation,
+  createReservationException,
+} from "@/lib/db/reservations";
 import { getCalendarDataBySpace } from "@/lib/db/resourceCalendar";
 import { getReservationTypeByCode } from "@/lib/db/reservationTypes";
 import { getRegisteredUserById } from "@/lib/db/users";
@@ -145,7 +148,9 @@ export async function DELETE(request: NextRequest) {
     if (!user) return apiError("Usuario no encontrado", 401);
 
     const body = await request.json();
-    const { reservationId } = body || {};
+    // occurrenceStartTime (ms), when present, cancels only that one occurrence of a
+    // recurring reservation instead of the whole series — see milestone 5.
+    const { reservationId, occurrenceStartTime } = body || {};
     if (!reservationId) return apiError("reservationId requerido", 400);
 
     const existing = await prisma.reservation.findFirst({
@@ -157,6 +162,21 @@ export async function DELETE(request: NextRequest) {
       !(existing.reservableType === "USER" && existing.reservableId === user.id)
     )
       return apiError("No puedes eliminar esta reserva", 403);
+
+    if (occurrenceStartTime != null) {
+      if (!existing.isRecurring)
+        return apiError(
+          "Esta reserva no es recurrente; cancelá la reserva completa",
+          400,
+        );
+      const ms = Number(occurrenceStartTime);
+      if (!Number.isFinite(ms))
+        return apiError("occurrenceStartTime inválido", 400);
+      await createReservationException(reservationId, unixMsToDate(ms), {
+        isCancelled: true,
+      });
+      return apiSuccess({ ok: true });
+    }
 
     await prisma.reservation.delete({ where: { id: reservationId } });
     return apiSuccess({ ok: true });

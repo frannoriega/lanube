@@ -198,6 +198,8 @@ export function WeekCalendar({
   const [selectedOccurrence, setSelectedOccurrence] =
     useState<ReservationOccurrence | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Recurring reservations ask "this occurrence only" vs. "whole series" before cancelling.
+  const [cancelScopeOpen, setCancelScopeOpen] = useState(false);
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -995,7 +997,12 @@ export function WeekCalendar({
       {/* View Reservation Details Dialog */}
       <Dialog
         open={!!selectedOccurrence}
-        onOpenChange={(open) => !open && setSelectedOccurrence(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedOccurrence(null);
+            setCancelScopeOpen(false);
+          }
+        }}
       >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
@@ -1052,7 +1059,109 @@ export function WeekCalendar({
                 )}
               {userId &&
                 selectedOccurrence.reservableType === "USER" &&
-                selectedOccurrence.reservableId === userId && (
+                selectedOccurrence.reservableId === userId &&
+                (selectedOccurrence.isRecurring ? (
+                  cancelScopeOpen ? (
+                    <div className="pt-2 space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        ¿Cancelar solo esta reserva o toda la serie?
+                      </p>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={() => setCancelScopeOpen(false)}
+                        >
+                          Volver
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={async () => {
+                            try {
+                              setDeleting(true);
+                              await apiSend(apiEndpoint, "DELETE", {
+                                reservationId: selectedOccurrence.reservationId,
+                                occurrenceStartTime:
+                                  selectedOccurrence.occurrenceStartTime,
+                              });
+                              toast.success("Reserva cancelada");
+                              setOccurrences((occurrences) =>
+                                occurrences.filter(
+                                  (occ) =>
+                                    !(
+                                      occ.reservationId ===
+                                        selectedOccurrence.reservationId &&
+                                      occ.occurrenceStartTime ===
+                                        selectedOccurrence.occurrenceStartTime
+                                    ),
+                                ),
+                              );
+                              setSelectedOccurrence(null);
+                              setCancelScopeOpen(false);
+                            } catch (err) {
+                              toast.error(
+                                apiErrorMessage(
+                                  err,
+                                  "No se pudo cancelar la reserva",
+                                ),
+                              );
+                            } finally {
+                              setDeleting(false);
+                            }
+                          }}
+                        >
+                          Solo esta reserva
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={async () => {
+                            try {
+                              setDeleting(true);
+                              await apiSend(apiEndpoint, "DELETE", {
+                                reservationId: selectedOccurrence.reservationId,
+                              });
+                              toast.success("Serie cancelada");
+                              setOccurrences((occurrences) =>
+                                occurrences.filter(
+                                  (occ) =>
+                                    occ.reservationId !==
+                                    selectedOccurrence.reservationId,
+                                ),
+                              );
+                              setSelectedOccurrence(null);
+                              setCancelScopeOpen(false);
+                            } catch (err) {
+                              toast.error(
+                                apiErrorMessage(
+                                  err,
+                                  "No se pudo cancelar la reserva",
+                                ),
+                              );
+                            } finally {
+                              setDeleting(false);
+                            }
+                          }}
+                        >
+                          Toda la serie
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        variant="destructive"
+                        onClick={() => setCancelScopeOpen(true)}
+                      >
+                        Cancelar reserva
+                      </Button>
+                    </div>
+                  )
+                ) : (
                   <div className="pt-2 flex justify-end">
                     <Button
                       variant="destructive"
@@ -1087,7 +1196,7 @@ export function WeekCalendar({
                       Eliminar
                     </Button>
                   </div>
-                )}
+                ))}
             </div>
           )}
         </DialogContent>
