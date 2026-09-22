@@ -23,6 +23,8 @@ export interface ReservationOccurrence {
   formSlug?: string | null;
   /** Whether the form is currently published, within its window, and not full. */
   formOpen?: boolean;
+  /** Whether this occurrence belongs to a recurring reservation (drives the cancel-scope prompt). */
+  isRecurring?: boolean;
 }
 
 /** Why a time slot is unavailable. Extend this union for new blocking reasons. */
@@ -191,6 +193,20 @@ export async function getCalendarDataBySpace(
       getEventOccurrencesForSpace(spaceId, startDate, endDate),
     ]);
 
+  const recurringIds = new Set(
+    (
+      await prisma.reservation.findMany({
+        where: {
+          id: {
+            in: [...new Set(allUserReservations.map((r) => r.reservationId))],
+          },
+          isRecurring: true,
+        },
+        select: { id: true },
+      })
+    ).map((r) => r.id),
+  );
+
   const userReservations: ReservationOccurrence[] = [];
   const crossResourceSlots: CalendarUnavailableSlot[] = [];
 
@@ -200,13 +216,17 @@ export async function getCalendarDataBySpace(
 
     if (res.spaceId === spaceId) {
       userReservations.push({
-        reservationId: res.id,
+        // `res.id` is a synthetic per-occurrence id for recurring reservations
+        // (`"<reservationId>_<occurrenceStart>"`, from get_user_next_reservations) —
+        // `res.reservationId` is always the real Reservation.id needed to act on it.
+        reservationId: res.reservationId,
         occurrenceStartTime: Number(res.occurrenceStartTime),
         occurrenceEndTime: Number(res.occurrenceEndTime),
         reason: res.reason ?? "",
         status: res.status,
         reservableType: res.reservableType as ReservableType,
         reservableId: res.reservableId,
+        isRecurring: recurringIds.has(res.reservationId),
       });
     } else if (
       res.spaceId != null &&
