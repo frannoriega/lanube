@@ -1,5 +1,35 @@
 # Milestone 5 — Cancel one occurrence vs. the whole series (regular reservations)
 
+> **Implemented (2026-09-22):** the cancel-scope prompt is live in
+> `WeekCalendar.tsx`'s reservation detail dialog — a recurring USER
+> reservation's "Cancelar reserva" now asks "Solo esta reserva" vs. "Toda la
+> serie" before either path; a one-time reservation keeps its original
+> single-action button unchanged. "Solo esta reserva" calls
+> `createReservationException` (already used by Events) with a cancel-type
+> exception for the occurrence's date; "Toda la serie" is the existing
+> `DELETE /api/resources/[spaceId]` whole-row delete. **Open questions
+> resolved as the doc suggested**: no reason is required (private booking,
+> no participants to notify) and no email is sent (nothing to notify).
+>
+> **A real bug had to be fixed to make this work at all**: `getCalendarDataBySpace`
+> (`src/lib/db/resourceCalendar.ts`) was setting each occurrence's
+> `reservationId` from `get_user_next_reservations()`'s synthetic per-occurrence
+> `id` column (`"<reservationId>_<occurrenceStart>"` for recurring rows) instead
+> of its `reservation_id` column (the real `Reservation.id`). For a one-time
+> reservation the two happen to be equal, so the existing "Eliminar" button
+> worked by coincidence; for a recurring reservation it meant cancelling from
+> the calendar was already silently broken (a 404 from a bogus id) before this
+> milestone — not just missing the per-occurrence option. Fixed as part of this
+> change (now reads `reservation_id`); also added an `isRecurring` field to
+> `ReservationOccurrence`, batch-looked-up from `Reservation` since the ledger
+> RPC doesn't carry it.
+>
+> Not done: the admin reservations view doesn't get the same per-occurrence
+> control (deferred per the doc's second open question — admins already have
+> the Events mechanism for their own recurring activities); no new tests
+> added (the occurrence-exclusion logic is exercised by the existing
+> `createReservationException`/ledger-rebuild path, not new pure logic).
+
 ## Use case
 
 Today, a USER with a recurring reservation (e.g. a weekly meeting-room
