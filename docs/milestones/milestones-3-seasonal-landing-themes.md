@@ -1,5 +1,14 @@
 # Milestone 3 — Seasonal / date-based landing themes
 
+> **Verified implemented (2026-09-22):** v1 scope is fully built — the
+> `LandingTheme` model, `resolveActiveTheme()` (23 passing unit tests in
+> `resolve.test.ts`), `/admin/themes` CRUD, `EmojiShower`, and the hero
+> eyebrow/keywords override are all wired into the public landing. The
+> accent-preset and banner fields exist in the schema (as planned, for a
+> breaking-migration-free v2) but are deliberately not read/written by any
+> code path yet — matches the decided v1 scope below exactly. No further
+> work needed to close this milestone as scoped.
+
 > **Decided scope (2026-09-18):** v1 ships for the 2026-09-25 anniversary with only
 > two of the capabilities below — the **`EMOJI_SHOWER` entrance effect** and a
 > **hero text override** (the headline/subheading area — see the reference
