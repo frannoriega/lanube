@@ -1,5 +1,16 @@
 # Milestone 2 — Audit trail
 
+> **Progress (2026-09-22):** schema, `recordAudit`/`recordAuditFromSession` +
+> `diffFields` helpers, and the `/admin/audit` view already existed
+> (first slice). This pass added instrumentation to the Spaces, Resources,
+> and Reservation Types superadmin CRUD routes (`space.update`/`.delete`,
+> `resource.update`/`.delete`, `reservationType.update`/`.delete`), the next
+> chunk after Users in the plan's rollout order. Still not instrumented:
+> Events (create/update/delete/session actions), Forms, Participant
+> decisions, Incidents, Site config, and the cascade-attribution correlation
+> id for `approve_reservation()`'s auto-rejects (open question, unresolved).
+> No tests added (item 7 of the plan).
+
 ## Use case
 
 Right now nothing records _who_ changed _what_ in the admin surfaces —
