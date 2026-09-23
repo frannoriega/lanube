@@ -72,6 +72,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { LoadError } from "@/components/molecules/load-error";
 
 // 0 = Sunday .. 6 = Saturday (matches Date.getDay()).
 const WEEKDAYS: Array<{ value: string; label: string }> = [
@@ -160,17 +161,39 @@ export function EventForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [alignRevision],
   );
-  const { data: resourcesData } = useApi<ResourceOption[]>(
-    "/api/admin/spaces?reservable=1",
-  );
+  // F1.2: these three feed <Select>s. Without surfacing `error`, a failed request gives
+  // an EMPTY picker, so the admin concludes there are no resources / no types / no
+  // templates rather than that the page failed to load. Reported inline (not thrown)
+  // because they are secondary to the form itself — see LoadError's docblock.
+  const {
+    data: resourcesData,
+    error: resourcesError,
+    refetch: refetchResources,
+  } = useApi<ResourceOption[]>("/api/admin/spaces?reservable=1");
   const resources = useMemo(() => resourcesData ?? [], [resourcesData]);
-  const { data: typesData } = useApi<ReservationType[]>(
-    "/api/reservation-types",
-  );
+  const {
+    data: typesData,
+    error: typesError,
+    refetch: refetchTypes,
+  } = useApi<ReservationType[]>("/api/reservation-types");
   const reservationTypes = typesData ?? [];
-  const { data: templatesData } =
-    useApi<FormPickerTemplate[]>("/api/admin/forms");
+  const {
+    data: templatesData,
+    error: templatesError,
+    refetch: refetchTemplates,
+  } = useApi<FormPickerTemplate[]>("/api/admin/forms");
   const templates = templatesData ?? [];
+  const loadFailures = [
+    resourcesError && {
+      label: "los recursos reservables",
+      retry: refetchResources,
+    },
+    typesError && { label: "los tipos de reserva", retry: refetchTypes },
+    templatesError && {
+      label: "las plantillas de formulario",
+      retry: refetchTemplates,
+    },
+  ].filter(Boolean) as Array<{ label: string; retry: () => Promise<void> }>;
   const [dropWarning, setDropWarning] = useState<{
     dropped: DroppedSession[];
     values: EventInput;
@@ -267,6 +290,17 @@ export function EventForm({
 
   return (
     <>
+      {loadFailures.length > 0 && (
+        <div className="mb-4 max-w-2xl space-y-2">
+          {loadFailures.map((failure) => (
+            <LoadError
+              key={failure.label}
+              message={`No se pudieron cargar ${failure.label}. El selector correspondiente va a aparecer vacío.`}
+              onRetry={() => void failure.retry()}
+            />
+          ))}
+        </div>
+      )}
       <Form {...form}>
         <form
           onSubmit={handleSubmit(onSubmit)}

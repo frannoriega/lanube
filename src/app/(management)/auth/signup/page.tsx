@@ -95,14 +95,12 @@ export default function SignUpPage() {
           router.push("/user/dashboard");
         }, 1000);
       } else {
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            signedUp: true,
-          },
-        });
-        const error = await response.json();
+        // F1.7: this branch used to optimistically set `signedUp: true` on FAILURE —
+        // exactly backwards. It was also inert: the jwt() callback takes only { token }
+        // and recomputes signedUp/banned/role/permissions from the DB on every call,
+        // deliberately ignoring NextAuth's `trigger`/`session` arguments, so a client
+        // update() can never forge session state. Removed rather than "fixed".
+        const error = await response.json().catch(() => ({}));
         toast.error(error.message || "Error al completar el perfil");
       }
     } catch {
