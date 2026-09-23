@@ -1,7 +1,7 @@
 # Milestone 4 — "Noticias" news section + Comunicador role
 
-> **Progress (2026-09-22):** despite the README/index marking this "Planning
-> only," the feature is substantially built: `NewsPost` model + migration,
+> **Progress (2026-09-22):** the feature is substantially built: `NewsPost`
+> model + migration,
 > `news:manage`/`news:approve` in `rbac.ts`, Comunicador-scoped nav, admin
 > CRUD (`/admin/news`, `/admin/news/new`, `/admin/news/[id]`) with an
 > author-scoped "Todas las notas"/"Mis notas" tab selector, a review queue
@@ -24,10 +24,22 @@
 >   `news.decide`) per item 10's "connection to milestone 2," now that
 >   milestone 2 has a real rollout pattern to follow.
 >
+> **Open questions resolved (2026-09-23), moved here from `docs/OPEN_QUESTIONS.md`:**
+>
+> - **`/noticias` index page** — built, as recommended. Both
+>   `src/app/(public)/noticias/page.tsx` (index) and
+>   `noticias/[yyyy]/[mm]/[dd]/[slug]/page.tsx` (detail) exist.
+> - **Who can approve** — resolved exactly as this doc assumed. In
+>   `src/lib/rbac.ts`, `ADMIN_PERMISSIONS` carries both `news:manage` and
+>   `news:approve`; `SUPERADMIN_PERMISSIONS` spreads `ADMIN_PERMISSIONS` and so
+>   inherits both. `COMUNICADOR_PERMISSIONS` is `admin:access` + `news:manage`
+>   only — a Comunicador authors but cannot approve, **including their own
+>   posts**, which is the property the role was created for.
+>
 > Still open: slug-uniqueness and featured-sort-order tests (DB-bound, not
-> attempted here — see milestone 1's same gap), and the `docs/OPEN_QUESTIONS.md`
-> items (a Comunicador-only nav confirmation, comments/reactions scope) are
-> unresolved product decisions, not code gaps.
+> attempted here — see milestone 1's same gap), and the remaining
+> `docs/OPEN_QUESTIONS.md` item (comments/reactions scope) is an unresolved
+> product decision, not a code gap.
 
 ## Use case
 
