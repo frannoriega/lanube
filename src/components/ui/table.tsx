@@ -66,9 +66,13 @@ TableRow.displayName = "TableRow";
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
+>(({ className, scope = "col", ...props }, ref) => (
+  // scope="col" by default: it is right for every current call site (all header cells
+  // sit in a single <thead> row) and makes the association explicit for screen readers
+  // instead of leaving them to guess. Override with scope="row" where needed (F2.9).
   <th
     ref={ref}
+    scope={scope}
     className={cn(
       "h-12 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wide text-muted-foreground",
       className,
