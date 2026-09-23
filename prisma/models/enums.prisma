@@ -1,11 +1,7 @@
-enum UserRole {
-  USER
-  ADMIN
-  SUPERADMIN
-  // Can author/manage Noticias posts (news:manage) but not approve them —
-  // see prisma/models/news.prisma and docs/milestones/milestones-4-news-section.md.
-  COMUNICADOR
-}
+// NOTE: the `UserRole` enum was removed in migration 20260924000000_dynamic_roles
+// (milestone 9). Roles are now rows in the `roles` table, created and scoped by a
+// superadmin at /admin/roles; USER/ADMIN/SUPERADMIN/COMUNICADOR are seeded there as
+// ordinary (system-protected) rows. See prisma/models/roles.prisma.
 
 enum IncidentStatus {
   OPEN

@@ -1,14 +1,24 @@
 import { now, nowMs } from "@/lib/clock";
+import { getPermissionSetForUser } from "@/lib/db/roles";
+import { isAdminRole } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
 
+/**
+ * Roles are data since milestone 9, so "is an admin" means "holds admin:access" rather
+ * than "has the row literally named ADMIN" — a superadmin-defined role with that
+ * permission counts, which is the whole point of the feature.
+ */
 export async function isAdminByEmail(email: string): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user?.id) return false;
   const reg = await prisma.registeredUser.findUnique({
     where: { userId: user.id },
+    select: { id: true },
   });
-  return !!reg && reg.role === "ADMIN";
+  if (!reg) return false;
+  const resolved = await getPermissionSetForUser(reg.id);
+  return isAdminRole(resolved?.permissions);
 }
 
 export async function getAdminAggregateStats() {

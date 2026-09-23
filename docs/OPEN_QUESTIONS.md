@@ -54,6 +54,19 @@ Grouped by milestone. See `docs/milestones/` for the full context behind each.
 - **Comments/reactions on news posts**: explicitly out of scope unless raised —
   listed here only so it stays a deliberate "not now," not an oversight.
 
+## Milestone 9 — Dynamic roles
+
+- **Vercel Global Config store for the role cache.** Milestone 9 decided role→permission
+  lookups should live in an edge-readable store so edits take effect immediately across
+  instances. Shipped instead: an in-process snapshot (30 s TTL, invalidated on every role
+  write) behind the same interface, because creating the store and wiring its token is an
+  account-level action, not a repo change. Open: provision it and implement the provider,
+  or accept the in-process cache as the permanent answer. See
+  [`milestones/milestones-9-dynamic-roles.md`](./milestones/milestones-9-dynamic-roles.md).
+- **Bulk reassignment before deleting a role.** Deleting an in-use role is blocked with a
+  409 naming the affected user count; there is no UI to move those users somewhere else
+  first. Worth building only if roles turn out to churn in practice.
+
 ## Milestone 10 — Frontend audit (error handling, a11y, security)
 
 See [`milestones/milestones-10-frontend-audit-hardening.md`](./milestones/milestones-10-frontend-audit-hardening.md)

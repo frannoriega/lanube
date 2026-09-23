@@ -14,7 +14,7 @@ export default async function EditNewsPage({
 }) {
   await requirePagePermission("news:manage");
   const session = await auth();
-  const canApprove = hasPermission(session?.role, "news:approve");
+  const canApprove = hasPermission(session, "news:approve");
 
   const { id } = await params;
   const post = await getNewsPostById(id);

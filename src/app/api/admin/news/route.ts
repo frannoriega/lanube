@@ -3,6 +3,7 @@ import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { actorLabelFor } from "@/lib/audit/diff";
 import { createNewsPost, listAdminNewsPosts } from "@/lib/db/news";
 import { prisma } from "@/lib/prisma";
+import { getPermissionSetForUser } from "@/lib/db/roles";
 import { hasPermission } from "@/lib/rbac";
 import {
   newsPostAdminInputSchema,
@@ -16,7 +17,10 @@ export async function GET(request: NextRequest) {
   const { error, session } = await requirePermission("news:manage");
   if (error) return error;
 
-  const canApprove = hasPermission(session.role, "news:approve");
+  const canApprove = hasPermission(
+    (await getPermissionSetForUser(session.userId))?.permissions,
+    "news:approve",
+  );
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const status = searchParams.get("status") ?? undefined;
@@ -37,7 +41,10 @@ export async function POST(request: NextRequest) {
   const { error, session } = await requirePermission("news:manage");
   if (error) return error;
 
-  const canApprove = hasPermission(session.role, "news:approve");
+  const canApprove = hasPermission(
+    (await getPermissionSetForUser(session.userId))?.permissions,
+    "news:approve",
+  );
   const schema = canApprove ? newsPostAdminInputSchema : newsPostInputSchema;
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);

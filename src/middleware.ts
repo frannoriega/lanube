@@ -1,4 +1,10 @@
-import { hasPermission, isAdminRole, type Permission } from "@/lib/rbac";
+import {
+  hasPermission,
+  isAdminRole,
+  NO_PERMISSIONS,
+  type Permission,
+  type PermissionSet,
+} from "@/lib/rbac";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -13,6 +19,7 @@ const ADMIN_PATH_PERMISSIONS: Array<[prefix: string, permission: Permission]> =
     ["/admin/reservation-types", "reservation-types:manage"],
     ["/admin/site", "site-config:manage"],
     ["/admin/themes", "landing-themes:manage"],
+    ["/admin/roles", "roles:manage"],
     ["/admin/audit", "audit:view"],
   ];
 
@@ -25,7 +32,17 @@ export async function middleware(request: NextRequest) {
   const isAuth = !!token;
   const isSignedUp = isAuth && token?.signedUp;
   const isBanned = isAuth && token?.banned;
-  const role = token?.role as string | undefined;
+  // Roles are data (milestone 9), so the token carries the *resolved* permission list
+  // rather than a role name — middleware stays a DB-free fast path. It can lag a role
+  // edit by one request; api-auth/page-auth re-read from the DB and are authoritative.
+  const permissionSet: PermissionSet = token
+    ? {
+        isSuperadmin: token.isSuperadmin === true,
+        permissions: Array.isArray(token.permissions)
+          ? (token.permissions as string[])
+          : [],
+      }
+    : NO_PERMISSIONS;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
 
   const requiresSession =
@@ -51,7 +68,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/signup", request.url));
   }
 
-  if (isSignedUp && requiresAdmin && !isAdminRole(role)) {
+  if (isSignedUp && requiresAdmin && !isAdminRole(permissionSet)) {
     return NextResponse.redirect(new URL("/user/dashboard", request.url));
   }
 
@@ -59,7 +76,7 @@ export async function middleware(request: NextRequest) {
     const required = ADMIN_PATH_PERMISSIONS.find(([prefix]) =>
       request.nextUrl.pathname.startsWith(prefix),
     );
-    if (required && !hasPermission(role, required[1])) {
+    if (required && !hasPermission(permissionSet, required[1])) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
   }

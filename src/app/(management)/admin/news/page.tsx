@@ -59,7 +59,7 @@ export default async function AdminNewsPage({
 }) {
   await requirePagePermission("news:manage");
   const session = await auth();
-  const canApprove = hasPermission(session?.role, "news:approve");
+  const canApprove = hasPermission(session, "news:approve");
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
