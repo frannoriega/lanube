@@ -42,6 +42,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { LoadError } from "@/components/molecules/load-error";
 
 interface ResourceRow {
   id: string;
@@ -52,7 +53,7 @@ interface ResourceRow {
 const EMPTY: ResourceInput = { name: "", serialNumber: "" };
 
 export function ResourcesManager() {
-  const { data, firstTime, refetch } = useApi<ResourceRow[]>(
+  const { data, error, firstTime, refetch } = useApi<ResourceRow[]>(
     "/api/admin/resources",
   );
   const resources = data ?? [];
@@ -131,7 +132,12 @@ export function ResourcesManager() {
         </Button>
       </CardHeader>
       <CardContent>
-        {firstTime ? (
+        {error ? (
+          <LoadError
+            message="No se pudieron cargar los recursos."
+            onRetry={() => void refetch()}
+          />
+        ) : firstTime ? (
           <div className="space-y-2">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />

@@ -33,6 +33,7 @@ import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { LoadError } from "@/components/molecules/load-error";
 
 interface SpaceRow {
   id: string;
@@ -47,7 +48,8 @@ interface SpaceRow {
 }
 
 export function SpacesManager() {
-  const { data, firstTime, refetch } = useApi<SpaceRow[]>("/api/admin/spaces");
+  const { data, error, firstTime, refetch } =
+    useApi<SpaceRow[]>("/api/admin/spaces");
   const spaces = data ?? [];
   const [deleting, setDeleting] = useState<SpaceRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,7 +108,12 @@ export function SpacesManager() {
         </Button>
       </CardHeader>
       <CardContent>
-        {firstTime ? (
+        {error ? (
+          <LoadError
+            message="No se pudieron cargar los espacios."
+            onRetry={() => void refetch()}
+          />
+        ) : firstTime ? (
           <div className="space-y-2">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />

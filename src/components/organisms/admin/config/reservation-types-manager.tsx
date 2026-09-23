@@ -48,11 +48,12 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { LoadError } from "@/components/molecules/load-error";
 
 const EMPTY: ReservationTypeInput = { name: "", displayOrder: 0 };
 
 export function ReservationTypesManager() {
-  const { data, firstTime, refetch } = useApi<ReservationType[]>(
+  const { data, error, firstTime, refetch } = useApi<ReservationType[]>(
     "/api/reservation-types",
   );
   const types = data ?? [];
@@ -133,7 +134,12 @@ export function ReservationTypesManager() {
         </Button>
       </CardHeader>
       <CardContent>
-        {firstTime ? (
+        {error ? (
+          <LoadError
+            message="No se pudieron cargar los tipos de reserva."
+            onRetry={() => void refetch()}
+          />
+        ) : firstTime ? (
           <div className="space-y-2">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
