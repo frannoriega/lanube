@@ -1051,6 +1051,7 @@ export function WeekCalendar({
                       <Link
                         href={`/forms/${selectedOccurrence.formSlug}`}
                         target="_blank"
+                        rel="noopener noreferrer"
                       >
                         Inscribirse
                       </Link>

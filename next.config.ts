@@ -16,6 +16,55 @@ if (process.env.STORAGE_PUBLIC_HOST) {
 const __impeccableLiveDev =
   process.env.NODE_ENV === "development" ? " http://localhost:8400" : "";
 
+// 'unsafe-eval' is needed by the dev bundler, never by the built app (milestone 10, F3.1).
+const __devEval =
+  process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+
+// Image hosts must be allowed in the CSP too, not just next/image's remotePatterns —
+// they are independent mechanisms and only the former actually blocks a load.
+const __imageHosts = [
+  "https://*.public.blob.vercel-storage.com",
+  process.env.STORAGE_PUBLIC_HOST
+    ? `https://${process.env.STORAGE_PUBLIC_HOST}`
+    : "",
+]
+  .filter(Boolean)
+  .join(" ");
+
+/**
+ * Content-Security-Policy.
+ *
+ * ⚠️ `'unsafe-inline'` is still present in `script-src` and is the single biggest
+ * remaining gap: it permits exactly the injected script the header exists to stop.
+ * Removing it requires a middleware-generated nonce, which is deliberately NOT part of
+ * this change — a wrong nonce blanks the entire app and `npm run build` will not catch
+ * it, so it ships on its own after a preview walkthrough of every route group. See
+ * docs/milestones/milestones-10-frontend-audit-hardening.md (slice C step 5).
+ *
+ * Everything below is the part that can land safely today.
+ */
+const contentSecurityPolicy = [
+  // No default-src meant every directive not listed was simply unrestricted.
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${__devEval} https://challenges.cloudflare.com${__impeccableLiveDev}`,
+  // Inline styles are unavoidable: Tailwind/Next inject them, as do the theme tokens.
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: ${__imageHosts}`,
+  "font-src 'self' data:",
+  `connect-src 'self' https://challenges.cloudflare.com${__impeccableLiveDev}`,
+  "frame-src 'self' https://challenges.cloudflare.com",
+  // Cheapest high-value directive there is: without it an injected <base href> re-targets
+  // every relative URL on the page, form posts included.
+  "base-uri 'self'",
+  "form-action 'self'",
+  // Clickjacking: the modern replacement for X-Frame-Options (which is also sent below
+  // for older browsers).
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+]
+  .join("; ")
+  .trim();
+
 const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
@@ -31,17 +80,33 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
+          { key: "Content-Security-Policy", value: contentSecurityPolicy },
+          // Belt-and-braces with frame-ancestors, for browsers that predate CSP2.
+          { key: "X-Frame-Options", value: "DENY" },
+          // Stops MIME sniffing turning an uploaded file into executable script.
+          { key: "X-Content-Type-Options", value: "nosniff" },
           {
-            key: "Content-Security-Policy",
-            value: `
-              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com${__impeccableLiveDev};
-              frame-src 'self' https://challenges.cloudflare.com;
-              connect-src 'self' https://challenges.cloudflare.com${__impeccableLiveDev};
-            `
-              .replace(/\s{2,}/g, " ")
-              .trim(),
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=()",
+          },
+          // 2 years + preload, the values the preload list requires. Browsers ignore
+          // this over plain HTTP, so it is inert in local dev.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
         ],
+      },
+      {
+        // The participant's editToken is IN THE PATH here, so the default
+        // strict-origin-when-cross-origin would still leak it to any host the page links
+        // out to. Send no referrer at all from these URLs.
+        source: "/forms/response/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
     ];
   },
