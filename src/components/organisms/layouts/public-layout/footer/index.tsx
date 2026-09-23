@@ -53,6 +53,7 @@ export default async function Footer({ className }: { className?: string }) {
               <Link
                 href="https://www.cdeluruguay.gob.ar/"
                 target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Municipalidad de Concepción del Uruguay"
               >
                 <LogoMunicipio size={200} />
