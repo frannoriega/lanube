@@ -38,7 +38,12 @@ import { toast } from "sonner";
 import { IncidentStatusBadge } from "@/components/atoms/status-badge";
 
 export default function IncidentsPage() {
-  const { data: incidentsData, firstTime, refetch } = useIncidents();
+  const {
+    data: incidentsData,
+    error: incidentsError,
+    firstTime,
+    refetch,
+  } = useIncidents();
   const incidents = incidentsData ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
@@ -116,6 +121,49 @@ export default function IncidentsPage() {
     (i) => i.status === "RESOLVED",
   ).length;
   const closedIncidents = incidents.filter((i) => i.status === "CLOSED").length;
+
+  // F1.6: GET /api/admin/incidents is a 501 stub whose real implementation is still
+  // commented out, but this page ships a complete UI in front of it — so every create and
+  // update fails with a generic toast and the list is permanently empty, which reads as
+  // "there are no incidents" rather than "this does not work yet". Until the API is
+  // finished (its own milestone), say so plainly instead of faking a working screen.
+  // The page is not in the admin nav, so this is only reachable by URL.
+  if (incidentsError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Incidentes
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Registro de incidentes del espacio.
+          </p>
+        </div>
+        <Card className="glass-card dark:glass-card-dark">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle
+                className="h-5 w-5 text-destructive"
+                aria-hidden="true"
+              />
+              Todavía no disponible
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              La gestión de incidentes está a medio construir: la interfaz
+              existe, pero el servicio que la respalda todavía no. Nada de lo
+              que cargues acá se guardaría.
+            </p>
+            <p>
+              Si necesitás registrar un incidente, anotalo por fuera del sistema
+              por ahora.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (firstTime) {
     return (

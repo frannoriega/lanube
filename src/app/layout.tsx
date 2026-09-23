@@ -38,6 +38,15 @@ export default async function RootLayout({
       <body
         className={`${roboto.variable} ${robotoMono.variable} font-sans flex flex-col min-h-[100svh] antialiased transition-colors`}
       >
+        {/* Skip link (WCAG 2.4.1). Without it a keyboard user tabs through the whole
+            sidebar before reaching any admin page's content. Visually hidden until
+            focused, and it is deliberately the first focusable element in the document. */}
+        <a
+          href="#main-content"
+          className="sr-only rounded-md bg-la-nube-selected px-4 py-2 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
+        >
+          Saltar al contenido
+        </a>
         <ServerTimeProvider serverNowMs={serverNowMs}>
           <SessionProvider session={session}>{children}</SessionProvider>
         </ServerTimeProvider>

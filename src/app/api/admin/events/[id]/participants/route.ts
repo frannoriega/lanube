@@ -1,3 +1,4 @@
+import { apiCatch } from "@/lib/api/response";
 import { requirePermission } from "@/lib/api-auth";
 import { PARTICIPANT_STATUS_LABEL } from "@/lib/constants/participants";
 import { getEventFormColumns } from "@/lib/db/forms";
@@ -44,46 +45,50 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("events:manage");
-  if (error) return error;
+  try {
+    const { error } = await requirePermission("events:manage");
+    if (error) return error;
 
-  const { id } = await params;
-  const [participants, columns] = await Promise.all([
-    listEventParticipants(id),
-    getEventFormColumns(id),
-  ]);
+    const { id } = await params;
+    const [participants, columns] = await Promise.all([
+      listEventParticipants(id),
+      getEventFormColumns(id),
+    ]);
 
-  const { origin, searchParams } = new URL(request.url);
-  if (searchParams.get("format") === "csv") {
-    const header = [
-      "Email",
-      "Email mostrado",
-      "Estado",
-      ...columns.map((c) => c.label),
-    ];
-    const lines = [header.map(csvCell).join(",")];
-    for (const p of participants) {
-      const answers = (p.answers ?? {}) as Record<string, unknown>;
-      const row = [
-        p.email,
-        p.displayEmail ?? "",
-        PARTICIPANT_STATUS_LABEL[p.status as ParticipantStatus],
-        ...columns.map((c) => csvValue(c, answers, origin, id)),
+    const { origin, searchParams } = new URL(request.url);
+    if (searchParams.get("format") === "csv") {
+      const header = [
+        "Email",
+        "Email mostrado",
+        "Estado",
+        ...columns.map((c) => c.label),
       ];
-      lines.push(row.map(csvCell).join(","));
+      const lines = [header.map(csvCell).join(",")];
+      for (const p of participants) {
+        const answers = (p.answers ?? {}) as Record<string, unknown>;
+        const row = [
+          p.email,
+          p.displayEmail ?? "",
+          PARTICIPANT_STATUS_LABEL[p.status as ParticipantStatus],
+          ...columns.map((c) => csvValue(c, answers, origin, id)),
+        ];
+        lines.push(row.map(csvCell).join(","));
+      }
+      return new NextResponse(lines.join("\n"), {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="participantes-${id}.csv"`,
+        },
+      });
     }
-    return new NextResponse(lines.join("\n"), {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="participantes-${id}.csv"`,
-      },
-    });
-  }
 
-  return NextResponse.json(
-    serializeJson({
-      fields: columns.map((c) => ({ id: c.key, label: c.label })),
-      participants,
-    }),
-  );
+    return NextResponse.json(
+      serializeJson({
+        fields: columns.map((c) => ({ id: c.key, label: c.label })),
+        participants,
+      }),
+    );
+  } catch (err) {
+    return apiCatch("admin/events/[id]/participants GET", err);
+  }
 }
