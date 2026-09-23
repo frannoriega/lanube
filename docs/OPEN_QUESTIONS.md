@@ -25,16 +25,18 @@ Grouped by milestone. See `docs/milestones/` for the full context behind each.
 - **Who can see what**: is the full trail superadmin-only (current), or can
   ADMIN see a filtered subset (e.g. everything except role/ban changes on other
   admins)? Would mean splitting `audit:view` into two permissions.
-- **Rollout order**: which of the not-yet-instrumented routes (bans, spaces/
-  resources/reservation-types CRUD, events/forms/participant decisions,
-  incidents, site-config) matter most to see logged first?
+- **Rollout order**: which of the not-yet-instrumented routes matter most to
+  see logged first? Instrumented as of 2026-09-23: `users/[id]` (role changes),
+  `reservations/[id]`, `spaces/[id]`, `resources/[id]`, `reservation-types/[id]`,
+  `news/[id]`, `news/[id]/decision`. **Still uninstrumented**: every
+  _collection_ POST (creating a space/resource/reservation-type/news post is
+  not logged — only editing and deleting one is), plus `events/*`, `forms/*`,
+  `events/[id]/participants/decision`, `incidents/*`, `site-config`, `themes/*`,
+  `checkin/[id]` and `spaces/reorder`. The create-vs-update asymmetry is
+  probably the most surprising gap and worth closing first.
 
 ## Milestone 3 — Seasonal landing themes
 
-- **Effect trigger**: once-per-browser-per-day (localStorage-gated, current
-  plan) vs. replaying every visit while a theme is active. Once-per-day matches
-  "first time you get into the page," but worth confirming a repeat visitor
-  shouldn't also get to see it again.
 - **Accent-preset swap** (v2, deferred): which named presets to build first
   (e.g. "Aniversario" gold, "Navidad" red/green), and whether a developer-curated
   list is an acceptable trade-off against true color freedom for a superadmin —
@@ -49,21 +51,56 @@ Grouped by milestone. See `docs/milestones/` for the full context behind each.
 
 ## Milestone 4 — Noticias / Comunicador
 
-- **`/noticias` index page**: a separate paginated "all posts" page beyond the
-  landing preview section (recommended, mirrors how `/admin/events` vs. the
-  landing's upcoming-events teaser both exist) — not yet confirmed.
-- **Who can approve**: does Admin (not just Superadmin) get `news:approve`, or
-  is approval Superadmin-only? The milestone doc assumes both Admin and
-  Superadmin can approve; worth a one-line confirmation since it's a single
-  permission-grant either way.
 - **Comments/reactions on news posts**: explicitly out of scope unless raised —
   listed here only so it stays a deliberate "not now," not an oversight.
 
+## Milestone 10 — Frontend audit (error handling, a11y, security)
+
+See [`milestones/milestones-10-frontend-audit-hardening.md`](./milestones/milestones-10-frontend-audit-hardening.md)
+for the full findings behind each of these.
+
+- **Incidents: finish it or hide it?** (F1.6) `src/app/api/admin/incidents/route.ts`
+  is a 501 stub whose real implementation is commented out, while
+  `/admin/incidents` ships a complete UI in front of it — so every create and
+  update fails with a generic toast and the list is permanently empty. The
+  `Incident`/`IncidentUser` models exist. Finishing it is a feature and probably
+  its own milestone; leaving a dead page in the admin nav is the worst of the
+  three options. _Recommendation:_ hide the nav entry now, open a milestone to
+  build it properly.
+- **What is the keyboard path for booking?** (F2.5) The `WeekCalendar` creates
+  reservations via a mouse drag on a `<div>` — there is no keyboard route at
+  all. Drag-select cannot be made keyboard-operable in place. Options: (a) a
+  "Reservar" button opening the existing time-range dialog pre-filled, or
+  (b) focusable 15-minute cells with space-to-extend, closer to Google Calendar.
+  (a) is much cheaper and probably better on touch too. Needs a product call
+  before slice E can start.
+- **How visible a change is the `--muted-foreground` fix?** (F2.2, slice A)
+  Raising it to clear AA changes the look of ~220 secondary-text usages at once.
+  That is a deliberate visual change, not a neutral bug fix. Worth eyeballing a
+  preview before merging — is slightly heavier secondary text an acceptable
+  trade for AA?
+- **Is a preview-only rollout enough for the CSP nonce?** (F3.1, slice C) A
+  wrong nonce blanks the entire app and `npm run build` will not catch it. The
+  proposal is to ship to a preview deployment and walk every route group —
+  including `/forms/[slug]`, which the auth-gated routes never exercise —
+  before promoting. Confirm that's acceptable, or whether the nonce work should
+  wait entirely.
+- **Is `reservation-timeline-legacy.tsx` dead?** (F2.7) 53 hardcoded palette
+  literals in a file named "legacy". If nothing mounts it, slice D should delete
+  it rather than fix it.
+
 ## Housekeeping
 
-- **`day-reservation-card.tsx` font sizes**: the Impeccable design hook flags
-  four `text-[22px]` stat-card values (lines ~113/123/133/154) as off the
-  documented type ramp in `DESIGN.md`. These are pre-existing (not introduced
-  by milestone 1's changes to that file). Still undecided: fold `22px` into
-  `DESIGN.md`'s type ramp as a sanctioned step, or restyle those stat numbers to
-  an existing documented size.
+- **Production storage must have `BLOB_READ_WRITE_TOKEN`.**
+  `docs/design/02-architecture.md#storage-abstraction` links here for this, but
+  the item had never actually been written down. `getStorage()` falls back to
+  the `local` filesystem provider when the token is absent — which on Vercel
+  means uploads (event/space/news images) write to a throwaway filesystem and
+  vanish, **silently**. Open: should the `local` provider hard-fail when
+  `NODE_ENV === "production"` instead of degrading quietly?
+- **`/api/cron/report-snapshot` is not scheduled.** The route exists and writes
+  `report_snapshots` rows, but `vercel.json`'s `crons` array only lists
+  `/api/cron/maintain-reservations`. So it never fires in production. Decide
+  whether to add a schedule (note Hobby-tier cron limits) or drop the endpoint.
+  Found during the milestone-10 audit; not a milestone-10 finding since it's
+  backend/config, not frontend.

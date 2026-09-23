@@ -99,3 +99,38 @@ See [memory: notifications-sync-limitation] and
 Three independent layers check role/permission, not one — see
 [`03-auth-and-permissions.md`](./03-auth-and-permissions.md) for why each
 exists separately instead of one shared gate.
+
+## The client↔API contract is a three-piece triad
+
+Documented here because it was previously only discoverable by reading the
+three files, and half the codebase predates it.
+
+1. **`src/lib/api/response.ts`** (server) — `apiSuccess` / `apiError` /
+   `apiCatch` / `apiServerError`. Error bodies are _always_ `{ message }`, the
+   message is user-facing, and internal error text never reaches it:
+   `apiServerError` logs the real error (with stack, via `src/lib/logger.ts`)
+   and returns a generic 500. `apiCatch` additionally maps a `DomainError` to
+   its own 4xx.
+2. **`src/lib/api/client.ts`** (client) — `apiGet` / `apiSend`, throwing
+   `ApiError` which carries the server's `message`, plus
+   `apiErrorMessage(err, fallback)`. `apiGet` dedupes concurrent requests for
+   the same URL and caches briefly (10s), which is what makes several
+   components mounting at once — or React Strict Mode's double effects — a
+   single network call.
+3. **`src/hooks/use-api.ts`** — stale-while-revalidate GET state:
+   `{ data, error, loading, firstTime, refetch }`. A non-`ApiError` throw is
+   normalized to `new ApiError(0, null, "Error de red")`, so callers only ever
+   handle one error type.
+
+**Why the client reads both `{ message }` and `{ error }`:** it's a
+compatibility shim, not a design choice. ~27 of 58 route handlers still
+hand-roll `NextResponse.json` instead of using the envelope. Once those are
+migrated the `{ error }` branch can go. New routes must use the envelope.
+
+**Known gaps** (audited 2026-09-23, see
+[`../milestones/milestones-10-frontend-audit-hardening.md`](../milestones/milestones-10-frontend-audit-hardening.md)):
+the App Router has **no `error.tsx` / `global-error.tsx` anywhere**, so an
+unhandled throw falls through to Next's default page; most `useApi` callers
+discard `error` and so render a failure as an empty state; and a few submit
+handlers still call `fetch` directly without a `catch`, failing silently on a
+dropped connection.
