@@ -17,6 +17,12 @@
         "value": "11px",
         "createdAt": "2026-09-18T23:06:04.689Z",
         "reason": "matches the existing 'Destacado' badge size already used in event-card.tsx — reusing the established featured-badge pattern, not a new size"
+      },
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-09-22T20:32:52.192Z",
+        "reason": "Email HTML inline styles must use web-safe fonts for client compatibility; mirrors the pre-existing event-decision.ts pattern this file was modeled on"
       }
     ]
   }

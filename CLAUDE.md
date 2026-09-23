@@ -61,19 +61,34 @@ FAKETIME='@2026-01-01 00:00:00' docker compose -f docker/docker-compose.yml -f d
 ```
 src/
 ├── app/                          # Next.js App Router (pages & API routes)
-│   ├── (public)/                 # Public pages (landing, about, services, policies)
+│   ├── (public)/                 # Public pages (landing, about, spaces, noticias, events, policies)
+│   ├── forms/                    # Public, UNAUTHENTICATED event registration
+│   │   ├── [slug]/               # Submit a registration (+ /submitted confirmation)
+│   │   └── response/[token]/     # Edit/cancel via the participant's editToken
 │   ├── (management)/             # Auth-gated section
 │   │   ├── auth/                 # Sign-in, sign-up, password reset, magic-link
 │   │   ├── user/                 # Logged-in user pages
 │   │   │   ├── dashboard/        # User dashboard with stats
-│   │   │   ├── spaces/[slug]/       # Reservation booking UI (dynamic; resolves Space by slug)
+│   │   │   ├── spaces/[slug]/    # Reservation booking UI (dynamic; resolves Space by slug)
+│   │   │   ├── events/           # Events the user can see/register for
 │   │   │   └── settings/         # User profile configuration
 │   │   ├── admin/                # Admin-only section (guards by role in middleware)
 │   │   │   ├── dashboard/        # Admin overview
 │   │   │   ├── reservations/     # Admin reservation management
 │   │   │   ├── users/            # User list, search, ban management
 │   │   │   ├── checkin/          # Check-in/out system
-│   │   │   └── incidents/        # Incident tracking
+│   │   │   ├── incidents/        # Incident tracking — ⚠️ UI is live but its API is a
+│   │   │   │                     #   501 stub; see milestones-10 F1.6
+│   │   │   ├── events/           # Event CRUD (+ participants, sessions)
+│   │   │   ├── forms/            # Reusable form templates
+│   │   │   ├── news/             # Noticias authoring/approval (COMUNICADOR)
+│   │   │   ├── reports/          # Usage reports (+ print.css)
+│   │   │   ├── audit/            # Audit trail viewer (superadmin)
+│   │   │   ├── spaces/           # Superadmin: Space CRUD
+│   │   │   ├── resources/        # Superadmin: Resource CRUD
+│   │   │   ├── reservation-types/# Superadmin: ReservationType CRUD
+│   │   │   ├── site/             # Superadmin: site config
+│   │   │   └── themes/           # Superadmin: seasonal landing themes
 │   │   └── banned/               # Fallback page when user is banned
 │   │
 │   └── api/
@@ -83,20 +98,22 @@ src/
 │       │   ├── confirm-email/    # Email verification
 │       │   ├── signup/           # Profile completion after email verify
 │       │   ├── reset/            # Password reset request
-│       │   └── magic-link/       # (deprecated/planned)
+│       │   └── magic-link/       # Magic-link sign-in
 │       ├── user/
 │       │   ├── profile/          # GET/PUT user profile
+│       │   ├── events/           # GET events for the current user
 │       │   └── stats/            # GET user dashboard stats
-│       ├── admin/
-│       │   ├── reservations/     # Admin CRUD for reservations
-│       │   ├── users/            # Admin user management
-│       │   ├── stats/            # Admin dashboard metrics
-│       │   └── incidents/        # Incident CRUD
-│       ├── resources/[type]/     # Get available resources & calendar for a type
+│       ├── admin/                # reservations, users, stats, incidents, events,
+│       │                         #   forms, news, reports, resources, spaces,
+│       │                         #   reservation-types, site-config, themes, checkin
+│       ├── forms/                # Public form submit/edit/cancel + uploads
+│       ├── spaces/ events/ reservation-types/   # Public read endpoints
+│       ├── resources/[spaceId]/  # Available resources & calendar for a Space
 │       ├── session/              # GET current session (session validation)
 │       ├── cron/
-│       │   ├── maintain-reservations/  # Daily 5am UTC: expire old reservations
-│       │   └── process-jobs/     # (planned)
+│       │   ├── maintain-reservations/  # Daily 5am UTC (scheduled in vercel.json)
+│       │   └── report-snapshot/  # ⚠️ Endpoint exists but is NOT in vercel.json's
+│       │                         #   `crons` — it never fires on Vercel today
 │       └── dev/
 │           └── server-time/      # GET server time (dev only, checks faketime)
 │
@@ -107,9 +124,10 @@ src/
 │   ├── organisms/                # Page-level complex components
 │   ├── templates/                # Layout wrappers
 │   ├── providers/
-│   │   ├── session-provider.tsx  # NextAuth SessionProvider
+│   │   ├── session/              # NextAuth SessionProvider
+│   │   ├── user/                 # Current-user context
 │   │   └── server-time.tsx       # ServerTimeProvider (client-side time sync)
-│   └── user-layout.tsx           # Shared layout for authenticated users
+│   └── organisms/layouts/        # user-layout.tsx, admin-layout.tsx, public-layout/
 │
 ├── lib/
 │   ├── auth.ts                   # NextAuth config & verifyCaptcha()
@@ -233,11 +251,12 @@ src/
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
 4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status checked in `jwt()` callback
-6. **Role-based (RBAC)**: `session.role` populated from `RegisteredUser.role` in `jwt()` callback. Roles: **USER / ADMIN / SUPERADMIN**; permissions are code-defined per role in `src/lib/rbac.ts` (`ROLE_PERMISSIONS`, `hasPermission()`, `isAdminRole()`). Enforcement layers:
-   - **Middleware** (JWT role, fast path): `/admin` needs `admin:access`; config paths (`/admin/spaces|resources|reservation-types`) need their `*:manage` permission.
+6. **Role-based (RBAC)**: `session.role` populated from `RegisteredUser.role` in `jwt()` callback. Roles: **USER / ADMIN / SUPERADMIN / COMUNICADOR** (`prisma/models/enums.prisma`); permissions are code-defined per role in `src/lib/rbac.ts` (`ROLE_PERMISSIONS`, `hasPermission()`, `isAdminRole()`). COMUNICADOR is an admin-panel role (`isAdminRole()` is true for it) scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts. Enforcement layers:
+   - **Middleware** (JWT role, fast path): `/admin` needs `admin:access`; the per-path table `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes` and `/admin/audit` on their own `*:manage` / `audit:view` permission. Keep that table and this list in sync.
    - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) re-reads the role from the DB (fresh after promotions/demotions) and returns 401/403.
    - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`) for the superadmin config pages; the admin layout checks the DB role.
-   - Superadmin extras: manage spaces/resources/reservation-types + change user roles (`PATCH /api/admin/users/[id]`; never your own role). Seed superadmins: `sa1`/`sa2@lanube.local`.
+   - Superadmin extras: manage spaces/resources/reservation-types/site-config/themes, view the audit trail, + change user roles (`PATCH /api/admin/users/[id]`; never your own role). Seed superadmins: `sa1`/`sa2@lanube.local`.
+   - ⚠️ The `jwt()` callback takes only `{ token }` — it deliberately ignores NextAuth's `trigger`/`session` arguments and recomputes `signedUp`/`banned`/`role` from the DB on every call. That is what makes a client-side `useSession().update({...})` unable to forge session state; don't "fix" it by merging the client-supplied session.
 
 **Special Cases**:
 
@@ -469,6 +488,35 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
 
 - Pages are Server Components by default; add `"use client"` at the component level when needed
 - Forms: react-hook-form + Zod; toasts: Sonner; path alias `@/` → `src/`
+
+### 8. Frontend data-fetching & error conventions
+
+- **Never call `fetch` directly from a component.** Use `apiGet` / `apiSend`
+  (`src/lib/api/client.ts`) or the `useApi` hook (`src/hooks/use-api.ts`). They
+  carry `ApiError` with the server's `message`, dedupe concurrent GETs, and give
+  you `apiErrorMessage(err, fallback)` for the toast. The handful of raw
+  `fetch` call sites that remain are tracked as findings in
+  [`docs/milestones/milestones-10-frontend-audit-hardening.md`](docs/milestones/milestones-10-frontend-audit-hardening.md) (F1.4) — don't add more.
+- **Always handle `useApi`'s `error`.** Rendering only `data`/`firstTime` makes
+  a failed request look like an empty result set — see milestone-10 F1.2.
+- **API routes must use the envelope** (`apiSuccess` / `apiError` / `apiCatch`
+  from `src/lib/api/response.ts`) so failures are logged server-side and the
+  client never sees internal error text. ~27 routes still hand-roll
+  `NextResponse.json`; migrate rather than copy them (milestone-10 F1.5).
+
+### 9. Styling & accessibility
+
+- **Use the design tokens, not raw palette classes.** `bg-*`/`text-*` literals
+  like `bg-green-100` need a `dark:` sibling or they break dark mode; there are
+  786 such literals today (milestone-10 F2.7). Prefer
+  `--background`/`--card`/`--muted-foreground`/`--border` and friends.
+- **Brand-colored text uses `text-la-nube-selected dark:text-la-nube-secondary`.**
+  `text-la-nube-primary` measures 3.06:1 on the light background and fails AA
+  (milestone-10 F2.3). `la-nube-primary` is fine for borders, icons, spinners
+  and gradient stops.
+- **Known token-level contrast failures are documented, not fixed** — the focus
+  ring (1.01:1 in light mode) and `--muted-foreground` (3.06:1) are milestone-10
+  slice A. Don't build new UI that depends on them reading clearly.
 
 ## Testing & Seeding
 

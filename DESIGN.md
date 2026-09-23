@@ -119,27 +119,55 @@ Typography is Roboto across the board — a humanist geometric sans-serif that c
 - Flat by default, alive on interaction — depth through state, not decoration
 - Admin surfaces are never punishing — the same visual warmth applies everywhere
 
+### Accessibility status (audited 2026-09-23)
+
+This document is the **design intent**; a frontend audit on 2026-09-23 found
+that several of its color prescriptions cannot meet WCAG 2.1 AA as written.
+Those points are marked inline below with ⚠️ and are **not** rules to follow —
+they are defects pending a decision in
+[`docs/milestones/milestones-10-frontend-audit-hardening.md`](docs/milestones/milestones-10-frontend-audit-hardening.md).
+
+| Item                                                   | Measured   | Needs          | Where                          |
+| ------------------------------------------------------ | ---------- | -------------- | ------------------------------ |
+| Focus ring (Ice Haze, `/50` opacity) vs. cloud-surface | **1.01:1** | 3:1            | §2 Ice Haze, §5 Buttons/Inputs |
+| Muted `#888282` vs. cloud-surface                      | **3.06:1** | 4.5:1 for body | §2 Neutral, The Muted Floor    |
+| Hairline border vs. card-white                         | **1.26:1** | 3:1            | §5 Inputs                      |
+| Gradient tail (Signal Cyan) vs. cloud-surface          | **1.22:1** | 3:1 (large)    | §3 Gradient Legibility Rule    |
+| `text-la-nube-primary` as body text                    | **3.06:1** | 4.5:1          | §2 Observatory Blue            |
+
+Dark mode is broadly healthier than light mode — the failures above are
+light-mode-specific, because most of them originate in hand-overridden light
+tokens while dark mode kept the stock Shadcn values. Ratios were computed, not
+eyeballed; the script is in the milestone-10 appendix.
+
+**Rule for new work:** don't build UI that depends on any of the five rows
+above reading clearly, and don't cite them as precedent. Brand-colored _text_
+goes through `text-la-nube-selected dark:text-la-nube-secondary`, which is
+measured and passing.
+
 ## 2. Colors: The Observatory Palette
 
 A two-hue palette anchored in blue and cyan — sky-inspired, community-owned. The brand lives in the mid-range: never so saturated it becomes corporate, never so desaturated it disappears.
 
 ### Primary
 
-- **Observatory Blue** (`#4e87c2`): The brand anchor. Section headings, active navigation states, primary data points, the gradient source in display type. Appears on 30–50% of typical screens. Medium saturation; reads as trustworthy and local, not enterprise navy.
+- **Observatory Blue** (`#4e87c2`): The brand anchor. Section headings, active navigation states, primary data points, the gradient source in display type. Appears on 30–50% of typical screens. Medium saturation; reads as trustworthy and local, not enterprise navy. ⚠️ **Not a text color in light mode** — `#4e87c2` is **3.06:1** on cloud-surface and **3.77:1** white-on-blue, both under AA. Use it for borders, icons, spinners, fills and gradient stops; for brand-colored _text_ use Deep Sky (`text-la-nube-selected dark:text-la-nube-secondary`), which measures 5.18:1 / 11.91:1. Milestone-10 F2.3.
 - **Deep Sky** (`#2a6297`): The darker register of observatory blue. Used for section kickers and mono labels in light mode, active link states, hover deepening on blue-tinted elements. Never used as a body background.
 
 ### Secondary
 
 - **Signal Cyan** (`#75e3f1`): The broadcast frequency. Used as the gradient target in display headings, section kickers in dark mode, and as a secondary accent in cards with themed backgrounds. Reads as technical and energetic — the cyan of screens and signals, not of tropical water.
-- **Ice Haze** (`#c8f1fc`): The washed-out cousin of signal cyan. Used for focus rings (the system's attention signal), section background tints, and subtle hover surfaces in public-facing areas. Quiet enough to be structural, blue enough to be on-brand.
+- **Ice Haze** (`#c8f1fc`): The washed-out cousin of signal cyan. Used for section background tints and subtle hover surfaces in public-facing areas. Quiet enough to be structural, blue enough to be on-brand.
+
+  ⚠️ **Ice Haze is also currently the focus-ring color, and that is a documented defect, not a rule to follow.** It measures **1.02:1** against cloud-surface and **1.20:1** against card-white — and the shipped ring applies it at 50% opacity (`focus-visible:ring-ring/50`), landing at **1.01:1**. WCAG SC 1.4.11 requires 3:1 for a focus indicator, so keyboard focus is effectively invisible app-wide in light mode. The property that makes Ice Haze good as a background tint — that it barely separates from the page — is exactly what disqualifies it as an attention signal. See milestone-10 F2.1 / slice A; **do not introduce new focus styling based on it.**
 
 ### Neutral
 
 - **Cloud Surface** (`#e8ecf2`): Page background in light mode. Not white — a cool, faintly blue-tinted gray that places content in sky, not paper. The very slight chroma (OKLCH implementation: `oklch(92.9% 0.013 255.508)`) keeps it from reading as generic.
 - **Ink** (`#303030`): Button primary background in light mode, highest-contrast text contexts. Slightly warmer than pure black — readable without clinical harshness.
-- **Carbon** (`#424242`): Body text, form labels, default foreground. 4.5:1 contrast against card-white; the everyday reading color.
+- **Carbon** (`#424242`): Body text, form labels, default foreground. **10.1:1** against card-white and **8.2:1** against cloud-surface — comfortably AA/AAA; the everyday reading color. (An earlier revision of this line claimed 4.5:1; that was understated. Measured 2026-09-23.)
 - **Whisper** (`#f7f7f7`): Muted surface backgrounds — disabled states, secondary panels, sidebar fills. Distinguishable from card-white when adjacent.
-- **Muted** (`#888282`): Secondary text, timestamps, form helper text, empty-state copy. 3:1 contrast against cloud-surface for large text. Do not use for body text below 18px.
+- **Muted** (`#888282`): Secondary text, timestamps, form helper text, empty-state copy. **3.06:1 against cloud-surface, 3.78:1 against card-white** — large text only. Do not use for body text below 18px. ⚠️ **The codebase violates this rule ~220 times** (`text-muted-foreground` is the default class for helper text, timestamps and empty-state copy at normal size). Either the token darkens or the rule is unenforceable — see milestone-10 F2.2 / slice A.
 - **Hairline** (`#eaeaea`): Borders, dividers, card outlines. Invisible at rest; structural without visual weight.
 - **Card White** (`#ffffff`): Card backgrounds in light mode. The explicit white against cloud-surface creates the surface hierarchy.
 - **Night Station** (`#1c2238`): Page background in dark mode. Deep navy-blue, not pure black — the OKLCH implementation (`oklch(20.8% 0.042 265.755)`) pulls toward indigo for a sky-at-night reading.
@@ -150,7 +178,7 @@ A two-hue palette anchored in blue and cyan — sky-inspired, community-owned. T
 
 **The Signal Cyan Rule.** Signal Cyan is never used alone; it always appears in relation to Observatory Blue — as a gradient partner, a dark-mode counterpart, or a supporting accent. Isolated Signal Cyan reads as a different product.
 
-**The Muted Floor.** `#888282` is the floor for secondary text. Nothing dimmer on body copy. For non-text elements (borders, separators), hairline is the floor.
+**The Muted Floor.** `#888282` is the floor for secondary text. Nothing dimmer on body copy. For non-text elements (borders, separators), hairline is the floor. ⚠️ The floor itself is currently below AA (3.06:1) and is applied to normal-size body copy ~220 times via `text-muted-foreground`, so this rule is both violated in practice _and_ insufficient as written — raising the floor is milestone-10 slice A, and it is a deliberate visual change worth reviewing before merge.
 
 ## 3. Typography: Roboto as Community + System
 
@@ -173,6 +201,8 @@ A two-hue palette anchored in blue and cyan — sky-inspired, community-owned. T
 **The Mono Voice Rule.** Roboto Mono is the system speaking. It appears on section kickers, status labels, form IDs, and timestamps — never on user-authored content (event titles, reservation notes, names). If you're unsure which to use, ask: is this text the system or a person? Mono = system.
 
 **The One Gradient Word Rule.** In any given heading, at most one word or phrase receives the primary-to-secondary gradient. If all words are gradient, none is. The gradient marks the concept — "innovación", "eventos", the promise — not the whole sentence.
+
+**The Gradient Legibility Rule** (added 2026-09-23). The gradient must stay legible across its whole run, in both themes. The current light-mode pair does not: `from-la-nube-primary` (`#4e87c2`) measures **3.06:1** against cloud-surface and `to-la-nube-secondary` (`#75e3f1`) measures **1.22:1** — so the tail of every gradient word fades into the page, even at Display/Headline sizes where only 3:1 is required. Light mode needs to run `selected → primary` (Deep Sky `#2a6297` is **5.18:1**); dark mode's `primary → secondary` is fine (Signal Cyan is 11.91:1 on night-station). This is milestone-10 F2.4 / slice A — the gradient stays, its anchors change.
 
 ## 4. Elevation
 
@@ -199,7 +229,7 @@ La Nube is flat by default. Surfaces rest at rest. Shadow is a response to state
 Character: Confident and direct. The default button is dark charcoal with white text — decisive, not branded. The brand blue appears on hover, rewarding the interaction.
 
 - **Shape:** Gently rounded (8px radius, `rounded-md`)
-- **Primary (default):** Ink (`#303030`) background, white text; `px-4 py-2 h-9`. On hover: transitions to Observatory Blue (`#4e87c2`). On focus-visible: 3px ring in Ice Haze.
+- **Primary (default):** Ink (`#303030`) background, white text; `px-4 py-2 h-9`. On hover: transitions to Observatory Blue (`#4e87c2`). On focus-visible: 3px ring — ⚠️ currently Ice Haze at 1.01:1, i.e. invisible in light mode; pending a contrast-safe ring color (milestone-10 slice A).
 - **Outline:** Transparent background, hairline border, carbon text. On hover: Whisper background.
 - **Ghost:** No border, no background. On hover: Hairline background fill. Used for secondary actions in dense admin tables.
 - **Destructive:** Red-tinted background (Shadcn destructive token); white text. Reserved for irreversible actions.
@@ -212,6 +242,7 @@ Character: Small, contained, read-only status signals or type labels.
 - **Default:** Ink background, white text, 8px radius; `px-2 py-0.5 text-xs`.
 - **Outline:** Hairline border, carbon text, transparent background. For read-only metadata (event type tags, resource type labels).
 - **Secondary:** Whisper background, carbon text. For lower-hierarchy status indicators.
+- **Status badges:** ⚠️ not currently on this system. Four independent status→color maps exist (`atoms/status-badge.tsx`, `admin/users/columns.tsx`, `admin/incidents/page.tsx`, `admin/checkin/page.tsx`), all hardcoding a light-only `bg-*-100 text-*-800` pair with **no `dark:` variant** — so in dark mode they render as bright pastel chips on a near-black card. Their internal contrast is fine (~6:1); the defect is that they are theme-blind and duplicated. Consolidation into one theme-aware variant is milestone-10 F2.6 / slice D.
 
 ### Cards
 
@@ -230,7 +261,8 @@ Character: White surfaces that float cleanly off the cloud-surface background. N
 Character: Clean stroke fields — no filled backgrounds, no floating labels. The focus state is the brand speaking.
 
 - **Style:** Transparent background, hairline border (`border border-input`), 8px radius; `h-9 px-3 text-sm`. `shadow-xs` at rest.
-- **Focus:** 3px ring in Ice Haze (`#c8f1fc`) with border color transitioning to the ring color. The focus state is the one place where the system accent visually activates.
+- **Focus:** 3px ring with border color transitioning to the ring color. The focus state is the one place where the system accent visually activates. ⚠️ The ring is Ice Haze today (**1.01:1** with the shipped `/50` opacity — see the Ice Haze entry above); it needs a color that clears 3:1 against both cloud-surface and card-white. Milestone-10 slice A.
+- **Border contrast:** Hairline (`#eaeaea`) against card-white measures **1.26:1**, under the 3:1 that SC 1.4.11 requires for a control's visual boundary — inputs currently read as borderless. Same slice.
 - **Error:** Destructive-red ring and border; `aria-invalid` attribute drives the visual state.
 - **Disabled:** 50% opacity, `cursor-not-allowed`.
 

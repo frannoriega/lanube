@@ -7,10 +7,10 @@ pointer, not a fork — don't duplicate entries here. It exists so the
 (`NN-open-questions.md` per subsystem area), while the actual list stays in
 one place, grouped by milestone.
 
-New product-level questions surfaced while writing `docs/design/*` (not
-tied to a specific milestone) have been added to
-[`docs/OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) under a new **"Design
-docs"** section.
+Product-level questions surfaced while writing `docs/design/*` that aren't
+tied to a specific milestone live in
+[`docs/OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) under its
+**"Housekeeping"** section, alongside the milestone-grouped ones.
 
 When resolving an entry, follow the workflow's rule: move the decision into
 the relevant `docs/design/*.md` file as the new authoritative statement,
