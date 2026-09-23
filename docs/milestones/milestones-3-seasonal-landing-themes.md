@@ -8,6 +8,17 @@
 > breaking-migration-free v2) but are deliberately not read/written by any
 > code path yet — matches the decided v1 scope below exactly. No further
 > work needed to close this milestone as scoped.
+>
+> **Open question resolved (2026-09-23), moved here from `docs/OPEN_QUESTIONS.md`:**
+> the **effect trigger** shipped exactly as planned — once per browser, per
+> theme, per calendar day. `src/app/(public)/page.tsx:45` passes a
+> ``storageKey={`landing-theme-shown:${theme.id}:${dateKeyFromUnixMs(now)}`}`` to
+> `EmojiShower`, which localStorage-gates on it
+> (`templates/landing/theme/emoji-shower.tsx:56-57`). Including `theme.id` in the
+> key means a _new_ theme next year replays rather than being suppressed by a
+> stale flag — which is the behaviour the open question was worried about.
+> The remaining v2 questions (accent presets, banner/ribbon, whether other
+> themes are wanted at all) are still open and stay in `OPEN_QUESTIONS.md`.
 
 > **Decided scope (2026-09-18):** v1 ships for the 2026-09-25 anniversary with only
 > two of the capabilities below — the **`EMOJI_SHOWER` entrance effect** and a
