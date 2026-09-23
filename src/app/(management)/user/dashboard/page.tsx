@@ -123,7 +123,7 @@ export default function DashboardPage() {
                     >
                       <div>
                         <p className="font-medium">{reservation.service}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
                           {new Date(reservation.startTime).toLocaleDateString()}{" "}
                           -
                           {new Date(reservation.startTime).toLocaleTimeString()}{" "}

@@ -14,6 +14,7 @@ import { type Column, type ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import { type AdminUser } from "./types";
+import { UserStatusBadge } from "@/components/atoms/status-badge";
 
 const formatDate = (value: string | Date | number) => {
   const date = value instanceof Date ? value : new Date(value);
@@ -31,27 +32,11 @@ const formatDate = (value: string | Date | number) => {
 /** Roles are data now, so the row already carries its display name. */
 const resolveRoleLabel = (role?: string | null) => role || NO_ROLE_LABEL;
 
-const resolveStatusBadge = (status?: string | null) => {
-  if (!status) {
-    return <Badge variant="outline">Sin estado</Badge>;
-  }
-
-  const normalized = status.toUpperCase();
-
-  if (normalized === "ACTIVE") {
-    return <Badge className="bg-green-100 text-green-800">Activo</Badge>;
-  }
-
-  if (normalized === "INACTIVE" || normalized === "BANNED") {
-    return (
-      <Badge className="bg-red-100 text-red-700">
-        {normalized === "BANNED" ? "Bloqueado" : "Inactivo"}
-      </Badge>
-    );
-  }
-
-  return <Badge variant="outline">{status}</Badge>;
-};
+// Was a local copy of the same status→color mapping three other files also had, with no
+// dark: variants. Now one theme-aware component (F2.6).
+const resolveStatusBadge = (status?: string | null) => (
+  <UserStatusBadge status={status} />
+);
 
 interface DataTableColumnHeaderProps<TData> {
   column: Column<TData, unknown>;

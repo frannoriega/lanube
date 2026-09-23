@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                       <p className="font-medium">
                         {user.name} {user.lastName}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         {getServiceName(user.service)} • Ingresó:{" "}
                         {new Date(user.checkInTime).toLocaleTimeString()}
                       </p>
@@ -239,13 +239,13 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     {isReservationOverdue(user.reservationEndTime) && (
-                      <Badge className="bg-red-100 text-red-800">
+                      <Badge className="bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
                         Tiempo agotado
                       </Badge>
                     )}
                     {isReservationEndingSoon(user.reservationEndTime) &&
                       !isReservationOverdue(user.reservationEndTime) && (
-                        <Badge className="bg-yellow-100 text-yellow-800">
+                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300">
                           Termina pronto
                         </Badge>
                       )}
