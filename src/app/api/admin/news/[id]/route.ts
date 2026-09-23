@@ -3,6 +3,7 @@ import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { diffFields } from "@/lib/audit/diff";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { deleteNewsPost, getNewsPostById, updateNewsPost } from "@/lib/db/news";
+import { getPermissionSetForUser } from "@/lib/db/roles";
 import { hasPermission } from "@/lib/rbac";
 import {
   newsPostAdminInputSchema,
@@ -38,7 +39,10 @@ export async function GET(
   if (error) return error;
 
   const { id } = await params;
-  const canApprove = hasPermission(session.role, "news:approve");
+  const canApprove = hasPermission(
+    (await getPermissionSetForUser(session.userId))?.permissions,
+    "news:approve",
+  );
   const { post, error: ownErr } = await assertOwnedOrPrivileged(
     id,
     session.userId,
@@ -56,7 +60,10 @@ export async function PUT(
   if (error) return error;
 
   const { id } = await params;
-  const canApprove = hasPermission(session.role, "news:approve");
+  const canApprove = hasPermission(
+    (await getPermissionSetForUser(session.userId))?.permissions,
+    "news:approve",
+  );
   const { post: before, error: ownErr } = await assertOwnedOrPrivileged(
     id,
     session.userId,
@@ -100,7 +107,10 @@ export async function DELETE(
   if (error) return error;
 
   const { id } = await params;
-  const canApprove = hasPermission(session.role, "news:approve");
+  const canApprove = hasPermission(
+    (await getPermissionSetForUser(session.userId))?.permissions,
+    "news:approve",
+  );
   const { post: before, error: ownErr } = await assertOwnedOrPrivileged(
     id,
     session.userId,

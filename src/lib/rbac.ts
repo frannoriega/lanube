@@ -1,16 +1,18 @@
-import { UserRole } from "@/types/prisma";
-
 /**
- * RBAC: roles carry a predefined set of permissions. Nothing besides the role is
- * persisted — grant/revoke happens by editing these maps. Client-safe (pure data,
- * no server imports); API routes enforce via requirePermission() in lib/api-auth.ts.
+ * RBAC. The *catalog* below is code-defined and stays that way: every string here
+ * corresponds to a real `requirePermission()` / `hasPermission()` call site in a route,
+ * page or middleware rule, so a permission invented at runtime would gate nothing.
+ *
+ * What IS data (milestone 9) is which catalog permissions each role carries — `Role` rows
+ * a superadmin manages at /admin/roles. This module stays client-safe (pure data + pure
+ * functions, no server imports); the DB-backed lookups live in `@/lib/rbac/roles`.
  */
 export const PERMISSIONS = [
   /** Enter the /admin section at all. */
   "admin:access",
   "reservations:manage",
   "users:manage",
-  /** Change another user's role (assign/revoke ADMIN). */
+  /** Assign a role to a user. Distinct from roles:manage (defining what a role can do). */
   "users:roles:manage",
   "events:manage",
   "forms:manage",
@@ -27,68 +29,141 @@ export const PERMISSIONS = [
   "reservation-types:manage",
   "site-config:manage",
   "landing-themes:manage",
+  /** Create roles and choose which permissions each one carries. */
+  "roles:manage",
   /** View the audit trail (can expose role changes and bans). */
   "audit:view",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
 
-const ADMIN_PERMISSIONS: readonly Permission[] = [
-  "admin:access",
-  "reservations:manage",
-  "users:manage",
-  "events:manage",
-  "forms:manage",
-  "reports:view",
-  "checkin:manage",
-  "incidents:manage",
-  "news:manage",
-  "news:approve",
+const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS);
+
+export function isPermission(value: string): value is Permission {
+  return PERMISSION_SET.has(value);
+}
+
+/** Drop anything not in the catalog — stored role rows can outlive a removed permission. */
+export function sanitizePermissions(values: readonly string[]): Permission[] {
+  return Array.from(new Set(values.filter(isPermission)));
+}
+
+/**
+ * Human-readable grouping for the /admin/roles permission checklist. Every catalog entry
+ * must appear in exactly one group — `permissionGroupCoverage()` is asserted in tests so a
+ * newly added permission can't silently become unassignable from the UI.
+ */
+export const PERMISSION_GROUPS: ReadonlyArray<{
+  label: string;
+  description: string;
+  permissions: readonly Permission[];
+}> = [
+  {
+    label: "Acceso",
+    description: "Entrada al panel de administración.",
+    permissions: ["admin:access"],
+  },
+  {
+    label: "Operación",
+    description: "El día a día del espacio.",
+    permissions: [
+      "reservations:manage",
+      "checkin:manage",
+      "incidents:manage",
+      "reports:view",
+    ],
+  },
+  {
+    label: "Eventos y formularios",
+    description: "Talleres, cursos e inscripciones.",
+    permissions: ["events:manage", "forms:manage"],
+  },
+  {
+    label: "Noticias",
+    description: "Redacción y aprobación de las notas públicas.",
+    permissions: ["news:manage", "news:approve"],
+  },
+  {
+    label: "Usuarios",
+    description: "Alta, baja y asignación de roles.",
+    permissions: ["users:manage", "users:roles:manage"],
+  },
+  {
+    label: "Configuración",
+    description: "Catálogos y apariencia del sitio.",
+    permissions: [
+      "spaces:manage",
+      "resources:manage",
+      "reservation-types:manage",
+      "site-config:manage",
+      "landing-themes:manage",
+    ],
+  },
+  {
+    label: "Gobernanza",
+    description: "Definición de roles y trazabilidad.",
+    permissions: ["roles:manage", "audit:view"],
+  },
 ];
 
-const SUPERADMIN_PERMISSIONS: readonly Permission[] = [
-  ...ADMIN_PERMISSIONS,
-  "users:roles:manage",
-  "spaces:manage",
-  "resources:manage",
-  "reservation-types:manage",
-  "site-config:manage",
-  "landing-themes:manage",
-  "audit:view",
-];
+export const PERMISSION_LABELS: Record<Permission, string> = {
+  "admin:access": "Acceder al panel",
+  "reservations:manage": "Gestionar reservas",
+  "users:manage": "Gestionar usuarios",
+  "users:roles:manage": "Asignar roles a usuarios",
+  "events:manage": "Gestionar eventos",
+  "forms:manage": "Gestionar formularios",
+  "reports:view": "Ver reportes",
+  "checkin:manage": "Gestionar ingresos y egresos",
+  "incidents:manage": "Gestionar incidentes",
+  "news:manage": "Redactar noticias",
+  "news:approve": "Aprobar o rechazar noticias",
+  "spaces:manage": "Gestionar espacios",
+  "resources:manage": "Gestionar recursos",
+  "reservation-types:manage": "Gestionar tipos de reserva",
+  "site-config:manage": "Configurar el sitio",
+  "landing-themes:manage": "Gestionar temas de la portada",
+  "roles:manage": "Definir roles y permisos",
+  "audit:view": "Ver la auditoría",
+};
 
-/** Narrow role: can author Noticias posts, but every other admin surface stays off-limits. */
-const COMUNICADOR_PERMISSIONS: readonly Permission[] = [
-  "admin:access",
-  "news:manage",
-];
+/**
+ * The shape every enforcement layer checks against, whether it came from the DB
+ * (api-auth, page-auth) or from the JWT (middleware).
+ */
+export type PermissionSet = {
+  /** True for the protected superadmin tier: holds every catalog permission, always. */
+  isSuperadmin: boolean;
+  permissions: readonly string[];
+};
 
-export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
-  [UserRole.USER]: [],
-  [UserRole.ADMIN]: ADMIN_PERMISSIONS,
-  [UserRole.SUPERADMIN]: SUPERADMIN_PERMISSIONS,
-  [UserRole.COMUNICADOR]: COMUNICADOR_PERMISSIONS,
+/** Nothing granted — an unauthenticated visitor, or a user on the base USER tier. */
+export const NO_PERMISSIONS: PermissionSet = {
+  isSuperadmin: false,
+  permissions: [],
 };
 
 export function hasPermission(
-  role: UserRole | string | undefined | null,
+  set: PermissionSet | null | undefined,
   permission: Permission,
 ): boolean {
-  if (!role) return false;
-  const permissions = ROLE_PERMISSIONS[role as UserRole];
-  return permissions?.includes(permission) ?? false;
+  if (!set) return false;
+  if (set.isSuperadmin) return true;
+  return set.permissions.includes(permission);
 }
 
-/** Any role that can operate the admin panel (ADMIN, SUPERADMIN, or COMUNICADOR). */
-export function isAdminRole(
-  role: UserRole | string | undefined | null,
-): boolean {
-  return hasPermission(role, "admin:access");
+/** Any role that can operate the admin panel at all. */
+export function isAdminRole(set: PermissionSet | null | undefined): boolean {
+  return hasPermission(set, "admin:access");
 }
 
-export const ROLE_LABELS: Record<UserRole, string> = {
-  [UserRole.USER]: "Usuario",
-  [UserRole.ADMIN]: "Administrador",
-  [UserRole.SUPERADMIN]: "Superadministrador",
-  [UserRole.COMUNICADOR]: "Comunicador",
-};
+/** Stable keys of the roles the migration seeds; used to protect/identify them in code. */
+export const SEEDED_ROLE_KEYS = {
+  user: "USER",
+  admin: "ADMIN",
+  superadmin: "SUPERADMIN",
+  comunicador: "COMUNICADOR",
+} as const;
+
+/** Label shown when a user has no role row (the base tier). */
+export const NO_ROLE_LABEL = "Usuario";
