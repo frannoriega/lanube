@@ -1,9 +1,17 @@
 "use client";
 
+import { type PermissionSet } from "@/lib/rbac";
 import { RegisteredUser } from "@/types/prisma";
 import { createContext } from "react";
 
-export const UserContext = createContext<RegisteredUser | null>(null);
+/**
+ * The current user as client components see them. Since milestone 9 roles are data, so the
+ * *resolved* permission set travels with the user rather than being derivable from a role
+ * name — client code calls `hasPermission(user, "…")` directly on this object.
+ */
+export type CurrentUser = RegisteredUser & PermissionSet;
+
+export const UserContext = createContext<CurrentUser | null>(null);
 
 /**
  * Receives the registered user resolved server-side by the user/admin
@@ -14,7 +22,7 @@ export default function UserProvider({
   user,
 }: {
   children: React.ReactNode;
-  user: RegisteredUser;
+  user: CurrentUser;
 }) {
   return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
 }

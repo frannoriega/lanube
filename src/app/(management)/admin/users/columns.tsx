@@ -8,8 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ROLE_LABELS } from "@/lib/rbac";
-import { UserRole } from "@/types/prisma";
+import { NO_ROLE_LABEL } from "@/lib/rbac";
+import { type RoleOption } from "@/types/prisma";
 import { type Column, type ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
@@ -28,8 +28,8 @@ const formatDate = (value: string | Date | number) => {
   });
 };
 
-const resolveRoleLabel = (role?: string | null) =>
-  (role && ROLE_LABELS[role as UserRole]) || role || "Sin rol";
+/** Roles are data now, so the row already carries its display name. */
+const resolveRoleLabel = (role?: string | null) => role || NO_ROLE_LABEL;
 
 const resolveStatusBadge = (status?: string | null) => {
   if (!status) {
@@ -90,17 +90,23 @@ function DataTableColumnHeader<TData>({
   );
 }
 
+/** Sentinel for "no role" — Radix Select cannot hold an empty-string value. */
+export const NO_ROLE_VALUE = "__none__";
+
 export interface AdminUsersColumnsOptions {
-  /** Show the role selector (superadmins with users:roles:manage). */
+  /** Show the role selector (holders of users:roles:manage). */
   canManageRoles: boolean;
   /** The viewer's RegisteredUser id — own role is never editable. */
   currentUserId: string | null;
-  onRoleChange: (user: AdminUser, role: UserRole) => void;
+  /** Assignable roles, loaded from /api/admin/roles/assignable. */
+  roles: RoleOption[];
+  onRoleChange: (user: AdminUser, roleId: string | null) => void;
 }
 
 export function buildAdminUsersColumns({
   canManageRoles,
   currentUserId,
+  roles,
   onRoleChange,
 }: AdminUsersColumnsOptions): ColumnDef<AdminUser>[] {
   const roleColumn: ColumnDef<AdminUser> = {
@@ -118,19 +124,22 @@ export function buildAdminUsersColumns({
       }
       return (
         <Select
-          value={user.role}
-          onValueChange={(value) => onRoleChange(user, value as UserRole)}
+          value={user.roleId ?? NO_ROLE_VALUE}
+          onValueChange={(value) =>
+            onRoleChange(user, value === NO_ROLE_VALUE ? null : value)
+          }
         >
           <SelectTrigger
             className="h-8 w-fit min-w-[150px]"
             aria-label={`Rol de ${user.name ?? user.email}`}
           >
-            <SelectValue />
+            <SelectValue placeholder={NO_ROLE_LABEL} />
           </SelectTrigger>
           <SelectContent>
-            {Object.values(UserRole).map((role) => (
-              <SelectItem key={role} value={role}>
-                {ROLE_LABELS[role]}
+            <SelectItem value={NO_ROLE_VALUE}>{NO_ROLE_LABEL}</SelectItem>
+            {roles.map((role) => (
+              <SelectItem key={role.id} value={role.id}>
+                {role.name}
               </SelectItem>
             ))}
           </SelectContent>

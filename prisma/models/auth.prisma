@@ -50,8 +50,11 @@ model RegisteredUser {
   dni              String                @unique
   institution      String?
   reasonToJoin     String                @map("reason_to_join")
-  role             UserRole              @default(USER)
-  createdAt        BigInt                @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  /// RBAC role (milestone 9). NULL means the base "no admin permissions" tier — the
+  /// seeded USER role is what the UI assigns, but NULL is treated identically so a
+  /// deleted-and-unreassigned row can never accidentally read as privileged.
+  roleId           String?               @map("role_id")
+  createdAt        BigInt               @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt        BigInt                @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   bans             Ban[]
   checkIns         CheckIn[]
@@ -64,6 +67,7 @@ model RegisteredUser {
   proposals        Proposal[]
   purchaseOrders   PurchaseOrder[]
   user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleRef          Role?                 @relation(fields: [roleId], references: [id], onDelete: Restrict)
   reservations     Reservation[]
   teamMembers      TeamMember[]
   eventParticipations EventParticipant[]

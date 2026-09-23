@@ -141,7 +141,7 @@ export default function UserLayout({ children }: UserLayoutProps) {
                 <ThemeToggle />
               </div>
 
-              {isAdminRole(session?.role) && (
+              {isAdminRole(session) && (
                 <Button
                   variant="ghost"
                   className="relative h-8 w-8 rounded-full"

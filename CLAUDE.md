@@ -88,7 +88,8 @@ src/
 │   │   │   ├── resources/        # Superadmin: Resource CRUD
 │   │   │   ├── reservation-types/# Superadmin: ReservationType CRUD
 │   │   │   ├── site/             # Superadmin: site config
-│   │   │   └── themes/           # Superadmin: seasonal landing themes
+│   │   │   ├── themes/           # Superadmin: seasonal landing themes
+│   │   │   └── roles/            # Superadmin: Role CRUD + permission checklist
 │   │   └── banned/               # Fallback page when user is banned
 │   │
 │   └── api/
@@ -192,6 +193,7 @@ src/
 - `Space`: Reservable space (coworking, lab, auditorium, meeting room) with capacity/exclusive/reservable flags — superadmin CRUD at `/admin/spaces`. Booking UI is the single dynamic route `/user/spaces/[slug]` (resolves the Space by its editable `slug`; 404s if missing or not reservable) — there are no per-space hardcoded folders. The user sidebar's space links are built from `getReservableSpaces()` in the user layout and passed to `ManagementLayout` (`spaceNav`), so a renamed/added space stays in sync automatically.
 - `Resource`: Physical equipment inventory (superadmin CRUD at `/admin/resources`)
 - `ReservationType`: Catalog of reservation/event types (was the `event_types` Postgres enum). `code` is the stable identifier stored on `Event.eventType` / `Reservation.eventType` (text FK, `ON UPDATE CASCADE`, delete restricted while in use); `name` is the display name. Superadmin CRUD at `/admin/reservation-types`; public read at `GET /api/reservation-types`. Migration `20260706110000` seeded MEETING/WORKSHOP/CONFERENCE/OTHER and recreated the SQL functions with `text` params.
+- `Role`: RBAC role (milestone 9) — `key`, `name`, `permissions String[]`, `isSystem` (protected from edit/delete), `isSuperadmin` (implicit all-permissions). `RegisteredUser.roleId` FKs here with `onDelete: Restrict`, so an in-use role can't be deleted. Superadmin CRUD at `/admin/roles`.
 - `Ban`: User suspension record (time-bounded)
 
 **Features** (expanding):
@@ -251,12 +253,14 @@ src/
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
 4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status checked in `jwt()` callback
-6. **Role-based (RBAC)**: `session.role` populated from `RegisteredUser.role` in `jwt()` callback. Roles: **USER / ADMIN / SUPERADMIN / COMUNICADOR** (`prisma/models/enums.prisma`); permissions are code-defined per role in `src/lib/rbac.ts` (`ROLE_PERMISSIONS`, `hasPermission()`, `isAdminRole()`). COMUNICADOR is an admin-panel role (`isAdminRole()` is true for it) scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts. Enforcement layers:
-   - **Middleware** (JWT role, fast path): `/admin` needs `admin:access`; the per-path table `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes` and `/admin/audit` on their own `*:manage` / `audit:view` permission. Keep that table and this list in sync.
-   - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) re-reads the role from the DB (fresh after promotions/demotions) and returns 401/403.
-   - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`) for the superadmin config pages; the admin layout checks the DB role.
-   - Superadmin extras: manage spaces/resources/reservation-types/site-config/themes, view the audit trail, + change user roles (`PATCH /api/admin/users/[id]`; never your own role). Seed superadmins: `sa1`/`sa2@lanube.local`.
-   - ⚠️ The `jwt()` callback takes only `{ token }` — it deliberately ignores NextAuth's `trigger`/`session` arguments and recomputes `signedUp`/`banned`/`role` from the DB on every call. That is what makes a client-side `useSession().update({...})` unable to forge session state; don't "fix" it by merging the client-supplied session.
+6. **Role-based (RBAC)** — ⚠️ **roles are DATA, not an enum** (milestone 9). A role is a row in `roles` (`prisma/models/roles.prisma`); `RegisteredUser.roleId` replaced the old `UserRole` enum column, and **NULL means the base tier**. The permission _catalog_ stays code-defined in `src/lib/rbac.ts` (`PERMISSIONS`, `hasPermission()`, `isAdminRole()`) because each string maps to a real call site; _which_ of those a role carries is `Role.permissions`, edited by a superadmin at `/admin/roles` (`roles:manage`). Full rationale: `docs/design/03-auth-and-permissions.md`.
+   - **Protected rows**: `Role.isSystem` blocks rename/delete/re-scope (403) — seeded on `USER` and `SUPERADMIN`. `Role.isSuperadmin` makes `hasPermission()` return true for _everything_, including permissions added in a later deploy; it can never be set from the UI (`createRole` hardcodes both flags false). Seeded roles: USER / ADMIN / SUPERADMIN / COMUNICADOR, with the exact permission sets they had pre-migration. COMUNICADOR is an admin-panel role scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts.
+   - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles` and `/admin/audit` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
+   - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) resolves fresh from the DB via `getPermissionSetForUser()` and returns 401/403. Authoritative — the JWT claim can lag by one request.
+   - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`); the admin/user layouts resolve the set and pass it into `UserProvider`, so client components call `hasPermission(user, "…")` on the user object directly (both `Session` and `CurrentUser` structurally _are_ a `PermissionSet`).
+   - **Role cache**: `src/lib/db/roles.ts` keeps a module-scoped snapshot (30 s TTL) invalidated by every role write. Call `invalidateRoleCache()` if you add a new write path. It is the seam for a future Vercel Global Config provider (see `docs/OPEN_QUESTIONS.md`).
+   - Assigning a role to a user is `users:roles:manage` (`PATCH /api/admin/users/[id]` takes `roleId`; never your own). _Defining_ what a role can do is `roles:manage` — a deliberate split. Seed superadmins: `sa1`/`sa2@lanube.local`.
+   - ⚠️ The `jwt()` callback takes only `{ token }` — it deliberately ignores NextAuth's `trigger`/`session` arguments and recomputes `signedUp`/`banned`/`role`/`permissions` from the DB on every call. That is what makes a client-side `useSession().update({...})` unable to forge session state; don't "fix" it by merging the client-supplied session.
 
 **Special Cases**:
 

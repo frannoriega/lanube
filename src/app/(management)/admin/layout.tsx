@@ -1,6 +1,7 @@
-import UserProvider from "@/components/providers/user";
+import UserProvider, { type CurrentUser } from "@/components/providers/user";
 import ManagementLayout from "@/components/templates/management";
 import { auth } from "@/lib/auth";
+import { getPermissionSetForUser } from "@/lib/db/roles";
 import { getRegisteredUserById } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
 import { isAdminRole } from "@/lib/rbac";
@@ -21,12 +22,19 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   if (!registeredUser) {
     redirect("/auth/signup");
   }
-  // Check the DB role (not the JWT) so a demotion applies immediately.
-  if (!isAdminRole(registeredUser.role)) {
+  // Resolve permissions from the DB (not the JWT) so a demotion — or an edit to the
+  // role itself — applies immediately rather than on the session's next refresh.
+  const resolved = await getPermissionSetForUser(registeredUser.id);
+  if (!isAdminRole(resolved?.permissions)) {
     redirect("/user/dashboard");
   }
   // serializeJson turns BigInt timestamps into numbers, matching the client type
-  const user = serializeJson(registeredUser) as unknown as RegisteredUser;
+  const user: CurrentUser = {
+    ...(serializeJson(registeredUser) as unknown as RegisteredUser),
+    role: resolved?.role?.name ?? null,
+    isSuperadmin: resolved?.permissions.isSuperadmin ?? false,
+    permissions: [...(resolved?.permissions.permissions ?? [])],
+  };
   return (
     <ThemeProvider
       attribute="class"

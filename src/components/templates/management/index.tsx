@@ -23,6 +23,7 @@ import {
   Newspaper,
   Settings,
   Shield,
+  ShieldCheck,
   Sparkles,
   Tags,
   User,
@@ -122,17 +123,58 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
   ],
 };
 
-/** Superadmin-only configuration section (requires the *:manage config permissions). */
+/**
+ * Superadmin-only configuration section. Each child declares the permission that gates its
+ * own middleware rule (ADMIN_PATH_PERMISSIONS in src/middleware.ts) — keep the two in sync.
+ * Children are filtered individually rather than the whole section being all-or-nothing,
+ * so a custom role granted just one config permission sees just that entry.
+ */
 const configNavigation: NavigationItem = {
   name: "Configuración",
   icon: Settings,
   children: [
-    { name: "Espacios", href: "/admin/spaces", icon: Building2 },
-    { name: "Recursos", href: "/admin/resources", icon: Wrench },
-    { name: "Tipos de reserva", href: "/admin/reservation-types", icon: Tags },
-    { name: "Contacto", href: "/admin/site", icon: Contact },
-    { name: "Temas del landing", href: "/admin/themes", icon: Sparkles },
-    { name: "Auditoría", href: "/admin/audit", icon: History },
+    {
+      name: "Espacios",
+      href: "/admin/spaces",
+      icon: Building2,
+      permission: "spaces:manage",
+    },
+    {
+      name: "Recursos",
+      href: "/admin/resources",
+      icon: Wrench,
+      permission: "resources:manage",
+    },
+    {
+      name: "Tipos de reserva",
+      href: "/admin/reservation-types",
+      icon: Tags,
+      permission: "reservation-types:manage",
+    },
+    {
+      name: "Contacto",
+      href: "/admin/site",
+      icon: Contact,
+      permission: "site-config:manage",
+    },
+    {
+      name: "Temas del landing",
+      href: "/admin/themes",
+      icon: Sparkles,
+      permission: "landing-themes:manage",
+    },
+    {
+      name: "Roles y permisos",
+      href: "/admin/roles",
+      icon: ShieldCheck,
+      permission: "roles:manage",
+    },
+    {
+      name: "Auditoría",
+      href: "/admin/audit",
+      icon: History,
+      permission: "audit:view",
+    },
   ],
 };
 
@@ -244,13 +286,19 @@ export default function ManagementLayout({
       return [panel, ...spaceItems, ...tail];
     }
     const visibleAdminItems = navigation.admin.filter((item) =>
-      hasPermission(user?.role, item.permission ?? "admin:access"),
+      hasPermission(user, item.permission ?? "admin:access"),
     );
-    const canConfigure = hasPermission(user?.role, "spaces:manage");
-    return canConfigure
-      ? [...visibleAdminItems, configNavigation]
+    const visibleConfigChildren = (configNavigation.children ?? []).filter(
+      (child) => hasPermission(user, child.permission ?? "admin:access"),
+    );
+    return visibleConfigChildren.length
+      ? [
+          ...visibleAdminItems,
+          { ...configNavigation, children: visibleConfigChildren },
+        ]
       : visibleAdminItems;
-  }, [userType, user?.role, spaceNav]);
+    // `permissions` is the resolved list the layout passed down; re-filter when it changes.
+  }, [userType, user, spaceNav]);
 
   if (!user) {
     return <ManagementLayoutSkeleton />;
@@ -330,7 +378,7 @@ export default function ManagementLayout({
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1" />
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                {isAdminRole(user.role) && (
+                {isAdminRole(user) && (
                   <nav
                     aria-label="Cambiar de vista"
                     className="flex items-center gap-0.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-slate-900/60 p-0.5 text-sm font-medium"

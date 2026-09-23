@@ -3,18 +3,13 @@ import { now, nowMs } from "@/lib/clock";
 import { DomainError } from "@/lib/errors";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
-import {
-  Ban,
-  Prisma,
-  RegisteredUser,
-  User,
-  UserRole,
-} from "@/generated/prisma/client";
+import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import bcrypt from "bcryptjs";
 import { startOfMonth } from "date-fns";
 
 type RegisteredUserListRow = RegisteredUser & {
+  roleRef: { id: string; name: string } | null;
   user: {
     email: string;
   };
@@ -48,7 +43,9 @@ export interface GetUsersResult {
     lastName: string;
     dni: string;
     institution: string | null;
-    role: string;
+    /** Display name of the assigned role, or null on the base tier. */
+    role: string | null;
+    roleId: string | null;
     createdAt: number;
     updatedAt: number;
     email: string;
@@ -84,14 +81,19 @@ export async function getRegisteredUserById(
   });
 }
 
-/** RBAC role assignment (superadmin-only; guarded at the API layer). */
+/**
+ * RBAC role assignment (needs `users:roles:manage`; guarded at the API layer).
+ * `roleId` is null for the base tier. The FK is Restrict-on-delete, so passing an id that
+ * no longer exists surfaces as a Prisma error rather than silently clearing the role.
+ */
 export async function updateUserRole(
   id: string,
-  role: UserRole,
-): Promise<RegisteredUser> {
+  roleId: string | null,
+): Promise<RegisteredUser & { roleRef: { id: string; name: string } | null }> {
   return prisma.registeredUser.update({
     where: { id },
-    data: { role },
+    data: { roleId },
+    include: { roleRef: { select: { id: true, name: true } } },
   });
 }
 
@@ -156,6 +158,9 @@ export async function getRegisteredUsers({
             email: true,
           },
         },
+        roleRef: {
+          select: { id: true, name: true },
+        },
         bans: {
           where: {
             OR: [{ endTime: null }, { endTime: { gt: BigInt(nowMs()) } }],
@@ -191,6 +196,18 @@ export async function getRegisteredUsers({
           ];
         }
 
+        // "role" is no longer a column on this table — sort by the joined role's name.
+        // Base-tier rows (roleId null) sort last regardless of direction in Postgres'
+        // default NULLS LAST for ASC; acceptable, and the UI labels them "Sin rol".
+        if (orderField === "role") {
+          return [
+            {
+              roleRef: { name: direction },
+            } as Prisma.RegisteredUserOrderByWithRelationInput,
+            { createdAt: direction },
+          ];
+        }
+
         return [
           {
             [orderField]: direction,
@@ -214,7 +231,8 @@ export async function getRegisteredUsers({
         lastName: user.lastName,
         dni: user.dni,
         institution: user.institution ?? null,
-        role: user.role,
+        role: user.roleRef?.name ?? null,
+        roleId: user.roleId,
         createdAt: Number(user.createdAt),
         updatedAt: Number(user.updatedAt),
         email: user.user.email,
@@ -316,6 +334,9 @@ export async function updateRegisteredUserProfileByEmail(
       user: {
         select: { email: true, displayEmail: true },
       },
+      roleRef: {
+        select: { id: true, name: true },
+      },
     },
   });
 
@@ -328,7 +349,7 @@ export async function updateRegisteredUserProfileByEmail(
     dni: updated.dni,
     institution: updated.institution ?? null,
     reasonToJoin: updated.reasonToJoin,
-    role: updated.role,
+    role: updated.roleRef?.name ?? null,
     createdAt: updated.createdAt,
     updatedAt: updated.updatedAt,
   };
