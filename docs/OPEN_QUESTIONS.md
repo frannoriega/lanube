@@ -69,38 +69,33 @@ Grouped by milestone. See `docs/milestones/` for the full context behind each.
 
 ## Milestone 10 — Frontend audit (error handling, a11y, security)
 
-See [`milestones/milestones-10-frontend-audit-hardening.md`](./milestones/milestones-10-frontend-audit-hardening.md)
-for the full findings behind each of these.
+The audit's five original questions are resolved — see the status block in
+[`milestones/milestones-10-frontend-audit-hardening.md`](./milestones/milestones-10-frontend-audit-hardening.md).
+What is still open is the work deliberately held back:
 
-- **Incidents: finish it or hide it?** (F1.6) `src/app/api/admin/incidents/route.ts`
-  is a 501 stub whose real implementation is commented out, while
-  `/admin/incidents` ships a complete UI in front of it — so every create and
-  update fails with a generic toast and the list is permanently empty. The
-  `Incident`/`IncidentUser` models exist. Finishing it is a feature and probably
-  its own milestone; leaving a dead page in the admin nav is the worst of the
-  three options. _Recommendation:_ hide the nav entry now, open a milestone to
-  build it properly.
-- **What is the keyboard path for booking?** (F2.5) The `WeekCalendar` creates
-  reservations via a mouse drag on a `<div>` — there is no keyboard route at
-  all. Drag-select cannot be made keyboard-operable in place. Options: (a) a
-  "Reservar" button opening the existing time-range dialog pre-filled, or
-  (b) focusable 15-minute cells with space-to-extend, closer to Google Calendar.
-  (a) is much cheaper and probably better on touch too. Needs a product call
-  before slice E can start.
-- **How visible a change is the `--muted-foreground` fix?** (F2.2, slice A)
-  Raising it to clear AA changes the look of ~220 secondary-text usages at once.
-  That is a deliberate visual change, not a neutral bug fix. Worth eyeballing a
-  preview before merging — is slightly heavier secondary text an acceptable
-  trade for AA?
-- **Is a preview-only rollout enough for the CSP nonce?** (F3.1, slice C) A
-  wrong nonce blanks the entire app and `npm run build` will not catch it. The
-  proposal is to ship to a preview deployment and walk every route group —
-  including `/forms/[slug]`, which the auth-gated routes never exercise —
-  before promoting. Confirm that's acceptable, or whether the nonce work should
-  wait entirely.
-- **Is `reservation-timeline-legacy.tsx` dead?** (F2.7) 53 hardcoded palette
-  literals in a file named "legacy". If nothing mounts it, slice D should delete
-  it rather than fix it.
+- **The CSP nonce (F3.1).** `'unsafe-inline'` is still in `script-src`, which is the
+  single biggest remaining gap in the header: it permits exactly the injected script the
+  policy exists to stop. Everything else in slice C shipped. Removing it needs a
+  middleware-generated nonce, and a wrong nonce blanks the whole app with `npm run build`
+  passing — so it wants a preview deployment walked route group by route group,
+  `/forms/[slug]` included (the auth-gated routes never exercise it). Open: schedule that,
+  or accept `'unsafe-inline'` as the standing position.
+- **Dark mode for the auth pages.** `signin` / `reset` / `signup` are wrapped in
+  `ThemeProvider` but contain not one `dark:` class (~60 palette literals), so in dark
+  mode they render light-theme colors. Slice D's mechanical sweep is the wrong tool here —
+  these are full-bleed branded screens, so it is a design pass. Open: do it, or decide the
+  auth screens are deliberately light-only and drop the `ThemeProvider`.
+- **Did the `--muted-foreground` change land well?** It moved `#888282` → `#666666`,
+  affecting ~220 secondary-text usages at once to clear AA. Measured and now asserted in
+  `src/lib/contrast.test.ts`, but it is a deliberate visual change and nobody has looked
+  at it in a browser yet.
+- **Is the per-day "Reservar" button the right keyboard path?** Built as option (a), the
+  audit's own recommendation, because the alternative was leaving a WCAG Level A failure
+  with no workaround. It adds a visible control to every day column — worth confirming it
+  reads well before merge, and whether it should also appear on touch-width layouts.
+- **Finish the Incidents feature.** Now honest about being unavailable rather than faking
+  a working screen, and unreachable from the nav. The `Incident`/`IncidentUser` models and
+  a commented-out implementation exist. Its own milestone when it is wanted.
 
 ## Housekeeping
 
