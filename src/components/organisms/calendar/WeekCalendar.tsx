@@ -687,7 +687,7 @@ export function WeekCalendar({
                   key={idx}
                   className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
                     isSameDay(day, now())
-                      ? "bg-la-nube-primary/10 text-la-nube-primary font-bold"
+                      ? "bg-la-nube-primary/10 text-la-nube-selected dark:text-la-nube-secondary font-bold"
                       : "text-gray-700 dark:text-gray-300"
                   }`}
                 >

@@ -62,7 +62,7 @@ export default function HeroSection({
         >
           <div className="flex flex-col items-center justify-center gap-8 flex-1">
             <div className="flex flex-col items-center justify-center gap-3">
-              <p className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-la-nube-primary dark:text-la-nube-secondary text-center text-balance">
+              <p className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-la-nube-selected dark:text-la-nube-secondary text-center text-balance">
                 {eyebrowOverride || "Una iniciativa de Concepción del Uruguay"}
               </p>
               <div className="lg:text-6xl md:text-5xl text-3xl font-bold text-center">

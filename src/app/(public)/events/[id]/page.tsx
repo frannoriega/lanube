@@ -85,7 +85,7 @@ export default async function EventDetailPage({
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     {isNext && (
-                      <span className="rounded-full bg-la-nube-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-la-nube-primary">
+                      <span className="rounded-full bg-la-nube-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-la-nube-selected dark:text-la-nube-secondary">
                         Próxima
                       </span>
                     )}

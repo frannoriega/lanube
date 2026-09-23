@@ -110,13 +110,20 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: #888282;
+  /* Milestone 10 slice A: was #888282 — 3.78:1 on --card and only 3.06:1 on
+     --background, failing AA for the ~220 places secondary text is used.
+     #666666 measures 5.74:1 on white and 4.66:1 on --background. */
+  --muted-foreground: #666666;
   --accent: #eeeeee;
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #c8f1fc;
+  /* Was oklch(0.922) — 1.26:1 against --card, i.e. inputs read as borderless.
+     oklch(0.66) measures 3.11:1, clearing WCAG 1.4.11 for UI boundaries. */
+  --border: oklch(0.66 0 0);
+  --input: oklch(0.66 0 0);
+  /* Was #c8f1fc — 1.20:1 on white: an invisible focus ring. Re-pointed at
+     la-nube-selected (6.38:1 on --card, 5.17:1 on --background). */
+  --ring: #2a6297;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -149,9 +156,11 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Was 10%/15% white — 1.3:1 over --card. 35% measures 3.22:1. */
+  --border: oklch(1 0 0 / 35%);
+  --input: oklch(1 0 0 / 35%);
+  /* la-nube-secondary: 11.96:1 over --card, 11.90:1 over --background. */
+  --ring: #75e3f1;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -170,7 +179,8 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    /* Full-strength ring: the /50 halved the token's measured contrast. */
+    @apply border-border outline-ring;
   }
 
   html,

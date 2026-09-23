@@ -311,11 +311,15 @@ export default function AboutPage() {
               </p>
               <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
                 El primer trazo nació cuando el{" "}
-                <b className="font-semibold text-la-nube-primary">Estado</b>{" "}
+                <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
+                  Estado
+                </b>{" "}
                 dijo «hagámoslo posible». El segundo, cuando la{" "}
-                <b className="font-semibold text-la-nube-primary">Academia</b>{" "}
+                <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
+                  Academia
+                </b>{" "}
                 dijo «hagámoslo saber». El tercero, cuando la{" "}
-                <b className="font-semibold text-la-nube-primary">
+                <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
                   Industria y el emprendimiento
                 </b>{" "}
                 dijeron «hagámoslo realidad».

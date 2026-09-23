@@ -301,7 +301,7 @@ export default function AdminUsersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="h-full flex flex-row items-end">
-            <p className="text-3xl font-semibold text-la-nube-primary">
+            <p className="text-3xl font-semibold text-la-nube-selected dark:text-la-nube-secondary">
               {summary.totalUsers}
             </p>
           </CardContent>
