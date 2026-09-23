@@ -34,7 +34,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import {
   useCallback,
@@ -459,6 +459,29 @@ export function WeekCalendar({
     setDragCurrent(null);
   }, [isDragging, dragStart, dragCurrent, occurrences, userId]);
 
+  /**
+   * Keyboard/touch path into the booking dialog (F2.5a).
+   *
+   * Creating a reservation was drag-only: the day column is a <div> with onMouseDown /
+   * onMouseMove and no key handler, so keyboard users had NO way to book at all
+   * (WCAG 2.1.1, Level A). Drag-select cannot be made keyboard-operable in place, so this
+   * is the equivalent non-drag route the audit recommended as option (a): a real button
+   * per day that opens the very same dialog with a default one-hour slot. The dialog's
+   * start/end Selects then do the rest, and they were already keyboard-operable.
+   *
+   * Deliberately not option (b) (focusable 15-minute cells with space-to-extend): far more
+   * code, and this is also the better touch path. Flagged in the milestone doc as the
+   * cheaper of the two options pending a product call.
+   */
+  const openBookingForDay = useCallback((day: Date) => {
+    const startMinutes = BUSINESS_HOURS.START * 60;
+    const endMinutes = startMinutes + 60;
+    setSelection({ day, startMinutes, endMinutes });
+    setStartTime(minutesToTime(startMinutes));
+    setEndTime(minutesToTime(endMinutes));
+    setDialogOpen(true);
+  }, []);
+
   // Calculate drag selection style
   const getDragSelectionStyle = useCallback(() => {
     if (!isDragging || !dragStart || !dragCurrent) return null;
@@ -682,21 +705,43 @@ export function WeekCalendar({
           <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700">
             <div className="w-14 flex-shrink-0"></div>
             <div className="flex-1 grid grid-cols-5 gap-0">
-              {weekDays.map((day, idx) => (
-                <div
-                  key={idx}
-                  className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
-                    isSameDay(day, now())
-                      ? "bg-la-nube-primary/10 text-la-nube-selected dark:text-la-nube-secondary font-bold"
-                      : "text-gray-700 dark:text-gray-300"
-                  }`}
-                >
-                  <div className="text-xs font-medium">
-                    {format(day, "EEE", { locale: es }).toUpperCase()}
+              {weekDays.map((day, idx) => {
+                const bookable = !isBefore(
+                  startOfDay(day),
+                  startOfDay(addDays(now(), 1)),
+                );
+                return (
+                  <div
+                    key={idx}
+                    className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
+                      isSameDay(day, now())
+                        ? "bg-la-nube-primary/10 text-la-nube-selected dark:text-la-nube-secondary font-bold"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    <div className="text-xs font-medium">
+                      {format(day, "EEE", { locale: es }).toUpperCase()}
+                    </div>
+                    <div className="text-xl font-bold">{format(day, "d")}</div>
+                    {bookable && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 h-7 w-full px-1 text-xs"
+                        onClick={() => openBookingForDay(day)}
+                      >
+                        <Plus className="h-3 w-3" aria-hidden="true" />
+                        <span className="sr-only sm:not-sr-only">Reservar</span>
+                        <span className="sr-only">
+                          {" "}
+                          el {format(day, "EEEE d 'de' MMMM", { locale: es })}
+                        </span>
+                      </Button>
+                    )}
                   </div>
-                  <div className="text-xl font-bold">{format(day, "d")}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -826,16 +871,48 @@ export function WeekCalendar({
                       const isRejected = occ.status === "REJECTED";
                       const isCancelled = occ.status === "CANCELLED";
 
+                      // F2.5(c): every one of these carries `text-white`, and the old
+                      // palette failed AA under it — bg-yellow-500 measured 1.92:1, the
+                      // worst pair in the codebase. These are the same hues one step
+                      // darker, all ≥ 4.8:1 on white.
                       const bgColor =
                         isOwnReservation && isPending
-                          ? "bg-yellow-500"
+                          ? "bg-amber-700" // was bg-yellow-500 (1.92:1) → 5.02:1
                           : isOwnReservation && isRejected
-                            ? "bg-red-600"
+                            ? "bg-red-600" // 4.83:1, already passing
                             : isOwnReservation && isCancelled
-                              ? "bg-gray-500"
+                              ? "bg-gray-500" // 4.83:1, already passing
                               : isOwnReservation
-                                ? "bg-green-600"
-                                : "bg-la-nube-primary";
+                                ? "bg-green-700" // was bg-green-600 (3.30:1) → 5.02:1
+                                : "bg-la-nube-selected"; // was primary (3.77:1) → 6.38:1
+
+                      const statusLabel = isPending
+                        ? "Pendiente"
+                        : isRejected
+                          ? "Rechazada"
+                          : isCancelled
+                            ? "Cancelada"
+                            : isOwnReservation
+                              ? "Aprobada"
+                              : null;
+                      const startLabel = format(
+                        fromUtcMs(occ.occurrenceStartTime),
+                        "HH:mm",
+                      );
+                      const endLabel = format(
+                        fromUtcMs(occ.occurrenceEndTime),
+                        "HH:mm",
+                      );
+                      // The title tooltip was the only place this information existed, and
+                      // it reaches neither keyboard nor touch nor screen readers.
+                      const accessibleLabel = [
+                        occ.reason,
+                        `${startLabel} a ${endLabel}`,
+                        isOwnReservation ? "Tu reserva" : "Reservado",
+                        statusLabel,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
 
                       return (
                         <div
@@ -843,35 +920,44 @@ export function WeekCalendar({
                           className="absolute w-full px-1"
                           style={{ top: style.top, height: style.height }}
                         >
-                          <div
-                            className={`h-full rounded ${bgColor} text-white text-xs p-1 overflow-hidden cursor-pointer shadow-sm`}
-                            title={`${occ.reason} ${isOwnReservation ? "(Tu reserva)" : ""} ${isPending ? "(Pendiente)" : isRejected ? "(Rechazada)" : isCancelled ? "(Cancelada)" : ""}`}
+                          {/* A real <button>: focusable, Enter/Space activated and
+                              announced as a control, instead of a div+onClick that
+                              keyboard users could not reach at all (F2.5b). The detail
+                              dialog it opens is where cancelling lives. */}
+                          <button
+                            type="button"
+                            className={`h-full w-full rounded ${bgColor} cursor-pointer overflow-hidden p-1 text-left text-xs text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
+                            title={accessibleLabel}
+                            aria-label={accessibleLabel}
                             onClick={() => setSelectedOccurrence(occ)}
                           >
-                            <div className="font-semibold truncate">
+                            <div className="truncate font-semibold">
                               {occ.reason}
+                              {/* Glyphs stay as a redundant non-color cue, but they are
+                                  decorative now: the status is in the aria-label, so a
+                                  screen reader no longer reads "check mark button". */}
                               {isOwnReservation &&
                                 !isRejected &&
-                                !isCancelled && <span className="ml-1">✓</span>}
+                                !isCancelled && (
+                                  <span className="ml-1" aria-hidden="true">
+                                    ✓
+                                  </span>
+                                )}
                               {isOwnReservation && isRejected && (
-                                <span className="ml-1">✗</span>
+                                <span className="ml-1" aria-hidden="true">
+                                  ✗
+                                </span>
                               )}
                             </div>
-                            <div className="text-[10px] opacity-90">
-                              {format(
-                                fromUtcMs(occ.occurrenceStartTime),
-                                "HH:mm",
-                              )}{" "}
-                              -{" "}
-                              {format(
-                                fromUtcMs(occ.occurrenceEndTime),
-                                "HH:mm",
-                              )}
+                            <div className="text-[10px]">
+                              {startLabel} - {endLabel}
                               {isPending && isOwnReservation && (
-                                <span className="ml-1">⏳</span>
+                                <span className="ml-1" aria-hidden="true">
+                                  ⏳
+                                </span>
                               )}
                             </div>
-                          </div>
+                          </button>
                         </div>
                       );
                     })}
