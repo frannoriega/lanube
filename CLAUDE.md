@@ -77,8 +77,9 @@ src/
 │   │   │   ├── reservations/     # Admin reservation management
 │   │   │   ├── users/            # User list, search, ban management
 │   │   │   ├── checkin/          # Check-in/out system
-│   │   │   ├── incidents/        # Incident tracking — ⚠️ UI is live but its API is a
-│   │   │   │                     #   501 stub; see milestones-10 F1.6
+│   │   │   ├── incidents/        # ⚠️ NOT FUNCTIONAL: the API is a 501 stub, so the
+│   │   │   │                     #   page shows an "unavailable" notice. Not in the
+│   │   │   │                     #   nav — URL-only. See milestones-10 F1.6
 │   │   │   ├── events/           # Event CRUD (+ participants, sessions)
 │   │   │   ├── forms/            # Reusable form templates
 │   │   │   ├── news/             # Noticias authoring/approval (COMUNICADOR)
@@ -498,29 +499,44 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
 - **Never call `fetch` directly from a component.** Use `apiGet` / `apiSend`
   (`src/lib/api/client.ts`) or the `useApi` hook (`src/hooks/use-api.ts`). They
   carry `ApiError` with the server's `message`, dedupe concurrent GETs, and give
-  you `apiErrorMessage(err, fallback)` for the toast. The handful of raw
-  `fetch` call sites that remain are tracked as findings in
-  [`docs/milestones/milestones-10-frontend-audit-hardening.md`](docs/milestones/milestones-10-frontend-audit-hardening.md) (F1.4) — don't add more.
+  you `apiErrorMessage(err, fallback)` for the toast. A few raw `fetch` call sites
+  remain (the auth forms and the public form, which need captcha/token handling);
+  they all now have a `catch` — don't add more without one.
 - **Always handle `useApi`'s `error`.** Rendering only `data`/`firstTime` makes
-  a failed request look like an empty result set — see milestone-10 F1.2.
+  a failed request look like an empty result set — the empty state then reads as
+  "the data is gone." Use the `LoadError` molecule
+  (`src/components/molecules/load-error.tsx`) for an inline message + retry;
+  every current caller does (milestone-10 F1.2).
 - **API routes must use the envelope** (`apiSuccess` / `apiError` / `apiCatch`
   from `src/lib/api/response.ts`) so failures are logged server-side and the
-  client never sees internal error text. ~27 routes still hand-roll
-  `NextResponse.json`; migrate rather than copy them (milestone-10 F1.5).
+  client never sees internal error text. Every route now has a `try`/`catch`;
+  ~11 still hand-roll `NextResponse.json` for their _success_ shape — migrate
+  rather than copy them.
+- **Error boundaries exist per route group** (`src/app/error.tsx` and one each in
+  `(public)/`, `(management)/user/`, `(management)/admin/`, `forms/`, plus
+  `global-error.tsx` for a root-layout crash). They share
+  `ErrorBoundaryScreen`; note it never renders `error.message`, only the `digest`.
 
 ### 9. Styling & accessibility
 
 - **Use the design tokens, not raw palette classes.** `bg-*`/`text-*` literals
-  like `bg-green-100` need a `dark:` sibling or they break dark mode; there are
-  786 such literals today (milestone-10 F2.7). Prefer
-  `--background`/`--card`/`--muted-foreground`/`--border` and friends.
+  like `bg-green-100` need a `dark:` sibling or they break dark mode. Prefer
+  `--background`/`--card`/`--muted-foreground`/`--border` and friends. For status
+  chips use `ToneBadge` / `StatusBadge` (`src/components/atoms/status-badge.tsx`),
+  which defines every tone for both themes in one place — don't write a new
+  status→color `switch`.
+- **⚠️ The token contrast ratios are asserted by a test.** `src/lib/contrast.test.ts`
+  parses `globals.css` and fails if `--muted-foreground`, `--foreground`, `--ring`,
+  `--border` or `--input` drop below AA. If you change a token and that test fails,
+  the token is wrong — don't relax the test. (This exists because
+  `--muted-foreground` had silently drifted to 3.06:1 across ~220 usages.)
 - **Brand-colored text uses `text-la-nube-selected dark:text-la-nube-secondary`.**
-  `text-la-nube-primary` measures 3.06:1 on the light background and fails AA
-  (milestone-10 F2.3). `la-nube-primary` is fine for borders, icons, spinners
-  and gradient stops.
-- **Known token-level contrast failures are documented, not fixed** — the focus
-  ring (1.01:1 in light mode) and `--muted-foreground` (3.06:1) are milestone-10
-  slice A. Don't build new UI that depends on them reading clearly.
+  `text-la-nube-primary` measures 3.06:1 on the light background and fails AA at
+  body size. It is fine for borders, icons, spinners, gradient stops, and large
+  bold text (≥18.66px, where 3:1 is the AA threshold).
+- **Remaining gap: the auth pages have no `dark:` classes at all**
+  (`signin`/`reset`/`signup`), so they render light-theme colors in dark mode.
+  Tracked in `docs/OPEN_QUESTIONS.md` as a design pass, not a mechanical sweep.
 
 ## Testing & Seeding
 

@@ -1,10 +1,69 @@
 # Milestone 10 — Frontend audit: error handling, accessibility/contrast, security hardening
 
-> **Status: audit complete, nothing implemented yet.** This document is the
-> record of a full frontend audit run on **2026-09-23** against branch
-> `milestone-5` (at `34a91be`). It lists every finding with the evidence that
-> produced it, the reasoning behind each severity call, and the decisions that
-> still need a human. Fixes are grouped into slices at the bottom.
+> **Status (2026-09-23): all six slices implemented** on branch `milestone-10`
+> (branched from `milestone-9`, itself from `preview`), except the two items
+> explicitly held back below. This document remains the record of the audit run on
+> **2026-09-23** against branch `milestone-5` (at `34a91be`) — findings, evidence and
+> reasoning are preserved as written; the implementation notes are additive.
+>
+> | Slice | Commit    | State                                                    |
+> | ----- | --------- | -------------------------------------------------------- |
+> | A     | `22c640e` | Done, + a regression test that reads the tokens from CSS |
+> | B     | `fb522d1` | Done                                                     |
+> | C     | `bc84ce7` | Done **except the CSP nonce** (step 5) — see below       |
+> | D     | `e3a2728` | Done; auth pages deferred as a design pass — see below   |
+> | E     | `9364b87` | Done, including the keyboard booking path                |
+> | F     | `8e29d77` | Done                                                     |
+>
+> Verified by `npm run build` (all 76 routes compile), `npx tsc --noEmit`, `eslint`,
+> and 178 passing tests; the admin surfaces and public pages were smoke-tested against
+> the running dev stack.
+>
+> ### Open questions, as resolved
+>
+> 1. **Incidents — finish or hide? (F1.6)** Neither, quite: the nav entry turned out to
+>    already be gone — it lived only in `organisms/layouts/admin-layout.tsx`, which has
+>    **zero imports** anywhere (the live shell is `templates/management`). That file and
+>    its sibling `user-layout.tsx` were deleted as dead code. `/admin/incidents` is
+>    reachable only by URL, and now says plainly that the service does not exist yet
+>    instead of rendering a working-looking screen over a 501. Finishing it stays its own
+>    milestone.
+> 2. **Calendar keyboard booking (F2.5 step 3).** Built as **option (a)** — the doc's own
+>    recommendation ("far cheaper and probably better for touch too"): a "Reservar" button
+>    per day column opening the existing dialog with a default one-hour slot. The dialog
+>    was already keyboard-operable; only _opening_ it required a mouse. This was a
+>    Level A failure with no workaround, so shipping the recommended option beat leaving
+>    it open — but it is a visible UI addition and worth a look before merge.
+> 3. **CSP nonce (slice C step 5) — NOT DONE, deliberately.** Everything else in slice C
+>    shipped and is verified live. `'unsafe-inline'` remains in `script-src`; removing it
+>    needs a middleware-generated nonce, and the audit's own reasoning (a wrong nonce
+>    blanks the app, and `npm run build` will not catch it) argues for shipping it alone
+>    after a preview walkthrough of every route group. It could not be verified that way
+>    from here.
+> 4. **How far does the token change reach (slice A)?** `--muted-foreground` went
+>    `#888282` → `#666666` (3.78 → 5.74:1 on `--card`; 3.06 → 4.66:1 on `--background`).
+>    That is a deliberate visual change across ~220 usages and still wants an eyeball
+>    before merge; the measured ratios are now asserted in `src/lib/contrast.test.ts`.
+> 5. **Is `reservation-timeline-legacy.tsx` dead?** Yes — zero imports, verified. Deleted
+>    rather than fixed, taking 53 palette literals with it.
+>
+> ### Deliberately not done
+>
+> - **The CSP nonce** (above).
+> - **The auth pages' dark mode.** `signin` / `reset` / `signup` (~60 literals) are
+>   wrapped in `ThemeProvider` but contain **not one** `dark:` class, so in dark mode they
+>   render light-theme colors throughout. That is a design pass, not the mechanical sweep
+>   slice D performed on the admin surfaces, and it is tracked in `OPEN_QUESTIONS.md`.
+> - **The remaining 11 hand-rolled routes.** The 14 with _no_ `try`/`catch` were the real
+>   finding and are fixed; the rest already log and differ only in response shape.
+>
+> ### A wrong turn worth recording
+>
+> The first pass at slice D's literal sweep matched `hover:bg-gray-50` and appended a
+> **resting-state** `dark:bg-gray-900` to sidebar items that already carried
+> `dark:hover:bg-gray-700` — silently changing their default background. It was reverted
+> and redone under a strict rule: plain string `className`s only, and only utilities with
+> no variant prefix. Anyone extending the sweep to the auth pages should keep that rule.
 >
 > Per `docs/milestones/README.md`, a milestone is "one coherent piece of
 > user-facing capability." This one is deliberately an exception: it is a

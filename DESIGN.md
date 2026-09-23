@@ -123,17 +123,18 @@ Typography is Roboto across the board — a humanist geometric sans-serif that c
 
 This document is the **design intent**; a frontend audit on 2026-09-23 found
 that several of its color prescriptions cannot meet WCAG 2.1 AA as written.
-Those points are marked inline below with ⚠️ and are **not** rules to follow —
-they are defects pending a decision in
-[`docs/milestones/milestones-10-frontend-audit-hardening.md`](docs/milestones/milestones-10-frontend-audit-hardening.md).
+**Most of these were fixed in milestone-10 slice A (2026-09-23)** and the ratios are
+now asserted by `src/lib/contrast.test.ts`, which parses `globals.css` and fails the
+build if a token regresses. The table records what changed; the ⚠️ marks that remain
+inline below are the ones still open.
 
-| Item                                                   | Measured   | Needs          | Where                          |
-| ------------------------------------------------------ | ---------- | -------------- | ------------------------------ |
-| Focus ring (Ice Haze, `/50` opacity) vs. cloud-surface | **1.01:1** | 3:1            | §2 Ice Haze, §5 Buttons/Inputs |
-| Muted `#888282` vs. cloud-surface                      | **3.06:1** | 4.5:1 for body | §2 Neutral, The Muted Floor    |
-| Hairline border vs. card-white                         | **1.26:1** | 3:1            | §5 Inputs                      |
-| Gradient tail (Signal Cyan) vs. cloud-surface          | **1.22:1** | 3:1 (large)    | §3 Gradient Legibility Rule    |
-| `text-la-nube-primary` as body text                    | **3.06:1** | 4.5:1          | §2 Observatory Blue            |
+| Item                                          | Was        | Now        | Needs          | State                                     |
+| --------------------------------------------- | ---------- | ---------- | -------------- | ----------------------------------------- |
+| Focus ring vs. cloud-surface                  | **1.01:1** | **5.17:1** | 3:1            | ✅ Fixed — now Deep Sky, `/50` removed    |
+| Muted secondary text vs. cloud-surface        | **3.06:1** | **4.66:1** | 4.5:1 for body | ✅ Fixed — `#888282` → `#666666`          |
+| Hairline border vs. card-white                | **1.26:1** | **3.11:1** | 3:1            | ✅ Fixed — `oklch(0.922)` → `oklch(0.66)` |
+| Gradient tail (Signal Cyan) vs. cloud-surface | **1.22:1** | 1.22:1     | 3:1 (large)    | ⚠️ Open — decorative, see §3              |
+| `text-la-nube-primary` as body text           | **3.06:1** | 3.06:1     | 4.5:1          | ✅ Rule enforced — call sites migrated    |
 
 Dark mode is broadly healthier than light mode — the failures above are
 light-mode-specific, because most of them originate in hand-overridden light
@@ -159,7 +160,7 @@ A two-hue palette anchored in blue and cyan — sky-inspired, community-owned. T
 - **Signal Cyan** (`#75e3f1`): The broadcast frequency. Used as the gradient target in display headings, section kickers in dark mode, and as a secondary accent in cards with themed backgrounds. Reads as technical and energetic — the cyan of screens and signals, not of tropical water.
 - **Ice Haze** (`#c8f1fc`): The washed-out cousin of signal cyan. Used for section background tints and subtle hover surfaces in public-facing areas. Quiet enough to be structural, blue enough to be on-brand.
 
-  ⚠️ **Ice Haze is also currently the focus-ring color, and that is a documented defect, not a rule to follow.** It measures **1.02:1** against cloud-surface and **1.20:1** against card-white — and the shipped ring applies it at 50% opacity (`focus-visible:ring-ring/50`), landing at **1.01:1**. WCAG SC 1.4.11 requires 3:1 for a focus indicator, so keyboard focus is effectively invisible app-wide in light mode. The property that makes Ice Haze good as a background tint — that it barely separates from the page — is exactly what disqualifies it as an attention signal. See milestone-10 F2.1 / slice A; **do not introduce new focus styling based on it.**
+  **Ice Haze is no longer the focus-ring color** (fixed in milestone-10 slice A). It had measured 1.02:1 against cloud-surface and, applied at 50% opacity via `focus-visible:ring-ring/50`, landed at **1.01:1** — keyboard focus effectively invisible app-wide in light mode. `--ring` is now Deep Sky (`#2a6297`, 5.17:1 on cloud-surface / 6.38:1 on card-white), Signal Cyan in dark mode (11.96:1), and the `/50` modifier was removed from all 12 Shadcn primitives so the token's measured ratio is what actually renders. The property that makes Ice Haze good as a background tint — that it barely separates from the page — is exactly what disqualified it as an attention signal; **keep using it as a tint, never as a focus indicator.**
 
 ### Neutral
 
@@ -167,7 +168,7 @@ A two-hue palette anchored in blue and cyan — sky-inspired, community-owned. T
 - **Ink** (`#303030`): Button primary background in light mode, highest-contrast text contexts. Slightly warmer than pure black — readable without clinical harshness.
 - **Carbon** (`#424242`): Body text, form labels, default foreground. **10.1:1** against card-white and **8.2:1** against cloud-surface — comfortably AA/AAA; the everyday reading color. (An earlier revision of this line claimed 4.5:1; that was understated. Measured 2026-09-23.)
 - **Whisper** (`#f7f7f7`): Muted surface backgrounds — disabled states, secondary panels, sidebar fills. Distinguishable from card-white when adjacent.
-- **Muted** (`#888282`): Secondary text, timestamps, form helper text, empty-state copy. **3.06:1 against cloud-surface, 3.78:1 against card-white** — large text only. Do not use for body text below 18px. ⚠️ **The codebase violates this rule ~220 times** (`text-muted-foreground` is the default class for helper text, timestamps and empty-state copy at normal size). Either the token darkens or the rule is unenforceable — see milestone-10 F2.2 / slice A.
+- **Muted** (`#666666`): Secondary text, timestamps, form helper text, empty-state copy. **4.66:1 against cloud-surface, 5.74:1 against card-white** — clears AA for body text at any size. It was `#888282` (3.06:1 / 3.78:1), which the codebase violated ~220 times via `text-muted-foreground`; milestone-10 slice A darkened the token rather than leave an unenforceable rule. That is a deliberate visual change across every one of those usages.
 - **Hairline** (`#eaeaea`): Borders, dividers, card outlines. Invisible at rest; structural without visual weight.
 - **Card White** (`#ffffff`): Card backgrounds in light mode. The explicit white against cloud-surface creates the surface hierarchy.
 - **Night Station** (`#1c2238`): Page background in dark mode. Deep navy-blue, not pure black — the OKLCH implementation (`oklch(20.8% 0.042 265.755)`) pulls toward indigo for a sky-at-night reading.
@@ -178,7 +179,7 @@ A two-hue palette anchored in blue and cyan — sky-inspired, community-owned. T
 
 **The Signal Cyan Rule.** Signal Cyan is never used alone; it always appears in relation to Observatory Blue — as a gradient partner, a dark-mode counterpart, or a supporting accent. Isolated Signal Cyan reads as a different product.
 
-**The Muted Floor.** `#888282` is the floor for secondary text. Nothing dimmer on body copy. For non-text elements (borders, separators), hairline is the floor. ⚠️ The floor itself is currently below AA (3.06:1) and is applied to normal-size body copy ~220 times via `text-muted-foreground`, so this rule is both violated in practice _and_ insufficient as written — raising the floor is milestone-10 slice A, and it is a deliberate visual change worth reviewing before merge.
+**The Muted Floor.** `#666666` is the floor for secondary text (4.66:1 on cloud-surface). Nothing dimmer on body copy. For non-text elements (borders, separators), hairline is the floor — itself raised to 3.11:1 against card-white. Both floors are now asserted in `src/lib/contrast.test.ts`: if you change a token and that test fails, the token is wrong.
 
 ## 3. Typography: Roboto as Community + System
 
@@ -229,7 +230,7 @@ La Nube is flat by default. Surfaces rest at rest. Shadow is a response to state
 Character: Confident and direct. The default button is dark charcoal with white text — decisive, not branded. The brand blue appears on hover, rewarding the interaction.
 
 - **Shape:** Gently rounded (8px radius, `rounded-md`)
-- **Primary (default):** Ink (`#303030`) background, white text; `px-4 py-2 h-9`. On hover: transitions to Observatory Blue (`#4e87c2`). On focus-visible: 3px ring — ⚠️ currently Ice Haze at 1.01:1, i.e. invisible in light mode; pending a contrast-safe ring color (milestone-10 slice A).
+- **Primary (default):** Ink (`#303030`) background, white text; `px-4 py-2 h-9`. On hover: transitions to Observatory Blue (`#4e87c2`). On focus-visible: 3px ring in Deep Sky at full strength (5.17:1) — the `/50` opacity modifier was removed in milestone-10 slice A.
 - **Outline:** Transparent background, hairline border, carbon text. On hover: Whisper background.
 - **Ghost:** No border, no background. On hover: Hairline background fill. Used for secondary actions in dense admin tables.
 - **Destructive:** Red-tinted background (Shadcn destructive token); white text. Reserved for irreversible actions.
@@ -242,7 +243,7 @@ Character: Small, contained, read-only status signals or type labels.
 - **Default:** Ink background, white text, 8px radius; `px-2 py-0.5 text-xs`.
 - **Outline:** Hairline border, carbon text, transparent background. For read-only metadata (event type tags, resource type labels).
 - **Secondary:** Whisper background, carbon text. For lower-hierarchy status indicators.
-- **Status badges:** ⚠️ not currently on this system. Four independent status→color maps exist (`atoms/status-badge.tsx`, `admin/users/columns.tsx`, `admin/incidents/page.tsx`, `admin/checkin/page.tsx`), all hardcoding a light-only `bg-*-100 text-*-800` pair with **no `dark:` variant** — so in dark mode they render as bright pastel chips on a near-black card. Their internal contrast is fine (~6:1); the defect is that they are theme-blind and duplicated. Consolidation into one theme-aware variant is milestone-10 F2.6 / slice D.
+- **Status badges:** one system, in `atoms/status-badge.tsx`. `ToneBadge` takes a `tone` (`success` / `danger` / `warning` / `info` / `neutral`), each defined once for both themes; `StatusBadge`, `UserStatusBadge` and `IncidentStatusBadge` map a domain status onto a tone. **Never write a new status→color `switch`** — that is exactly what milestone-10 slice D consolidated away (four duplicated, light-only maps that rendered as bright pastel chips on a near-black card in dark mode).
 
 ### Cards
 
@@ -261,8 +262,8 @@ Character: White surfaces that float cleanly off the cloud-surface background. N
 Character: Clean stroke fields — no filled backgrounds, no floating labels. The focus state is the brand speaking.
 
 - **Style:** Transparent background, hairline border (`border border-input`), 8px radius; `h-9 px-3 text-sm`. `shadow-xs` at rest.
-- **Focus:** 3px ring with border color transitioning to the ring color. The focus state is the one place where the system accent visually activates. ⚠️ The ring is Ice Haze today (**1.01:1** with the shipped `/50` opacity — see the Ice Haze entry above); it needs a color that clears 3:1 against both cloud-surface and card-white. Milestone-10 slice A.
-- **Border contrast:** Hairline (`#eaeaea`) against card-white measures **1.26:1**, under the 3:1 that SC 1.4.11 requires for a control's visual boundary — inputs currently read as borderless. Same slice.
+- **Focus:** 3px ring at full strength with border color transitioning to the ring color. The focus state is the one place where the system accent visually activates. The ring is Deep Sky in light mode (5.17:1 on cloud-surface, 6.38:1 on card-white) and Signal Cyan in dark (11.96:1). **Do not reintroduce an opacity modifier on it** — the shipped `/50` was what dropped the old ring to 1.01:1.
+- **Border contrast:** Hairline against card-white measures **3.11:1**, clearing the 3:1 SC 1.4.11 requires for a control's visual boundary. It was 1.26:1 (inputs read as borderless) until milestone-10 slice A.
 - **Error:** Destructive-red ring and border; `aria-invalid` attribute drives the visual state.
 - **Disabled:** 50% opacity, `cursor-not-allowed`.
 
