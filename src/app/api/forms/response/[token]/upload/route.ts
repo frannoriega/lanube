@@ -1,3 +1,4 @@
+import { apiCatch } from "@/lib/api/response";
 import { getParticipantByToken } from "@/lib/db/participants";
 import { handleParticipantUpload } from "@/lib/events/participant-upload";
 import { ParticipantStatus } from "@/types/prisma";
@@ -8,25 +9,29 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = await params;
-  const participant = await getParticipantByToken(token);
-  if (!participant) {
-    return NextResponse.json(
-      { message: "Inscripción no encontrada" },
-      { status: 404 },
-    );
+  try {
+    const { token } = await params;
+    const participant = await getParticipantByToken(token);
+    if (!participant) {
+      return NextResponse.json(
+        { message: "Inscripción no encontrada" },
+        { status: 404 },
+      );
+    }
+    if (
+      participant.status === ParticipantStatus.CANCELLED ||
+      participant.status === ParticipantStatus.REJECTED
+    ) {
+      return NextResponse.json(
+        { message: "La inscripción ya no puede editarse" },
+        { status: 409 },
+      );
+    }
+    return handleParticipantUpload(request, participant.schema, [
+      "events",
+      "participant-uploads",
+    ]);
+  } catch (err) {
+    return apiCatch("forms/response/[token]/upload POST", err);
   }
-  if (
-    participant.status === ParticipantStatus.CANCELLED ||
-    participant.status === ParticipantStatus.REJECTED
-  ) {
-    return NextResponse.json(
-      { message: "La inscripción ya no puede editarse" },
-      { status: 409 },
-    );
-  }
-  return handleParticipantUpload(request, participant.schema, [
-    "events",
-    "participant-uploads",
-  ]);
 }

@@ -26,7 +26,10 @@ export default function FormsLayout({
           </Link>
         </header>
 
-        <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-16">
+        <main
+          id="main-content"
+          className="mx-auto w-full max-w-2xl flex-1 px-4 pb-16"
+        >
           <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
             {children}
           </div>

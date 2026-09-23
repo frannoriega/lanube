@@ -811,7 +811,7 @@ export function WeekCalendar({
                     key={dayIdx}
                     className={`relative z-40 border-l border-gray-200 dark:border-gray-700 ${
                       isPastOrUnavailableDay
-                        ? "bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
+                        ? "bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#4a5565_0,_#4a5565_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
                         : "bg-white dark:bg-gray-950"
                     }`}
                     onMouseDown={(e) =>
@@ -845,7 +845,7 @@ export function WeekCalendar({
                         const stripeClass =
                           slot.kind === "cross_resource"
                             ? "h-full rounded bg-[repeating-linear-gradient(135deg,_#7c3aed_0,_#7c3aed_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#a78bfa_0,_#a78bfa_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
-                            : "h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed";
+                            : "h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#4a5565_0,_#4a5565_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed";
                         return (
                           <div
                             key={idx}

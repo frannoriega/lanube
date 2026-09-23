@@ -19,6 +19,17 @@ const components: Components = {
       {children}
     </a>
   ),
+  // Shift every heading down one level (F2.9). This content is always embedded in a page
+  // that already owns the <h1> — an event description, a news post body — so an author
+  // starting with `#` produced a second h1 and a heading-order violation. The CSS above
+  // still styles by tag name, so `#` keeps its h1 *appearance* while emitting an <h2>:
+  // the visual scale the author picked is preserved, only the outline is corrected.
+  h1: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
+  h2: ({ children, ...props }) => <h3 {...props}>{children}</h3>,
+  h3: ({ children, ...props }) => <h4 {...props}>{children}</h4>,
+  h4: ({ children, ...props }) => <h5 {...props}>{children}</h5>,
+  h5: ({ children, ...props }) => <h6 {...props}>{children}</h6>,
+  h6: ({ children, ...props }) => <h6 {...props}>{children}</h6>,
 };
 
 export function Markdown({

@@ -1,61 +1,76 @@
+import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import {
   cancelParticipant,
   getParticipantByToken,
   updateParticipantAnswers,
 } from "@/lib/db/participants";
 import { participantEditSchema } from "@/lib/schemas/events";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+
+/**
+ * Public registration edit/cancel, keyed by the participant's `editToken`.
+ *
+ * Milestone 10 / F1.5: none of these three handlers had a `try`/`catch`, so a Prisma
+ * failure produced Next's default 500 and never reached `logger.error` — invisible in the
+ * production log stream. This is the public endpoint whose failures we would most want to
+ * see, which is why it was the priority migration onto the envelope helpers.
+ */
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = await params;
-  const participant = await getParticipantByToken(token);
-  if (!participant) {
-    return NextResponse.json({ message: "No encontrado" }, { status: 404 });
+  try {
+    const { token } = await params;
+    const participant = await getParticipantByToken(token);
+    if (!participant) {
+      return apiError("No encontrado", 404);
+    }
+    return apiSuccess(participant);
+  } catch (err) {
+    return apiCatch("forms/response/[token] GET", err);
   }
-  return NextResponse.json(participant);
 }
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = await params;
-  const body = await request.json().catch(() => null);
-  const parsed = participantEditSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ message: "Datos inválidos" }, { status: 400 });
-  }
-
-  const result = await updateParticipantAnswers(token, parsed.data.answers);
-  if (!result.ok) {
-    if (result.errors) {
-      return NextResponse.json(
-        { message: "Revisá los campos", errors: result.errors },
-        { status: 400 },
-      );
+  try {
+    const { token } = await params;
+    const body = await request.json().catch(() => null);
+    const parsed = participantEditSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError("Datos inválidos", 400);
     }
-    return NextResponse.json(
-      { message: result.message ?? "No se pudo actualizar" },
-      { status: 404 },
-    );
+
+    const result = await updateParticipantAnswers(token, parsed.data.answers);
+    if (!result.ok) {
+      if (result.errors) {
+        // Field-level errors ride alongside the message; the public form reads them
+        // into react-hook-form via setError.
+        return apiError("Revisá los campos", 400, { errors: result.errors });
+      }
+      return apiError(result.message ?? "No se pudo actualizar", 404);
+    }
+    return apiSuccess({ ok: true });
+  } catch (err) {
+    return apiCatch("forms/response/[token] PUT", err);
   }
-  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = await params;
-  const result = await cancelParticipant(token);
-  if (!result.ok) {
-    return NextResponse.json(
-      { message: result.message ?? "No encontrado" },
-      { status: 404 },
-    );
+  try {
+    const { token } = await params;
+    const result = await cancelParticipant(token);
+    if (!result.ok) {
+      return apiError(result.message ?? "No encontrado", 404);
+    }
+    return apiSuccess({ ok: true });
+  } catch (err) {
+    return apiCatch("forms/response/[token] DELETE", err);
   }
-  return NextResponse.json({ ok: true });
 }
