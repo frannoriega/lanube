@@ -18,7 +18,7 @@ task list is checked off.
 - [`milestones-6-teams-and-organizations.md`](./milestones-6-teams-and-organizations.md) — flat admin-provisioned `Organization`s plus self-service `Team`s as bookable actors. Planning only.
 - [`milestones-7-proposals.md`](./milestones-7-proposals.md) — a community suggestion box; the dormant `Proposal`/`ProposalComment` schema gets migrated to match the use case. Planning only.
 - [`milestones-8-inventory-and-purchase-orders.md`](./milestones-8-inventory-and-purchase-orders.md) — track equipment and consumables with restock thresholds; restructures the dormant `Inventory`/`PurchaseOrder` schema. Planning only.
-- [`milestones-9-dynamic-roles.md`](./milestones-9-dynamic-roles.md) — replace the hardcoded `UserRole` + `rbac.ts` permission map with superadmin-defined roles. Planning only.
+- [`milestones-9-dynamic-roles.md`](./milestones-9-dynamic-roles.md) — replace the hardcoded `UserRole` + `rbac.ts` permission map with superadmin-defined roles. **Implemented** on branch `milestone-9` (branched from `preview`): `Role` rows + `RegisteredUser.roleId`, `/admin/roles` CRUD, resolved permissions on the JWT, behaviour-preserving seed. One blocker left open — the Vercel Global Config cache the doc decided on is shipped as a swappable in-process seam instead.
 - [`milestones-10-frontend-audit-hardening.md`](./milestones-10-frontend-audit-hardening.md) — findings from the 2026-09-23 frontend audit (error handling, accessibility/contrast in both themes, security headers), sliced into fixes. A **quality** milestone rather than a feature one. Audit complete, nothing implemented.
 
 See [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) for the running list of undefined product/design decisions across these milestones.

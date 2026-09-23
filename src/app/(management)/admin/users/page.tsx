@@ -29,7 +29,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useApi } from "@/hooks/use-api";
 import useUser from "@/hooks/use-user";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
-import { hasPermission, ROLE_LABELS } from "@/lib/rbac";
+import { hasPermission, NO_ROLE_LABEL } from "@/lib/rbac";
+import { type RoleOption } from "@/types/prisma";
 import { toast } from "sonner";
 import { buildAdminUsersColumns } from "./columns";
 import { type AdminUser } from "./types";
@@ -228,18 +229,27 @@ export default function AdminUsersPage() {
   };
 
   const currentUser = useUser();
-  const canManageRoles = hasPermission(currentUser?.role, "users:roles:manage");
+  const canManageRoles = hasPermission(currentUser, "users:roles:manage");
+
+  // Roles are data (milestone 9), so the picker's options come from the DB rather than
+  // an enum. Only fetched for viewers who can actually assign one.
+  const { data: roleOptions, error: rolesError } = useApi<RoleOption[]>(
+    canManageRoles ? "/api/admin/roles/assignable" : null,
+  );
+  const roles = useMemo(() => roleOptions ?? [], [roleOptions]);
+
   const columns = useMemo(
     () =>
       buildAdminUsersColumns({
         canManageRoles,
         currentUserId: currentUser?.id ?? null,
-        onRoleChange: async (user, role) => {
+        roles,
+        onRoleChange: async (user, roleId) => {
+          const label =
+            roles.find((role) => role.id === roleId)?.name ?? NO_ROLE_LABEL;
           try {
-            await apiSend(`/api/admin/users/${user.id}`, "PATCH", { role });
-            toast.success(
-              `${user.name ?? user.email} ahora es ${ROLE_LABELS[role]}`,
-            );
+            await apiSend(`/api/admin/users/${user.id}`, "PATCH", { roleId });
+            toast.success(`${user.name ?? user.email} ahora es ${label}`);
           } catch (err) {
             toast.error(apiErrorMessage(err, "No se pudo cambiar el rol"));
           } finally {
@@ -247,7 +257,7 @@ export default function AdminUsersPage() {
           }
         },
       }),
-    [canManageRoles, currentUser?.id, refetch],
+    [canManageRoles, currentUser?.id, roles, refetch],
   );
 
   const table = useReactTable<AdminUser>({
@@ -391,6 +401,13 @@ export default function AdminUsersPage() {
               </Button>
             </div>
           </div>
+
+          {rolesError && canManageRoles && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+              No se pudo cargar la lista de roles: el selector de rol quedó
+              deshabilitado.
+            </div>
+          )}
 
           {error && (
             <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">

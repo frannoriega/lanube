@@ -2,7 +2,6 @@ import {
   PrismaClient,
   ReservableType,
   ReservationStatus,
-  UserRole,
 } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
@@ -11,6 +10,15 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 const BCRYPT_ROUNDS = 12;
+
+// Role keys seeded by migration 20260924000000_dynamic_roles. The seed looks roles up by
+// key rather than hardcoding ids, so a rename in the admin UI doesn't break it.
+const RoleKey = {
+  USER: "USER",
+  ADMIN: "ADMIN",
+  SUPERADMIN: "SUPERADMIN",
+} as const;
+type RoleKey = (typeof RoleKey)[keyof typeof RoleKey];
 
 // Base reservation-type codes (seeded into reservation_types by the
 // 20260706110000_reservation_types_table migration).
@@ -54,7 +62,7 @@ function generateUsers(): Array<{
   dni: string;
   institution: string | null;
   reasonToJoin: string;
-  role: UserRole;
+  roleKey: RoleKey;
 }> {
   const users: Array<{
     email: string;
@@ -64,7 +72,7 @@ function generateUsers(): Array<{
     dni: string;
     institution: string | null;
     reasonToJoin: string;
-    role: UserRole;
+    roleKey: RoleKey;
   }> = [];
 
   for (let i = 1; i <= 30; i++) {
@@ -76,7 +84,7 @@ function generateUsers(): Array<{
       dni: `2000000${i}`,
       institution: "La Nube (desarrollo)",
       reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
-      role: UserRole.USER,
+      roleKey: RoleKey.USER,
     });
   }
 
@@ -89,7 +97,7 @@ function generateUsers(): Array<{
       dni: `3000000${i}`,
       institution: "La Nube (desarrollo)",
       reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
-      role: UserRole.ADMIN,
+      roleKey: RoleKey.ADMIN,
     });
   }
 
@@ -102,7 +110,7 @@ function generateUsers(): Array<{
       dni: `4000000${i}`,
       institution: "La Nube (desarrollo)",
       reasonToJoin: "Usuario de ejemplo generado por prisma/seed.ts",
-      role: UserRole.SUPERADMIN,
+      roleKey: RoleKey.SUPERADMIN,
     });
   }
 
@@ -111,7 +119,18 @@ function generateUsers(): Array<{
 
 async function seedExampleUsers() {
   const users = generateUsers();
+  const roleRows = await prisma.role.findMany({
+    select: { id: true, key: true },
+  });
+  const roleIdByKey = new Map(roleRows.map((role) => [role.key, role.id]));
+
   for (const u of users) {
+    const roleId = roleIdByKey.get(u.roleKey) ?? null;
+    if (!roleId) {
+      throw new Error(
+        `[seed] Role "${u.roleKey}" not found — run the migrations before seeding.`,
+      );
+    }
     const passwordHash = await bcrypt.hash(u.password, BCRYPT_ROUNDS);
 
     const user = await prisma.user.upsert({
@@ -138,7 +157,7 @@ async function seedExampleUsers() {
         dni: u.dni,
         institution: u.institution,
         reasonToJoin: u.reasonToJoin,
-        role: u.role,
+        roleId,
       },
       update: {
         name: u.name,
@@ -146,12 +165,12 @@ async function seedExampleUsers() {
         dni: u.dni,
         institution: u.institution,
         reasonToJoin: u.reasonToJoin,
-        role: u.role,
+        roleId,
       },
     });
 
     console.log(
-      `[seed] User ready: ${u.email} (password: ${u.password}) role=${u.role}`,
+      `[seed] User ready: ${u.email} (password: ${u.password}) role=${u.roleKey}`,
     );
   }
 }

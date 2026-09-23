@@ -6,7 +6,7 @@ import { hasPermission } from "@/lib/rbac";
 export default async function NewNewsPage() {
   await requirePagePermission("news:manage");
   const session = await auth();
-  const canApprove = hasPermission(session?.role, "news:approve");
+  const canApprove = hasPermission(session, "news:approve");
 
   return (
     <div className="space-y-6">

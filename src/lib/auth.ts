@@ -1,7 +1,7 @@
 import "server-only";
 import { nowMs } from "@/lib/clock";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { UserRole } from "@/types/prisma";
+import { getRoleById, permissionSetOf } from "./db/roles";
 import NextAuth from "next-auth";
 import type { DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -21,7 +21,12 @@ declare module "next-auth" {
     banned: boolean;
     bannedReason: string;
     bannedUntil: Date;
-    role: UserRole;
+    /** Display name of the user's role, or null on the base tier. */
+    role: string | null;
+    /** Resolved catalog permissions (milestone 9 — roles are data, not an enum). */
+    permissions: string[];
+    /** Protected owner tier: implicitly holds every permission. */
+    isSuperadmin: boolean;
     userId: string;
     user: DefaultSession["user"] & {
       /** Original signup / display form; fall back to `email` in UI when null. */
@@ -33,7 +38,9 @@ declare module "next-auth" {
     banned: boolean;
     bannedReason: string;
     bannedUntil: Date;
-    role: UserRole;
+    role: string | null;
+    permissions: string[];
+    isSuperadmin: boolean;
     userId: string;
     /** True when a `RegisteredUser` row exists (JWT-safe; never store Prisma rows here — BigInt breaks `JSON.stringify`). */
     signedUp: boolean;
@@ -94,7 +101,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.banned = token.banned as boolean;
         session.bannedReason = token.bannedReason as string;
         session.bannedUntil = token.bannedUntil as Date;
-        session.role = token.role as UserRole;
+        session.role = (token.role as string | null) ?? null;
+        session.permissions = Array.isArray(token.permissions)
+          ? (token.permissions as string[])
+          : [];
+        session.isSuperadmin = token.isSuperadmin === true;
         session.userId = token.userId as string;
         if (session.user) {
           session.user.displayEmail =
@@ -114,7 +125,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const defaultExp = atMs + SESSION_EXPIRATION_TIME_MS;
           const activeBan = registeredUser.bans[0] ?? null;
           token.signedUp = true;
-          token.role = registeredUser.role;
+          // Roles are data now, so the token carries the RESOLVED permission list —
+          // middleware needs it to stay a DB-free fast path. Recomputed here on every
+          // jwt() call (same freshness contract the role string had before), so a role
+          // edit reaches middleware on the session's next touch rather than at re-auth.
+          const role = await getRoleById(registeredUser.roleId);
+          const resolved = permissionSetOf(role);
+          token.role = role?.name ?? null;
+          token.permissions = [...resolved.permissions];
+          token.isSuperadmin = resolved.isSuperadmin;
           token.userId = registeredUser.id;
           token.displayEmail =
             registeredUser.user.displayEmail ?? registeredUser.user.email;
@@ -137,6 +156,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } else {
           token.signedUp = false;
           token.displayEmail = undefined;
+          token.role = null;
+          token.permissions = [];
+          token.isSuperadmin = false;
         }
       }
       return token;
