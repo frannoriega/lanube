@@ -1,4 +1,5 @@
 import z from "zod";
+import { PERMISSIONS } from "@/lib/rbac";
 
 /** Superadmin configuration inputs (spaces, resources, reservation types). */
 
@@ -183,3 +184,24 @@ export const landingThemeInputSchema = z
   });
 
 export type LandingThemeInput = z.infer<typeof landingThemeInputSchema>;
+
+/**
+ * A superadmin-defined role (milestone 9). `permissions` is constrained to the code
+ * catalog: an arbitrary string would name a permission nothing in the app checks.
+ */
+export const roleInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "El nombre debe tener al menos 2 caracteres")
+    .max(60, "El nombre no puede superar los 60 caracteres"),
+  description: z
+    .string()
+    .trim()
+    .max(240, "La descripción no puede superar los 240 caracteres")
+    .optional()
+    .or(z.literal("")),
+  permissions: z.array(z.enum(PERMISSIONS)),
+});
+
+export type RoleInput = z.infer<typeof roleInputSchema>;

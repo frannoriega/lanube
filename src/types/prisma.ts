@@ -13,17 +13,25 @@ export type RegisteredUser = {
   dni: string;
   institution: string | null;
   reasonToJoin: string;
-  role: UserRole;
+  /** Display name of the assigned role, or null on the base tier. */
+  role: string | null;
+  roleId: string | null;
   createdAt: number;
   updatedAt: number;
 };
 
-export enum UserRole {
-  USER = "USER",
-  ADMIN = "ADMIN",
-  SUPERADMIN = "SUPERADMIN",
-  COMUNICADOR = "COMUNICADOR",
-}
+/**
+ * Roles are rows in `roles` (milestone 9), not an enum — the `UserRole` enum that used to
+ * live here was removed alongside the DB type. Client components take the role list from
+ * the server (`listRoles()`); permission *names* stay code-defined in `@/lib/rbac`.
+ */
+export type RoleOption = {
+  id: string;
+  key: string;
+  name: string;
+  isSystem: boolean;
+  isSuperadmin: boolean;
+};
 
 export enum IncidentStatus {
   OPEN = "OPEN",

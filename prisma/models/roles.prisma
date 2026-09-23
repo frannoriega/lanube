@@ -1,0 +1,35 @@
+/// A role is per-install data, not a code constant — a superadmin creates, renames and
+/// re-scopes them from /admin/roles (milestone 9). The *catalog* of permissions stays
+/// code-defined (`PERMISSIONS` in src/lib/rbac.ts): each permission string corresponds to a
+/// real requirePermission()/hasPermission() check, so an arbitrary new string would gate
+/// nothing. What is data here is **which** catalog permissions a role carries.
+model Role {
+  id          String  @id @default(cuid())
+  /// Stable machine key (e.g. "ADMIN"). Survives renames, so seeds/migrations and the
+  /// superadmin bootstrap can find a role without depending on its display name.
+  key         String  @unique
+  /// Display name, editable for non-system roles.
+  name        String  @unique
+  description String?
+
+  /// Protected tier: cannot be renamed, deleted, or have its permission set edited.
+  /// Guards against a superadmin deleting the only role able to manage roles at all.
+  isSystem Boolean @default(false) @map("is_system")
+
+  /// Implicitly holds EVERY permission in the code catalog, including ones added later.
+  /// Storing superadmin as an explicit list would mean shipping a new permission and
+  /// silently locking the owner tier out of it until someone noticed — this avoids that
+  /// bug class entirely. `permissions` is ignored while this is true.
+  isSuperadmin Boolean @default(false) @map("is_superadmin")
+
+  /// Catalog permission strings. Validated against `PERMISSIONS` at write time rather
+  /// than via a join table — the catalog is small, code-defined and changes with deploys.
+  permissions String[] @default([])
+
+  createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+
+  users RegisteredUser[]
+
+  @@map("roles")
+}

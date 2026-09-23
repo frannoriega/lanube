@@ -1,53 +1,87 @@
 # Auth & permissions
 
-> **Planned change**: this document describes the current, code-defined
-> role system. [`../milestones/milestones-9-dynamic-roles.md`](../milestones/milestones-9-dynamic-roles.md)
-> proposes making role→permission assignment data-driven (superadmin-defined
-> roles) instead of hardcoded here — once that ships, this doc becomes the
-> "previous architecture" and should be rewritten as the new authoritative
-> description, not left describing a system that no longer exists.
+## Roles are data; permissions are code
 
-## Roles
+Since **milestone 9** a role is a row in `roles`, not an enum value. The split is
+deliberate and is the single most important thing to understand here:
 
-`USER / ADMIN / SUPERADMIN / COMUNICADOR` (`UserRole` enum). Permissions are
-**code-defined per role** in `src/lib/rbac.ts` (`ROLE_PERMISSIONS`) —
-nothing permission-related is persisted beyond the role itself. Granting or
-revoking a capability means editing that map, not a DB migration.
+- **The permission _catalog_ stays code-defined** (`PERMISSIONS` in `src/lib/rbac.ts`).
+  Every string in it corresponds to a real `requirePermission()` / `hasPermission()`
+  call site, so a permission invented at runtime would gate nothing. Adding one is
+  still a code change.
+- **Which catalog permissions a role carries is data** (`Role.permissions`, a
+  `String[]`), edited by a superadmin at `/admin/roles` (gated on `roles:manage`).
+  Writes are validated against the catalog and sanitized again on read, so a role row
+  can outlive a permission a later deploy removed.
+- `RegisteredUser.roleId` replaced the old `UserRole` enum column. **NULL is the base
+  tier** — no admin permissions — and is treated identically to the seeded `USER`
+  role, so an unassigned row can never read as privileged.
 
-| Permission                                                                                                                                         | ADMIN | SUPERADMIN | COMUNICADOR |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------- | ----------- |
-| `admin:access`                                                                                                                                     | ✓     | ✓          | ✓           |
-| `reservations:manage`, `users:manage`, `events:manage`, `forms:manage`, `reports:view`, `checkin:manage`, `incidents:manage`                       | ✓     | ✓          |             |
-| `news:manage`                                                                                                                                      | ✓     | ✓          | ✓           |
-| `news:approve`                                                                                                                                     | ✓     | ✓          |             |
-| `users:roles:manage`, `spaces:manage`, `resources:manage`, `reservation-types:manage`, `site-config:manage`, `landing-themes:manage`, `audit:view` |       | ✓          |             |
+### Protected rows
 
-`COMUNICADOR` is deliberately narrow: it can enter `/admin` and manage
-Noticias content (including submitting for review), but nothing else — not
-even approving its own posts (`news:approve` is withheld). This is the only
-role that can author news; `ADMIN`/`SUPERADMIN` can also author _and_
-approve.
+`Role.isSystem` rows cannot be renamed, deleted or re-scoped from the UI or the API
+(403). `USER` and `SUPERADMIN` are seeded that way; without it a superadmin could
+delete the only role able to manage roles at all.
+
+`SUPERADMIN` additionally carries `Role.isSuperadmin`, which short-circuits
+`hasPermission()` to **always true** and ignores the stored list. This is not a
+shortcut — it is what stops a permission added in a later deploy from being silently
+withheld from the owner tier until someone remembers to edit a data row. `roles:manage`
+is deliberately _not_ seeded to `ADMIN`: defining roles is an owner capability, which
+is the employee-vs-owner separation this milestone exists to draw.
+
+### Seeded roles (migration `20260924000000_dynamic_roles`)
+
+Cutover was behaviour-preserving — these carry exactly the sets `ROLE_PERMISSIONS`
+held in code beforehand. `src/lib/db/roles.seed.test.ts` asserts that against the
+migration SQL so it cannot drift. All four are ordinary rows; `ADMIN` and
+`COMUNICADOR` are editable and deletable like any role a superadmin creates.
+
+| Permission                                                                                                                   | ADMIN | SUPERADMIN | COMUNICADOR |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----- | ---------- | ----------- |
+| `admin:access`                                                                                                               | ✓     | ✓          | ✓           |
+| `reservations:manage`, `users:manage`, `events:manage`, `forms:manage`, `reports:view`, `checkin:manage`, `incidents:manage` | ✓     | ✓          |             |
+| `news:manage`                                                                                                                | ✓     | ✓          | ✓           |
+| `news:approve`                                                                                                               | ✓     | ✓          |             |
+| everything else (`users:roles:manage`, `spaces:manage`, …, `roles:manage`, `audit:view`)                                     |       | ✓          |             |
+
+`COMUNICADOR` is deliberately narrow: it can enter `/admin` and manage Noticias
+content (including submitting for review), but nothing else — not even approving its
+own posts (`news:approve` is withheld).
 
 ## Why three enforcement layers, not one
 
-1. **Middleware** (`src/middleware.ts`-equivalent, JWT role, fast path):
-   gates `/admin` on `admin:access`, and the subpaths listed in
-   `ADMIN_PATH_PERMISSIONS` on a specific permission each —
-   `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`,
-   `/admin/site` and `/admin/themes` on their `*:manage`, and `/admin/audit`
-   on `audit:view`. Runs on the JWT claim — no DB round-trip — because it's on
-   the hot path for every admin request. That table is the source of truth;
-   this list mirrors it and both must move together.
-2. **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) **re-reads
-   the role from the DB**. This exists because the JWT role can be stale —
-   a promotion/demotion doesn't invalidate existing sessions instantly, and
-   an API mutation is exactly the moment staleness would matter (a just-
-   demoted admin still holding a valid JWT must not be able to mutate
-   through the API even if middleware's cached claim let the page load).
-3. **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`) for
-   the superadmin config pages; the admin layout separately checks the DB
-   role. This is defense in depth for page-level rendering, distinct from
-   the API check on the mutations those pages trigger.
+1. **Middleware** (`src/middleware.ts`, JWT claim, fast path): gates `/admin` on
+   `admin:access`, and the subpaths listed in `ADMIN_PATH_PERMISSIONS` on a specific
+   permission each — `/admin/spaces`, `/admin/resources`,
+   `/admin/reservation-types`, `/admin/site` and `/admin/themes` on their `*:manage`,
+   `/admin/roles` on `roles:manage`, `/admin/audit` on `audit:view`. That table is the
+   source of truth; this list mirrors it and both must move together.
+
+   Because roles are data, the token carries the **resolved permission list**
+   (`token.permissions` + `token.isSuperadmin`) rather than a role name — that is what
+   keeps middleware DB-free on the hot path. The list is recomputed from the DB inside
+   the `jwt()` callback on every call, the same freshness contract the role string had
+   before, so a role edit reaches middleware on the session's next touch.
+
+2. **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) resolves permissions
+   **fresh from the DB** via `getPermissionSetForUser()`. This exists because the JWT
+   claim can lag by one request, and an API mutation is exactly the moment staleness
+   would matter (a just-demoted admin still holding a valid JWT must not be able to
+   mutate through the API even if middleware's cached claim let the page load).
+3. **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`) for the
+   superadmin config pages; the admin layout separately resolves from the DB and
+   passes the resolved set down to client components through `UserProvider`, so
+   `hasPermission(user, …)` in the UI agrees with the server.
+
+### The role cache
+
+`src/lib/db/roles.ts` holds a module-scoped snapshot of the `roles` table with a 30 s
+TTL, invalidated explicitly by every role write. Layers 2 and 3 read through it, so
+resolving a permission set is not a query per request. Milestone 9 named Vercel Global
+Config as the eventual edge-readable cache; that store can't be provisioned from the
+repo, so this module is the seam — implementing the same shape against Global Config
+changes no call site. See `docs/milestones/milestones-9-dynamic-roles.md`.
 
 None of these three is redundant with another: middleware is cheap and
 coarse, the API layer is authoritative and fresh, the page layer prevents a
@@ -56,8 +90,9 @@ stale-but-not-yet-mutating page render.
 ## Session & ban interaction
 
 Sessions are NextAuth JWT, 7-day expiration. `jwt()` callback checks ban
-status on every session refresh and populates `session.role` from
-`RegisteredUser.role`. If a user is banned **mid-session**, the ban's
+status on every session refresh and populates `session.role` (the role's display
+name), `session.permissions` and `session.isSuperadmin` by resolving
+`RegisteredUser.roleId` through the role cache. If a user is banned **mid-session**, the ban's
 `endTime` becomes the new effective session expiration — forcing
 re-authentication once the ban lifts, rather than leaving a banned user's
 existing session valid until its original 7-day expiry.
