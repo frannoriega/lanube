@@ -154,18 +154,32 @@ export function PublicForm({
   });
 
   const onSubmit = async (values: PublicFormValues) => {
-    const res = await fetch(
-      mode === "submit" ? `/api/forms/${slug}` : `/api/forms/response/${token}`,
-      {
-        method: mode === "submit" ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          mode === "submit"
-            ? { email: values.email, answers: values.answers }
-            : { answers: values.answers },
-        ),
-      },
-    );
+    let res: Response;
+    try {
+      res = await fetch(
+        mode === "submit"
+          ? `/api/forms/${slug}`
+          : `/api/forms/response/${token}`,
+        {
+          method: mode === "submit" ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            mode === "submit"
+              ? { email: values.email, answers: values.answers }
+              : { answers: values.answers },
+          ),
+        },
+      );
+    } catch (err) {
+      // Public registration, often from a phone on a flaky connection. Failing silently
+      // here means someone walks away believing they are registered when they are not —
+      // so this message has to be unambiguous about the registration NOT having happened.
+      console.error("[public-form] submit failed", err);
+      toast.error(
+        "No pudimos enviar el formulario: revisá tu conexión e intentá de nuevo. Tu inscripción no se registró.",
+      );
+      return;
+    }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (err.errors) {
@@ -198,6 +212,12 @@ export function PublicForm({
       }
       toast.success("Inscripción cancelada");
       router.refresh();
+    } catch (err) {
+      // try/finally without a catch had the same silent-failure shape as onSubmit.
+      console.error("[public-form] cancel failed", err);
+      toast.error(
+        "No pudimos cancelar la inscripción: revisá tu conexión e intentá de nuevo. Tu inscripción sigue activa.",
+      );
     } finally {
       setCancelling(false);
     }

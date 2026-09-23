@@ -38,13 +38,24 @@ export default function ResetPage() {
   const decodedToken = decodeURIComponent(token);
 
   const onSubmit = async (data: z.infer<typeof newPasswordSchema>) => {
-    const res = await fetch("/api/auth/reset", {
-      method: "PATCH",
-      body: JSON.stringify({
-        token: decodedToken,
-        ...data,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/auth/reset", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: decodedToken,
+          ...data,
+        }),
+      });
+    } catch (err) {
+      // Without this, a dropped connection just re-enables the button silently.
+      console.error("[reset] request failed", err);
+      toast.error(
+        "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+      );
+      return;
+    }
     if (!res.ok) {
       toast.error("Error al reestablecer la contraseña");
       return;

@@ -49,7 +49,10 @@ export default function MagicLinkPage() {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          // An error response isn't guaranteed to be JSON (a proxy 502, an empty body):
+          // without the catch, response.json() throws a raw SyntaxError whose message
+          // ("Unexpected token '<'…") was being rendered to the user verbatim.
+          const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.message || "Error al validar el enlace");
         }
 
@@ -60,8 +63,14 @@ export default function MagicLinkPage() {
           router.push("/dashboard");
         }, 2000);
       } catch (error: unknown) {
-        const knownError = error as Error;
-        setError(knownError.message || "Error al validar el enlace");
+        // Narrow instead of casting: a non-Error throw would make `.message` undefined
+        // and, worse, any internal message would reach the screen unfiltered.
+        console.error("[magic-link] validation failed", error);
+        setError(
+          error instanceof Error && error.message
+            ? error.message
+            : "Error al validar el enlace",
+        );
         setIsValidating(false);
       }
     };

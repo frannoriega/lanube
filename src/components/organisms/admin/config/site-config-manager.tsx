@@ -29,6 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { LoadError } from "@/components/molecules/load-error";
 
 const EMPTY: SiteConfigInput = {
   addressText: "",
@@ -117,7 +118,9 @@ const FIELDS: Array<{
 ];
 
 export function SiteConfigManager() {
-  const { data, firstTime } = useApi<SiteConfigInput>("/api/admin/site-config");
+  const { data, error, firstTime, refetch } = useApi<SiteConfigInput>(
+    "/api/admin/site-config",
+  );
   const [busy, setBusy] = useState(false);
 
   const form = useForm<SiteConfigInput>({
@@ -164,7 +167,12 @@ export function SiteConfigManager() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {firstTime ? (
+        {error ? (
+          <LoadError
+            message="No se pudo cargar la configuración del sitio."
+            onRetry={() => void refetch()}
+          />
+        ) : firstTime ? (
           <div className="space-y-3">
             {[...Array(6)].map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />

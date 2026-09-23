@@ -57,6 +57,7 @@ import {
 } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { LoadError } from "@/components/molecules/load-error";
 
 // ---------------------------------------------------------------------------
 // Schema (the builder edits a flat-ish model; groups nest one level of inputs)
@@ -407,7 +408,12 @@ export function FormTemplateBuilder({
     keyName: "fieldKey",
   });
 
-  const { data: template, firstTime } = useApi<{
+  const {
+    data: template,
+    error: templateError,
+    firstTime,
+    refetch: refetchTemplate,
+  } = useApi<{
     name?: string;
     description?: string | null;
     schema?: FormSchema | null;
@@ -450,6 +456,17 @@ export function FormTemplateBuilder({
     router.push("/admin/forms");
     router.refresh();
   };
+
+  // Without this an edit whose GET failed renders the builder with an EMPTY field list,
+  // which looks exactly like a template whose fields were deleted (F1.2).
+  if (mode === "edit" && templateError) {
+    return (
+      <LoadError
+        message="No se pudo cargar el formulario. No lo edites hasta que cargue, o guardarás una versión vacía."
+        onRetry={() => void refetchTemplate()}
+      />
+    );
+  }
 
   if (loading) return <p className="text-muted-foreground">Cargando…</p>;
 

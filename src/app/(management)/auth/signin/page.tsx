@@ -124,17 +124,30 @@ export default function LandingPage() {
   };
 
   const onRegisterSubmit = async (data: z.infer<typeof registerSchema>) => {
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    const body = await res.json().catch(() => ({}));
-    // Turnstile tokens are single-use and consumed by this request (the server
-    // verifies before it can fail), so a fresh token is always required for the
-    // next attempt. Reset the captcha field + widget instead of the whole form
-    // so the user keeps their corrected inputs and the button re-enables.
-    registerForm.setValue("captcha", "");
-    registerCaptchaRef.current?.reset();
+    let res: Response;
+    let body: { message?: string };
+    try {
+      res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      body = await res.json().catch(() => ({}));
+    } catch (err) {
+      // A rejected fetch (offline, DNS, aborted) never reaches the !res.ok branch.
+      console.error("[signin] register request failed", err);
+      toast.error(
+        "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+      );
+      return;
+    } finally {
+      // Turnstile tokens are single-use and consumed by this request (the server
+      // verifies before it can fail), so a fresh token is always required for the
+      // next attempt. Reset the captcha field + widget instead of the whole form
+      // so the user keeps their corrected inputs and the button re-enables.
+      registerForm.setValue("captcha", "");
+      registerCaptchaRef.current?.reset();
+    }
     if (!res.ok) {
       toast.error(body.message || "Error al crear la cuenta");
       return;
@@ -148,15 +161,27 @@ export default function LandingPage() {
   };
 
   const onResetSubmit = async (data: z.infer<typeof resetSchema>) => {
-    const res = await fetch("/api/auth/reset", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    const body = await res.json().catch(() => ({}));
-    // The captcha token is single-use and spent by this request; mint a fresh
-    // one so a retry after a failure isn't stuck with a stale token.
-    resetForm.setValue("captcha", "");
-    resetCaptchaRef.current?.reset();
+    let res: Response;
+    let body: { message?: string };
+    try {
+      res = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      body = await res.json().catch(() => ({}));
+    } catch (err) {
+      console.error("[signin] reset request failed", err);
+      toast.error(
+        "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+      );
+      return;
+    } finally {
+      // The captcha token is single-use and spent by this request; mint a fresh
+      // one so a retry after a failure isn't stuck with a stale token.
+      resetForm.setValue("captcha", "");
+      resetCaptchaRef.current?.reset();
+    }
     if (!res.ok) {
       toast.error(body.message || "Error al enviar el enlace de acceso");
       return;
