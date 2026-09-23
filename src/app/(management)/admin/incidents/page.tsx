@@ -7,7 +7,6 @@ import { useIncidents } from "@/hooks/api";
 import { apiErrorMessage } from "@/lib/api/client";
 import { createIncident, updateIncidentStatus } from "@/lib/api/mutations";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +35,7 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { IncidentStatusBadge } from "@/components/atoms/status-badge";
 
 export default function IncidentsPage() {
   const { data: incidentsData, firstTime, refetch } = useIncidents();
@@ -85,18 +85,9 @@ export default function IncidentsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "OPEN":
-        return <Badge className="bg-red-100 text-red-800">Abierto</Badge>;
-      case "RESOLVED":
-        return <Badge className="bg-green-100 text-green-800">Resuelto</Badge>;
-      case "CLOSED":
-        return <Badge className="bg-gray-100 text-gray-800">Cerrado</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
-    }
-  };
+  const getStatusBadge = (status: string) => (
+    <IncidentStatusBadge status={status} />
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -105,9 +96,9 @@ export default function IncidentsPage() {
       case "RESOLVED":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case "CLOSED":
-        return <XCircle className="h-4 w-4 text-gray-500" />;
+        return <XCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
+        return <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -225,7 +216,7 @@ export default function IncidentsPage() {
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {openIncidents}
             </div>
           </CardContent>
@@ -237,7 +228,7 @@ export default function IncidentsPage() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {resolvedIncidents}
             </div>
           </CardContent>
@@ -246,7 +237,7 @@ export default function IncidentsPage() {
         <Card className="glass-card dark:glass-card-dark">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cerrados</CardTitle>
-            <XCircle className="h-4 w-4 text-gray-500" />
+            <XCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">
@@ -265,7 +256,7 @@ export default function IncidentsPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                 <Input
                   placeholder="Buscar incidentes..."
                   value={searchTerm}
@@ -295,13 +286,13 @@ export default function IncidentsPage() {
       {filteredIncidents.length === 0 ? (
         <Card className="glass-card dark:glass-card-dark">
           <CardContent className="flex flex-col items-center justify-center py-8">
-            <AlertTriangle className="h-12 w-12 text-gray-400 mb-4" />
+            <AlertTriangle className="h-12 w-12 text-gray-400 mb-4 dark:text-gray-500" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {searchTerm || selectedStatus !== "ALL"
                 ? "No se encontraron incidentes"
                 : "No hay incidentes reportados"}
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {searchTerm || selectedStatus !== "ALL"
                 ? "Intenta con otros filtros de búsqueda."
                 : "Los incidentes reportados aparecerán aquí."}
@@ -324,7 +315,9 @@ export default function IncidentsPage() {
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-gray-700">{incident.description}</p>
+                      <p className="text-gray-700 dark:text-gray-300">
+                        {incident.description}
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -362,7 +355,7 @@ export default function IncidentsPage() {
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                           Usuarios presentes durante el incidente:
                         </p>
-                        <div className="bg-gray-50 p-3 rounded-lg">
+                        <div className="bg-gray-50 p-3 rounded-lg dark:bg-gray-900">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {incident.incidentUsers.map(
                               (incidentUser, index) => (
