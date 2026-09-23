@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCheckedInUsers } from "@/hooks/api";
@@ -27,6 +26,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ToneBadge } from "@/components/atoms/status-badge";
 
 export default function AdminCheckInPage() {
   const { now } = useServerTime();
@@ -59,7 +59,7 @@ export default function AdminCheckInPage() {
       case "AUDITORIUM":
         return <Calendar className="h-4 w-4 text-purple-500" />;
       default:
-        return <Users className="h-4 w-4 text-gray-500" />;
+        return <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -174,7 +174,7 @@ export default function AdminCheckInPage() {
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {endingSoonUsers.length}
             </div>
           </CardContent>
@@ -188,7 +188,7 @@ export default function AdminCheckInPage() {
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {overdueUsers.length}
             </div>
           </CardContent>
@@ -200,7 +200,7 @@ export default function AdminCheckInPage() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-sm font-medium text-green-600">
+            <div className="text-sm font-medium text-green-600 dark:text-green-400">
               {now().toLocaleTimeString()}
             </div>
           </CardContent>
@@ -217,7 +217,7 @@ export default function AdminCheckInPage() {
         </CardHeader>
         <CardContent>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
             <Input
               placeholder="Buscar usuarios..."
               value={searchTerm}
@@ -232,13 +232,13 @@ export default function AdminCheckInPage() {
       {filteredUsers.length === 0 ? (
         <Card className="glass-card dark:glass-card-dark">
           <CardContent className="flex flex-col items-center justify-center py-8">
-            <Users className="h-12 w-12 text-gray-400 mb-4" />
+            <Users className="h-12 w-12 text-gray-400 mb-4 dark:text-gray-500" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {searchTerm
                 ? "No se encontraron usuarios"
                 : "No hay usuarios en La Nube"}
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {searchTerm
                 ? "Intenta con otros términos de búsqueda."
                 : "Los usuarios aparecerán aquí cuando hagan check-in."}
@@ -285,15 +285,11 @@ export default function AdminCheckInPage() {
                   <div className="flex flex-col items-end gap-3">
                     <div className="flex gap-2">
                       {isReservationOverdue(user.reservationEndTime) && (
-                        <Badge className="bg-red-100 text-red-800">
-                          Tiempo agotado
-                        </Badge>
+                        <ToneBadge tone="danger">Tiempo agotado</ToneBadge>
                       )}
                       {isReservationEndingSoon(user.reservationEndTime) &&
                         !isReservationOverdue(user.reservationEndTime) && (
-                          <Badge className="bg-yellow-100 text-yellow-800">
-                            Termina pronto
-                          </Badge>
+                          <ToneBadge tone="warning">Termina pronto</ToneBadge>
                         )}
                     </div>
 
