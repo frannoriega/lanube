@@ -58,6 +58,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { LoadError } from "@/components/molecules/load-error";
 
 const EMPTY: LandingThemeInput = {
   name: "",
@@ -113,7 +114,7 @@ function windowSummary(t: LandingTheme): string {
 }
 
 export function LandingThemesManager() {
-  const { data, firstTime, refetch } =
+  const { data, error, firstTime, refetch } =
     useApi<LandingTheme[]>("/api/admin/themes");
   const themes = data ?? [];
   const [editing, setEditing] = useState<LandingTheme | null>(null);
@@ -192,7 +193,12 @@ export function LandingThemesManager() {
         </Button>
       </CardHeader>
       <CardContent>
-        {firstTime ? (
+        {error ? (
+          <LoadError
+            message="No se pudieron cargar los temas."
+            onRetry={() => void refetch()}
+          />
+        ) : firstTime ? (
           <div className="space-y-2">
             {[...Array(3)].map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />

@@ -133,10 +133,10 @@ export default function DashboardPage() {
                       <div
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           reservation.status === "APPROVED"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
                             : reservation.status === "PENDING"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
+                              ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                              : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
                         }`}
                       >
                         {reservation.status === "APPROVED"

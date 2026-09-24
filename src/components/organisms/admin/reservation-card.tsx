@@ -28,10 +28,14 @@ export function ReservationCard({
   return (
     <Card>
       <CardContent className="p-4">
-        {/* Collapsed header row */}
-        <div
-          className="flex items-center justify-between cursor-pointer"
+        {/* Collapsed header row. A real <button>: it was a div+onClick, so keyboard
+            users could not expand a reservation to reach its approve/reject actions
+            (same defect class as the calendar cards, F2.5b). */}
+        <button
+          type="button"
+          className="flex w-full items-center justify-between text-left cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
         >
           <div className="flex items-center gap-3">
             <StatusIcon status={reservation.status} />
@@ -46,10 +50,10 @@ export function ReservationCard({
             </div>
             <StatusBadge status={reservation.status} />
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             {expanded ? "Ocultar" : "Ver"}
           </div>
-        </div>
+        </button>
 
         {expanded && (
           <div className="flex items-start justify-between mt-4">

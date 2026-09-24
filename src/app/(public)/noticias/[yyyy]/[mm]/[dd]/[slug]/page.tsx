@@ -53,7 +53,7 @@ export default async function NoticiaDetailPage({
       <Container className="flex flex-col gap-6 px-8 py-16">
         <Link
           href="/noticias"
-          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-la-nube-primary"
+          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-la-nube-selected dark:hover:text-la-nube-secondary"
         >
           <ArrowLeft className="h-4 w-4" />
           Todas las noticias
