@@ -9,31 +9,25 @@ Grouped by milestone. See `docs/milestones/` for the full context behind each.
 
 ## Milestone 2 — Audit trail
 
-- **Retention**: keep audit logs forever, or age them out after N months/years?
-  Affects whether a cron-based purge is in scope for a future pass.
-- **Scope of "activity"**: admin-surface mutations only (current, implemented
-  slice), or also user self-service actions (cancel own reservation, edit own
-  profile)? Recommend staying admin-only unless there's a specific need driving
-  the broader scope — instrumenting every write in the app is a materially
-  bigger effort.
-- **Cascade attribution**: when one action (e.g. approving a reservation)
-  triggers others (auto-rejecting conflicts) inside `approve_reservation()`,
-  should the trail show that as one grouped event or independent entries linked
-  by a correlation id? The schema already has a `requestId` column for this,
-  unused so far since the app layer doesn't currently surface which
-  reservations got auto-rejected — needs that surfaced first.
-- **Who can see what**: is the full trail superadmin-only (current), or can
-  ADMIN see a filtered subset (e.g. everything except role/ban changes on other
-  admins)? Would mean splitting `audit:view` into two permissions.
-- **Rollout order**: which of the not-yet-instrumented routes matter most to
-  see logged first? Instrumented as of 2026-09-23: `users/[id]` (role changes),
-  `reservations/[id]`, `spaces/[id]`, `resources/[id]`, `reservation-types/[id]`,
-  `news/[id]`, `news/[id]/decision`. **Still uninstrumented**: every
-  _collection_ POST (creating a space/resource/reservation-type/news post is
-  not logged — only editing and deleting one is), plus `events/*`, `forms/*`,
-  `events/[id]/participants/decision`, `incidents/*`, `site-config`, `themes/*`,
-  `checkin/[id]` and `spaces/reorder`. The create-vs-update asymmetry is
-  probably the most surprising gap and worth closing first.
+Cascade attribution and rollout order are resolved — see
+[`milestones/milestones-2-audit-trail.md`](./milestones/milestones-2-audit-trail.md).
+What remains is product policy, not engineering:
+
+- **Retention**: keep audit logs forever, or age them out after N months/years? Now that
+  every admin mutation writes an entry (check-outs included, which are the highest-volume
+  source), the table grows faster than it did — so this is worth deciding before it is a
+  problem rather than after. Affects whether a cron-based purge is in scope.
+- **Scope of "activity"**: admin-surface mutations only (current), or also user
+  self-service actions (cancelling one's own reservation, editing one's own profile)?
+  Recommend staying admin-only unless something specific drives the broader scope;
+  instrumenting every write in the app is a materially bigger effort.
+- **Who can see what**: is the full trail superadmin-only (current), or can ADMIN see a
+  filtered subset — e.g. everything except role and ban changes on other admins? Would
+  mean splitting `audit:view` into two permissions.
+- **Should check-outs live in the same trail?** They are instrumented now, and the view
+  filters by action and entity type, so they do not drown anything today. If the volume
+  becomes a nuisance in practice, the alternative is a separate lighter log rather than
+  going back to not recording them.
 
 ## Milestone 3 — Seasonal landing themes
 

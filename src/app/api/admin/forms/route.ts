@@ -4,6 +4,8 @@ import { createFormTemplate, listFormTemplates } from "@/lib/db/forms";
 import { serializeJson } from "@/lib/json-bigint";
 import { formTemplateSchema } from "@/lib/schemas/events";
 import { NextRequest, NextResponse } from "next/server";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 export async function GET() {
   try {
@@ -19,7 +21,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { error } = await requirePermission("forms:manage");
+    const { error, session } = await requirePermission("forms:manage");
     if (error) return error;
 
     const body = await request.json().catch(() => null);
@@ -35,6 +37,14 @@ export async function POST(request: NextRequest) {
     }
 
     const template = await createFormTemplate(parsed.data);
+    if (template) {
+      await recordAuditFromSession(session, {
+        action: AUDIT_ACTIONS.formCreate,
+        entityType: "Form",
+        entityId: template.id,
+        after: { name: template.name },
+      });
+    }
     return NextResponse.json(serializeJson(template), { status: 201 });
   } catch (err) {
     return apiCatch("admin/forms POST", err);

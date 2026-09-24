@@ -7,8 +7,10 @@ import {
 import { ReservationStatus } from "@/generated/prisma/client";
 import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { diffFields } from "@/lib/audit/diff";
 import { recordAuditFromSession } from "@/lib/audit/record";
+import { createId } from "@paralleldrive/cuid2";
 import { NextRequest, NextResponse } from "next/server";
 import { apiServerError } from "@/lib/api/response";
 
@@ -44,20 +46,45 @@ export async function PATCH(
         const result = await approveReservationAndRejectConflicts(
           resolvedParams.id /*, deniedReason*/,
         );
+
+        // One approval can cascade into rejecting other people's reservations. Every
+        // entry from this request shares a requestId so the view can group the cascade
+        // under the approval that caused it (the milestone's cascade-attribution
+        // question, resolved as "N atomic entries linked by a correlation id").
+        const requestId = createId();
+
         if (before) {
           const diff = diffFields(before, { ...before, status: "APPROVED" }, [
             "status",
           ]);
           if (diff) {
             await recordAuditFromSession(session, {
-              action: "reservation.approve",
+              action: AUDIT_ACTIONS.reservationApprove,
               entityType: "Reservation",
               entityId: resolvedParams.id,
               before: diff.before,
               after: diff.after,
+              requestId,
             });
           }
         }
+
+        for (const rejectedId of result.autoRejectedIds) {
+          await recordAuditFromSession(session, {
+            action: AUDIT_ACTIONS.reservationAutoReject,
+            entityType: "Reservation",
+            entityId: rejectedId,
+            // approve_reservation() only ever touches rows that were PENDING, so the
+            // before-state is known without a second query.
+            before: { status: "PENDING" },
+            after: { status: "REJECTED" },
+            // The actor is the approving admin, not "system": they caused this, even
+            // though they never acted on this reservation directly.
+            reason: `Rechazada automáticamente al aprobarse la reserva ${resolvedParams.id}`,
+            requestId,
+          });
+        }
+
         return NextResponse.json(result);
       }
     } else {
@@ -83,8 +110,8 @@ export async function PATCH(
           await recordAuditFromSession(session, {
             action:
               status === "REJECTED"
-                ? "reservation.reject"
-                : "reservation.cancel",
+                ? AUDIT_ACTIONS.reservationReject
+                : AUDIT_ACTIONS.reservationCancel,
             entityType: "Reservation",
             entityId: resolvedParams.id,
             before: diff.before,

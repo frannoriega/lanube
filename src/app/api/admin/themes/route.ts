@@ -4,6 +4,8 @@ import { serializeJson } from "@/lib/json-bigint";
 import { landingThemeInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
 import { apiServerError } from "@/lib/api/response";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 export async function GET() {
   const { error } = await requirePermission("landing-themes:manage");
@@ -18,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { error } = await requirePermission("landing-themes:manage");
+  const { error, session } = await requirePermission("landing-themes:manage");
   if (error) return error;
 
   const body = await request.json().catch(() => null);
@@ -35,6 +37,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const theme = await createLandingTheme(parsed.data);
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.themeCreate,
+      entityType: "LandingTheme",
+      entityId: theme.id,
+      after: { name: theme.name, isEnabled: theme.isEnabled },
+    });
     return NextResponse.json(serializeJson(theme), { status: 201 });
   } catch (err) {
     return apiServerError("admin/themes POST", err);

@@ -4,6 +4,8 @@ import { createEvent, listEvents } from "@/lib/db/events";
 import { eventInputSchema } from "@/lib/schemas/events";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 export async function GET() {
   const { error } = await requirePermission("events:manage");
@@ -14,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { error } = await requirePermission("events:manage");
+  const { error, session } = await requirePermission("events:manage");
   if (error) return error;
 
   const body = await request.json().catch(() => null);
@@ -25,6 +27,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const event = await createEvent(parsed.data);
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.eventCreate,
+      entityType: "Event",
+      entityId: event.id,
+      after: { name: event.name, status: event.status },
+    });
     return apiSuccess(event, { status: 201 });
   } catch (e) {
     return apiCatch("admin/events POST", e);

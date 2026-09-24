@@ -1,15 +1,66 @@
 # Milestone 2 — Audit trail
 
-> **Progress (2026-09-22):** schema, `recordAudit`/`recordAuditFromSession` +
-> `diffFields` helpers, and the `/admin/audit` view already existed
-> (first slice). This pass added instrumentation to the Spaces, Resources,
-> and Reservation Types superadmin CRUD routes (`space.update`/`.delete`,
-> `resource.update`/`.delete`, `reservationType.update`/`.delete`), the next
-> chunk after Users in the plan's rollout order. Still not instrumented:
-> Events (create/update/delete/session actions), Forms, Participant
-> decisions, Incidents, Site config, and the cascade-attribution correlation
-> id for `approve_reservation()`'s auto-rejects (open question, unresolved).
-> No tests added (item 7 of the plan).
+> **Implemented (2026-09-24)** on branch `milestone-2` (cut fresh from `preview`).
+> Every admin route that mutates state now writes an audit entry, the
+> cascade-attribution question is resolved and working, and the plan's item 7 (tests)
+> is done.
+>
+> ### What this pass added
+>
+> - **Cascade attribution — the open question, resolved.** It was blocked on "the app
+>   layer doesn't surface which reservations got auto-rejected." That turned out to be a
+>   **bug, not a missing feature**: `approve_reservation()` has always returned
+>   `auto_rejected_ids`, but `approveReservationAndRejectConflicts()` called it through
+>   `$executeRaw`, which yields a row count and throws the result set away. Switched to
+>   `$queryRaw`. The approval and each cascaded rejection are now separate entries sharing
+>   a `requestId` (the column existed, unused), attributed to the **approving admin** — not
+>   "system" — with the cause in `reason`. Verified end-to-end against the dev DB with a
+>   constructed conflict: one approval produced three linked entries.
+> - **The create-vs-update asymmetry is closed** — the gap `OPEN_QUESTIONS.md` called "the
+>   most surprising." Creating a space, resource, reservation type, news post, theme, event
+>   or form was invisible; only editing and deleting were logged.
+> - **Remaining domains instrumented:** events (create/update/delete), forms
+>   (create/update/delete), participant decisions, themes (create/update/delete),
+>   site config, space reordering, and check-out.
+> - **An action registry** (`src/lib/audit/actions.ts`). Action ids were free-text strings
+>   written at each call site, so a typo produced a silently-unfilterable entry and the
+>   view could only render the raw id. Now they are typed constants with Spanish labels.
+> - **The view reads causally.** It renders labels instead of raw ids, marks cascaded
+>   entries and indents them, and links "Ver la acción completa" to every entry sharing a
+>   `requestId`. Its standing copy claimed only reservations and user roles were logged —
+>   true when written, long stale.
+> - **Tests (item 7).** `actions.test.ts` covers the registry and, more usefully, walks
+>   every `src/app/api/admin/**/route.ts` and fails if one exports a mutating handler
+>   without calling `recordAudit`. Exclusions live in an explicit `AUDIT_EXEMPT` map with a
+>   reason each, so adding one is deliberate. The guard's first version checked
+>   `source.includes("recordAudit")` and passed on a route whose call had been removed but
+>   whose import remained — it now looks for a call, and was re-verified by breaking a
+>   route on purpose.
+>
+> ### Deliberately not audited
+>
+> - **The five upload routes** (`events/upload`, `events/attachment`, `forms/upload`,
+>   `news/upload`, `spaces/upload`). They push a file to storage and hold no state of their
+>   own; the entity referencing the file is audited when it is saved.
+> - **Incidents.** Its API is a 501 stub that writes nothing (milestone-10 F1.6) — there is
+>   no mutation to record. It will need instrumenting whenever the feature is finished.
+> - **User self-service actions** (cancelling one's own reservation, editing one's own
+>   profile). Still admin-surface-only, per this doc's own recommendation; see
+>   `OPEN_QUESTIONS.md`.
+>
+> ### Fixed in passing
+>
+> `checkin/[id]` authorised with `auth()` + `isAdminByEmail()` — i.e. "can this person open
+> /admin". Since milestone 9 made roles data, that is true of _any_ admin-panel role, so a
+> Comunicador could check people out. It now uses `requirePermission("checkin:manage")`
+> like every other admin mutation.
+>
+> ### Noticed, not fixed (out of scope)
+>
+> `previewConflictingPending()` returns a hardcoded `[]`, so the UI's "these reservations
+> will be auto-rejected" warning shows nothing before an admin confirms. Same family as the
+> `$executeRaw` bug but on the preview path, and replicating the SQL conflict logic in TS is
+> a reservations-domain change, not an audit one.
 
 ## Use case
 
@@ -126,7 +177,11 @@ an extension of something partial.
    mutation (e.g. role change) produces the expected `AuditLog` row with
    correct before/after.
 
-## Open questions (needs a product decision before/while building)
+## Open questions
+
+**Resolved:** cascade attribution (N atomic entries linked by a shared `requestId`, actor =
+the admin whose action caused them) and rollout order (everything is instrumented).
+Still open:
 
 - **Retention**: keep audit logs forever, or age them out after N
   months/years? (Affects whether a cron-based purge belongs in this

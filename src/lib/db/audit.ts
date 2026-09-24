@@ -21,6 +21,8 @@ export interface AuditLogListItem {
 export interface ListAuditLogsOptions {
   entityType?: string;
   actorUserId?: string;
+  /** Every entry written by one request: an action together with its cascade. */
+  requestId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -42,11 +44,14 @@ export async function listAuditLogs(
   const where: Prisma.AuditLogWhereInput = {};
   if (options?.entityType) where.entityType = options.entityType;
   if (options?.actorUserId) where.actorUserId = options.actorUserId;
+  if (options?.requestId) where.requestId = options.requestId;
 
   const [rows, total] = await Promise.all([
     prisma.auditLog.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: options?.requestId
+        ? { createdAt: "asc" }
+        : { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
