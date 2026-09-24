@@ -5,12 +5,14 @@ import { notifyParticipantsDecision } from "@/lib/email/event-decision";
 import { logger } from "@/lib/logger";
 import { participantDecisionSchema } from "@/lib/schemas/events";
 import { NextRequest } from "next/server";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("events:manage");
+  const { error, session } = await requirePermission("events:manage");
   if (error) return error;
 
   const { id } = await params;
@@ -29,6 +31,20 @@ export async function POST(
       decision,
       reason ?? null,
     );
+
+    // One entry for the batch, keyed to the event: a decision covering 40 people should
+    // not produce 40 rows. The participant ids live in the payload.
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.participantDecide,
+      entityType: "Event",
+      entityId: id,
+      after: {
+        decision,
+        participantIds,
+        decided: participants.length,
+      },
+      reason: reason?.trim() || null,
+    });
 
     // Notify affected participants only after the write commits (mirrors session-change notices).
     const { sent, failed } = await notifyParticipantsDecision(

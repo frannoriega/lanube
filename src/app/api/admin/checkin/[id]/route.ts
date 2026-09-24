@@ -1,44 +1,48 @@
-import { auth } from "@/lib/auth";
-import {
-  checkoutActiveCheckinByUserId,
-  isAdminByEmail,
-} from "@/lib/db/adminStats";
-import { serializeJson } from "@/lib/json-bigint";
-import { NextRequest, NextResponse } from "next/server";
-import { apiServerError } from "@/lib/api/response";
+import { requirePermission } from "@/lib/api-auth";
+import { apiError, apiServerError, apiSuccess } from "@/lib/api/response";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
+import { checkoutActiveCheckinByUserId } from "@/lib/db/adminStats";
+import { NextRequest } from "next/server";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth();
+    // Was `auth()` + `isAdminByEmail()`, which only asks "can this person enter /admin".
+    // Since roles became data (milestone 9) that is true for any admin-panel role — a
+    // Comunicador could check people out. This route needs its own permission, like
+    // every other admin mutation.
+    const { error, session } = await requirePermission("checkin:manage");
+    if (error) return error;
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
-
-    const isAdmin = await isAdminByEmail(session.user.email);
-    if (!isAdmin) {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-    }
-
-    const { action } = await request.json();
+    const { action } = await request.json().catch(() => ({ action: null }));
 
     if (!action || !["checkout"].includes(action)) {
-      return NextResponse.json({ message: "Acción inválida" }, { status: 400 });
+      return apiError("Acción inválida", 400);
     }
 
-    const resolvedParams = await params;
+    const { id } = await params;
 
-    const updated = await checkoutActiveCheckinByUserId(resolvedParams.id);
+    const updated = await checkoutActiveCheckinByUserId(id);
     if (!updated) {
-      return NextResponse.json(
-        { message: "Check-in no encontrado o ya cerrado" },
-        { status: 404 },
-      );
+      return apiError("Check-in no encontrado o ya cerrado", 404);
     }
-    return NextResponse.json(serializeJson(updated));
+
+    // Check-outs are higher-frequency than the rest of the trail, but "who closed this
+    // person's session, and when" is exactly the kind of operational question the audit
+    // exists to answer. The view filters by action and entity type, so the volume does
+    // not drown anything.
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.checkinUpdate,
+      entityType: "CheckIn",
+      entityId: updated.id,
+      before: { checkOutTime: null },
+      after: { checkOutTime: Number(updated.checkOutTime ?? 0) },
+    });
+
+    return apiSuccess(updated);
   } catch (error) {
     return apiServerError("admin/checkin/[id]", error);
   }

@@ -7,6 +7,8 @@ import {
 } from "@/lib/db/forms";
 import { formTemplateSchema } from "@/lib/schemas/events";
 import { NextRequest } from "next/server";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 export async function GET(
   _request: NextRequest,
@@ -27,7 +29,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("forms:manage");
+  const { error, session } = await requirePermission("forms:manage");
   if (error) return error;
 
   const { id } = await params;
@@ -41,6 +43,12 @@ export async function PUT(
 
   try {
     const template = await updateFormTemplate(id, parsed.data);
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.formUpdate,
+      entityType: "Form",
+      entityId: id,
+      after: { name: template?.name ?? null },
+    });
     return apiSuccess(template);
   } catch (e) {
     return apiCatch("admin/forms/[id] PUT", e);
@@ -51,12 +59,17 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("forms:manage");
+  const { error, session } = await requirePermission("forms:manage");
   if (error) return error;
 
   const { id } = await params;
   try {
     await deleteFormTemplate(id);
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.formDelete,
+      entityType: "Form",
+      entityId: id,
+    });
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/forms/[id] DELETE", e);
