@@ -13,6 +13,8 @@ import {
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { z } from "zod";
 import { NextRequest } from "next/server";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 export async function GET(
   _request: NextRequest,
@@ -33,7 +35,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("events:manage");
+  const { error, session } = await requirePermission("events:manage");
   if (error) return error;
 
   const { id } = await params;
@@ -66,6 +68,12 @@ export async function PUT(
       sessionActions: sessionsParsed.data,
       sessionReason,
     });
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.eventUpdate,
+      entityType: "Event",
+      entityId: id,
+      after: { name: event.name, status: event.status },
+    });
     return apiSuccess(event);
   } catch (e) {
     // Edit would drop per-session changes → ask the admin to confirm (frontend resends force).
@@ -80,12 +88,18 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error } = await requirePermission("events:manage");
+  const { error, session } = await requirePermission("events:manage");
   if (error) return error;
 
   const { id } = await params;
   try {
     await deleteEvent(id);
+    // Soft delete: the event, its form and participant history survive.
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.eventDelete,
+      entityType: "Event",
+      entityId: id,
+    });
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/events/[id] DELETE", e);
