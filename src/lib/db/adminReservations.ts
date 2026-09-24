@@ -94,11 +94,29 @@ async function mapRowsToAdminResults(
   return rows.map((r) => toAdminReservationListResult(r, sizes.get(r.id) ?? 1));
 }
 
+/**
+ * Approves a reservation and lets `approve_reservation()` reject whatever it conflicts
+ * with — one admin click can cascade into rejecting other people's reservations.
+ *
+ * The SQL function has always RETURNED those ids (`auto_rejected_ids`, a comma-separated
+ * text column), but this helper called it through `$executeRaw`, which yields a row count
+ * and discards the result set — so the cascade was invisible to the app and the audit
+ * trail had nothing to attribute. `$queryRaw` reads them properly.
+ */
 export async function approveReservationAndRejectConflicts(
   id: string,
 ): Promise<{ approvedId: string; autoRejectedIds: string[] }> {
-  await prisma.$executeRaw`SELECT approve_reservation(${id}::text)`;
-  return { approvedId: id, autoRejectedIds: [] };
+  const rows = await prisma.$queryRaw<
+    Array<{ approved_id: string | null; auto_rejected_ids: string | null }>
+  >`SELECT * FROM approve_reservation(${id}::text)`;
+
+  const raw = rows[0]?.auto_rejected_ids ?? "";
+  const autoRejectedIds = raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0 && value !== id);
+
+  return { approvedId: rows[0]?.approved_id ?? id, autoRejectedIds };
 }
 
 export async function previewConflictingPending(): Promise<string[]> {

@@ -538,6 +538,31 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   (`signin`/`reset`/`signup`), so they render light-theme colors in dark mode.
   Tracked in `docs/OPEN_QUESTIONS.md` as a design pass, not a mechanical sweep.
 
+### 10. Audit trail
+
+- **Every admin route that mutates state must write an audit entry.** This is enforced:
+  `src/lib/audit/actions.test.ts` walks `src/app/api/admin/**/route.ts` and fails if a
+  file exports a `POST`/`PUT`/`PATCH`/`DELETE` without calling `recordAudit`. If a route
+  genuinely shouldn't be audited, add it to that test's `AUDIT_EXEMPT` map **with a
+  reason** — don't weaken the check.
+- **Use the action registry**, `AUDIT_ACTIONS` in `src/lib/audit/actions.ts` — never a
+  free-text action string. Adding an action means adding its Spanish label in the same
+  file (a test asserts every action has one). Action ids are persisted in
+  `audit_logs.action`, so **renaming one orphans existing history**.
+- **Call `recordAuditFromSession(session, {...})`** from routes; it resolves the actor's
+  display label. It never throws — a broken audit pipe must not break the mutation it
+  documents — so a failure surfaces as a `logger.error`, not a 500.
+- **Log the changed slice, not the row.** `diffFields(before, after, keys)` returns
+  `null` when nothing in `keys` changed, so callers skip writing a no-op entry.
+- **Cascades share a `requestId`.** One admin action can change records the admin never
+  touched — approving a reservation auto-rejects conflicting ones inside
+  `approve_reservation()`. Those get their own entries, attributed to the _approving
+  admin_ (not "system"), all carrying one `requestId` so `/admin/audit` can group them.
+  Add new cascading actions to `CASCADED_ACTIONS` so the view de-emphasises them.
+- ⚠️ `approve_reservation()` returns `auto_rejected_ids`; read it with `$queryRaw`.
+  `$executeRaw` returns a row count and silently discards the result set — that was a
+  real bug that made the cascade invisible for months.
+
 ## Testing & Seeding
 
 **Vitest Configuration** (`vitest.config.ts`):
