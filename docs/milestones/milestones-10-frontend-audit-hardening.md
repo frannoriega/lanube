@@ -19,6 +19,26 @@
 > and 178 passing tests; the admin surfaces and public pages were smoke-tested against
 > the running dev stack.
 >
+> ### Branch base corrected (2026-09-24)
+>
+> `milestone-9` and `milestone-10` were originally cut from `preview` while `preview` was
+> still 5 commits behind `milestone-5`, so the slices were built against a tree that did
+> **not** contain milestones 1–5. That was fixed by fast-forwarding `preview` to
+> `milestone-5`, rebasing `milestone-9` onto it (one conflict, in
+> `api/admin/news/[id]/route.ts`: milestone-4's audit `before` binding vs. milestone-9's
+> DB-fresh permission lookup — both were wanted, both kept), then replaying
+> milestone-10's seven commits onto that with `--onto`.
+>
+> **Every audit check was then re-run against the merged tree**, because a clean rebase
+> proves nothing about code the audit never looked at. Five real gaps surfaced in
+> milestone-1–5 code and were fixed in `6a6bd48`: `landing-themes-manager` discarding
+> `useApi`'s error (F1.2), a fifth light-only status→colour map in `participants-table`
+> and a sixth inline in the user dashboard (F2.6), `reservation-card`'s expand row being a
+> `div`+`onClick` with no keyboard path to the approve/reject actions (F2.5b), and a
+> `hover:text-la-nube-primary` on body-size text (F2.3). No new instances of: routes
+> without `try`/`catch`, `target="_blank"` without `rel`, or `ring-ring/50`. Milestone-5's
+> cancel-scope dialog was already using real `<Button>`s.
+>
 > ### Open questions, as resolved
 >
 > 1. **Incidents — finish or hide? (F1.6)** Neither, quite: the nav entry turned out to
