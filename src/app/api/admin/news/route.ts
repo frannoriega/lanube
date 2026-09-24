@@ -10,6 +10,8 @@ import {
   newsPostInputSchema,
 } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 // GET: paginated list. A Comunicador (news:manage only) sees just their own
 // posts; Admin/Superadmin (news:approve) see everyone's — scoped server-side.
@@ -71,6 +73,12 @@ export async function POST(request: NextRequest) {
       { id: session.userId, label },
       canApprove,
     );
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.newsCreate,
+      entityType: "NewsPost",
+      entityId: post.id,
+      after: { title: post.title, status: post.status },
+    });
     return apiSuccess(post, { status: 201 });
   } catch (err) {
     return apiCatch("admin/news POST", err);

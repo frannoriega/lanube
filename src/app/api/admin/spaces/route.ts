@@ -4,6 +4,8 @@ import { createSpace, getPublicSpaces } from "@/lib/db/spaces";
 import { NextRequest } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { spaceInputSchema } from "@/lib/schemas/config";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { recordAuditFromSession } from "@/lib/audit/record";
 
 // GET: list spaces. `?reservable=1` narrows to reservable ones (event-form picker);
 // any admin can read, mutations need spaces:manage.
@@ -27,7 +29,7 @@ function isUniqueViolation(e: unknown): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const { error } = await requirePermission("spaces:manage");
+  const { error, session } = await requirePermission("spaces:manage");
   if (error) return error;
 
   const body = await request.json().catch(() => null);
@@ -40,6 +42,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const space = await createSpace(parsed.data);
+    await recordAuditFromSession(session, {
+      action: AUDIT_ACTIONS.spaceCreate,
+      entityType: "Space",
+      entityId: space.id,
+      after: { name: space.name, slug: space.slug },
+    });
     return apiSuccess(space, { status: 201 });
   } catch (e) {
     if (isUniqueViolation(e)) {
