@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, DataTablePagination } from "@/components/ui/data-table";
 import {
@@ -22,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ToneBadge, type StatusTone } from "@/components/atoms/status-badge";
 import { PARTICIPANT_STATUS_LABEL } from "@/lib/constants/participants";
 import {
   type ExportColumn,
@@ -85,11 +85,16 @@ const DECIDABLE: ParticipantStatus[] = [
   ParticipantStatus.APPROVED,
 ];
 
-const STATUS_BADGE_CLASS: Record<ParticipantStatus, string> = {
-  [ParticipantStatus.PENDING]: "bg-amber-100 text-amber-800",
-  [ParticipantStatus.APPROVED]: "bg-green-100 text-green-800",
-  [ParticipantStatus.REJECTED]: "bg-red-100 text-red-700",
-  [ParticipantStatus.CANCELLED]: "bg-slate-200 text-slate-700",
+/**
+ * Participant status → shared tone. This was a fifth light-only `bg-*-100 text-*-800`
+ * map (milestone-10 F2.6); the tones live in atoms/status-badge.tsx and define both
+ * themes once. Don't reintroduce colour classes here.
+ */
+const STATUS_TONE: Record<ParticipantStatus, StatusTone> = {
+  [ParticipantStatus.PENDING]: "warning",
+  [ParticipantStatus.APPROVED]: "success",
+  [ParticipantStatus.REJECTED]: "danger",
+  [ParticipantStatus.CANCELLED]: "neutral",
 };
 
 /** A sortable column header button (mirrors the admin users table). */
@@ -273,9 +278,9 @@ export function ParticipantsTable({
         />
       ),
       cell: ({ row }) => (
-        <Badge className={STATUS_BADGE_CLASS[row.original.status]}>
+        <ToneBadge tone={STATUS_TONE[row.original.status]}>
           {PARTICIPANT_STATUS_LABEL[row.original.status]}
-        </Badge>
+        </ToneBadge>
       ),
       meta: { label: "Estado" },
     };
