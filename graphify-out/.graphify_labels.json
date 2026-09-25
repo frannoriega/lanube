@@ -357,6 +357,7 @@
   "355": "builder-conditions.ts",
   "356": "markdown-editor.tsx",
   "357": "🎉 Success!",
+  "358": "index.tsx",
   "359": "plan.ts",
   "360": "package.json",
   "361": "page.tsx",
@@ -376,6 +377,18 @@
   "375": "🗄️ Database Requirements",
   "376": "🎨 Design Highlights",
   "377": "📊 Performance",
+  "378": "audit.ts",
   "379": "📚 Documentation Updates",
-  "380": "UserRole"
+  "380": "UserRole",
+  "381": "Auth & permissions",
+  "382": "route.ts",
+  "383": "Milestone 3 — Seasonal / date-based landing themes",
+  "384": "errors.ts",
+  "385": "Milestone 7 — Proposals (community suggestion box)",
+  "386": "Overview",
+  "387": "Milestone 2 — Audit trail",
+  "388": "Milestone 6 — Teams & Organizations",
+  "392": "language-and-copy.md",
+  "393": "0002-magic-link-login.md",
+  "394": "global-error.tsx"
 }
