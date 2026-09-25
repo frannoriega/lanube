@@ -1,7 +1,7 @@
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 
 /**
- * `/noticias/YYYY/MM/DD/slug` — the date segments are the post's publish date
+ * `/news/YYYY/MM/DD/slug` — the date segments are the post's publish date
  * (admin timezone), not part of the lookup key (the slug alone is globally
  * unique); they exist for a readable, dated URL. See
  * `[yyyy]/[mm]/[dd]/[slug]/page.tsx`, which 308-redirects to this canonical
@@ -14,7 +14,7 @@ export function newsDetailPath(post: {
 }): string {
   const ms = Number(post.publishedAt ?? post.createdAt);
   const [yyyy, mm, dd] = dateKeyFromUnixMs(ms).split("-");
-  return `/noticias/${yyyy}/${mm}/${dd}/${post.slug}`;
+  return `/news/${yyyy}/${mm}/${dd}/${post.slug}`;
 }
 
 /**

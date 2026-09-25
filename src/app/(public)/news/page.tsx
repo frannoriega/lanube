@@ -86,7 +86,7 @@ export default async function NoticiasIndexPage({
         <Pagination
           page={page}
           totalPages={totalPages}
-          basePath="/noticias"
+          basePath="/news"
           query={{ q: sp.q, from: sp.from, to: sp.to }}
         />
       </Container>

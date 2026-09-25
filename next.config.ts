@@ -73,6 +73,14 @@ const nextConfig: NextConfig = {
     return [
       // "Servicios" was renamed to "Espacios"; keep the old URL working.
       { source: "/services", destination: "/spaces", permanent: true },
+      // Public routes are English; "/noticias" was the original Noticias path and is
+      // already out in the wild (shared article links carry the dated sub-path).
+      { source: "/noticias", destination: "/news", permanent: true },
+      {
+        source: "/noticias/:path*",
+        destination: "/news/:path*",
+        permanent: true,
+      },
     ];
   },
   async headers() {

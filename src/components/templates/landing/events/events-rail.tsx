@@ -46,7 +46,7 @@ export function EventsRail({ events }: { events: UpcomingEventCardData[] }) {
     <div className="relative">
       <div
         ref={trackRef}
-        className="flex snap-x gap-6 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x items-stretch gap-6 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {events.map((event) => (
           <div
