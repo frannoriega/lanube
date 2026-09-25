@@ -26,9 +26,33 @@ type PeriodSummary = {
   reservations: ReservationSummary;
 };
 
+/**
+ * Qué parte del rango pedido está respaldada por detalle crudo y qué parte ya fue
+ * compactada. Ver `src/lib/constants/retention.ts`.
+ *
+ * Existe para que el reporte no mienta por omisión: el detalle crudo se borra a los
+ * RAW_RETENTION_MONTHS meses, así que un rango viejo devolvería cero reservas y se vería
+ * igual que un período sin actividad.
+ */
+type ReportCoverage = {
+  /** Instante más antiguo que todavía conserva detalle crudo. */
+  rawFromMs: number;
+  /** True si parte del rango pedido es anterior a `rawFromMs`. */
+  hasPrunedPortion: boolean;
+  /** Snapshots mensuales disponibles que cubren la parte podada. */
+  snapshots: { key: string; fromDate: string; toDate: string }[];
+};
+
 type ReportData = PeriodSummary & {
   daily: DailyStats[];
   comparison?: PeriodSummary;
+  coverage: ReportCoverage;
 };
 
-export type { ReportData, PeriodSummary, StatusBreakdown, ReservationSummary };
+export type {
+  ReportData,
+  ReportCoverage,
+  PeriodSummary,
+  StatusBreakdown,
+  ReservationSummary,
+};

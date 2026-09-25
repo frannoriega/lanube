@@ -1,0 +1,40 @@
+/// Foto del reporte ya calculado de un período cerrado (un mes, o un año).
+///
+/// Existe para poder borrar el detalle crudo sin perder el historial: las filas de
+/// `reservations` se conservan RAW_RETENTION_MONTHS meses y después viven solo acá, como
+/// agregado, hasta SNAPSHOT_RETENTION_YEARS años (ver src/lib/constants/retention.ts).
+///
+/// `data` es jsonb y no columnas tipadas a propósito: la forma del reporte la define
+/// `src/types/stats/report.ts` y cambia con el producto. Un snapshot es lo que el reporte
+/// decía en ese momento, no un esquema que haya que migrar cada vez que se agrega una
+/// métrica.
+///
+/// ⚠️ La tabla no existía hasta la migración `20260925000000_report_snapshots_and_retention`:
+/// `/api/cron/report-snapshot` la insertaba desde SQL crudo sin que ninguna migración la
+/// creara, así que habría fallado en cada corrida. No se notó porque tampoco estaba
+/// agendada en vercel.json (milestone-12 D22).
+model ReportSnapshot {
+  id String @id @default(cuid())
+
+  /// Clave estable y legible: `MONTHLY_2026_09` / `YEARLY_2026`. Es el destino del
+  /// ON CONFLICT del cron, que reescribe el snapshot mientras el período siga abierto.
+  key   String  @unique
+  /// "MONTHLY" | "YEARLY".
+  type  String
+  year  Int
+  /// 1..12 para los mensuales; null para los anuales.
+  month Int?
+
+  /// Rango cubierto, como claves de fecha "YYYY-MM-DD" en la zona del predio.
+  fromDate String @map("from_date")
+  toDate   String @map("to_date")
+
+  /// El `ReportData` serializado.
+  data Json
+
+  createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@index([year, month])
+  @@index([fromDate])
+  @@map("report_snapshots")
+}

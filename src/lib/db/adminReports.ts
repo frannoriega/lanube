@@ -1,10 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import {
+  ADMIN_TIMEZONE,
   dateKeyFromUnixMs,
   enumerateDateKeysInclusive,
+  startOfDateKeyMs,
 } from "@/lib/admin/admin-timezone";
+import { nowMs } from "@/lib/clock";
+import { RAW_RETENTION_MONTHS } from "@/lib/constants/retention";
+import { TZDate } from "@date-fns/tz";
 import type { ResourceStats, DailyStats } from "@/types/stats";
-import type { PeriodSummary, ReportData } from "@/types/stats/report";
+import type {
+  PeriodSummary,
+  ReportCoverage,
+  ReportData,
+} from "@/types/stats/report";
 
 export type { ResourceStats };
 
@@ -194,6 +203,55 @@ function buildDailyStats(
   }));
 }
 
+/**
+ * Instante más antiguo con detalle crudo garantizado: el primer día del mes que queda
+ * RAW_RETENTION_MONTHS meses atrás, en la zona del predio. Se redondea a mes porque la
+ * poda es mensual (solo borra meses ya compactados).
+ */
+export function rawRetentionBoundaryMs(): number {
+  const now = new TZDate(nowMs(), ADMIN_TIMEZONE);
+  const boundary = new TZDate(
+    now.getFullYear(),
+    now.getMonth() - RAW_RETENTION_MONTHS,
+    1,
+    ADMIN_TIMEZONE,
+  );
+  const y = boundary.getFullYear();
+  const m = String(boundary.getMonth() + 1).padStart(2, "0");
+  return startOfDateKeyMs(`${y}-${m}-01`);
+}
+
+/**
+ * Qué parte del rango pedido sigue teniendo detalle crudo, y qué snapshots existen para la
+ * parte que ya no.
+ *
+ * Sin esto el reporte mentiría por omisión: pasada la retención, un rango viejo devuelve
+ * cero reservas, que se ve exactamente igual que un período sin actividad.
+ */
+async function buildCoverage(
+  fromMs: number,
+  toMs: number,
+): Promise<ReportCoverage> {
+  const rawFromMs = rawRetentionBoundaryMs();
+  const hasPrunedPortion = fromMs < rawFromMs;
+
+  if (!hasPrunedPortion) {
+    return { rawFromMs, hasPrunedPortion: false, snapshots: [] };
+  }
+
+  const snapshots = await prisma.reportSnapshot.findMany({
+    where: {
+      type: "MONTHLY",
+      fromDate: { lte: dateKeyFromUnixMs(Math.min(toMs, rawFromMs)) },
+      toDate: { gte: dateKeyFromUnixMs(fromMs) },
+    },
+    orderBy: { fromDate: "asc" },
+    select: { key: true, fromDate: true, toDate: true },
+  });
+
+  return { rawFromMs, hasPrunedPortion: true, snapshots };
+}
+
 export async function getReportForRange(
   fromMs: number,
   toMs: number,
@@ -219,5 +277,7 @@ export async function getReportForRange(
     );
   }
 
-  return { ...summary, daily, comparison };
+  const coverage = await buildCoverage(fromMs, toMs);
+
+  return { ...summary, daily, comparison, coverage };
 }
