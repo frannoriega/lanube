@@ -48,7 +48,7 @@ function toFormValues(post?: NewsPost | null): NewsPostAdminInput {
     slug: post?.slug ?? "",
     summary: post?.summary ?? "",
     body: post?.body ?? "",
-    coverImageUrl: post?.coverImageUrl ?? null,
+    coverImageUrl: post?.coverImageUrl ?? "",
     isFeatured: post?.isFeatured ?? false,
     featuredOrder: post?.featuredOrder ?? 0,
     status: (post?.status as NewsPostAdminInput["status"]) ?? "DRAFT",
@@ -76,9 +76,18 @@ export function NewsForm({
     defaultValues: toFormValues(post),
   });
 
+  // Un autor sin news:approve que edita una nota que YA está publicada puede dejarla
+  // publicada mientras la corrige, así el artículo nunca se va del sitio por una corrección
+  // (milestone-12 D20). Sigue sin poder publicar algo que nunca estuvo en línea, ni pausar una
+  // que sí lo está: las dos siguen siendo de nivel aprobación. El servidor vuelve a chequear
+  // todo esto (`assertAuthorTransition` + el schema que elige la ruta); esto solo da forma al
+  // menú.
+  const canAmendInPlace = !canApprove && post?.status === "PUBLISHED";
   const statusOptions = canApprove
     ? (["DRAFT", "PENDING_REVIEW", "PUBLISHED", "PAUSED"] as const)
-    : (["DRAFT", "PENDING_REVIEW"] as const);
+    : canAmendInPlace
+      ? (["PUBLISHED", "DRAFT", "PENDING_REVIEW"] as const)
+      : (["DRAFT", "PENDING_REVIEW"] as const);
 
   const onSubmit = async (values: NewsPostAdminInput) => {
     setBusy(true);
@@ -148,7 +157,7 @@ export function NewsForm({
                     />
                   </FormControl>
                   <FormDescription>
-                    /noticias/{form.watch("slug") || "…"}
+                    /news/{form.watch("slug") || "…"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -181,8 +190,8 @@ export function NewsForm({
                   <FormLabel>Imagen de portada</FormLabel>
                   <FormControl>
                     <ImageUpload
-                      value={field.value ?? null}
-                      onChange={field.onChange}
+                      value={field.value || null}
+                      onChange={(url) => field.onChange(url ?? "")}
                       uploadUrl={`/api/admin/news/upload${post ? `?postId=${encodeURIComponent(post.id)}` : ""}`}
                     />
                   </FormControl>
@@ -237,7 +246,13 @@ export function NewsForm({
                       ))}
                     </SelectContent>
                   </Select>
-                  {!canApprove ? (
+                  {canAmendInPlace ? (
+                    <FormDescription>
+                      Si la dejás publicada, los cambios se ven en el sitio al
+                      instante y un administrador los revisa después. Si elegís
+                      otro estado, la nota sale del sitio hasta que la aprueben.
+                    </FormDescription>
+                  ) : !canApprove ? (
                     <FormDescription>
                       Un administrador revisa y publica las notas enviadas.
                     </FormDescription>

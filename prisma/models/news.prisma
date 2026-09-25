@@ -26,6 +26,13 @@ model NewsPost {
 
   status NewsPostStatus @default(DRAFT)
 
+  /// Se marca cuando un autor con `news:manage` a secas corrige una nota que ya está
+  /// PUBLISHED. La nota sigue en línea (arreglar un typo no debería bajar la página) y esto
+  /// la deja marcada para que un admin revise el cambio después — ver milestone-12 D20. La
+  /// edición de un admin nunca la marca: tiene `news:approve`, así que su edición *es* la
+  /// revisión.
+  needsReview Boolean @default(false) @map("needs_review")
+
   /// Featured posts lead the landing section — same isFeatured/featuredOrder shape as Event.
   isFeatured    Boolean @default(false) @map("is_featured")
   featuredOrder Int     @default(0) @map("featured_order")
@@ -41,7 +48,29 @@ model NewsPost {
   createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
 
+  /// Slugs con los que esta nota era alcanzable antes (ver NewsPostSlug).
+  previousSlugs NewsPostSlug[]
+
   @@index([status])
   @@index([authorId])
+  @@index([needsReview])
   @@map("news_posts")
+}
+
+/// Un slug con el que una NewsPost estuvo publicada antes, conservado para que los links
+/// compartidos nunca se rompan (milestone-12 D8). La página de detalle cae en esta tabla y
+/// hace 308 hacia la ruta canónica actual de la nota.
+///
+/// `slug` es primary key sobre TODAS las notas a propósito: un slug retirado tiene que
+/// quedar inreclamable, o una nota posterior podría tomarlo y secuestrar en silencio los
+/// links entrantes del artículo viejo. `uniqueSlugFor()` chequea esta tabla además de
+/// `news_posts`.
+model NewsPostSlug {
+  slug       String   @id
+  newsPostId String   @map("news_post_id")
+  post       NewsPost @relation(fields: [newsPostId], references: [id], onDelete: Cascade)
+  createdAt  BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@index([newsPostId])
+  @@map("news_post_slugs")
 }
