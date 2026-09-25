@@ -1,16 +1,16 @@
-# Graph Report - lanube  (2026-09-08)
+# Graph Report - lanube  (2026-09-24)
 
 ## Corpus Check
-- 465 files · ~1,204,305 words
+- 574 files · ~1,295,452 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3002 nodes · 6044 edges · 379 communities (198 shown, 181 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 27 edges (avg confidence: 0.7)
+- 3570 nodes · 7568 edges · 392 communities (209 shown, 183 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 36 edges (avg confidence: 0.7)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7c65f587`
+- Built from commit: `3cdaff70`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -82,6 +82,7 @@
 - [[_COMMUNITY_Postgres Faketime Script|Postgres Faketime Script]]
 - [[_COMMUNITY_Next.js Wordmark|Next.js Wordmark]]
 - [[_COMMUNITY_PostCSS Configuration|PostCSS Configuration]]
+- [[_COMMUNITY_News Section|News Section]]
 - [[_COMMUNITY_Spaces Constants|Spaces Constants]]
 - [[_COMMUNITY_Navigation Types|Navigation Types]]
 - [[_COMMUNITY_File Icon SVG|File Icon SVG]]
@@ -278,6 +279,7 @@
 - [[_COMMUNITY_Restart Dev Server Required After DB Reset|Restart Dev Server Required After DB Reset]]
 - [[_COMMUNITY_Database Seed README|Database Seed README]]
 - [[_COMMUNITY_Session Strategy Analysis JWT vs Database|Session Strategy Analysis: JWT vs Database]]
+- [[_COMMUNITY_DIAGRAM|DIAGRAM.md]]
 - [[_COMMUNITY_Database ER Diagram|Database ER Diagram]]
 - [[_COMMUNITY_User Flow Create Reservation|User Flow: Create Reservation]]
 - [[_COMMUNITY_User Flow Get Calendar Reservations|User Flow: Get Calendar Reservations]]
@@ -362,6 +364,7 @@
 - [[_COMMUNITY_builder-conditions.ts|builder-conditions.ts]]
 - [[_COMMUNITY_markdown-editor.tsx|markdown-editor.tsx]]
 - [[_COMMUNITY_🎉 Success!|🎉 Success!]]
+- [[_COMMUNITY_index.tsx|index.tsx]]
 - [[_COMMUNITY_plan.ts|plan.ts]]
 - [[_COMMUNITY_package.json|package.json]]
 - [[_COMMUNITY_page.tsx|page.tsx]]
@@ -381,20 +384,31 @@
 - [[_COMMUNITY_🗄️ Database Requirements|🗄️ Database Requirements]]
 - [[_COMMUNITY_🎨 Design Highlights|🎨 Design Highlights]]
 - [[_COMMUNITY_📊 Performance|📊 Performance]]
+- [[_COMMUNITY_audit.ts|audit.ts]]
 - [[_COMMUNITY_📚 Documentation Updates|📚 Documentation Updates]]
 - [[_COMMUNITY_UserRole|UserRole]]
+- [[_COMMUNITY_Auth & permissions|Auth & permissions]]
+- [[_COMMUNITY_route.ts|route.ts]]
+- [[_COMMUNITY_Milestone 3 — Seasonal  date-based landing themes|Milestone 3 — Seasonal / date-based landing themes]]
+- [[_COMMUNITY_errors.ts|errors.ts]]
+- [[_COMMUNITY_Milestone 7 — Proposals (community suggestion box)|Milestone 7 — Proposals (community suggestion box)]]
+- [[_COMMUNITY_Overview|Overview]]
+- [[_COMMUNITY_Milestone 2 — Audit trail|Milestone 2 — Audit trail]]
+- [[_COMMUNITY_Milestone 6 — Teams & Organizations|Milestone 6 — Teams & Organizations]]
+- [[_COMMUNITY_language-and-copy|language-and-copy.md]]
+- [[_COMMUNITY_0002-magic-link-login|0002-magic-link-login.md]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `cn()` - 161 edges
-2. `Button()` - 64 edges
-3. `requirePermission()` - 64 edges
-4. `serializeJson()` - 52 edges
-5. `nowMs()` - 48 edges
-6. `apiServerError()` - 43 edges
-7. `Card()` - 31 edges
-8. `CardContent()` - 31 edges
-9. `apiErrorMessage()` - 31 edges
-10. `useApi()` - 28 edges
+1. `cn()` - 168 edges
+2. `requirePermission()` - 99 edges
+3. `apiCatch()` - 74 edges
+4. `Button()` - 68 edges
+5. `serializeJson()` - 59 edges
+6. `recordAuditFromSession()` - 57 edges
+7. `nowMs()` - 57 edges
+8. `apiSuccess()` - 50 edges
+9. `apiServerError()` - 49 edges
+10. `apiErrorMessage()` - 39 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `ReservationCard()` --references--> `react`  [EXTRACTED]
@@ -410,61 +424,61 @@
 
 ## Import Cycles
 - 3-file cycle: `src/lib/db/events.ts -> src/lib/email/event-occurrence-update.ts -> src/lib/db/participants.ts -> src/lib/db/events.ts`
-- 3-file cycle: `src/components/organisms/admin/admin-reservation-detail-sheet.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/admin-reservation-detail-sheet.tsx`
 - 3-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
+- 3-file cycle: `src/components/organisms/admin/admin-reservation-detail-sheet.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/admin-reservation-detail-sheet.tsx`
 - 4-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 - 4-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
 - 5-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 
-## Communities (379 total, 181 thin omitted)
+## Communities (392 total, 183 thin omitted)
 
 ### Community 0 - "Admin Pages & Check-In"
-Cohesion: 0.19
-Nodes (13): react, ReservationCard(), ChartConfig, ChartContainer(), ChartContext, ChartContextProps, ChartLegendContent(), ChartTooltipContent() (+5 more)
+Cohesion: 0.21
+Nodes (12): react, ChartConfig, ChartContainer(), ChartContext, ChartContextProps, ChartLegendContent(), ChartTooltipContent(), getPayloadConfigFromPayload() (+4 more)
 
 ### Community 1 - "Admin API Routes & Export"
-Cohesion: 0.20
-Nodes (14): navigation, UserLayout(), UserLayoutProps, ManagementLayout(), ADMIN_PERMISSIONS, hasPermission(), isAdminRole(), Permission (+6 more)
+Cohesion: 0.10
+Nodes (20): Appendix — reproducing the contrast numbers, Explicitly out of scope, F3.1 — CSP is present but provides essentially no XSS protection _(High)_, F3.2 — No clickjacking protection _(Medium)_, F3.3 — Other missing security headers _(Low–Medium)_, F3.4 — `target="_blank"` without `rel` on a link built from data _(Low)_, Implementation plan, Method (+12 more)
 
 ### Community 2 - "Node.js Dependencies"
-Cohesion: 0.04
-Nodes (57): dependencies, @auth/prisma-adapter, bcryptjs, class-variance-authority, clsx, cmdk, date-fns, @date-fns/tz (+49 more)
+Cohesion: 0.03
+Nodes (58): dependencies, @auth/prisma-adapter, bcryptjs, class-variance-authority, clsx, cmdk, cn, date-fns (+50 more)
 
 ### Community 3 - "Forms & Notification Layer"
-Cohesion: 0.40
-Nodes (12): AdminReportsPage(), formatDateKey(), formatMs(), getComparisonRange(), getWindowRange(), nowInAdminTz(), toDateKey(), WindowKey (+4 more)
+Cohesion: 0.08
+Nodes (41): assertOwnedOrPrivileged(), AUDITED_NEWS_FIELDS, DELETE(), GET(), PUT(), GET(), EditNewsPage(), AdminNewsPage() (+33 more)
 
 ### Community 4 - "Admin Dashboard & Reports"
-Cohesion: 0.20
-Nodes (14): BUSINESS_HOURS, DragSelection, fromUtcMs(), generateTimeOptions(), getCurrentWorkWeekStart(), isBookableReservationDay(), minutesToTime(), ReservationFormData (+6 more)
+Cohesion: 0.22
+Nodes (13): BUSINESS_HOURS, DragSelection, fromUtcMs(), generateTimeOptions(), getCurrentWorkWeekStart(), isBookableReservationDay(), minutesToTime(), ReservationFormData (+5 more)
 
 ### Community 5 - "Resource Reservation API"
-Cohesion: 0.14
-Nodes (20): AdminReport(), AdminReportParams, aggregateForChart(), ChartBar, minutesToDisplay(), MONTH_LABELS, RESOURCE_LABELS, buildDailyStats() (+12 more)
+Cohesion: 0.10
+Nodes (36): LoadError(), EMPTY, EMPTY, EMPTY, ResourceRow, EMPTY, Role, SpaceRow (+28 more)
 
 ### Community 6 - "Build & Dev Tooling"
-Cohesion: 0.09
-Nodes (21): husky.sh script, devDependencies, eslint, eslint-config-next, @eslint/eslintrc, husky, lint-staged, @playwright/test (+13 more)
+Cohesion: 0.04
+Nodes (47): husky.sh script, devDependencies, eslint, eslint-config-next, @eslint/eslintrc, husky, lint-staged, @playwright/test (+39 more)
 
 ### Community 7 - "Authentication Pages"
-Cohesion: 0.06
-Nodes (58): Github(), Instagram(), LogoMunicipio(), LogoProps, AdminResourceTypeCombobox(), DateRangePicker(), DateRangePickerProps, DateRangeValue (+50 more)
+Cohesion: 0.04
+Nodes (49): D10 — El chequeo de capacidad de inscripciones no tenía guarda de concurrencia _(Alto)_, D11 — La capacidad podía bajar por debajo de las inscripciones existentes _(Alto)_, D12 — Una falla del mail de inscripción informaba que la inscripción falló _(Alto)_, D13 — El rate limiting se podía evadir con un header falsificable _(Medio)_, D14 — La validación de la ventana de reserva estaba mal, y su mensaje la contradecía _(Medio)_, D15 — La vista previa de aprobación siempre informaba "no se rechaza a nadie" _(Medio)_, D16 — Los errores de solapamiento entre espacios salían como 500 _(Medio)_, D17 — El ledger no tenía índice en su camino caliente _(Medio)_ (+41 more)
 
 ### Community 8 - "CRUD API Endpoints"
-Cohesion: 0.11
-Nodes (27): DELETE(), GET(), PUT(), GET(), POST(), GET(), ResponsePage(), SubmittedPage() (+19 more)
+Cohesion: 0.14
+Nodes (17): CLOSED_MESSAGES, PublicFormPage(), ScrollToTop(), EventMeta(), EventMetaProps, EventHero(), FileField(), formatBytes() (+9 more)
 
 ### Community 9 - "Admin Event & User Management"
-Cohesion: 0.15
-Nodes (14): firstZodMessage(), POST(), { handlers, auth, signIn, signOut }, next-auth, verifyCaptcha(), createUser(), getUserByEmailAndPassword(), sendEmailConfirmation() (+6 more)
+Cohesion: 0.14
+Nodes (19): PATCH(), AUDITED_RESOURCE_FIELDS, DELETE(), PUT(), GET(), POST(), actorLabelFor(), ActorSource (+11 more)
 
 ### Community 10 - "Events System"
-Cohesion: 0.16
-Nodes (23): applySessionActions(), assertRescheduleFree(), createEvent(), deleteEvent(), deleteEventReservations(), EventListFilters, eventToFormDefaults(), EventType (+15 more)
+Cohesion: 0.09
+Nodes (37): GET(), EditEventPage(), EventDetailPage(), DeleteEventButton(), EventsSection(), applySessionActions(), assertEventOccurrencesFree(), assertRescheduleFree() (+29 more)
 
 ### Community 11 - "Public Events Pages"
-Cohesion: 0.17
-Nodes (24): GET(), parseTimestamp(), GET(), parseAllServices(), parseTimestamp(), dateKeyFromUnixMs(), todayDateKeyInAdminTz(), actorSizeByReservationId() (+16 more)
+Cohesion: 0.16
+Nodes (25): GET(), parseTimestamp(), GET(), parseAllServices(), parseTimestamp(), dateKeyFromUnixMs(), todayDateKeyInAdminTz(), actorSizeByReservationId() (+17 more)
 
 ### Community 12 - "Public Landing Pages"
 Cohesion: 0.20
@@ -475,40 +489,40 @@ Cohesion: 0.06
 Nodes (32): 1. **Better Organization**, 1. Choose the Right File, 2. Create New File (if needed), 2. **Easier Maintenance**, 3. **Better Navigation**, 3. Enums Go in `enums.prisma`, 4. Run Prisma Commands, 4. **Scalability** (+24 more)
 
 ### Community 14 - "Admin Service Timeline"
-Cohesion: 0.32
-Nodes (14): adminDayTimelineEndMs(), adminDayTimelineStartMs(), blockGridPosition(), buildSlotLoadByResource(), clipToTimeline(), compareLoad(), countsForCapacity(), heatmapRowLevels() (+6 more)
+Cohesion: 0.16
+Nodes (29): actorSizeLabelForBucket(), AdminServiceDayTimeline(), AdminServiceTimelineLegend(), assignTracks(), blockVisualClass(), ClippedItem, heatmapCellClass(), labelCellClass() (+21 more)
 
 ### Community 15 - "Event Sessions & Form"
-Cohesion: 0.20
-Nodes (16): EventFormProps, EventSessions(), toHHmm(), detectDroppedExceptions(), effectiveExceptions(), EventOccurrence, ExistingException, expandAllEventOccurrences() (+8 more)
+Cohesion: 0.12
+Nodes (29): EventFormProps, dateToKey(), EventSessions(), hhmmFmt, keyToDate(), RescheduleDialog(), toHHmm(), PublicEventDetail (+21 more)
 
 ### Community 16 - "User Settings & Theming"
-Cohesion: 0.05
-Nodes (39): LogoMunicipioCrest(), LogoProps, MarkdownMark(), components, MarkdownEditorProps, Markdown(), ThemeToggle(), ThemeToggleProps (+31 more)
+Cohesion: 0.07
+Nodes (42): MarkdownMark(), MarkdownEditorProps, ThemeToggleProps, Avatar(), AvatarFallback(), AvatarImage(), CardAction(), CardFooter() (+34 more)
 
 ### Community 18 - "Prisma & Email Infrastructure"
-Cohesion: 0.15
-Nodes (20): AnswerValidationResult, PublicFormField, field(), validateAnswer(), validateAnswers(), AnswerMap, evaluateCondition(), FlatFieldInput (+12 more)
+Cohesion: 0.14
+Nodes (29): updateParticipantAnswers(), AnswerValidationResult, PublicFormField, field(), validateAnswer(), validateAnswers(), AnswerMap, AnswerValue (+21 more)
 
 ### Community 19 - "UI Card & Drawer Components"
-Cohesion: 0.09
-Nodes (28): BuilderChild, builderFieldSchema, builderFieldToNode(), builderSchema, BuilderValues, childSchema, editorToConstraints(), editorToInputNode() (+20 more)
+Cohesion: 0.10
+Nodes (29): BuilderChild, builderFieldSchema, builderFieldToNode(), builderSchema, BuilderValues, childSchema, editorToConstraints(), editorToInputNode() (+21 more)
 
 ### Community 20 - "Reservation Availability Logic"
-Cohesion: 0.09
-Nodes (29): DashboardStats, getDashboardStatsByEmail(), getDashboardStatsByUserId(), toHours(), getConflictingReservations(), getReservationStats(), getUnavailableSlots(), getUserNextReservations() (+21 more)
+Cohesion: 0.07
+Nodes (40): cancelReservation(), CreateReservationInput, deleteReservationException(), EventType, ExpandedReservationOccurrence, getConflictingReservations(), getReservationStats(), getResourceReservations() (+32 more)
 
 ### Community 21 - "Incident Management"
-Cohesion: 0.23
-Nodes (13): DashboardRecentReservations(), AdminReservationsRange, useSpaceOptions(), UseApiResult, AdminReservationListResult, DayWithReservations, parseAdminReservationListFromApi(), parseItemsByDateFromApi() (+5 more)
+Cohesion: 0.11
+Nodes (33): AuditSearchParams, AdminDashboard(), EventsSearchParams, STATUS_BADGE_CLASS, FormsPage(), NewsSearchParams, STATUS_LABELS, STATUS_VARIANTS (+25 more)
 
 ### Community 22 - "File Storage & Upload"
-Cohesion: 0.15
-Nodes (14): @vercel/blob, LocalStorage, MIME_BY_EXT, PRIVATE_ROOT, PUBLIC_ROOT, buildStorageKey(), PrivateFetchResult, safeFilename() (+6 more)
+Cohesion: 0.21
+Nodes (5): @vercel/blob, LocalStorage, PrivateFetchResult, StorageProvider, VercelBlobStorage
 
 ### Community 23 - "Form Submission & Date Picker"
-Cohesion: 0.10
-Nodes (20): Additional Resources, Best Practices, Database Functions, Delete a Reservation, Delete a Reservation Exception, DELETE Operations, Example 1: Create and List Recurring Reservations, Example 2: Cancel One Occurrence of a Recurring Reservation (+12 more)
+Cohesion: 0.04
+Nodes (46): Additional Resources, Approve a Reservation, Best Practices, Cancel a Reservation, Check if User Has Active Reservations, Check Resource Availability, Create a Recurring Reservation, Create a Reservation Exception (+38 more)
 
 ### Community 24 - "Email Identity Validation"
 Cohesion: 0.13
@@ -520,7 +534,7 @@ Nodes (41): 1. **Duplicate State Management**, 2. **Weekend Detection Bug**, 3. 
 
 ### Community 26 - "Admin Reservations Query"
 Cohesion: 0.15
-Nodes (15): GET(), isOrderableField(), ORDERABLE_FIELDS, getRegisteredUserByEmailAndPassword(), getRegisteredUsers(), getRegisteredUsersSummary(), GetUsersOptions, GetUsersResult (+7 more)
+Nodes (14): GET(), isOrderableField(), ORDERABLE_FIELDS, getRegisteredUsers(), getRegisteredUsersSummary(), GetUsersOptions, GetUsersResult, hashPassword() (+6 more)
 
 ### Community 27 - "Reservation Detail UI"
 Cohesion: 0.05
@@ -536,35 +550,35 @@ Nodes (18): aliases, components, hooks, lib, ui, utils, iconLibrary, registries 
 
 ### Community 30 - "Social Media Links"
 Cohesion: 0.10
-Nodes (20): scripts, build, build:next, db:generate, db:migrate, db:migrate:deploy, db:normalize-emails, db:push (+12 more)
+Nodes (22): AuditPage(), NewNewsPage(), ReservationTypesPage(), ResourcesPage(), RolesPage(), SitePage(), EditSpacePage(), NewSpacePage() (+14 more)
 
 ### Community 31 - "Database Seeding"
-Cohesion: 0.14
-Nodes (13): adapter, DENIED_REASONS, EventType, generateUsers(), main(), pickStatus(), prisma, REASONS (+5 more)
+Cohesion: 0.13
+Nodes (14): adapter, DENIED_REASONS, EventType, generateUsers(), main(), pickStatus(), prisma, REASONS (+6 more)
 
 ### Community 32 - "Resource & Form Pickers"
-Cohesion: 0.67
-Nodes (3): 🗄️ Database Requirements, Required Resources, Seed Data
+Cohesion: 0.14
+Nodes (17): metadata, NoticiasIndexPage(), NoticiasSearchParams, SpacesPage(), Breakout(), Container(), EventsRail(), FeaturedCarousel() (+9 more)
 
 ### Community 33 - "Week Calendar Component"
-Cohesion: 0.14
-Nodes (13): dateKeySchema, EventFormBindingInput, eventFormBindingSchema, FormFieldInput, formFieldSchema, FormTemplateInput, ParticipantDecisionInput, participantDecisionSchema (+5 more)
+Cohesion: 0.12
+Nodes (15): dateKeySchema, EventFormBindingInput, eventFormBindingSchema, FormFieldInput, formFieldSchema, FormTemplateInput, ParticipantDecisionInput, participantDecisionSchema (+7 more)
 
 ### Community 34 - "admin-reservation-detail-sheet.tsx"
-Cohesion: 0.16
-Nodes (20): GET(), csvCell(), csvValue(), GET(), ParticipantsPage(), dateFmt(), DECIDABLE, ParticipantsTable() (+12 more)
+Cohesion: 0.18
+Nodes (12): InlineRichText(), InlineRichTextInput(), InlineRichTextInputProps, renderNode(), renderNodes(), Delimiter, DELIMITERS, INLINE_DELIMITERS (+4 more)
 
 ### Community 36 - "Markdown Editing & Display"
 Cohesion: 0.09
-Nodes (40): AdminDashboard(), ReservationsPageContent(), MagicLinkPage(), BannedPage(), EMPTY, EMPTY, ResourceRow, SpaceRow (+32 more)
+Nodes (32): AdminReservationsPage(), ALL_SPACES_OPTION, ReservationsPageContent(), AdminResourceTypeCombobox(), SpaceOption, FieldPreview(), FormPicker(), FormPickerField (+24 more)
 
 ### Community 37 - "Cron & Maintenance API"
 Cohesion: 0.06
 Nodes (32): API Endpoints, API Endpoints, Applied to Database, Benefits Scale with Resources, ✅ Benefits Summary, 🔍 Capacity Understanding, Code Quality, 📝 Code Quality Metrics (+24 more)
 
 ### Community 38 - "API Route Handlers"
-Cohesion: 0.50
-Nodes (4): GET(), POST(), listFormTemplates(), formTemplateSchema
+Cohesion: 0.16
+Nodes (4): Open questions, Milestones, Rejected: rewriting existing docs into the new structure retroactively, Rejected
 
 ### Community 39 - "Form Template Builder"
 Cohesion: 0.06
@@ -575,16 +589,16 @@ Cohesion: 0.06
 Nodes (30): After (Efficient), Before (Inefficient), Benefits Scale with Data, 📝 Code Quality, 🚀 Database Execution, Function Added, 🔧 Implementation, In API Endpoints (+22 more)
 
 ### Community 41 - "layout.tsx"
-Cohesion: 0.53
-Nodes (4): POST(), UploadedFile, getIp(), handleParticipantUpload()
+Cohesion: 0.22
+Nodes (14): Home(), getActiveLandingTheme(), LandingThemeInput, toRecord(), isThemeActive(), LandingThemeEffect, LandingThemeKeywordMode, LandingThemeRecord (+6 more)
 
 ### Community 42 - "Check-In API Routes"
-Cohesion: 0.10
-Nodes (21): cancelReservation(), createReservationException(), CreateReservationInput, deleteReservationException(), EventType, ExpandedReservationOccurrence, getResourceReservations(), getUpcomingReservations() (+13 more)
+Cohesion: 0.16
+Nodes (12): SpaceEditable, buildStats(), SpaceCard(), StatData, SpaceImagePanel(), SpaceImagePanelProps, SpacesList(), getMetadataIcon() (+4 more)
 
 ### Community 43 - "Navigation Header"
-Cohesion: 0.26
-Nodes (15): AdminReservationsCardsPanel(), dateKeyFromReservation(), weekRangeLabel(), useAdminReservationsRange(), addDaysToDateKey(), adminForwardWindowRange(), adminTwoCalendarWeeksRange(), endOfIsoWeekDateKey() (+7 more)
+Cohesion: 0.20
+Nodes (12): NodeRenderer(), PublicFormProps, PublicFormView, extensionAllowed(), answerToString(), collectUploadedFiles(), findFileNode(), validateUploadMeta() (+4 more)
 
 ### Community 45 - "page.tsx"
 Cohesion: 0.12
@@ -599,12 +613,12 @@ Cohesion: 0.06
 Nodes (30): Added Fetch Logic, Added Internal State, After (Fixed Architecture), After (Meeting Room - 115 lines), Before (Broken Architecture), Before (Meeting Room Example - 150 lines), 📊 Behavior Comparison, ✅ Benefits Summary (+22 more)
 
 ### Community 49 - "Calendar Patterns & Constants"
-Cohesion: 0.10
-Nodes (21): 1. Same Calendar Interface, 1. WeekCalendar Component, 2. Generic Resource API Endpoint, 2. Same Dialog Form, 3. Same Validation Rules, After Refactor, Before Refactor, Calendar Component Refactor (+13 more)
+Cohesion: 0.09
+Nodes (22): 1. WeekCalendar Component, 2. Generic Resource API Endpoint, After Refactor, Before Refactor, Calendar Component Refactor, 📊 Code Reduction, 📝 Component API Reference, 🔄 Data Flow (+14 more)
 
 ### Community 50 - "Cron Jobs"
-Cohesion: 0.07
-Nodes (41): AdminCheckInPage(), IncidentsPage(), adminUsersBaseColumns, AdminUsersColumnsOptions, buildAdminUsersColumns(), DataTableColumnHeaderProps, resolveRoleLabel(), AdminUsersPage() (+33 more)
+Cohesion: 0.09
+Nodes (38): AdminCheckInPage(), IncidentsPage(), AdminUsersPage(), SettingsPage(), LandingThemesManager(), msToDateKey(), themeToFormValues(), windowSummary() (+30 more)
 
 ### Community 51 - "App Layout & Fonts"
 Cohesion: 0.19
@@ -623,16 +637,20 @@ Cohesion: 0.40
 Nodes (4): compat, __dirname, eslintConfig, __filename
 
 ### Community 60 - "Next.js Configuration"
-Cohesion: 0.50
-Nodes (3): imageRemotePatterns, nextConfig, withMDX
+Cohesion: 0.33
+Nodes (5): contentSecurityPolicy, __imageHosts, imageRemotePatterns, nextConfig, withMDX
 
 ### Community 61 - "Docker & Time Simulation"
 Cohesion: 0.67
 Nodes (3): libfaketime Docker Integration — simulate wall clock for date-sensitive tests, Docker Compose Timemock Overlay (libfaketime for postgres/app/migrate), Docker Compose Stack (postgres, app, migrate, mailpit)
 
+### Community 70 - "News Section"
+Cohesion: 0.09
+Nodes (34): GET(), firstZodMessage(), POST(), firstZodMessage(), PATCH(), POST(), GET(), { handlers, auth, signIn, signOut } (+26 more)
+
 ### Community 71 - "Spaces Constants"
-Cohesion: 0.17
-Nodes (23): GET(), PATCH(), GET(), GET(), parseTimestamp(), PATCH(), GET(), POST() (+15 more)
+Cohesion: 0.09
+Nodes (40): GET(), ALLOWED_TYPES, POST(), GET(), ALLOWED_TYPES, POST(), ALLOWED_TYPES, POST() (+32 more)
 
 ### Community 102 - "✅ **Traducción Completada**"
 Cohesion: 0.06
@@ -644,7 +662,7 @@ Nodes (29): 1. Simplicity, 2. Performance, 3. Maintainability, 4. Flexibility, A
 
 ### Community 104 - "Key Patterns & Non-Obvious Behavior"
 Cohesion: 0.06
-Nodes (29): 1. Recurring Reservations via RRULE, 2. Reservation Approval Logic (in SQL), 3. Email Normalization (No MX Checks in Identity Server), 4. Cron Job (Vercel), 5. Events & Custom Forms, 6. Prisma Config & Schema, 7. Component Structure, Architecture Overview (+21 more)
+Nodes (33): 10. Navigation, 11. Audit trail, 1. Recurring Reservations via RRULE, 2. Reservation Approval Logic (in SQL), 3. Email Normalization (No MX Checks in Identity Server), 4. Cron Job (Vercel), 5. Events & Custom Forms, 6. Prisma Config & Schema (+25 more)
 
 ### Community 105 - "Database Setup Complete ✅"
 Cohesion: 0.07
@@ -660,7 +678,7 @@ Nodes (25): 1. Data Model, 2. DB Query & Booking URL, 3. ResourceType Removal �
 
 ### Community 108 - "5. Components"
 Cohesion: 0.08
-Nodes (23): 1. Overview, 2. Colors: The Observatory Palette, 3. Typography: Roboto as Community + System, 4. Elevation, 5. Components, 6. Do's and Don'ts, Badges / Chips, Buttons (+15 more)
+Nodes (24): 1. Overview, 2. Colors: The Observatory Palette, 3. Typography: Roboto as Community + System, 4. Elevation, 5. Components, 6. Do's and Don'ts, Accessibility status (audited 2026-09-23), Badges / Chips (+16 more)
 
 ### Community 109 - "Fix para JWT vs Database Sessions en Middleware"
 Cohesion: 0.09
@@ -675,7 +693,7 @@ Cohesion: 0.10
 Nodes (20): **1. 🔐 Requerimientos de Seguridad**, **2. 🔄 Actualizaciones de Roles en Tiempo Real**, **3. 📊 Complejidad de Data de Sesión**, **4. 🏢 Lógica de Negocio**, **5. 📈 Escalabilidad para tu Caso**, Análisis de Estrategia de Sesiones: JWT vs Database, **Beneficios específicos para La Nube:**, 📊 **Comparación Detallada** (+12 more)
 
 ### Community 112 - "spaces.ts"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (14): 10. Transferencias y Cesión de Datos, 11. Autoridad de Aplicación, 12. Modificaciones a la Política de Privacidad, 13. Vigencia, 1. Identidad del Responsable, 2. Datos Personales Recolectados, 3. Origen de los Datos y Autoregistro, 4. Finalidad del Tratamiento (+6 more)
 
 ### Community 113 - "Fixes: Async Params & Timestamp Type Issue"
@@ -691,20 +709,20 @@ Cohesion: 0.12
 Nodes (15): File Map, Global Constraints, Spaces & Resources Redesign Implementation Plan, Task 10: Admin components, Task 11: Landing spaces section, Task 12: Types + test cleanup + delete `services.ts`, Task 1: Prisma schema + migration, Task 2: Seed update (+7 more)
 
 ### Community 116 - "api.ts"
-Cohesion: 0.25
-Nodes (14): actorSizeLabelForBucket(), AdminServiceDayTimeline(), assignTracks(), blockVisualClass(), ClippedItem, heatmapCellClass(), labelCellClass(), registeredUserBucketKey() (+6 more)
+Cohesion: 0.22
+Nodes (8): LogoMunicipioCrest(), LogoProps, ThemeToggle(), SignIn(), Drawer(), DrawerTrigger(), Separator(), links
 
 ### Community 117 - "Meeting Room Feature - Google Calendar Style"
-Cohesion: 0.09
-Nodes (22): API Reference, Business Rules, Configuration, Database Integration, Database Setup, Features, For Users, Future Enhancements (+14 more)
+Cohesion: 0.08
+Nodes (26): API Reference, Business Rules, Configuration, Database Integration, Database Setup, Features, For Users, Future Enhancements (+18 more)
 
 ### Community 118 - "index.tsx"
-Cohesion: 0.10
-Nodes (28): NodeRenderer(), AnswerValue, cloneSchemaWithNewIds(), extensionAllowed(), fileExtension(), FormValidationResult, pruneAnswers(), pruneNodes() (+20 more)
+Cohesion: 0.12
+Nodes (17): schema, conditionSchema, constraintsSchema, EMPTY_FORM_SCHEMA, FIELD_TYPES, FieldType, formNodeSchema, formSchemaZod (+9 more)
 
 ### Community 119 - "Política de Privacidad de La Nube"
-Cohesion: 0.18
-Nodes (12): AdminLayout(), AdminLayoutProps, UserLayoutProps, UserContext, UserProvider(), EventStatus, IncidentStatus, OrderStatus (+4 more)
+Cohesion: 0.11
+Nodes (24): AdminLayout(), AdminLayoutProps, UserLayoutProps, CurrentUser, UserContext, UserProvider(), isAdminByEmail(), MIGRATION (+16 more)
 
 ### Community 120 - "⚠️ Restart Dev Server Required"
 Cohesion: 0.17
@@ -723,8 +741,8 @@ Cohesion: 0.20
 Nodes (9): Events Landing Rework & Event Detail Page Implementation Plan, File Map, Global Constraints, Task 1: Data layer — `expandAllEventOccurrences` + paginated DB queries, Task 2: Public API route `GET /api/events`, Task 3: `LocalDateTime` molecule, Task 4: Extract `RegistrationCta` to a shared molecule, Task 5: `EventsGrid` client component + update `EventsSection` (+1 more)
 
 ### Community 124 - "index.tsx"
-Cohesion: 0.16
-Nodes (16): DELETE(), POST(), reorderSchema, isUniqueViolation(), POST(), GET(), UserLayout(), createSpace() (+8 more)
+Cohesion: 0.19
+Nodes (15): DELETE(), GET(), POST(), requireActiveSession(), isOnLedgerGrid(), createReservation(), createReservationException(), deleteReservation() (+7 more)
 
 ### Community 125 - "✨ New Features"
 Cohesion: 0.22
@@ -739,8 +757,8 @@ Cohesion: 0.22
 Nodes (8): Accessibility & Inclusion, Anti-references, Brand Personality, Design Principles, Product, Product Purpose, Register, Users
 
 ### Community 128 - "reservationTypes.ts"
-Cohesion: 0.27
-Nodes (10): DELETE(), PUT(), GET(), POST(), createResource(), deleteResource(), listResources(), ResourceInput (+2 more)
+Cohesion: 0.26
+Nodes (12): AdminReservationsCardsPanel(), dateKeyFromReservation(), WINDOW_OPTIONS, useAdminReservationsRange(), addDaysToDateKey(), adminForwardWindowRange(), enumerateDateKeysInclusive(), isValidDateKey() (+4 more)
 
 ### Community 129 - "New Files"
 Cohesion: 0.25
@@ -764,7 +782,7 @@ Nodes (7): Automated Testing (Recommended), Basic Functionality, Creating Reserv
 
 ### Community 135 - "📅 Meeting Room Calendar - Google Calendar Drag & Drop! ✅"
 Cohesion: 0.29
-Nodes (7): 🚢 Deployment Checklist, 📅 Meeting Room Calendar - Google Calendar Drag & Drop! ✅, 🎉 Success!, 🔧 Technical Stack, What Developers Get, What Users Get, 🎯 What Was Built
+Nodes (7): 🗄️ Database Requirements, 🚢 Deployment Checklist, 📅 Meeting Room Calendar - Google Calendar Drag & Drop! ✅, Required Resources, Seed Data, 🔧 Technical Stack, 🎯 What Was Built
 
 ### Community 136 - "✨ Key Features"
 Cohesion: 0.29
@@ -775,16 +793,16 @@ Cohesion: 0.29
 Nodes (7): 1. Drag-and-Drop Selection, 2. 15-Minute Intervals, 3. Continuous Calendar Grid, 4. Whole Day Events, 5. Inline Time Editing, 6. Real-Time Visual Feedback, 🆕 New Features
 
 ### Community 138 - "Meeting Room Calendar V2 - Drag & Drop Implementation"
-Cohesion: 0.29
-Nodes (7): 📊 Comparison Table, 🎉 Conclusion, Meeting Room Calendar V2 - Drag & Drop Implementation, New Validations, 📋 Overview, Retained Validations, 🔒 Validation Changes
+Cohesion: 0.09
+Nodes (23): 📦 Bundle Size Impact, 📊 Comparison Table, 🎉 Conclusion, For Developers, For Existing Users, Future Optimizations, Meeting Room Calendar V2 - Drag & Drop Implementation, 🔄 Migration Path (+15 more)
 
 ### Community 139 - "page.tsx"
-Cohesion: 0.20
-Nodes (26): POST(), DELETE(), GET(), PUT(), GET(), POST(), DELETE(), GET() (+18 more)
+Cohesion: 0.14
+Nodes (42): PATCH(), POST(), DELETE(), GET(), PUT(), GET(), POST(), DELETE() (+34 more)
 
 ### Community 140 - "weekdaysFromRrule"
-Cohesion: 0.33
-Nodes (6): GET(), EventsSection(), getUpcomingPublicEvents(), getUpcomingPublicEventsPage(), weekdaysFromRrule(), WEEKDAY_RRULE
+Cohesion: 0.12
+Nodes (16): Auth architecture (confirmed 2026-09-21), Background jobs & scheduling (confirmed 2026-09-21), Crate layout (this repo, backend half), Cross-links, Data migration & cutover (revised 2026-09-25), Landing's frontend stack (confirmed 2026-09-22), Multi-credential schema (proposed 2026-09-22), Non-goals (+8 more)
 
 ### Community 141 - "Implementation Summary: Meeting Room Calendar Feature"
 Cohesion: 0.33
@@ -795,8 +813,8 @@ Cohesion: 0.33
 Nodes (5): Anti-Patterns Verdict, Design Health Score, Minor Observations, Persona Red Flags, Priority Issues
 
 ### Community 143 - "route.ts"
-Cohesion: 0.28
-Nodes (10): EditFormPage(), DeleteFormButton(), cloneTemplateToInstance(), createFormTemplate(), getFormTemplate(), schemaJson(), schemaToRows(), updateFormTemplate() (+2 more)
+Cohesion: 0.20
+Nodes (15): ParticipantsPage(), EditFormPage(), DeleteFormButton(), getEvent(), cloneTemplateToInstance(), createFormTemplate(), getEventFormColumns(), getFormTemplate() (+7 more)
 
 ### Community 144 - "Files Created"
 Cohesion: 0.33
@@ -807,16 +825,16 @@ Cohesion: 0.33
 Nodes (5): Commits, Deleted: [type]/route.ts, Modified admin routes, New file: [fungibleResourceId]/route.ts, Stat
 
 ### Community 146 - "🎯 Benefits"
-Cohesion: 0.08
-Nodes (39): EventsPage(), EventsSearchParams, STATUS_BADGE_CLASS, EventCover(), InlineRichText(), renderNode(), renderNodes(), format() (+31 more)
+Cohesion: 0.19
+Nodes (17): UserEventsPage(), EventCover(), format(), FORMATS, LocalDate(), LocalDateFormat, LocalDateRange(), LocalDateTime() (+9 more)
 
 ### Community 147 - "occurrences.ts"
-Cohesion: 0.13
-Nodes (19): CLOSED_MESSAGES, PublicFormPage(), EventMeta(), EventMetaProps, EventHero(), FileField(), formatBytes(), NodeList() (+11 more)
+Cohesion: 0.06
+Nodes (52): EventsPage(), adminUsersBaseColumns, AdminUsersColumnsOptions, buildAdminUsersColumns(), DataTableColumnHeaderProps, resolveRoleLabel(), PAGE_SIZE_OPTIONS, UsersResponse (+44 more)
 
 ### Community 148 - "page.tsx"
-Cohesion: 0.20
-Nodes (10): ALLOWED_TYPES, POST(), ALLOWED_TYPES, POST(), ALLOWED_TYPES, POST(), ALLOWED_TYPES, POST() (+2 more)
+Cohesion: 0.29
+Nodes (6): Current state (as of this doc), Implementation plan, Milestone 1 — Admin reservations browsing: window, pagination, "All spaces" filter, Open questions (needs a product decision before/while building), Use case, What needs building
 
 ### Community 149 - "🚀 Deployment Notes"
 Cohesion: 0.40
@@ -851,8 +869,8 @@ Cohesion: 0.40
 Nodes (4): Self-review findings, Task 2 Report, TypeScript compilation result, What changed in seed.ts
 
 ### Community 157 - "spaces.ts"
-Cohesion: 0.29
-Nodes (6): metadata, roboto, robotoMono, RootLayout(), ServerTimeProvider(), SessionProvider()
+Cohesion: 0.12
+Nodes (21): ManagementBreadcrumbs(), configNavigation, ManagementLayoutProps, navigation, NavigationItem, SpaceNavItem, Breadcrumb(), BreadcrumbEllipsis() (+13 more)
 
 ### Community 158 - "🔐 Security"
 Cohesion: 0.50
@@ -890,9 +908,13 @@ Nodes (4): Desktop, Mobile, 📱 Responsive Design, Tablet
 Cohesion: 0.50
 Nodes (4): Issue: Can't select certain times, Issue: Drag doesn't work, Issue: Times are off by 15 minutes, 📞 Troubleshooting
 
+### Community 167 - "page-auth.ts"
+Cohesion: 0.29
+Nodes (7): Capability spec: Events, forms & participant approval, Forms: template vs. instance, Lifecycle, Notifications, Participant approval, Sessions (per-occurrence cancel/reschedule), What an Event is
+
 ### Community 168 - "Troubleshooting"
-Cohesion: 0.50
-Nodes (4): Issue: Cannot create reservation, Issue: No meeting rooms available, Issue: Reservations not showing, Troubleshooting
+Cohesion: 0.14
+Nodes (13): 1. Equal-height landing cards, 2. Noticia detail layout, 3. Cover images are required, 4. Focus rings, 5. `/noticias` → `/news`, 6. Management navigation — breadcrumbs, 7. Logo links & sign-out destination, Files touched (+5 more)
 
 ### Community 169 - "📋 Business Rules"
 Cohesion: 0.50
@@ -915,20 +937,20 @@ Cohesion: 0.50
 Nodes (4): For Developers, For End Users, 🚀 How to Use, Pro Tips 💡
 
 ### Community 174 - "📱 Responsive Behavior"
-Cohesion: 0.50
-Nodes (4): Desktop, Mobile, 📱 Responsive Behavior, Tablet
+Cohesion: 0.27
+Nodes (8): VisibilityEditor(), BuilderConditionOp, BuilderConditionState, CONDITION_OPS, EMPTY_CONDITION, opIsNumeric(), opNeedsValue(), parseVisibleWhen()
 
 ### Community 175 - "🎨 Visual Design Updates"
 Cohesion: 0.50
 Nodes (4): Drag Overlay, Grid Lines, Reservation Blocks, 🎨 Visual Design Updates
 
 ### Community 176 - "🚀 Performance Considerations"
-Cohesion: 0.50
-Nodes (4): Future Optimizations, Optimizations Applied, 🚀 Performance Considerations, Potential Issues
+Cohesion: 0.28
+Nodes (9): MIME_BY_EXT, PRIVATE_ROOT, PUBLIC_ROOT, buildStorageKey(), safeFilename(), safeSegment(), storageEnvRoot(), StorageUploadInput (+1 more)
 
 ### Community 177 - "listReservationTypeOptions"
-Cohesion: 0.16
-Nodes (14): ParticipantRow, PARTICIPANT_STATUS_LABEL, SPOT_HOLDING_STATUSES, changeLine(), dateFmt, formatSession(), notifyEventParticipantsBatch(), OccurrenceBatchPayload (+6 more)
+Cohesion: 0.24
+Nodes (11): csvCell(), csvValue(), GET(), dateFmt(), DECIDABLE, ParticipantsTable(), ParticipantsTableProps, PARTICIPANT_STATUS_LABEL (+3 more)
 
 ### Community 178 - "user-layout.tsx"
 Cohesion: 0.16
@@ -1011,20 +1033,20 @@ Cohesion: 0.67
 Nodes (3): Optimizations, 📊 Performance Considerations, Potential Bottlenecks
 
 ### Community 198 - "index.tsx"
-Cohesion: 0.15
-Nodes (15): SpaceImage(), IconPicker(), IconPickerProps, buildStats(), SpaceCard(), StatData, SpaceImagePanel(), SpaceImagePanelProps (+7 more)
+Cohesion: 0.40
+Nodes (12): AdminReportsPage(), formatDateKey(), formatMs(), getComparisonRange(), getWindowRange(), nowInAdminTz(), toDateKey(), WindowKey (+4 more)
 
 ### Community 199 - "🎉 Success!"
-Cohesion: 0.11
-Nodes (16): MaintainRow, GET(), toDateKey(), upsertSnapshot(), transporter, approvedHtml(), DecisionRecipient, escapeHtml() (+8 more)
+Cohesion: 0.16
+Nodes (16): POST(), GET(), POST(), STATUS_MESSAGES, POST(), SubmittedPage(), getPublicForm(), resolveCapacity() (+8 more)
 
 ### Community 200 - "🎨 Design Highlights"
-Cohesion: 0.14
-Nodes (12): StatusBadge(), StatusIcon(), ReservationInfo(), AdminReservationDetailSheet(), timeOverlaps(), Sheet(), SheetContent(), SheetDescription() (+4 more)
+Cohesion: 0.20
+Nodes (9): AdminReservationDetailSheet(), timeOverlaps(), Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay() (+1 more)
 
 ### Community 201 - "📊 Performance"
-Cohesion: 0.20
-Nodes (11): GET(), DEFAULT_SITE_CONFIG, getSiteConfig(), updateSiteConfig(), ReservationTypeInput, ResourceInput, SiteConfigInput, siteConfigInputSchema (+3 more)
+Cohesion: 0.15
+Nodes (13): DEFAULT_SITE_CONFIG, emojiListSchema, LandingThemeInput, monthDaySchema, ReservationTypeInput, ResourceInput, RoleInput, roleInputSchema (+5 more)
 
 ### Community 202 - "🔄 What Changed"
 Cohesion: 0.67
@@ -1035,120 +1057,124 @@ Cohesion: 0.67
 Nodes (3): ✅ Backwards Compatibility, What's Different, What's Preserved
 
 ### Community 204 - "index.tsx"
-Cohesion: 0.10
-Nodes (29): CopyField(), CopyFieldProps, InlineRichTextInput(), InlineRichTextInputProps, MarkdownEditor(), QUARTER_HOURS, TimeSelect(), CopyFormUrl() (+21 more)
+Cohesion: 0.11
+Nodes (27): SpaceImage(), DateRangePicker(), DateRangePickerProps, DateRangeValue, dateToKey(), formatKey(), keyToDate(), DateTimePicker() (+19 more)
 
 ### Community 205 - "reservation-card.tsx"
-Cohesion: 0.21
-Nodes (17): GET(), firstZodMessage(), PATCH(), POST(), nowMs(), deleteReservation(), hasActiveReservations(), getRegisteredUserByEmail() (+9 more)
+Cohesion: 0.15
+Nodes (12): INCIDENT_STATUSES, IncidentStatusBadge(), RESERVATION_STATUSES, StatusBadge(), StatusTone, TONE_CLASSES, ToneBadge(), USER_STATUSES (+4 more)
 
 ### Community 206 - "🧪 Testing Implications"
-Cohesion: 0.67
-Nodes (3): New Test Cases, 🧪 Testing Implications, Updated Test Cases
+Cohesion: 0.30
+Nodes (11): authorInitials(), generateMetadata(), NoticiaDetailPage(), NoticiaParams, NewsCard(), NewsCardData, getOtherPublishedNews(), getPublishedNewsByRetiredSlug() (+3 more)
 
 ### Community 207 - "🔒 Validation Changes"
-Cohesion: 0.20
-Nodes (7): Breakout(), Container(), HeroSection(), keywords, SpacesSection(), SpacesList(), SpaceWithFungible
+Cohesion: 0.17
+Nodes (15): AUDITED_SPACE_FIELDS, PUT(), POST(), reorderSchema, isUniqueViolation(), POST(), GET(), UserLayout() (+7 more)
 
 ### Community 208 - "EventEditDropWarning"
-Cohesion: 0.14
-Nodes (17): EditSpacePage(), metadata, SpaceSection(), AdminServiceTimelineLegend(), DayReservationCard(), uniqueResourcesMeta(), EventCardActions(), Accordion() (+9 more)
+Cohesion: 0.11
+Nodes (22): metadata, Github(), Instagram(), LogoMunicipio(), LogoProps, components, Markdown(), DayReservationCard() (+14 more)
 
 ### Community 209 - "🎯 User Flow Comparison"
-Cohesion: 0.67
-Nodes (3): 🎯 User Flow Comparison, V1 Flow (5 steps), V2 Flow (4 steps)
+Cohesion: 0.20
+Nodes (10): F2.1 — The focus indicator is invisible in light mode, app-wide _(Critical)_, F2.2 — `--muted-foreground` fails AA in light mode; ~220 usages _(High)_, F2.3 — `text-la-nube-primary` fails AA as a text color _(Medium)_, F2.4 — `bg-clip-text` gradient headings are near-invisible at their light end _(High)_, F2.5 — `WeekCalendar` is mouse-only and color-coded _(Critical)_, F2.6 — Status badges are duplicated four times and none is theme-aware _(Medium)_, F2.7 — 786 hardcoded palette literals bypass the token system _(Medium — root cause of F2.6)_, F2.8 — `--border` at 1.26:1 makes inputs effectively borderless _(Medium)_ (+2 more)
+
+### Community 271 - "DIAGRAM.md"
+Cohesion: 0.29
+Nodes (7): Content & ops (smaller, mostly independent subsystems), Domain model, Events & forms (recurring, admin-run activities), Identity, Planned, not yet built (schema exists, zero application code today), Reservations (the booking core), Space & resource catalog (SUPERADMIN-managed)
 
 ### Community 352 - "READ Operations"
-Cohesion: 0.32
-Nodes (6): ReservationTypesPage(), ResourcesPage(), SitePage(), NewSpacePage(), SpacesPage(), requirePagePermission()
+Cohesion: 0.22
+Nodes (9): F1.1 — No error boundaries anywhere in the App Router _(High)_, F1.2 — `useApi` callers silently discard `error`, so a failed GET renders as an empty state _(High)_, F1.3 — `magic-link` surfaces a raw JS error string to the user _(Medium)_, F1.4 — Four submit handlers have no `try`/`catch` around `fetch` _(Medium)_, F1.5 — 27 of 58 API routes bypass the response helpers; several have no `try`/`catch` at all _(Medium)_, F1.6 — The admin Incidents feature is wired to a 501 stub _(High — broken feature)_, F1.7 — Dead, misleading optimistic session write in signup _(Low — NOT a vulnerability)_, Part 1 — Error handling (+1 more)
 
 ### Community 353 - "page.tsx"
-Cohesion: 0.10
-Nodes (41): FormsPage(), SignUpPage(), signUpSchema, DashboardPage(), formSchema, SettingsFormValues, LogoLaNube(), LogoProps (+33 more)
+Cohesion: 0.12
+Nodes (29): SignUpPage(), signUpSchema, formSchema, SettingsFormValues, LogoLaNube(), LogoProps, CopyField(), CopyFieldProps (+21 more)
 
 ### Community 354 - "route.ts"
-Cohesion: 0.23
-Nodes (11): GET(), getIp(), POST(), STATUS_MESSAGES, now(), submitForm(), sendEventRegistrationEmail(), checkRateLimit() (+3 more)
+Cohesion: 0.21
+Nodes (11): GET(), now(), getAdminAggregateStats(), getCurrentCheckinsForToday(), DashboardStats, getDashboardStatsByEmail(), getDashboardStatsByUserId(), toHours() (+3 more)
 
 ### Community 355 - "builder-conditions.ts"
-Cohesion: 0.25
-Nodes (9): VisibilityEditor(), BuilderConditionOp, BuilderConditionState, buildVisibleWhen(), CONDITION_OPS, EMPTY_CONDITION, opIsNumeric(), opNeedsValue() (+1 more)
+Cohesion: 0.24
+Nodes (13): LandingPage(), contrastRatio(), oklchToRgb(), over(), parseCssColor(), parseHex(), relativeLuminance(), Rgb (+5 more)
 
 ### Community 356 - "markdown-editor.tsx"
-Cohesion: 0.20
-Nodes (10): Get a Single Reservation, Get Expanded Resource Reservations, Get Expanded Upcoming Reservations, Get Expanded User Reservations, Get Resource Reservations, Get Upcoming Reservations, Get User Reservations, List Expanded Reservations (With Recurring Instances) (+2 more)
+Cohesion: 0.40
+Nodes (5): 1. **Maintainability**, 2. **Consistency**, 3. **Extensibility**, 4. **Code Quality**, 🎯 Benefits
 
 ### Community 357 - "🎉 Success!"
 Cohesion: 0.13
 Nodes (14): 10. Copy del home (~400 palabras), 11. Nombre comercial canónico, 12. Opcionales / más adelante, 1. Variable de entorno `NEXT_PUBLIC_SITE_URL` (Vercel), 2. Coordenadas exactas (JSON-LD `geo`), 3. Horarios de atención, 4. Google Business Profile + Search Console, 5. Revisar el texto de "Nuestros valores" (lo redacté yo) (+6 more)
 
-### Community 359 - "plan.ts"
-Cohesion: 0.29
-Nodes (6): dateKeyTimeToMs(), EventRecipe, OccurrencePlan, planEventOccurrences(), weekdayOfDateKey(), EventInput
-
-### Community 360 - "package.json"
-Cohesion: 0.29
-Nodes (6): lint-staged, *.{json,md,mdx,css}, *.{ts,tsx,js,jsx,mjs,cjs}, name, private, version
-
-### Community 361 - "page.tsx"
-Cohesion: 0.60
-Nodes (3): EditEventPage(), DeleteEventButton(), getEventSessionExceptions()
-
-### Community 362 - "page.tsx"
-Cohesion: 0.47
-Nodes (4): EventDetailPage(), ScrollToTop(), getPublicEventDetail(), toRawReservation()
-
-### Community 363 - "📦 Bundle Size Impact"
-Cohesion: 0.67
-Nodes (3): 📦 Bundle Size Impact, New Code, Removed Code
-
-### Community 364 - "📚 Documentation Updates"
-Cohesion: 0.40
-Nodes (5): 1. **Maintainability**, 2. **Consistency**, 3. **Extensibility**, 4. **Code Quality**, 🎯 Benefits
-
-### Community 365 - "🔄 Migration Path"
-Cohesion: 0.67
-Nodes (3): For Developers, For Existing Users, 🔄 Migration Path
-
-### Community 366 - "🎯 Success Metrics"
-Cohesion: 0.67
-Nodes (3): 🎯 Success Metrics, Technical Metrics, User Experience Metrics
-
-### Community 367 - "📄 Updated Pages"
+### Community 358 - "index.tsx"
 Cohesion: 0.40
 Nodes (5): 1. Meeting Room (`/user/meeting-room`), 2. Coworking (`/user/coworking`), 3. Lab (`/user/lab`), 4. Auditorium (`/user/auditorium`), 📄 Updated Pages
 
+### Community 359 - "plan.ts"
+Cohesion: 0.17
+Nodes (17): AdminReportParams, buildCoverage(), buildDailyStats(), buildPeriodSummary(), durationStats(), fetchRangeData(), getReportForRange(), rawRetentionBoundaryMs() (+9 more)
+
+### Community 360 - "package.json"
+Cohesion: 0.11
+Nodes (26): ResponsePage(), ParticipantRow, SPOT_HOLDING_STATUSES, cancelParticipant(), DecidedParticipant, decideParticipants(), formFields(), FormRow (+18 more)
+
+### Community 361 - "page.tsx"
+Cohesion: 0.29
+Nodes (6): metadata, roboto, robotoMono, RootLayout(), ServerTimeProvider(), SessionProvider()
+
+### Community 362 - "page.tsx"
+Cohesion: 0.60
+Nodes (4): buildParticles(), EmojiShower(), Particle, rand()
+
+### Community 363 - "📦 Bundle Size Impact"
+Cohesion: 0.50
+Nodes (4): 1. Same Calendar Interface, 2. Same Dialog Form, 3. Same Validation Rules, 🎨 Consistent User Experience
+
+### Community 364 - "📚 Documentation Updates"
+Cohesion: 0.25
+Nodes (8): Housekeeping, Milestone 10 — Frontend audit (error handling, a11y, security), Milestone 12 — Auditoría de dominio (reservas, publicar-y-editar, retención), Milestone 2 — Audit trail, Milestone 3 — Seasonal landing themes, Milestone 4 — Noticias / Comunicador, Milestone 9 — Dynamic roles, Open questions
+
+### Community 365 - "🔄 Migration Path"
+Cohesion: 0.12
+Nodes (19): MaintainRow, GET(), toDateKey(), upsertSnapshot(), transporter, approvedHtml(), DecisionRecipient, escapeHtml() (+11 more)
+
+### Community 366 - "🎯 Success Metrics"
+Cohesion: 0.33
+Nodes (6): Open questions, Relationship to the Rust migration, Resale & genericization, Status: confirmed future direction, not immediate work, What isn't generic yet, What's already generic
+
+### Community 367 - "📄 Updated Pages"
+Cohesion: 0.40
+Nodes (5): Engineering input — where the existing schema doesn't match the ask, Milestone 8 — Inventory & purchase orders, Open questions (needs a product decision before/while building), Use case (as described 2026-09-21), What needs building
+
 ### Community 368 - "🔧 How to Add New Resource Type"
 Cohesion: 0.40
-Nodes (5): 🔧 How to Add New Resource Type, Step 1: Add Resource Type to Database, Step 2: Seed Resources, Step 3: Add API Route Mapping, Step 4: Create Page
+Nodes (5): Engineering input, Milestone 9 — Superadmin-defined roles & permissions, Open questions, Use case (as described 2026-09-21), What needs building
 
 ### Community 369 - "event-decision.ts"
-Cohesion: 0.29
-Nodes (5): configNavigation, ManagementLayoutProps, navigation, NavigationItem, SpaceNavItem
+Cohesion: 0.17
+Nodes (11): Admin authoring UI, Comunicador role, Current state, Data model, Implementation plan, Milestone 4 — "Noticias" news section + Comunicador role, Open questions (needs a product decision before/while building), Public surface (+3 more)
 
 ### Community 370 - "route.ts"
-Cohesion: 0.16
-Nodes (16): DELETE(), PUT(), POST(), GET(), SpacePage(), createReservationType(), deleteReservationType(), getReservationTypeByCode() (+8 more)
+Cohesion: 0.15
+Nodes (17): AUDITED_RESERVATION_TYPE_FIELDS, DELETE(), PUT(), POST(), GET(), SpacePage(), createReservationType(), deleteReservationType() (+9 more)
 
 ### Community 371 - "Utility Functions"
-Cohesion: 0.33
-Nodes (6): Check if User Has Active Reservations, Check Resource Availability, Get Actor Size, Get Conflicting Reservations, Get Reservation Statistics, Utility Functions
+Cohesion: 0.50
+Nodes (4): Desktop, Mobile, 📱 Responsive Behavior, Tablet
 
 ### Community 372 - "UPDATE Operations"
-Cohesion: 0.40
-Nodes (5): Approve a Reservation, Cancel a Reservation, Reject a Reservation, Update a Reservation, UPDATE Operations
+Cohesion: 0.50
+Nodes (4): Milestone 5 — Cancel one occurrence vs. the whole series (regular reservations), Open questions (needs a product decision before/while building), Use case, What needs building
 
 ### Community 373 - "CREATE Operations"
-Cohesion: 0.40
-Nodes (5): Create a Recurring Reservation, Create a Reservation Exception, Create a Simple Reservation, CREATE Operations, Supported RRULE Formats
-
-### Community 374 - "getPublicSpaces"
-Cohesion: 0.50
-Nodes (4): AdminReservationsPage(), SpacesPage(), SpaceOption, getPublicSpaces()
+Cohesion: 0.67
+Nodes (3): 🎉 Success!, What Developers Get, What Users Get
 
 ### Community 375 - "🗄️ Database Requirements"
-Cohesion: 0.67
-Nodes (3): PATCH(), roleUpdateSchema, updateUserRole()
+Cohesion: 0.15
+Nodes (21): GET(), PATCH(), roleUpdateSchema, CacheEntry, createRole(), deleteRole(), deriveKey(), getRoleById() (+13 more)
 
 ### Community 376 - "🎨 Design Highlights"
 Cohesion: 0.67
@@ -1158,33 +1184,69 @@ Nodes (3): 🎨 Design Highlights, Responsive Design, Visual States
 Cohesion: 0.67
 Nodes (3): Load Times, Optimizations, 📊 Performance
 
-### Community 379 - "📚 Documentation Updates"
+### Community 378 - "audit.ts"
 Cohesion: 0.67
 Nodes (3): 📚 Documentation Updates, New Documents, Updated Documents
 
-### Community 380 - "UserRole"
+### Community 379 - "📚 Documentation Updates"
 Cohesion: 0.67
-Nodes (3): JWT, Session, UserRole
+Nodes (3): New Validations, Retained Validations, 🔒 Validation Changes
+
+### Community 380 - "UserRole"
+Cohesion: 0.20
+Nodes (10): Architecture, Enforcement layers for permissions, Faketime for date-dependent testing, Notifications are synchronous, by design-for-now, Polymorphic `reservable_id`, Stack, Storage abstraction, The client↔API contract is a three-piece triad (+2 more)
+
+### Community 381 - "Auth & permissions"
+Cohesion: 0.22
+Nodes (9): Auth flow (sign-up → sign-in), Auth & permissions, Email identity, Protected rows, Roles are data; permissions are code, Seeded roles (migration `20260924000000_dynamic_roles`), Session & ban interaction, The role cache (+1 more)
+
+### Community 382 - "route.ts"
+Cohesion: 0.40
+Nodes (5): Engineering input — where I'd push back, Milestone 6 — Teams & Organizations, Open questions (needs a product decision before/while building), Use case (as described 2026-09-21), What needs building
+
+### Community 383 - "Milestone 3 — Seasonal / date-based landing themes"
+Cohesion: 0.22
+Nodes (8): Current state, Design constraint: themes must stay inside the brand system, not outside it, Implementation plan, Milestone 3 — Seasonal / date-based landing themes, Open questions (needs a product decision before/while building), Resolved (2026-09-18), Use case, What needs building
+
+### Community 384 - "errors.ts"
+Cohesion: 0.17
+Nodes (9): Gaps / friction, Situation, Use case: book a recurring space, then skip one week, Walkthrough, Gaps / friction, Situation, Use case: capacity-limited workshop with manual approval, Walkthrough (+1 more)
+
+### Community 385 - "Milestone 7 — Proposals (community suggestion box)"
+Cohesion: 0.33
+Nodes (6): Engineering input, Milestone 7 — Proposals (community suggestion box), Open questions (needs a product decision before/while building), Use case (as described 2026-09-21), Visibility & moderation (2026-09-21), What needs building
+
+### Community 386 - "Overview"
+Cohesion: 0.33
+Nodes (6): How the pieces fit together, Non-goals, Overview, Relationship to other docs in this repo, What this is, Who it's for
+
+### Community 387 - "Milestone 2 — Audit trail"
+Cohesion: 0.40
+Nodes (5): Implementation plan, Milestone 2 — Audit trail, Open questions, Use case, What needs building
+
+### Community 388 - "Milestone 6 — Teams & Organizations"
+Cohesion: 0.50
+Nodes (3): Foundation: date & time handling, How to apply, Why
 
 ## Knowledge Gaps
-- **1377 isolated node(s):** `husky.sh script`, `$schema`, `style`, `rsc`, `tsx` (+1372 more)
+- **1646 isolated node(s):** `husky.sh script`, `$schema`, `style`, `rsc`, `tsx` (+1641 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **181 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **183 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Authentication Pages` to `Admin Pages & Check-In`, `Event Sessions & Form`, `User Settings & Theming`, `🎯 Benefits`, `occurrences.ts`, `UI Card & Drawer Components`, `Markdown Editing & Display`, `Navigation Header`, `page.tsx`, `user-layout.tsx`, `App Layout & Fonts`, `index.tsx`, `🎨 Design Highlights`, `index.tsx`, `🔒 Validation Changes`, `EventEditDropWarning`, `page.tsx`, `page.tsx`, `api.ts`?**
-  _High betweenness centrality (0.042) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `Node.js Dependencies` to `Admin Pages & Check-In`, `Next.js Wordmark`, `package.json`, `App Layout & Fonts`, `File Storage & Upload`, `Email Identity Validation`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `Button()` connect `page.tsx` to `Admin API Routes & Export`, `Forms & Notification Layer`, `Admin Dashboard & Reports`, `Resource Reservation API`, `Authentication Pages`, `CRUD API Endpoints`, `route.ts`, `User Settings & Theming`, `🎯 Benefits`, `UI Card & Drawer Components`, `occurrences.ts`, `admin-reservation-detail-sheet.tsx`, `Markdown Editing & Display`, `Navigation Header`, `Cron Jobs`, `index.tsx`, `🎨 Design Highlights`, `index.tsx`, `🔒 Validation Changes`, `EventEditDropWarning`, `READ Operations`, `page.tsx`, `event-decision.ts`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `cn()` connect `User Settings & Theming` to `reservationTypes.ts`, `Admin Pages & Check-In`, `Resource Reservation API`, `CRUD API Endpoints`, `Events System`, `Admin Service Timeline`, `Event Sessions & Form`, `🎯 Benefits`, `occurrences.ts`, `Incident Management`, `spaces.ts`, `Resource & Form Pickers`, `Markdown Editing & Display`, `page.tsx`, `user-layout.tsx`, `App Layout & Fonts`, `🎨 Design Highlights`, `index.tsx`, `reservation-card.tsx`, `EventEditDropWarning`, `page.tsx`, `api.ts`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `Node.js Dependencies` to `Admin Pages & Check-In`, `Next.js Wordmark`, `Build & Dev Tooling`, `App Layout & Fonts`, `File Storage & Upload`, `Email Identity Validation`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+- **Why does `react` connect `Admin Pages & Check-In` to `page.tsx`, `Node.js Dependencies`, `index.tsx`, `reservation-card.tsx`, `User Settings & Theming`?**
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Are the 7 inferred relationships involving `cn()` (e.g. with `BreadcrumbEllipsis()` and `BreadcrumbItem()`) actually correct?**
+  _`cn()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `husky.sh script`, `$schema`, `style` to the rest of the system?**
-  _1385 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1654 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Admin API Routes & Export` be split into smaller, more focused modules?**
+  _Cohesion score 0.1 - nodes in this community are weakly interconnected._
 - **Should `Node.js Dependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.03508771929824561 - nodes in this community are weakly interconnected._
-- **Should `Resource Reservation API` be split into smaller, more focused modules?**
-  _Cohesion score 0.13538461538461538 - nodes in this community are weakly interconnected._
-- **Should `Build & Dev Tooling` be split into smaller, more focused modules?**
-  _Cohesion score 0.09090909090909091 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.034482758620689655 - nodes in this community are weakly interconnected._
