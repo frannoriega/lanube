@@ -187,6 +187,19 @@ export async function submitForm(
   const email = await normalizeEmailForIdentityServer(displayEmail);
 
   return prisma.$transaction(async (tx) => {
+    // Serializa las inscripciones de este formulario. El chequeo de capacidad de más abajo es
+    // un leer-y-después-escribir, y con el READ COMMITTED por defecto de PostgreSQL dos envíos
+    // concurrentes leen los dos `capacity - 1` y los dos insertan — se sobrevende justo cuando
+    // el evento es lo bastante buscado para que los últimos lugares se disputen
+    // (milestone-12 D10).
+    //
+    // `@@unique([eventId, email])` no ayuda: evita *personas* duplicadas, no personas de más.
+    // Un advisory lock con alcance de transacción es la corrección correcta más barata acá: no
+    // necesita columna extra, se libera al commitear o al hacer rollback, y se compone con la
+    // transacción que ya envuelve esto. Se indexa por el slug (hasheado al bigint que pide la
+    // API de locks) porque es lo que identifica al formulario antes de leer la fila del evento.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`event-form:${slug}`}, 0))`;
+
     const eventForm = await tx.eventForm.findUnique({
       where: { slug },
       include: {
@@ -381,6 +394,13 @@ export async function updateParticipantAnswers(
   return { ok: true };
 }
 
+/**
+ * Baja voluntaria mediante el token de edición del participante. Solo se puede cancelar una
+ * inscripción que hoy ocupa un lugar: antes aceptaba cualquier estado, así que una inscripción
+ * REJECTED podía pasar a CANCELLED — reescribiendo la decisión de un admin como si fuera
+ * la elección del participante, y ensuciando la lista sin ningún beneficio
+ * (milestone-12, Parte 4).
+ */
 export async function cancelParticipant(
   token: string,
 ): Promise<{ ok: boolean; message?: string }> {
@@ -388,6 +408,14 @@ export async function cancelParticipant(
     where: { editToken: token },
   });
   if (!participant) return { ok: false, message: "No encontrado" };
+  if (participant.status === ParticipantStatus.CANCELLED) {
+    return { ok: true };
+  }
+  if (
+    !SPOT_HOLDING_STATUSES.includes(participant.status as ParticipantStatus)
+  ) {
+    return { ok: false, message: "Esta inscripción no está activa" };
+  }
   await prisma.eventParticipant.update({
     where: { editToken: token },
     data: { status: ParticipantStatus.CANCELLED },

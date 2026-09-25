@@ -6,7 +6,7 @@ import {
   schemaToPublicFields,
 } from "@/lib/events/form-engine";
 import { type ExportColumn, exportColumns } from "@/lib/events/form-export";
-import { type FormSchema, isInputNode } from "@/lib/events/form-schema";
+import { type FormSchema } from "@/lib/events/form-schema";
 import { prisma } from "@/lib/prisma";
 import { EventFormBindingInput, FormTemplateInput } from "@/lib/schemas/events";
 import { createId } from "@paralleldrive/cuid2";
@@ -181,19 +181,15 @@ async function cloneTemplateToInstance(
       schema: schemaJson(schema),
     },
   });
-  const rows: Prisma.FormFieldCreateManyInput[] = schema.nodes
-    .filter(isInputNode)
-    .map((n, index) => ({
-      id: n.id,
-      formId: instanceId,
-      order: index,
-      type: n.type as Prisma.FormFieldCreateManyInput["type"],
-      label: n.label,
-      placeholder: n.placeholder ?? null,
-      required: n.required,
-      options: (n.options as Prisma.InputJsonValue) ?? Prisma.JsonNull,
-      config: (n.constraints as Prisma.InputJsonValue) ?? Prisma.JsonNull,
-    }));
+  // `schemaToRows` (o sea schemaToPublicFields), y no `schema.nodes.filter(isInputNode)`:
+  // eso último solo ve los nodos de PRIMER NIVEL, así que clonar una plantilla con un grupo
+  // dejaba los campos hijos de ese grupo afuera de form_fields mientras Form.schema sí los
+  // conservaba (milestone-12 D19). Todos los lectores prefieren el schema, así que nada se
+  // rompía a la vista — pero el fallback documentado de `schema == null` en participants.ts
+  // habría renderizado un formulario sin sus preguntas agrupadas, con las respuestas podadas
+  // para coincidir. Además es el mismo helper que usan los dos writers de plantillas, que es
+  // justamente el punto: tres writers, una sola regla de aplanado.
+  const rows = schemaToRows(schema, instanceId);
   if (rows.length > 0) {
     await tx.formField.createMany({ data: rows });
   }

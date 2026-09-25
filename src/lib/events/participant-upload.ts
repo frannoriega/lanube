@@ -11,28 +11,18 @@
 import { nowMs } from "@/lib/clock";
 import { findFileNode, validateUploadMeta } from "@/lib/events/form-files";
 import type { FormSchema, UploadedFile } from "@/lib/events/form-schema";
+import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/request-ip";
 import { getStorage } from "@/lib/storage";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
-async function getIp(): Promise<string | null> {
-  const h = await headers();
-  return (
-    h.get("cf-connecting-ip") ??
-    h.get("x-real-ip") ??
-    (process.env.NODE_ENV === "development"
-      ? (h.get("x-forwarded-for")?.split(",")[0].trim() ?? "127.0.0.1")
-      : null)
-  );
-}
 
 export async function handleParticipantUpload(
   request: NextRequest,
   schema: FormSchema,
   folder: string[],
 ): Promise<NextResponse> {
-  const ip = await getIp();
+  const ip = await getClientIp();
   if (!ip) {
     return NextResponse.json({ message: "IP no encontrada" }, { status: 400 });
   }
@@ -95,8 +85,13 @@ export async function handleParticipantUpload(
     };
     return NextResponse.json(descriptor, { status: 201 });
   } catch (e) {
-    const message =
-      e instanceof Error ? e.message : "No se pudo subir el archivo";
-    return NextResponse.json({ message }, { status: 500 });
+    // Loguear la falla real y devolver un mensaje controlado. Devolver `e.message` acá
+    // filtraba internals del proveedor de storage a un llamador sin autenticar, en contra del
+    // contrato de src/lib/api/response.ts (milestone-12, Parte 4).
+    logger.error("participant upload failed", e, { folder: folder.join("/") });
+    return NextResponse.json(
+      { message: "No se pudo subir el archivo" },
+      { status: 500 },
+    );
   }
 }

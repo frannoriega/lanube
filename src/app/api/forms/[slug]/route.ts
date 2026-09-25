@@ -2,21 +2,11 @@ import { apiCatch } from "@/lib/api/response";
 import { nowMs } from "@/lib/clock";
 import { getPublicForm, submitForm } from "@/lib/db/participants";
 import { sendEventRegistrationEmail } from "@/lib/email/event-registration";
+import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/request-ip";
 import { participantSubmitSchema } from "@/lib/schemas/events";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
-async function getIp(): Promise<string | null> {
-  const h = await headers();
-  return (
-    h.get("cf-connecting-ip") ??
-    h.get("x-real-ip") ??
-    (process.env.NODE_ENV === "development"
-      ? (h.get("x-forwarded-for")?.split(",")[0].trim() ?? "127.0.0.1")
-      : null)
-  );
-}
 
 const STATUS_MESSAGES: Record<string, string> = {
   closed: "El formulario no está disponible en este momento",
@@ -51,7 +41,7 @@ export async function POST(
   try {
     const { slug } = await params;
 
-    const ip = await getIp();
+    const ip = await getClientIp();
     if (!ip) {
       return NextResponse.json(
         { message: "IP no encontrada" },
@@ -109,14 +99,29 @@ export async function POST(
       );
     }
 
-    // Best-effort confirmation email (don't fail the registration if it bounces).
+    // Mail de confirmación best-effort — y ahora sí realmente best-effort. El `await` estaba
+    // pelado dentro del try externo de la ruta, así que un timeout de SMTP devolvía un 500
+    // *después* de haber commiteado la fila del participante: a la persona se le decía que la
+    // inscripción falló, reintentaba, y recibía "Ya estás inscripto con ese email"
+    // (milestone-12 D12).
+    //
+    // El mail es lo único que lleva su editToken, así que una falla vale loguearla fuerte —
+    // simplemente no vale hacer fallar una inscripción que ya salió bien. Mismo razonamiento
+    // que las notificaciones de sesiones y de decisiones, que a propósito se envían después de
+    // que su transacción commitea.
     if (result.token && result.eventName) {
-      await sendEventRegistrationEmail(
-        parsed.data.email,
-        result.eventName,
-        result.token,
-        result.requiresApproval ?? false,
-      );
+      try {
+        await sendEventRegistrationEmail(
+          parsed.data.email,
+          result.eventName,
+          result.token,
+          result.requiresApproval ?? false,
+        );
+      } catch (err) {
+        logger.error("forms/[slug] POST confirmation email failed", err, {
+          slug,
+        });
+      }
     }
 
     return NextResponse.json({ ok: true }, { status: 201 });
