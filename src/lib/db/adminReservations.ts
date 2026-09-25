@@ -3,6 +3,7 @@ import {
   dateKeyFromUnixMs,
   enumerateDateKeysInclusive,
 } from "@/lib/admin/admin-timezone";
+import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { ReservationStatus } from "@/generated/prisma/client";
@@ -95,6 +96,37 @@ async function mapRowsToAdminResults(
 }
 
 /**
+ * Traduce las fallas de precondición de `approve_reservation()` (milestone-12 D3) a mensajes
+ * seguros para el usuario. La función se niega a promover una reserva que ya no entra en el
+ * espacio tal como está ahora — el lugar puede haberse ocupado entre la creación y la
+ * aprobación (un evento nuevo, otra aprobación, una capacidad reducida), y antes de que
+ * existiera la precondición aprobar simplemente fabricaba un sobrecupo.
+ */
+function translateApprovalError(error: unknown): never {
+  if (error instanceof Error) {
+    if (error.message.includes("Approval conflict: space taken")) {
+      throw new DomainError(
+        "El espacio ya está ocupado en ese horario — la reserva no puede aprobarse",
+        409,
+      );
+    }
+    if (error.message.includes("Approval conflict: capacity exceeded")) {
+      throw new DomainError(
+        "No queda capacidad en el espacio para ese horario — la reserva no puede aprobarse",
+        409,
+      );
+    }
+    if (error.message.includes("Approval conflict: actor already approved")) {
+      throw new DomainError(
+        "Quien reserva ya tiene una reserva aprobada en otro espacio en ese horario",
+        409,
+      );
+    }
+  }
+  throw error;
+}
+
+/**
  * Approves a reservation and lets `approve_reservation()` reject whatever it conflicts
  * with — one admin click can cascade into rejecting other people's reservations.
  *
@@ -102,13 +134,18 @@ async function mapRowsToAdminResults(
  * text column), but this helper called it through `$executeRaw`, which yields a row count
  * and discards the result set — so the cascade was invisible to the app and the audit
  * trail had nothing to attribute. `$queryRaw` reads them properly.
+ *
+ * Desde la slice B del milestone-12 la función además rechaza la aprobación de plano cuando
+ * la reserva ya no entra — ver {@link translateApprovalError}.
  */
 export async function approveReservationAndRejectConflicts(
   id: string,
 ): Promise<{ approvedId: string; autoRejectedIds: string[] }> {
   const rows = await prisma.$queryRaw<
     Array<{ approved_id: string | null; auto_rejected_ids: string | null }>
-  >`SELECT * FROM approve_reservation(${id}::text)`;
+  >`SELECT * FROM approve_reservation(${id}::text)`.catch(
+    translateApprovalError,
+  );
 
   const raw = rows[0]?.auto_rejected_ids ?? "";
   const autoRejectedIds = raw
@@ -119,10 +156,38 @@ export async function approveReservationAndRejectConflicts(
   return { approvedId: rows[0]?.approved_id ?? id, autoRejectedIds };
 }
 
-export async function previewConflictingPending(): Promise<string[]> {
-  return [];
+/**
+ * Las reservas que aprobar `id` rechazaría automáticamente, sin aprobar nada.
+ *
+ * Era un stub que devolvía `[]` (con el id de la reserva comentado en su único call site), así
+ * que la pantalla de confirmación del admin siempre decía "esto no afecta a nadie" y después
+ * la aprobación rechazaba reservas de otras personas y les mandaba mail (milestone-12 D15).
+ *
+ * `preview_approval_conflicts()` replica en solo lectura los dos loops de cascada de
+ * `approve_reservation()`, con el mismo chequeo de capacidad `peak_space_usage` que usa el
+ * camino de escritura. Las dos viven contiguas en
+ * `20260924150000_actor_size_and_approval_preview` a propósito: la falla que hay que evitar es
+ * que la vista previa y la acción se separen.
+ */
+export async function previewConflictingPending(id: string): Promise<string[]> {
+  const rows = await prisma.$queryRaw<{ reservation_id: string }[]>`
+    SELECT reservation_id FROM preview_approval_conflicts(${id}::text)
+  `;
+  return [...new Set(rows.map((r) => r.reservation_id))].filter(
+    (value) => value !== id,
+  );
 }
 
+/**
+ * Cambia el estado de una reserva (rechazar / cancelar — aprobar pasa por
+ * `approveReservationAndRejectConflicts`).
+ *
+ * Las filas correspondientes de `reservation_ledger` las actualiza el trigger
+ * `sync_reservation_ledger_status` (migración `20260924100000_ledger_integrity`), **no** esta
+ * función. No agregar una escritura manual al ledger: el trigger cubre a todos los writers, y
+ * antes de que existiera esta función dejaba en APPROVED las filas del ledger de una reserva
+ * cancelada, así que el espacio quedaba ocupado para siempre (milestone-12 D1).
+ */
 export async function setReservationStatus(
   id: string,
   status: ReservationStatus,

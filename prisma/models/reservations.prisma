@@ -17,6 +17,7 @@ model Reservation {
   updatedAt      BigInt                 @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   checkIns       CheckIn[]
   exceptions     ReservationException[]
+  ledger         ReservationLedger[]
   registeredUser RegisteredUser         @relation(fields: [reservableId], references: [id], onDelete: Cascade)
   space          Space?                 @relation(fields: [spaceId], references: [id], onDelete: SetNull)
   type           ReservationType        @relation(fields: [eventType], references: [code], onDelete: Restrict, onUpdate: Cascade)
@@ -45,9 +46,18 @@ model ReservationException {
   @@map("reservation_exceptions")
 }
 
+/// Expansión materializada de cada reserva en buckets de 15 minutos. Es lo **único** que se
+/// consulta para capacidad y disponibilidad — la tabla `reservations` nunca se suma —, así que
+/// nunca debe sobrevivir a la reserva que describe ni discrepar con ella. Dos garantías a
+/// nivel de base lo aseguran (migración `20260924100000_ledger_integrity`): la relación
+/// `reservation` cascadea al borrar, y un trigger `AFTER UPDATE OF status` sobre
+/// `reservations` propaga acá cada cambio de estado. No "optimizar" ninguna de las dos: antes
+/// de que existieran, cancelar una reserva dejaba el lugar bloqueado para siempre
+/// (milestone-12 D1/D2).
 model ReservationLedger {
   id                  Int               @id @default(autoincrement())
   reservationId       String            @map("reservation_id")
+  reservation         Reservation       @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   occurrenceStartTime BigInt            @map("occurrence_start_time")
   occurrenceEndTime   BigInt            @map("occurrence_end_time")
   reservableType      ReservableType    @map("reservable_type")
@@ -60,6 +70,10 @@ model ReservationLedger {
   status              ReservationStatus
   createdAt           BigInt            @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
 
+  @@index([reservationId])
+  @@index([spaceId, status, occurrenceStartTime])
+  @@index([occurrenceStartTime, occurrenceEndTime])
+  @@index([reservableId, reservableType, status], map: "reservation_ledger_reservable_status_idx")
   @@map("reservation_ledger")
 }
 

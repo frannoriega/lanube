@@ -188,8 +188,13 @@ export async function createReservation(
           "No hay recursos disponibles para el horario seleccionado",
         );
       }
+      // `create_reservation` levanta 'Overlap with approved reservation at %' con el nombre
+      // del espacio y nada después. El patrón anterior exigía un " (" final que el SQL nunca
+      // emite, así que esta rama nunca corría y un error de usuario de lo más común salía
+      // como 500 (milestone-12 D16). La variante recurrente agrega " on occurrence <ms>", y
+      // la captura no-greedy se detiene antes.
       const overlapMatch = error.message?.match(
-        /Overlap with approved reservation at (.+?) \(/,
+        /Overlap with approved reservation at (.+?)(?: on occurrence \d+)?$/m,
       );
       if (overlapMatch) {
         throw new DomainError(
@@ -666,14 +671,20 @@ export async function deleteReservation(id: string): Promise<void> {
   });
 
   if (!reservation) {
-    throw new Error("Reservation not found");
+    throw new DomainError("Reserva no encontrada", 404);
   }
 
   // Check if reservation has started
   if (reservation.startTime < BigInt(nowMs())) {
-    throw new Error("Cannot delete reservations that have already started");
+    throw new DomainError(
+      "No se puede eliminar una reserva que ya comenzó",
+      409,
+    );
   }
 
+  // Las filas del ledger cascadean (FK agregada en 20260924100000_ledger_integrity). Antes
+  // de eso este delete las dejaba huérfanas y seguían ocupando el lugar indefinidamente —
+  // ver milestone-12 D2.
   await prisma.reservation.delete({
     where: { id },
   });

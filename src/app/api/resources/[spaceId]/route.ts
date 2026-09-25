@@ -1,14 +1,20 @@
-import { auth } from "@/lib/auth";
+import { requireActiveSession } from "@/lib/api-auth";
 import { nowMs } from "@/lib/clock";
 import {
   createReservation,
   createReservationException,
+  deleteReservation,
 } from "@/lib/db/reservations";
 import { getCalendarDataBySpace } from "@/lib/db/resourceCalendar";
 import { getReservationTypeByCode } from "@/lib/db/reservationTypes";
 import { getRegisteredUserById } from "@/lib/db/users";
 import { getSpaceById } from "@/lib/db/spaces";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
+import { isOnLedgerGrid } from "@/lib/constants/reservations";
+import {
+  BOOKING_WINDOW_MESSAGES,
+  checkBookingWindow,
+} from "@/lib/reservations/booking-window";
 import { unixMsToDate } from "@/lib/unix-ms";
 import { prisma } from "@/lib/prisma";
 import { isAfter, startOfDay } from "date-fns";
@@ -19,8 +25,8 @@ export async function GET(
   { params }: { params: Promise<{ spaceId: string }> },
 ) {
   try {
-    const session = await auth();
-    if (!session?.userId) return apiError("No autorizado", 401);
+    const { session, error: authError } = await requireActiveSession();
+    if (authError) return authError;
 
     const user = await getRegisteredUserById(session.userId);
     if (!user) return apiError("Usuario no encontrado", 401);
@@ -55,8 +61,8 @@ export async function POST(
   { params }: { params: Promise<{ spaceId: string }> },
 ) {
   try {
-    const session = await auth();
-    if (!session?.userId) return apiError("No autorizado", 401);
+    const { session, error: authError } = await requireActiveSession();
+    if (authError) return authError;
 
     const user = await getRegisteredUserById(session.userId);
     if (!user) return apiError("Usuario no encontrado", 401);
@@ -93,6 +99,15 @@ export async function POST(
         400,
       );
 
+    // Mantener toda reserva en la grilla de 15 minutos del ledger. La UI solo ofrece horarios
+    // alineados; la API nunca los exigió, y eso es lo que hacía explotable a mano el chequeo
+    // de capacidad vacuo (ya corregido) — ver milestone-12 D4.
+    if (!isOnLedgerGrid(startMs) || !isOnLedgerGrid(endMs))
+      return apiError(
+        "Las reservas deben empezar y terminar en intervalos de 15 minutos",
+        400,
+      );
+
     if (startMs < nowMs())
       return apiError("No se pueden hacer reservas en el pasado", 400);
 
@@ -103,25 +118,12 @@ export async function POST(
         400,
       );
 
-    const dayOfWeek = startDateTime.getUTCDay();
-    const startHour = startDateTime.getUTCHours();
-    const endHour = endDateTime.getUTCHours();
-
-    if (dayOfWeek === 0 || dayOfWeek === 6)
-      return apiError(
-        "Las reservas solo están disponibles de lunes a viernes",
-        400,
-      );
-
-    if (
-      startHour < 12 ||
-      endHour > 21 ||
-      (endHour === 18 && endDateTime.getMinutes() > 0)
-    )
-      return apiError(
-        "Las reservas deben estar entre las 9:00 AM y las 6:00 PM",
-        400,
-      );
+    // Reglas de día de semana + horario de apertura, comparadas en la zona horaria del
+    // propio predio. La versión anterior, escrita acá mismo, usaba getUTCDay()/getUTCHours()
+    // contra un predio en UTC−3 y erraba en los dos extremos de la ventana — ver el comentario
+    // de checkBookingWindow (milestone-12 D14).
+    const violation = checkBookingWindow(startMs, endMs);
+    if (violation) return apiError(BOOKING_WINDOW_MESSAGES[violation], 400);
 
     const reservation = await createReservation({
       reservableType: "USER",
@@ -141,8 +143,8 @@ export async function POST(
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.userId) return apiError("No autorizado", 401);
+    const { session, error: authError } = await requireActiveSession();
+    if (authError) return authError;
 
     const user = await getRegisteredUserById(session.userId);
     if (!user) return apiError("Usuario no encontrado", 401);
@@ -178,7 +180,11 @@ export async function DELETE(request: NextRequest) {
       return apiSuccess({ ok: true });
     }
 
-    await prisma.reservation.delete({ where: { id: reservationId } });
+    // Vía la función de dominio, no prisma.delete: esa se niega a borrar una reserva que ya
+    // empezó (lo que además desvincularía sus check-ins, porque check_ins.reservation_id es
+    // ON DELETE SET NULL). Las filas del ledger ahora cascadean — antes de la FK que agregó
+    // 20260924100000 quedaban huérfanas y seguían ocupando el lugar.
+    await deleteReservation(reservationId);
     return apiSuccess({ ok: true });
   } catch (error) {
     return apiCatch("resources/[spaceId] DELETE", error);

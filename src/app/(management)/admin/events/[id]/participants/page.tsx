@@ -4,7 +4,6 @@ import { getEvent } from "@/lib/db/events";
 import { getEventFormColumns } from "@/lib/db/forms";
 import { listEventParticipants } from "@/lib/db/participants";
 import { ParticipantStatus } from "@/types/prisma";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export default async function ParticipantsPage({
@@ -29,6 +28,12 @@ export default async function ParticipantsPage({
   const pending = participants.filter(
     (p) => p.status === ParticipantStatus.PENDING,
   );
+  // Cupo efectivo, con la misma resolución que usa el formulario público. Un admin puede
+  // bajarlo (o mover el evento a un espacio más chico) después de que la gente se inscribió —
+  // cuando lo hace confirma un aviso, y acá es donde el excedente queda visible
+  // (milestone-12 D11).
+  const capacity = event.capacity ?? event.space.capacity;
+  const oversubscribed = capacity > 0 && active.length > capacity;
 
   const rows = participants.map((p) => ({
     id: p.id,
@@ -45,16 +50,23 @@ export default async function ParticipantsPage({
         <div>
           <h1 className="text-2xl font-bold">Participantes</h1>
           <p className="text-muted-foreground">
-            {event.name} · {active.length} inscriptos
+            {event.name} ·{" "}
+            {capacity > 0
+              ? `${active.length} / ${capacity} inscriptos`
+              : `${active.length} inscriptos`}
             {event.requiresApproval && pending.length > 0
               ? ` · ${pending.length} pendiente${pending.length === 1 ? "" : "s"}`
               : ""}
           </p>
+          {oversubscribed && (
+            <p className="mt-1 text-sm font-medium text-destructive">
+              Hay {active.length - capacity} inscriptos por encima del cupo.
+              Nadie se dio de baja automáticamente: rechazá inscripciones para
+              ajustarlo.
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href={`/admin/events/${id}`}>Volver</Link>
-          </Button>
           <Button asChild>
             <a href={`/api/admin/events/${id}/participants?format=csv`}>
               Descargar CSV

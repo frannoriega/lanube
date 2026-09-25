@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import {
   deleteEvent,
+  EventCapacityWarning,
   EventEditDropWarning,
   getEvent,
   updateEvent,
@@ -46,6 +47,9 @@ export async function PUT(
   }
 
   const force = body?.force === true;
+  // Separado de `force` a propósito: confirman cosas distintas (sesiones que se pierden vs.
+  // sobrecupo), y confirmar una no debe confirmar la otra en silencio.
+  const forceCapacity = body?.forceCapacity === true;
   const sessionsParsed = z
     .array(sessionActionSchema)
     .safeParse(body?.sessionActions ?? []);
@@ -65,6 +69,7 @@ export async function PUT(
   try {
     const event = await updateEvent(id, parsed.data, {
       force,
+      forceCapacity,
       sessionActions: sessionsParsed.data,
       sessionReason,
     });
@@ -79,6 +84,13 @@ export async function PUT(
     // Edit would drop per-session changes → ask the admin to confirm (frontend resends force).
     if (e instanceof EventEditDropWarning) {
       return apiError(e.message, 409, { dropped: e.dropped });
+    }
+    // La edición deja más inscriptos que lugares → confirmar (el frontend reenvía
+    // forceCapacity).
+    if (e instanceof EventCapacityWarning) {
+      return apiError(e.message, 409, {
+        capacityWarning: { registered: e.registered, capacity: e.capacity },
+      });
     }
     return apiCatch("admin/events/[id] PUT", e);
   }
