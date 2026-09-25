@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 type MaintainRow = {
   deleted_past_ledger: bigint;
   rebuilt_recurring: bigint;
-  deleted_reservations: bigint;
+  pruned_expired_ledger: bigint;
 };
 
 /**
- * Daily reservation ledger maintenance (UTC day boundaries in SQL).
- * Vercel Cron: set CRON_SECRET and Authorization: Bearer <CRON_SECRET>.
+ * Mantenimiento diario del **ledger** de reservas (los límites de día se calculan en UTC,
+ * dentro del SQL). Vercel Cron: setear CRON_SECRET y Authorization: Bearer <CRON_SECRET>.
+ *
+ * Poda y rematerializa el ledger derivado; **no** borra filas de `reservations`. Antes sí lo
+ * hacía (milestone-12 D7), y por eso `/admin/reports` no podía reportar ningún período pasado
+ * — el tercer contador ahora es `prunedExpiredLedger`, no `deletedReservations`.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -40,10 +45,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Limpieza de tablas transitorias: tokens de verificación vencidos y ventanas de
+    // rate limit ya cerradas. Ninguna de las dos se limpiaba nunca (milestone-12 D28).
+    const [transient] = await prisma.$queryRaw<
+      { deleted_tokens: bigint; deleted_rate_limits: bigint }[]
+    >`SELECT * FROM prune_transient_rows(${nowMs()}::bigint)`;
+
     const result = {
       deletedPastLedger: Number(row.deleted_past_ledger),
       rebuiltRecurring: Number(row.rebuilt_recurring),
-      deletedReservations: Number(row.deleted_reservations),
+      prunedExpiredLedger: Number(row.pruned_expired_ledger),
+      deletedExpiredTokens: Number(transient?.deleted_tokens ?? 0),
+      deletedStaleRateLimits: Number(transient?.deleted_rate_limits ?? 0),
     };
     logger.info("cron/maintain-reservations done", result);
     return NextResponse.json(result);

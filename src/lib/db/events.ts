@@ -241,6 +241,33 @@ export class EventEditDropWarning extends Error {
   }
 }
 
+/**
+ * La lanza `updateEvent` cuando la edición dejaría más inscriptos que lugares y no se pasó
+ * `forceCapacity` (milestone-12 D11).
+ *
+ * Dos ediciones la provocan: bajar `Event.capacity`, o mover el evento a un espacio de
+ * capacidad menor (porque la capacidad cae por defecto a la del espacio). Ninguna de las dos
+ * se detectaba: el formulario público simplemente cerraba como "completo" y los inscriptos
+ * excedentes quedaban invisibles para el admin.
+ *
+ * Resuelto (2026-09-24) como avisar-y-confirmar en lugar de bloquear: una sala realmente puede
+ * achicarse, y negar la grabación obligaría al admin a rechazar gente antes de poder registrar
+ * la realidad. **A nadie se lo da de baja automáticamente** — decidir quién pierde el lugar
+ * sigue siendo una decisión humana.
+ */
+export class EventCapacityWarning extends Error {
+  /** Registrations currently holding a spot (PENDING or APPROVED). */
+  registered: number;
+  /** The capacity the edit would apply. */
+  capacity: number;
+  constructor(registered: number, capacity: number) {
+    super(`Hay ${registered} inscriptos y el nuevo cupo es ${capacity}`);
+    this.name = "EventCapacityWarning";
+    this.registered = registered;
+    this.capacity = capacity;
+  }
+}
+
 /** Maps a Prisma event reservation (+ exceptions) to the pure `RawReservation` shape. */
 export function toRawReservation(r: {
   id: string;
@@ -313,6 +340,45 @@ async function assertRescheduleFree(
 }
 
 /**
+ * Rechaza una edición de evento que pondría alguna de sus ocurrencias encima de otra reserva.
+ *
+ * La creación está protegida (`create_event_reservation` levanta excepción si hay solape) y
+ * también la reprogramación de una sesión suelta (`assertRescheduleFree`), pero el camino de
+ * **edición** actualiza en el lugar la reserva de cada día de la semana y llama a
+ * `rebuild_reservation_ledger_forward`, que no hace ningún chequeo de conflicto por su cuenta
+ * — así que mover la ventana horaria de un evento publicado sobre un horario ocupado
+ * duplicaba la reserva del espacio en silencio (milestone-12 D6).
+ *
+ * Corre una sola vez, después de reconstruir todos los días, sobre las filas del ledger tal
+ * como quedaron. `reservation_window_conflicts` excluye la reserva que se está chequeando, así
+ * que una ocurrencia nunca choca consigo misma; y dos días distintos del mismo evento no
+ * pueden solaparse, así que el evento nunca es su propio conflicto.
+ */
+async function assertEventOccurrencesFree(
+  tx: Prisma.TransactionClient,
+  eventId: string,
+): Promise<void> {
+  const rows = await tx.$queryRaw<{ occurrence_start_time: bigint }[]>`
+    SELECT l.occurrence_start_time
+    FROM reservation_ledger l
+    JOIN reservations r ON r.id = l.reservation_id
+    WHERE r.reservable_type = 'EVENT'
+      AND r.reservable_id = ${eventId}
+      AND reservation_window_conflicts(
+            l.reservation_id, l.occurrence_start_time, l.occurrence_end_time
+          )
+    ORDER BY l.occurrence_start_time
+    LIMIT 1
+  `;
+  if (rows.length > 0) {
+    const when = dateKeyFromUnixMs(Number(rows[0].occurrence_start_time));
+    throw new DomainError(
+      `El horario elegido se superpone con otra reserva en ese espacio (por ej. el ${when})`,
+    );
+  }
+}
+
+/**
  * Recomputes the Event's denormalized window from its reservations + exceptions:
  * `startTime`/`endTime` from the earliest occurrence (for the card's time display),
  * `recurrenceEnd` = max end including rescheduled windows (so a reschedule past the old end
@@ -373,6 +439,8 @@ export async function updateEvent(
   input: EventInput,
   opts: {
     force?: boolean;
+    /** Confirma una edición que dejaría más inscriptos que lugares (D11). */
+    forceCapacity?: boolean;
     sessionActions?: SessionActionInput[];
     /** Single reason shared by every staged cancel/reschedule in this save. */
     sessionReason?: string;
@@ -403,6 +471,18 @@ export async function updateEvent(
         input.capacity ?? (await getSpaceCapacity(tx, input.spaceId));
       if (capacity === null) {
         throw new DomainError("El recurso seleccionado no existe");
+      }
+
+      // ¿Esta edición dejaría más inscriptos que lugares? Sea bajando Event.capacity o
+      // moviendo a un espacio más chico (la capacidad cae por defecto a la del espacio).
+      // Avisar una vez y dejar que el admin siga — ver EventCapacityWarning.
+      if (!opts.forceCapacity && capacity > 0) {
+        const holding = await tx.eventParticipant.count({
+          where: { eventId: id, status: { in: SPOT_HOLDING_STATUSES } },
+        });
+        if (holding > capacity) {
+          throw new EventCapacityWarning(holding, capacity);
+        }
       }
 
       const existingRes = await tx.reservation.findMany({
@@ -489,6 +569,11 @@ export async function updateEvent(
             await rebuildLedger(tx, r.id);
           }
         }
+
+        // La rama de edición en el lugar es la única que reconstruye sin chequear
+        // conflictos: el camino de inserción pasa por create_event_reservation, que levanta
+        // excepción si hay solape.
+        await assertEventOccurrencesFree(tx, id);
       }
 
       // Metadata (window fields are set by recomputeEventWindow below).
@@ -537,7 +622,10 @@ export async function updateEvent(
     }
     return event;
   } catch (error) {
+    // Los dos avisos son confirmables, no fallas: la ruta los convierte en un 409 que el
+    // formulario de evento reenvía con el flag de forzado correspondiente.
     if (error instanceof EventEditDropWarning) throw error;
+    if (error instanceof EventCapacityWarning) throw error;
     translateSqlError(error);
   }
 }
@@ -667,7 +755,10 @@ export async function getEvent(id: string) {
     where: { id },
     include: {
       space: {
-        select: { id: true, name: true },
+        // `capacity` se necesita para que quien llama pueda resolver el cupo efectivo del
+        // evento (Event.capacity ?? space.capacity) — la vista de inscriptos lo compara con
+        // la cantidad de lugares ocupados para mostrar el sobrecupo (milestone-12 D11).
+        select: { id: true, name: true, capacity: true },
       },
       form: {
         select: {
@@ -857,7 +948,7 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
     endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
     capacity: event.capacity,
     requiresApproval: event.requiresApproval,
-    imageUrl: event.imageUrl ?? null,
+    imageUrl: event.imageUrl ?? "",
     form: event.form
       ? {
           templateId: event.form.templateId ?? "",
