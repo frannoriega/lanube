@@ -74,11 +74,12 @@ What is still open is the work deliberately held back:
   passing — so it wants a preview deployment walked route group by route group,
   `/forms/[slug]` included (the auth-gated routes never exercise it). Open: schedule that,
   or accept `'unsafe-inline'` as the standing position.
-- **Dark mode for the auth pages.** `signin` / `reset` / `signup` are wrapped in
-  `ThemeProvider` but contain not one `dark:` class (~60 palette literals), so in dark
-  mode they render light-theme colors. Slice D's mechanical sweep is the wrong tool here —
-  these are full-bleed branded screens, so it is a design pass. Open: do it, or decide the
-  auth screens are deliberately light-only and drop the `ThemeProvider`.
+- ~~**Dark mode for the auth pages.**~~ **Resolved (milestone 11, 2026-09-24): light-only
+  by decision.** `signin` / `reset` / `signup` carry no `dark:` classes and deliberately
+  won't; new auth markup should match the page's existing hardcoded light palette
+  (`text-blue-900`, `bg-slate-200`) rather than introduce tokens. Still open as a tidy-up:
+  the pages remain wrapped in `ThemeProvider`, which now does nothing for them and could
+  be dropped.
 - **Did the `--muted-foreground` change land well?** It moved `#888282` → `#666666`,
   affecting ~220 secondary-text usages at once to clear AA. Measured and now asserted in
   `src/lib/contrast.test.ts`, but it is a deliberate visual change and nobody has looked
@@ -90,6 +91,34 @@ What is still open is the work deliberately held back:
 - **Finish the Incidents feature.** Now honest about being unavailable rather than faking
   a working screen, and unreachable from the nav. The `Incident`/`IncidentUser` models and
   a commented-out implementation exist. Its own milestone when it is wanted.
+
+## Milestone 12 — Auditoría de dominio (reservas, publicar-y-editar, retención)
+
+Los defectos de ingeniería de la auditoría del 2026-09-24 y de su segunda pasada del 2026-09-25
+están corregidos — ver
+[`milestones/milestones-12-domain-audit-reservations-and-lifecycle.md`](./milestones/milestones-12-domain-audit-reservations-and-lifecycle.md).
+Tres preguntas de producto surgidas en el proceso se **respondieron e implementaron**: el camino de
+corrección en el lugar del Comunicador (D20, resuelto como "corregir en el lugar + marcar para
+re-revisión"), la reducción de capacidad de un evento (D11, resuelto como "avisar y confirmar") y la
+retención del historial de reportes (D7, resuelto como 3 años compactado / 12 meses de detalle
+crudo). Viven en el doc del milestone. Lo que queda abierto acá:
+
+- **¿La base desplegada está en sincronía con las migraciones?** Nada verifica que las funciones
+  que corren en producción coincidan con `prisma/migrations/**`. El incidente de `get_actor_size`
+  — una reescritura que se salteó una función, rompiendo toda operación de ledger de EVENT hasta
+  que `20260713000000` lo atrapó — es el precedente. Este milestone agrega once migraciones con
+  funciones nuevas, así que la superficie creció. Vale un chequeo, y quizá una aserción de arranque.
+- **¿La retención de auditoría debería seguir a la de reportes?** El historial de reportes quedó en
+  3 años compactado. `audit_logs` sigue creciendo sin política (el ítem abierto del milestone 2).
+  Son la misma clase de decisión y probablemente merecen una sola respuesta.
+- **¿Meter la ventana dentro de `get_user_next_reservations`?** La slice G subió el techo de
+  ocurrencias del calendario de 100 a 500 y agregó un warning de desarrollo, pero la corrección
+  real es que la función SQL reciba el rango pedido y devuelva solo eso. Cambia su firma y tiene
+  otros callers, así que se dejó anotado.
+- **Documentación en inglés que quedó.** El código y los docs nuevos de este milestone están en
+  español (ver la memoria `feedback-docs-in-spanish`). Siguen en inglés: `CLAUDE.md`, los docs de
+  los milestones 1–11, y la mayoría de los comentarios pre-existentes del código. Convertirlos es
+  un barrido aparte; decidir si se hace, y en qué orden, queda abierto.
 
 ## Housekeeping
 
