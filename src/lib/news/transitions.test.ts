@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isDomainError } from "@/lib/errors";
 import {
   assertAuthorTransition,
-  isAmendInPlace,
+  assertCanRequestPendingAction,
   statusRequiresApprovalPermission,
 } from "./transitions";
 
@@ -43,53 +43,49 @@ describe("assertAuthorTransition", () => {
   });
 });
 
-describe("isAmendInPlace", () => {
-  it("is true only when a published post stays published", () => {
-    expect(isAmendInPlace("PUBLISHED", "PUBLISHED")).toBe(true);
-    expect(isAmendInPlace("PUBLISHED", "DRAFT")).toBe(false);
-    expect(isAmendInPlace("PUBLISHED", "PAUSED")).toBe(false);
-    expect(isAmendInPlace("PAUSED", "PUBLISHED")).toBe(false);
-  });
-
-  it("is false on create, where there is no existing status", () => {
-    expect(isAmendInPlace("PUBLISHED", undefined)).toBe(false);
-  });
-});
-
-describe("assertAuthorTransition with an existing status", () => {
-  it("lets a plain author amend their own already-published post", () => {
-    // milestone-12 D20: before this, the author's only options were a 403 or taking
-    // the live article off the site.
+describe("assertCanRequestPendingAction", () => {
+  it("allows a fresh EDIT/PAUSE/DELETE request against a published post with nothing pending", () => {
     expect(() =>
-      assertAuthorTransition("PUBLISHED", false, "PUBLISHED"),
+      assertCanRequestPendingAction("PUBLISHED", null, "EDIT"),
+    ).not.toThrow();
+    expect(() =>
+      assertCanRequestPendingAction("PUBLISHED", null, "PAUSE"),
+    ).not.toThrow();
+    expect(() =>
+      assertCanRequestPendingAction("PUBLISHED", null, "DELETE"),
     ).not.toThrow();
   });
 
-  it("still refuses a plain author publishing something not yet live", () => {
-    for (const from of ["DRAFT", "PENDING_REVIEW", "REJECTED", "PAUSED"]) {
-      let thrown: unknown;
-      try {
-        assertAuthorTransition("PUBLISHED", false, from);
-      } catch (err) {
-        thrown = err;
-      }
-      expect(isDomainError(thrown)).toBe(true);
+  it("refuses a request against a post that isn't published", () => {
+    for (const status of ["DRAFT", "PENDING_REVIEW", "REJECTED", "PAUSED"]) {
+      expect(() =>
+        assertCanRequestPendingAction(status, null, "EDIT"),
+      ).toThrow();
     }
   });
 
-  it("still refuses a plain author pausing a live post", () => {
-    let thrown: unknown;
+  it("allows re-requesting the same pending action (overwrites it)", () => {
+    expect(() =>
+      assertCanRequestPendingAction("PUBLISHED", "EDIT", "EDIT"),
+    ).not.toThrow();
+  });
+
+  it("refuses a different request while one is already pending", () => {
+    expect(() =>
+      assertCanRequestPendingAction("PUBLISHED", "EDIT", "PAUSE"),
+    ).toThrow();
+    expect(() =>
+      assertCanRequestPendingAction("PUBLISHED", "PAUSE", "DELETE"),
+    ).toThrow();
+  });
+
+  it("throws a 409 DomainError", () => {
     try {
-      assertAuthorTransition("PAUSED", false, "PUBLISHED");
+      assertCanRequestPendingAction("DRAFT", null, "EDIT");
+      expect.unreachable();
     } catch (err) {
-      thrown = err;
+      expect(isDomainError(err)).toBe(true);
+      if (isDomainError(err)) expect(err.status).toBe(409);
     }
-    expect(isDomainError(thrown)).toBe(true);
-  });
-
-  it("is unchanged for an author who can publish directly", () => {
-    expect(() =>
-      assertAuthorTransition("PUBLISHED", true, "DRAFT"),
-    ).not.toThrow();
   });
 });
