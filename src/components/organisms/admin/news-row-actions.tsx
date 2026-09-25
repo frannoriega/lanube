@@ -22,12 +22,17 @@ export function NewsRowActions({
   title,
   canApprove,
   showDecision,
+  isPublished,
+  isDeleted,
 }: {
   id: string;
   title: string;
   canApprove: boolean;
-  /** Show approve/reject (only meaningful for a PENDING_REVIEW row). */
+  /** Show approve/reject (a PENDING_REVIEW row, or one with a pending EDIT/PAUSE/DELETE). */
   showDecision: boolean;
+  /** A plain author can't delete a live post directly — they request it instead. */
+  isPublished: boolean;
+  isDeleted: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -68,8 +73,36 @@ export function NewsRowActions({
     }
   };
 
+  const onRestore = async () => {
+    setBusy(true);
+    try {
+      await apiSend(`/api/admin/news/${id}/restore`, "POST");
+      toast.success("Nota restaurada");
+      router.refresh();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "No se pudo restaurar la nota"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Un autor sin news:approve no puede bajar/eliminar su propia nota publicada con un click
+  // — tiene que pedirlo desde el formulario y que un admin lo decida.
+  const canDeleteDirectly = canApprove || !isPublished;
+
   return (
     <div className="flex items-center justify-end gap-1">
+      {canApprove && isDeleted ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          onClick={onRestore}
+          aria-label={`Restaurar ${title}`}
+        >
+          Restaurar
+        </Button>
+      ) : null}
       {canApprove && showDecision ? (
         <>
           <Button
@@ -97,14 +130,16 @@ export function NewsRowActions({
           <Pencil className="h-4 w-4" />
         </Link>
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setDeleting(true)}
-        aria-label={`Eliminar ${title}`}
-      >
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
+      {canDeleteDirectly ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDeleting(true)}
+          aria-label={`Eliminar ${title}`}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      ) : null}
 
       <Dialog open={rejecting} onOpenChange={setRejecting}>
         <DialogContent>
@@ -117,7 +152,7 @@ export function NewsRowActions({
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Motivo (opcional)"
+            placeholder="Motivo (obligatorio)"
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejecting(false)}>
@@ -125,8 +160,8 @@ export function NewsRowActions({
             </Button>
             <Button
               variant="destructive"
-              disabled={busy}
-              onClick={() => decide("REJECTED", reason || undefined)}
+              disabled={busy || !reason.trim()}
+              onClick={() => decide("REJECTED", reason.trim())}
             >
               Rechazar
             </Button>
@@ -139,7 +174,9 @@ export function NewsRowActions({
           <DialogHeader>
             <DialogTitle>¿Eliminar &ldquo;{title}&rdquo;?</DialogTitle>
             <DialogDescription>
-              Esta acción no se puede deshacer.
+              {isPublished
+                ? "Deja de estar visible en el sitio. Se puede restaurar después."
+                : "Esta acción no se puede deshacer."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

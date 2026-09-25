@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  shouldFlagForReview,
   shouldRetireSlug,
+  shouldSoftDelete,
   shouldStampPublishedAt,
 } from "./publishing";
 
@@ -60,33 +60,13 @@ describe("shouldRetireSlug", () => {
   });
 });
 
-describe("shouldFlagForReview", () => {
-  it("flags a plain author amending their own live post", () => {
-    expect(shouldFlagForReview("PUBLISHED", "PUBLISHED", false)).toBe(true);
+describe("shouldSoftDelete", () => {
+  it("soft-deletes a post that was ever published", () => {
+    expect(shouldSoftDelete(BigInt(1_600_000_000_000))).toBe(true);
+    expect(shouldSoftDelete(1_600_000_000_000)).toBe(true);
   });
 
-  it("does not flag an admin's edit — their edit is the review", () => {
-    expect(shouldFlagForReview("PUBLISHED", "PUBLISHED", true)).toBe(false);
-  });
-
-  it("does not flag a normal first publication out of review", () => {
-    // This path is gated by assertAuthorTransition instead: a plain author cannot
-    // reach PUBLISHED from PENDING_REVIEW at all.
-    expect(shouldFlagForReview("PUBLISHED", "PENDING_REVIEW", false)).toBe(
-      false,
-    );
-    expect(shouldFlagForReview("PUBLISHED", "DRAFT", false)).toBe(false);
-  });
-
-  it("does not flag an author taking their post back to a draft", () => {
-    expect(shouldFlagForReview("DRAFT", "PUBLISHED", false)).toBe(false);
-    expect(shouldFlagForReview("PENDING_REVIEW", "PUBLISHED", false)).toBe(
-      false,
-    );
-  });
-
-  it("does not flag reviving a paused post", () => {
-    // PAUSED -> PUBLISHED still needs news:approve, so a plain author never gets here.
-    expect(shouldFlagForReview("PUBLISHED", "PAUSED", false)).toBe(false);
+  it("hard-deletes a post that never went live", () => {
+    expect(shouldSoftDelete(null)).toBe(false);
   });
 });

@@ -7,6 +7,16 @@
 /// resubmittable) -> PAUSED (was live, taken down without deleting). Admin/Superadmin skip
 /// review for their own posts (DRAFT -> PUBLISHED directly); only Admin/Superadmin can move
 /// a post out of PENDING_REVIEW (see the news:approve permission in src/lib/rbac.ts).
+///
+/// A PUBLISHED post never leaves the site on a plain author's say-so (milestone-12, "no
+/// unpublish-on-edit"). A `news:manage`-only author can instead *request* one of three
+/// things against their own live post — `pendingAction` EDIT/PAUSE/DELETE — which an
+/// Admin/Superadmin (`news:approve`) then approves or rejects via the same decision
+/// endpoint used for PENDING_REVIEW. The live fields never change until an EDIT request is
+/// approved (the proposed content sits in the `pending*` snapshot columns instead), and the
+/// post stays up and unchanged if a PAUSE/DELETE request is rejected. Admin/Superadmin skip
+/// this entirely — they can still edit/pause/delete a PUBLISHED post directly, same as they
+/// can publish directly; their action *is* the review.
 model NewsPost {
   id            String  @id @default(cuid())
   title         String
@@ -26,12 +36,23 @@ model NewsPost {
 
   status NewsPostStatus @default(DRAFT)
 
-  /// Se marca cuando un autor con `news:manage` a secas corrige una nota que ya está
-  /// PUBLISHED. La nota sigue en línea (arreglar un typo no debería bajar la página) y esto
-  /// la deja marcada para que un admin revise el cambio después — ver milestone-12 D20. La
-  /// edición de un admin nunca la marca: tiene `news:approve`, así que su edición *es* la
-  /// revisión.
-  needsReview Boolean @default(false) @map("needs_review")
+  /// What a plain author is asking for against this (PUBLISHED) post. Null when nothing is
+  /// pending. See the model doc comment above for the full flow.
+  pendingAction NewsPendingAction? @map("pending_action")
+
+  /// Staged EDIT snapshot — only populated when `pendingAction = EDIT`. The live
+  /// title/slug/summary/body/coverImageUrl are untouched until an Admin/Superadmin approves
+  /// the request, at which point these overwrite them (see `decideNewsPost`).
+  pendingTitle         String? @map("pending_title")
+  pendingSlug          String? @map("pending_slug")
+  pendingSummary       String? @map("pending_summary")
+  pendingBody          String? @map("pending_body")
+  pendingCoverImageUrl String? @map("pending_cover_image_url")
+
+  /// Author-supplied note on *why* they're asking (shown to the deciding admin) —
+  /// optional for all three pending actions.
+  pendingReason      String? @map("pending_reason")
+  pendingRequestedAt BigInt? @map("pending_requested_at")
 
   /// Featured posts lead the landing section — same isFeatured/featuredOrder shape as Event.
   isFeatured    Boolean @default(false) @map("is_featured")
@@ -41,9 +62,15 @@ model NewsPost {
   /// independent of createdAt (a post can be drafted long before it's approved).
   publishedAt BigInt? @map("published_at")
 
-  /// Set by an Admin/Superadmin decision on a PENDING_REVIEW post (approve or reject).
+  /// Set by an Admin/Superadmin decision — either on a PENDING_REVIEW post, or on a pending
+  /// EDIT/PAUSE/DELETE request against a PUBLISHED one.
   decisionReason String? @map("decision_reason")
   decidedAt      BigInt? @map("decided_at")
+
+  /// Soft delete, same shape as Event.deletedAt — set when a DELETE request is approved (or
+  /// an Admin/Superadmin deletes a post that was ever public). The row and its slug history
+  /// stay (so an old link can still 308 through `NewsPostSlug`), and it's reversible.
+  deletedAt BigInt? @map("deleted_at")
 
   createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
@@ -53,7 +80,7 @@ model NewsPost {
 
   @@index([status])
   @@index([authorId])
-  @@index([needsReview])
+  @@index([pendingAction])
   @@map("news_posts")
 }
 
