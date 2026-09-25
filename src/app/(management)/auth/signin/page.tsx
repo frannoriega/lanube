@@ -555,7 +555,11 @@ export default function LandingPage() {
             <p>Espacio de Coworking e Innovación</p>
           </CardHeader>
           <CardContent className="bg-transparent w-full flex flex-col gap-6">
-            <div className="w-full overflow-hidden">
+            {/* px-1 -mx-1: the slide transition needs overflow-hidden, but a
+                zero-padding clip box crops the inputs' focus ring on the
+                left/right edges. Padding gives the ring room; the matching
+                negative margin keeps the visible width unchanged. */}
+            <div className="w-full overflow-hidden px-1 -mx-1">
               <AnimatePresence mode="wait">{renderScreen()}</AnimatePresence>
             </div>
             <p className="text-sm text-center">
