@@ -114,7 +114,7 @@ export interface EventFormDefaults {
   endTime: string;
   capacity: number | null;
   requiresApproval: boolean;
-  imageUrl: string | null;
+  imageUrl: string;
   form: EventFormBindingDefaults | null;
 }
 
@@ -134,7 +134,7 @@ const EMPTY_DEFAULTS: EventInput = {
   endTime: "13:00",
   capacity: null,
   requiresApproval: false,
-  imageUrl: null,
+  imageUrl: "",
   form: null,
 };
 
@@ -198,6 +198,13 @@ export function EventForm({
     dropped: DroppedSession[];
     values: EventInput;
   } | null>(null);
+  // La edición dejaría más inscriptos que lugares (milestone-12 D11). Es confirmable, como
+  // dropWarning, pero con un flag propio: confirmar una no debe confirmar la otra.
+  const [capacityWarning, setCapacityWarning] = useState<{
+    registered: number;
+    capacity: number;
+    values: EventInput;
+  } | null>(null);
   // Opened via the ?sessions=1 shortcut (from the admin card) or the "Sesiones" button.
   const [sessionsOpen, setSessionsOpen] = useState(
     mode === "edit" && searchParams.get("sessions") === "1",
@@ -245,7 +252,10 @@ export function EventForm({
     (a) => a.kind === "cancel" || a.kind === "reschedule",
   );
 
-  const save = async (values: EventInput, force: boolean): Promise<boolean> => {
+  const save = async (
+    values: EventInput,
+    forces: { force?: boolean; forceCapacity?: boolean } = {},
+  ): Promise<boolean> => {
     // A batch of cancels/reschedules needs the single shared reason before it can be saved.
     if (mode === "edit" && needsSessionReason && sessionReason.trim() === "") {
       toast.error("Indicá el motivo de los cambios de sesiones");
@@ -262,22 +272,35 @@ export function EventForm({
           ? values
           : {
               ...values,
-              force,
+              force: forces.force ?? false,
+              forceCapacity: forces.forceCapacity ?? false,
               sessionActions,
               sessionReason: sessionReason.trim(),
             },
       );
     } catch (err) {
-      // The edit would drop per-session changes → confirm before forcing.
+      // De esta ruta vuelven dos 409 confirmables distintos, así que hay que discriminar por
+      // el body y no por el status — tratar todo 409 como el aviso de sesiones mostraría una
+      // lista de "se perderán sesiones" vacía cuando en realidad hay sobrecupo.
       if (err instanceof ApiError && err.status === 409) {
-        const body = err.body as { dropped?: DroppedSession[] } | null;
-        setDropWarning({ dropped: body?.dropped ?? [], values });
-        return false;
+        const body = err.body as {
+          dropped?: DroppedSession[];
+          capacityWarning?: { registered: number; capacity: number };
+        } | null;
+        if (body?.capacityWarning) {
+          setCapacityWarning({ ...body.capacityWarning, values });
+          return false;
+        }
+        if (body?.dropped) {
+          setDropWarning({ dropped: body.dropped, values });
+          return false;
+        }
       }
       toast.error(apiErrorMessage(err, "No se pudo guardar el evento"));
       return false;
     }
     setDropWarning(null);
+    setCapacityWarning(null);
     setSessionActions([]);
     setSessionReason("");
     toast.success(mode === "create" ? "Evento creado" : "Evento actualizado");
@@ -286,7 +309,7 @@ export function EventForm({
     return true;
   };
 
-  const onSubmit = (values: EventInput) => save(values, false);
+  const onSubmit = (values: EventInput) => save(values);
 
   return (
     <>
@@ -379,11 +402,11 @@ export function EventForm({
             name="imageUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Imagen (opcional)</FormLabel>
+                <FormLabel>Imagen</FormLabel>
                 <FormControl>
                   <ImageUpload
-                    value={field.value ?? null}
-                    onChange={field.onChange}
+                    value={field.value || null}
+                    onChange={(url) => field.onChange(url ?? "")}
                     uploadUrl={`/api/admin/events/upload${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
                     alt={watch("name") || "Imagen del evento"}
                   />
@@ -821,10 +844,54 @@ export function EventForm({
               type="button"
               variant="destructive"
               onClick={() => {
-                if (dropWarning) save(dropWarning.values, true);
+                if (dropWarning) save(dropWarning.values, { force: true });
               }}
             >
               Continuar y eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={capacityWarning !== null}
+        onOpenChange={(o) => !o && setCapacityWarning(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              El cupo queda por debajo de los inscriptos
+            </DialogTitle>
+            <DialogDescription>
+              Hay {capacityWarning?.registered} inscriptos y el nuevo cupo es{" "}
+              {capacityWarning?.capacity}. Nadie se da de baja automáticamente:
+              si continuás, quedan{" "}
+              {Math.max(
+                0,
+                (capacityWarning?.registered ?? 0) -
+                  (capacityWarning?.capacity ?? 0),
+              )}{" "}
+              inscriptos por encima del cupo y vas a tener que resolverlo desde
+              la lista de inscriptos.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCapacityWarning(null)}
+            >
+              Volver
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (capacityWarning)
+                  save(capacityWarning.values, { forceCapacity: true });
+              }}
+            >
+              Guardar igual
             </Button>
           </DialogFooter>
         </DialogContent>

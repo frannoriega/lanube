@@ -12,7 +12,7 @@ import { diffFields } from "@/lib/audit/diff";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { createId } from "@paralleldrive/cuid2";
 import { NextRequest, NextResponse } from "next/server";
-import { apiServerError } from "@/lib/api/response";
+import { apiCatch } from "@/lib/api/response";
 
 export async function PATCH(
   request: NextRequest,
@@ -32,8 +32,7 @@ export async function PATCH(
 
     if (status === "APPROVED") {
       if (preview) {
-        const conflicts =
-          await previewConflictingPending(/*resolvedParams.id*/);
+        const conflicts = await previewConflictingPending(resolvedParams.id);
         return NextResponse.json({
           approvedId: null,
           autoRejectedIds: conflicts,
@@ -123,6 +122,9 @@ export async function PATCH(
       return NextResponse.json(serializeJson(reservation));
     }
   } catch (error) {
-    return apiServerError("admin/reservations/[id]", error);
+    // apiCatch y no apiServerError: approve_reservation() ahora levanta un DomainError con
+    // mensaje mostrable cuando la reserva ya no entra (milestone-12 D3), y el admin necesita
+    // leer el motivo en lugar de "Error interno del servidor".
+    return apiCatch("admin/reservations/[id]", error);
   }
 }
