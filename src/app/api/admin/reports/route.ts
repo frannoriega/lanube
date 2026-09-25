@@ -1,5 +1,4 @@
-import { auth } from "@/lib/auth";
-import { isAdminByEmail } from "@/lib/db/adminStats";
+import { requirePermission } from "@/lib/api-auth";
 import { getReportForRange } from "@/lib/db/adminReports";
 import { NextRequest, NextResponse } from "next/server";
 import { apiServerError } from "@/lib/api/response";
@@ -8,14 +7,11 @@ const MAX_RANGE_MS = 366 * 24 * 60 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
-    const isAdmin = await isAdminByEmail(session.user.email);
-    if (!isAdmin) {
-      return NextResponse.json({ message: "Acceso denegado" }, { status: 403 });
-    }
+    // `reports:view` en lugar de "¿es admin en general?". `isAdminByEmail` solo responde
+    // `admin:access`, que tienen todos los roles del panel — así que un Comunicador podía leer
+    // esto. Mismo defecto que tenían las rutas de check-in (milestone-12, Parte 4).
+    const { error } = await requirePermission("reports:view");
+    if (error) return error;
 
     const { searchParams } = new URL(request.url);
     const fromRaw = searchParams.get("from");

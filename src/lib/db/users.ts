@@ -397,31 +397,6 @@ async function getUserByEmailAndPassword(
   return null;
 }
 
-async function getRegisteredUserByEmailAndPassword(
-  email: string,
-  password: string,
-): Promise<RegisteredUserWithBans | null> {
-  email = await normalizeEmailForIdentityServer(email);
-  const passwordHash = await hashPassword(password);
-  const user = await prisma.registeredUser.findFirst({
-    relationLoadStrategy: "join",
-    include: {
-      user: true,
-      bans: {
-        where: {
-          OR: [{ endTime: null }, { endTime: { gt: BigInt(nowMs()) } }],
-        },
-        orderBy: {
-          endTime: "desc",
-        },
-        take: 1,
-      },
-    },
-    where: { user: { email, passwordHash } },
-  });
-  return user ?? null;
-}
-
 async function getRegisteredUserByEmail(
   email: string,
 ): Promise<RegisteredUserWithBans | null> {
@@ -501,7 +476,6 @@ export {
   banUser,
   createUser,
   getRegisteredUserByEmail,
-  getRegisteredUserByEmailAndPassword,
   getUserByEmailAndPassword,
   unbanUser,
   updateUser,

@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/api-auth";
 import { updateUserRole } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { getRoleById } from "@/lib/db/roles";
 import { NextRequest, NextResponse } from "next/server";
@@ -44,6 +45,19 @@ export async function PATCH(
     );
   }
 
+  // Solo un superadmin puede otorgar el tier superadmin. Hoy `users:roles:manage` lo tiene
+  // únicamente el rol SUPERADMIN, así que esto no es explotable tal como está sembrado —
+  // pero `users:roles:manage` es un permiso asignable del catálogo, así que un superadmin
+  // podría delegar la asignación de roles a alguien que no lo es, y esa persona podría
+  // otorgarse superadmin a través de una cuenta títere. Defensa en profundidad: quien no es
+  // superadmin no puede crear superadmins (milestone-12 D27).
+  if (nextRole?.isSuperadmin && !session.isSuperadmin) {
+    return NextResponse.json(
+      { message: "Solo un superadmin puede asignar el rol de superadmin" },
+      { status: 403 },
+    );
+  }
+
   try {
     const before = await prisma.registeredUser.findUnique({
       where: { id },
@@ -52,7 +66,7 @@ export async function PATCH(
     const user = await updateUserRole(id, parsed.data.roleId);
     if (before && before.roleId !== user.roleId) {
       await recordAuditFromSession(session, {
-        action: "user.role.update",
+        action: AUDIT_ACTIONS.userRoleUpdate,
         entityType: "RegisteredUser",
         entityId: id,
         // Log the readable name alongside the id — the id alone is unreadable in the

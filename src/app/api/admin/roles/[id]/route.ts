@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import {
   deleteRole,
@@ -38,7 +39,7 @@ export async function PUT(
     const before = await getRoleById(id);
     const role = await updateRole(id, parsed.data);
     await recordAuditFromSession(session, {
-      action: "role.update",
+      action: AUDIT_ACTIONS.roleUpdate,
       entityType: "Role",
       entityId: role.id,
       before: before
@@ -74,7 +75,7 @@ export async function DELETE(
     const before = await getRoleById(id);
     await deleteRole(id);
     await recordAuditFromSession(session, {
-      action: "role.delete",
+      action: AUDIT_ACTIONS.roleDelete,
       entityType: "Role",
       entityId: id,
       before: before
