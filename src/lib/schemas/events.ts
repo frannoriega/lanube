@@ -9,10 +9,19 @@ const dateKeySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Fecha inválida" });
 
-/** HH:mm 24h time-of-day (admin timezone). */
-const timeOfDaySchema = z
-  .string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: "Hora inválida" });
+/**
+ * Hora del día HH:mm en formato 24h (zona del predio), restringida a cuartos de hora.
+ *
+ * La restricción de minutos no es cosmética: las ocurrencias de un evento se expanden en los
+ * buckets de 15 minutos del ledger de reservas empezando por el horario de inicio del propio
+ * evento, así que un evento fuera de grilla (10:07) producía buckets con los que ninguna otra
+ * reserva podía compararse nunca. La slice B pasó los predicados SQL a comparar rangos, así
+ * que eso ya no es *inseguro*, pero una sola grilla compartida es lo que mantiene los buckets
+ * fusionables y los índices selectivos — ver milestone-12 D4 y `isOnLedgerGrid`.
+ */
+const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):(00|15|30|45)$/, {
+  message: "La hora debe ser en intervalos de 15 minutos (por ej. 14:30)",
+});
 
 /** Weekday numbers, 0 = Sunday .. 6 = Saturday (matches Date.getDay()). */
 export const WEEKDAY_RRULE = [
@@ -88,15 +97,14 @@ export const eventInputSchema = z
     // When true, registrations require admin approval (start PENDING); the capacity then caps
     // how many can register, not the final approved headcount.
     requiresApproval: z.boolean(),
-    // Optional cover image URL produced by the upload endpoint. Accepts an absolute
+    // Required cover image URL produced by the upload endpoint. Accepts an absolute
     // http(s) URL (Vercel Blob / custom host) or a root-relative path (local dev provider).
     imageUrl: z
-      .string()
+      .string({ message: "La imagen del evento es obligatoria" })
+      .min(1, { message: "La imagen del evento es obligatoria" })
       .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/"), {
         message: "URL de imagen inválida",
-      })
-      .optional()
-      .nullable(),
+      }),
     // Optional form binding: a template to clone + the registration window/publish state.
     form: eventFormBindingSchema.optional().nullable(),
   })
@@ -104,6 +112,23 @@ export const eventInputSchema = z
     message: "La fecha de fin debe ser igual o posterior a la de inicio",
     path: ["endDate"],
   })
+  // El motor de recurrencia en SQL limita la expansión a 365 días desde la primera ocurrencia
+  // (`LEAST(COALESCE(_recurrence_end_ms, start + year), start + year)` en
+  // create_event_reservation / rebuild_reservation_ledger_forward). Un rango más largo se
+  // aceptaba y después simplemente dejaba de existir a mitad de camino, sin ningún aviso al
+  // crearlo (milestone-12, Parte 4). Mejor fallar fuerte en el borde que truncar en silencio.
+  .refine(
+    (d) =>
+      (Date.parse(`${d.endDate}T00:00:00Z`) -
+        Date.parse(`${d.startDate}T00:00:00Z`)) /
+        86_400_000 <=
+      364,
+    {
+      message:
+        "El rango no puede superar un año — creá un evento nuevo para el período siguiente",
+      path: ["endDate"],
+    },
+  )
   .refine((d) => d.startTime < d.endTime, {
     message: "La hora de inicio debe ser anterior a la de fin",
     path: ["endTime"],
