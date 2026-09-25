@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { requireActiveSession } from "@/lib/api-auth";
 import { updateRegisteredUserProfileByEmail } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
@@ -42,9 +43,15 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.email) {
+    // Escritura: un usuario suspendido no debe poder editar su perfil por API. El GET de
+    // arriba sí queda accesible — es una lectura de sus propios datos, que la página
+    // /banned puede necesitar (milestone-12 D24).
+    const { session, error: authError } = await requireActiveSession();
+    if (authError) return authError;
+    // `requireActiveSession` garantiza `userId`, no el email; el helper de abajo busca por
+    // email, así que se chequea explícitamente en lugar de asumirlo.
+    const email = session.user?.email;
+    if (!email) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
@@ -60,16 +67,13 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-      const updatedUser = await updateRegisteredUserProfileByEmail(
-        session.user.email,
-        {
-          name,
-          lastName,
-          dni: parsedDni.data.toString(),
-          institution,
-          reasonToJoin,
-        },
-      );
+      const updatedUser = await updateRegisteredUserProfileByEmail(email, {
+        name,
+        lastName,
+        dni: parsedDni.data.toString(),
+        institution,
+        reasonToJoin,
+      });
       return NextResponse.json(serializeJson(updatedUser));
     } catch (error) {
       return apiCatch("user/profile PUT (update)", error);

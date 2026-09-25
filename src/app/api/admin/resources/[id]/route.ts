@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
 import { diffFields } from "@/lib/audit/diff";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { deleteResource, updateResource } from "@/lib/db/resources";
 import { serializeJson } from "@/lib/json-bigint";
@@ -39,7 +40,7 @@ export async function PUT(
       const diff = diffFields(before, resource, [...AUDITED_RESOURCE_FIELDS]);
       if (diff) {
         await recordAuditFromSession(session, {
-          action: "resource.update",
+          action: AUDIT_ACTIONS.resourceUpdate,
           entityType: "Resource",
           entityId: id,
           ...diff,
@@ -71,7 +72,7 @@ export async function DELETE(
     await deleteResource(id);
     if (before) {
       await recordAuditFromSession(session, {
-        action: "resource.delete",
+        action: AUDIT_ACTIONS.resourceDelete,
         entityType: "Resource",
         entityId: id,
         before: { name: before.name },

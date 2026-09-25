@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { decideNewsPost } from "@/lib/db/news";
 import { notifyNewsDecision } from "@/lib/email/news-decision";
@@ -32,7 +33,7 @@ export async function POST(
     );
 
     await recordAuditFromSession(session, {
-      action: "news.decide",
+      action: AUDIT_ACTIONS.newsDecide,
       entityType: "NewsPost",
       entityId: id,
       before: { status: "PENDING_REVIEW" },
