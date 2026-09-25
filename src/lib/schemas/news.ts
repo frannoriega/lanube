@@ -28,13 +28,14 @@ export const newsPostInputSchema = z.object({
     .trim()
     .min(1, { message: "El contenido es obligatorio" })
     .max(20000),
+  // Required: every post needs a cover image. Accepts an absolute http(s) URL
+  // (Vercel Blob / custom host) or a root-relative path (local dev provider).
   coverImageUrl: z
-    .string()
+    .string({ message: "La imagen de portada es obligatoria" })
+    .min(1, { message: "La imagen de portada es obligatoria" })
     .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/"), {
       message: "URL de imagen inválida",
-    })
-    .optional()
-    .nullable(),
+    }),
   isFeatured: z.boolean(),
   featuredOrder: z.number().int().min(0),
   /** Only the transitions an author drives directly. */
@@ -42,6 +43,22 @@ export const newsPostInputSchema = z.object({
 });
 
 export type NewsPostInput = z.infer<typeof newsPostInputSchema>;
+
+/**
+ * Entrada del autor para editar una nota que **ya está publicada**. Los mismos campos, pero
+ * `status` además admite `PUBLISHED` para que el autor pueda corregir en el lugar sin bajar el
+ * artículo del sitio (milestone-12 D20). La ruta elige este schema solo cuando el estado
+ * guardado es `PUBLISHED` y la nota es del autor; `assertAuthorTransition` aplica la misma
+ * regla del lado del servidor, y la grabación setea `needsReview`.
+ *
+ * `PAUSED` sigue ausente a propósito: bajar una nota en línea es una acción de nivel
+ * aprobación, no una edición.
+ */
+export const newsPostAmendInputSchema = newsPostInputSchema.extend({
+  status: z.enum(["DRAFT", "PENDING_REVIEW", "PUBLISHED"]),
+});
+
+export type NewsPostAmendInput = z.infer<typeof newsPostAmendInputSchema>;
 
 /**
  * Admin/Superadmin-only input for publishing directly (bypassing review — they

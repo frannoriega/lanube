@@ -41,13 +41,19 @@ interface NewsSearchParams {
   page?: string;
   status?: string;
   mine?: string;
+  review?: string;
 }
 
-/** Builds an `/admin/news` href, keeping the other active filter and dropping `page`. */
-function newsFilterHref(params: { status?: string; mine?: boolean }): string {
+/** Arma un href de `/admin/news`, manteniendo los otros filtros activos y soltando `page`. */
+function newsFilterHref(params: {
+  status?: string;
+  mine?: boolean;
+  review?: boolean;
+}): string {
   const qs = new URLSearchParams();
   if (params.status) qs.set("status", params.status);
   if (params.mine) qs.set("mine", "1");
+  if (params.review) qs.set("review", "1");
   const query = qs.toString();
   return query ? `/admin/news?${query}` : "/admin/news";
 }
@@ -64,6 +70,10 @@ export default async function AdminNewsPage({
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const mine = sp.mine === "1";
+  // Notas corregidas por su autor después de salir a la luz (milestone-12 D20). Se mantiene
+  // como filtro propio y no como estado, porque el estado de la nota sigue siendo PUBLISHED:
+  // nunca dejó el sitio.
+  const needsReview = sp.review === "1";
   const { items, total } = await listAdminNewsPosts({
     authorId: canApprove
       ? mine
@@ -71,6 +81,7 @@ export default async function AdminNewsPage({
         : undefined
       : session?.userId,
     status: sp.status,
+    needsReview: needsReview ? true : undefined,
     page,
   });
   const pageSize = 20;
@@ -139,6 +150,13 @@ export default async function AdminNewsPage({
                 Publicadas
               </Badge>
             </Link>
+            {canApprove && (
+              <Link href={newsFilterHref({ mine, review: true })}>
+                <Badge variant={needsReview ? "default" : "outline"}>
+                  Editadas — revisar
+                </Badge>
+              </Link>
+            )}
           </div>
         </div>
       ) : null}
@@ -162,9 +180,22 @@ export default async function AdminNewsPage({
               <TableRow key={post.id}>
                 <TableCell className="font-medium">{post.title}</TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANTS[post.status]}>
-                    {STATUS_LABELS[post.status]}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant={STATUS_VARIANTS[post.status]}>
+                      {STATUS_LABELS[post.status]}
+                    </Badge>
+                    {/* Un autor corrigió esta nota mientras estaba en línea, así que siguió
+                        en el sitio y en cambio quedó en cola para una revisión posterior
+                        (milestone-12 D20). Que un admin la abra y la guarde baja la marca. */}
+                    {post.needsReview && (
+                      <Badge
+                        variant="outline"
+                        title="Editada después de publicarse"
+                      >
+                        Editada — revisar
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {post.authorLabel}
@@ -194,7 +225,11 @@ export default async function AdminNewsPage({
         page={page}
         totalPages={totalPages}
         basePath="/admin/news"
-        query={{ status: sp.status, mine: mine ? "1" : undefined }}
+        query={{
+          status: sp.status,
+          mine: mine ? "1" : undefined,
+          review: needsReview ? "1" : undefined,
+        }}
       />
     </div>
   );

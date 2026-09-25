@@ -1,9 +1,19 @@
+import { nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { DomainError } from "@/lib/errors";
 import { assertAuthorTransition } from "@/lib/news/transitions";
+import {
+  shouldFlagForReview,
+  shouldRetireSlug,
+  shouldStampPublishedAt,
+} from "@/lib/news/publishing";
 import { slugify } from "@/lib/utils/string";
 import { Prisma, type NewsPost } from "@/generated/prisma/client";
-import type { NewsPostAdminInput, NewsPostInput } from "@/lib/schemas/news";
+import type {
+  NewsPostAdminInput,
+  NewsPostAmendInput,
+  NewsPostInput,
+} from "@/lib/schemas/news";
 
 export type { NewsPost };
 
@@ -14,27 +24,47 @@ export interface NewsAuthor {
   label: string;
 }
 
-/** "Título de la nota" -> a slug guaranteed unique among existing posts. */
+/**
+ * "Título de la nota" -> un slug garantizado único entre las notas existentes **y entre los
+ * slugs retirados** (`news_post_slugs`).
+ *
+ * Los slugs retirados quedan reservados: si una nota nueva pudiera tomar uno, su redirect
+ * empezaría a apuntar al artículo equivocado (milestone-12 D8). Un slug retirado por *esta*
+ * misma nota sí se puede reclamar, que es lo que habilita `excludeId` — volver a un título
+ * anterior es algo normal.
+ *
+ * El loop está acotado para que un título patológico no gire para siempre; pasados
+ * `MAX_SLUG_ATTEMPTS` cae a un sufijo que no puede colisionar.
+ */
+const MAX_SLUG_ATTEMPTS = 50;
+
 export async function uniqueSlugFor(
   title: string,
   excludeId?: string,
 ): Promise<string> {
   const base = slugify(title) || "nota";
   let slug = base;
-  for (let i = 2; ; i++) {
-    const existing = await prisma.newsPost.findUnique({
-      where: { slug },
-      select: { id: true },
-    });
-    if (!existing || existing.id === excludeId) return slug;
+  for (let i = 2; i <= MAX_SLUG_ATTEMPTS; i++) {
+    const [existing, retired] = await Promise.all([
+      prisma.newsPost.findUnique({ where: { slug }, select: { id: true } }),
+      prisma.newsPostSlug.findUnique({
+        where: { slug },
+        select: { newsPostId: true },
+      }),
+    ]);
+    const takenBy = existing?.id ?? retired?.newsPostId;
+    if (!takenBy || takenBy === excludeId) return slug;
     slug = `${base}-${i}`;
   }
+  return `${base}-${Date.now()}`;
 }
 
 export interface ListAdminNewsOptions {
   /** Restricts to one author's posts (Comunicador scoping — enforced by the caller). */
   authorId?: string;
   status?: string;
+  /** Solo las notas marcadas por la corrección en el lugar de un autor (milestone-12 D20). */
+  needsReview?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -55,6 +85,7 @@ export async function listAdminNewsPosts(
   const where: Prisma.NewsPostWhereInput = {};
   if (options?.authorId) where.authorId = options.authorId;
   if (options?.status) where.status = options.status as never;
+  if (options?.needsReview) where.needsReview = true;
 
   const [items, total] = await Promise.all([
     prisma.newsPost.findMany({
@@ -128,12 +159,19 @@ export interface SearchPublishedNewsOptions {
 }
 
 /**
- * Public search/filter over published posts, for the full `/noticias` index —
+ * Búsqueda/filtro público sobre las notas publicadas, para el índice completo `/news` —
  * unlike `listPublishedNews` (unfiltered landing preview), this always runs as
  * raw SQL so the query (Postgres `to_tsvector`/`plainto_tsquery`, ranked by
  * `ts_rank` when a query is given) and the date range apply together. Column
  * names are aliased to the model's camelCase field names — `$queryRaw` returns
  * raw driver rows, not Prisma's usual field mapping.
+ *
+ * El texto buscable pasa por `news_search_text()` en lugar de `title || ' ' || …`: concatenar
+ * con `||` devuelve NULL si algún operando es NULL, lo que habría sacado la nota de todos los
+ * resultados en silencio en lugar de dar error. Hoy `summary`/`body` son no nulos, así que
+ * estaba latente — pero es de las latencias que nunca se anuncian. La función además es
+ * IMMUTABLE para que el índice GIN de `20260924160000_news_search_index` pueda construirse
+ * sobre ella (milestone-12, Parte 4).
  */
 export async function searchPublishedNews(
   options?: SearchPublishedNewsOptions,
@@ -151,7 +189,7 @@ export async function searchPublishedNews(
     status = 'PUBLISHED'
     AND (
       ${query}::text IS NULL
-      OR to_tsvector('spanish', title || ' ' || summary || ' ' || body)
+      OR to_tsvector('spanish', news_search_text(title, summary, body))
          @@ plainto_tsquery('spanish', ${query})
     )
     AND (${fromMs}::bigint IS NULL OR published_at >= ${fromMs}::bigint)
@@ -177,7 +215,7 @@ export async function searchPublishedNews(
       ORDER BY
         (CASE WHEN ${query}::text IS NULL THEN 0
           ELSE ts_rank(
-            to_tsvector('spanish', title || ' ' || summary || ' ' || body),
+            to_tsvector('spanish', news_search_text(title, summary, body)),
             plainto_tsquery('spanish', ${query})
           )
         END) DESC,
@@ -214,43 +252,93 @@ export async function createNewsPost(
       status: input.status,
       isFeatured: input.isFeatured,
       featuredOrder: input.featuredOrder,
-      publishedAt: isPublishing ? BigInt(Date.now()) : null,
+      publishedAt: isPublishing ? BigInt(nowMs()) : null,
     },
   });
 }
 
 export async function updateNewsPost(
   id: string,
-  input: NewsPostInput | NewsPostAdminInput,
+  input: NewsPostInput | NewsPostAmendInput | NewsPostAdminInput,
   canPublishDirectly: boolean,
 ): Promise<NewsPost> {
   const existing = await getNewsPostById(id);
   if (!existing) throw new DomainError("Nota no encontrada", 404);
-  assertAuthorTransition(input.status, canPublishDirectly);
+  // The stored status is passed so an author may amend their own already-published post
+  // without unpublishing it (milestone-12 D20).
+  assertAuthorTransition(input.status, canPublishDirectly, existing.status);
 
   const slug =
     input.slug === existing.slug
       ? existing.slug
       : await uniqueSlugFor(input.slug || input.title, id);
-  const becomingPublished =
-    input.status === "PUBLISHED" && existing.status !== "PUBLISHED";
 
-  return prisma.newsPost.update({
-    where: { id },
-    data: {
-      title: input.title,
-      slug,
-      summary: input.summary,
-      body: input.body,
-      coverImageUrl: input.coverImageUrl ?? null,
-      status: input.status,
-      isFeatured: input.isFeatured,
-      featuredOrder: input.featuredOrder,
-      publishedAt: becomingPublished
-        ? BigInt(Date.now())
-        : existing.publishedAt,
-    },
+  const firstPublish = shouldStampPublishedAt(
+    input.status,
+    existing.publishedAt,
+  );
+  const flagForReview = shouldFlagForReview(
+    input.status,
+    existing.status,
+    canPublishDirectly,
+  );
+  const retireOldSlug = shouldRetireSlug(
+    slug,
+    existing.slug,
+    existing.publishedAt,
+  );
+
+  return prisma.$transaction(async (tx) => {
+    if (retireOldSlug) {
+      // upsert y no create: la nota pudo haberse renombrado a X, a otra cosa, y de vuelta a X.
+      await tx.newsPostSlug.upsert({
+        where: { slug: existing.slug },
+        create: { slug: existing.slug, newsPostId: id },
+        update: { newsPostId: id },
+      });
+    }
+    // Si la nota está (re)tomando un slug que había retirado antes, esa reserva ya es
+    // redundante — y dejarla haría que el slug canónico redirija a sí mismo.
+    await tx.newsPostSlug.deleteMany({ where: { slug } });
+
+    return tx.newsPost.update({
+      where: { id },
+      data: {
+        title: input.title,
+        slug,
+        summary: input.summary,
+        body: input.body,
+        coverImageUrl: input.coverImageUrl ?? null,
+        status: input.status,
+        isFeatured: input.isFeatured,
+        featuredOrder: input.featuredOrder,
+        publishedAt: firstPublish ? BigInt(nowMs()) : existing.publishedAt,
+        // La corrección en el lugar de un autor levanta la marca; la edición de un admin (o
+        // una decisión, más abajo) la baja. Cualquier otra cosa la deja como estaba.
+        ...(flagForReview
+          ? { needsReview: true }
+          : canPublishDirectly
+            ? { needsReview: false }
+            : {}),
+      },
+    });
   });
+}
+
+/**
+ * Resuelve un slug que ya no es el vigente hacia la nota que lo tenía, para que la página de
+ * detalle pueda redirigir en lugar de dar 404 (milestone-12 D8). Devuelve null si el slug nunca
+ * se usó, o si su nota ya no está publicada.
+ */
+export async function getPublishedNewsByRetiredSlug(
+  slug: string,
+): Promise<NewsPost | null> {
+  const retired = await prisma.newsPostSlug.findUnique({
+    where: { slug },
+    select: { post: true },
+  });
+  if (!retired?.post || retired.post.status !== "PUBLISHED") return null;
+  return retired.post;
 }
 
 export async function deleteNewsPost(id: string): Promise<void> {
@@ -271,14 +359,35 @@ export async function decideNewsPost(
       409,
     );
   }
-  const now = BigInt(Date.now());
+  const now = BigInt(nowMs());
   return prisma.newsPost.update({
     where: { id },
     data: {
       status: decision === "APPROVED" ? "PUBLISHED" : "REJECTED",
       decisionReason: reason,
       decidedAt: now,
+      // Decidir sobre una nota es una revisión, así que baja la marca de corrección.
+      needsReview: false,
       publishedAt: decision === "APPROVED" ? now : existing.publishedAt,
     },
+  });
+}
+
+/**
+ * Sidebar fodder for the article detail page: other published posts, excluding the
+ * one being read. Featured lead, then newest-published — same ordering as the list.
+ */
+export async function getOtherPublishedNews(
+  excludeSlug: string,
+  limit = 4,
+): Promise<NewsPost[]> {
+  return prisma.newsPost.findMany({
+    where: { status: "PUBLISHED", slug: { not: excludeSlug } },
+    orderBy: [
+      { isFeatured: "desc" },
+      { featuredOrder: "asc" },
+      { publishedAt: "desc" },
+    ],
+    take: limit,
   });
 }
