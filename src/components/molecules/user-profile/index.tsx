@@ -18,7 +18,9 @@ export default function UserProfile() {
   const { data: session } = useSession();
   const router = useRouter();
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
+    // Back to sign-in, not the landing: signing out is nearly always "I'm done" or
+    // "wrong account", and both want the login form next.
+    await signOut({ callbackUrl: "/auth/signin" });
   };
 
   return (

@@ -4,6 +4,7 @@ import Logo from "@/components/atoms/logos/lanube";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -527,13 +528,27 @@ export default function LandingPage() {
       className={`min-h-screen flex items-center justify-center relative transition-opacity duration-1000 ${fadeIn ? "opacity-100" : "opacity-0"}`}
     >
       {/* Content with fade-in animation */}
-      <div className={`relative z-20 max-w-md w-full space-y-8 p-8`}>
+      <div className={`relative z-20 max-w-md w-full space-y-4 p-8`}>
+        {/* Way out of the auth flow — this page is reachable directly (and is where
+            signing out lands), so it can't rely on browser history to get home. */}
+        <Link
+          href="/"
+          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-blue-900 transition-opacity hover:opacity-80"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver al inicio
+        </Link>
+
         <Card className="glass-card">
           <CardHeader className="text-center flex flex-col items-center">
-            {/* La Nube Logo */}
-            <div className="flex flex-col items-center bg-slate-100 p-8 w-fit rounded-full">
+            {/* La Nube Logo — also a way home, the convention everywhere else in the app. */}
+            <Link
+              href="/"
+              aria-label="Ir al inicio de La Nube"
+              className="flex flex-col items-center bg-slate-100 p-8 w-fit rounded-full transition-opacity hover:opacity-90"
+            >
               <Logo size={200} />
-            </div>
+            </Link>
             <CardTitle className="text-3xl font-bold sr-only">
               La Nube
             </CardTitle>

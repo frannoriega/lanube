@@ -19,7 +19,9 @@ export default function MobileMenu() {
         </DrawerTrigger>
         <DrawerContent className="dark:bg-slate-900 bg-slate-200 border-none">
           <div className="py-8 pl-4 flex flex-col gap-4">
-            <LogoLaNube />
+            <Link href="/" aria-label="Ir al inicio de La Nube">
+              <LogoLaNube />
+            </Link>
             <Separator orientation="horizontal" className="bg-slate-800" />
             <div className="flex flex-row gap-4 items-start justify-start">
               <SignIn />

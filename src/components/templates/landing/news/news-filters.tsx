@@ -29,7 +29,7 @@ export function NewsFilters({
     }
     params.delete("page"); // any filter change resets to the first page
     const qs = params.toString();
-    router.push(qs ? `/noticias?${qs}` : "/noticias");
+    router.push(qs ? `/news?${qs}` : "/news");
   };
 
   // Debounced: avoid a navigation per keystroke.
@@ -77,7 +77,7 @@ export function NewsFilters({
           size="sm"
           onClick={() => {
             setSearchInput("");
-            router.push("/noticias");
+            router.push("/news");
           }}
         >
           <X className="h-4 w-4" />
