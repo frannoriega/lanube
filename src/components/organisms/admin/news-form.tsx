@@ -5,6 +5,14 @@ import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -14,14 +22,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import {
   newsPostAdminInputSchema,
@@ -35,12 +37,174 @@ import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+type NewsStatus = NewsPostAdminInput["status"];
+type PendingAction = "EDIT" | "PAUSE" | "DELETE";
+
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
   PENDING_REVIEW: "Enviada a revisión",
   PUBLISHED: "Publicada",
+  REJECTED: "Rechazada",
   PAUSED: "Pausada",
 };
+
+const PENDING_ACTION_LABELS: Record<PendingAction, string> = {
+  EDIT: "una edición",
+  PAUSE: "una pausa",
+  DELETE: "una eliminación",
+};
+
+/**
+ * A button on the "next step" bar. `status` is what the field is set to before submit
+ * (ignored for a `decision`/`request` action — see `runAction`). `decision` marks the two
+ * buttons that must go through the approve/reject endpoint instead of a plain save (so the
+ * author gets notified and the audit trail reads as a decision, not an edit). `request`
+ * marks the three buttons a plain author gets on their own PUBLISHED post, which propose a
+ * change instead of writing it — see the module doc comment on `prisma/models/news.prisma`.
+ */
+type NextStepAction = {
+  key: string;
+  label: string;
+  status: NewsStatus;
+  variant: "default" | "outline" | "destructive";
+  decision?: "APPROVED" | "REJECTED";
+  request?: PendingAction;
+};
+
+/**
+ * Computes the "next step" buttons for the current post status + role, replacing what used
+ * to be a free-form status `<Select>`. A dropdown asked the user to know the state machine;
+ * buttons only ever offer the transitions valid from here, phrased as an action instead of a
+ * destination state.
+ */
+function getNextStepActions(
+  existingStatus: NewsStatus | undefined,
+  canApprove: boolean,
+  pendingAction: PendingAction | null,
+): NextStepAction[] {
+  if (canApprove && existingStatus === "PENDING_REVIEW") {
+    return [
+      {
+        key: "hold",
+        label: "Guardar sin decidir",
+        status: "PENDING_REVIEW",
+        variant: "outline",
+      },
+      {
+        key: "reject",
+        label: "Rechazar",
+        status: "PENDING_REVIEW",
+        variant: "destructive",
+        decision: "REJECTED",
+      },
+      {
+        key: "approve",
+        label: "Aprobar y publicar",
+        status: "PUBLISHED",
+        variant: "default",
+        decision: "APPROVED",
+      },
+    ];
+  }
+
+  if (existingStatus === "PUBLISHED") {
+    if (canApprove) {
+      return [
+        {
+          key: "save",
+          label: "Guardar cambios",
+          status: "PUBLISHED",
+          variant: "default",
+        },
+        {
+          key: "unpublish",
+          label: "Despublicar",
+          status: "PAUSED",
+          variant: "outline",
+        },
+      ];
+    }
+    // Un autor sin news:approve nunca vuelve a escribir los campos en vivo de una nota
+    // publicada — propone un cambio y un admin lo decide (ver el modelo NewsPost). Solo se
+    // ofrece la acción ya pendiente, si hay una (para actualizarla), o las tres si no hay
+    // ninguna — pedir una distinta mientras hay una pendiente lo rechaza el servidor.
+    const actions: NextStepAction[] = [];
+    if (!pendingAction || pendingAction === "EDIT") {
+      actions.push({
+        key: "request-edit",
+        label: pendingAction
+          ? "Actualizar edición pendiente"
+          : "Enviar edición a revisión",
+        status: "PUBLISHED",
+        variant: "default",
+        request: "EDIT",
+      });
+    }
+    if (!pendingAction || pendingAction === "PAUSE") {
+      actions.push({
+        key: "request-pause",
+        label: pendingAction ? "Actualizar pedido de pausa" : "Solicitar pausa",
+        status: "PUBLISHED",
+        variant: "outline",
+        request: "PAUSE",
+      });
+    }
+    if (!pendingAction || pendingAction === "DELETE") {
+      actions.push({
+        key: "request-delete",
+        label: pendingAction
+          ? "Actualizar pedido de eliminación"
+          : "Solicitar eliminación",
+        status: "PUBLISHED",
+        variant: "destructive",
+        request: "DELETE",
+      });
+    }
+    return actions;
+  }
+
+  if (existingStatus === "PAUSED" && canApprove) {
+    return [
+      {
+        key: "publish",
+        label: "Publicar",
+        status: "PUBLISHED",
+        variant: "default",
+      },
+      {
+        key: "draft",
+        label: "Pasar a borrador",
+        status: "DRAFT",
+        variant: "outline",
+      },
+    ];
+  }
+
+  // DRAFT, REJECTED, or a brand-new post: the author's own editorial-work states.
+  const actions: NextStepAction[] = [
+    {
+      key: "draft",
+      label: "Guardar borrador",
+      status: "DRAFT",
+      variant: "outline",
+    },
+    {
+      key: "review",
+      label: "Enviar a revisión",
+      status: "PENDING_REVIEW",
+      variant: canApprove ? "outline" : "default",
+    },
+  ];
+  if (canApprove) {
+    actions.push({
+      key: "publish",
+      label: "Publicar",
+      status: "PUBLISHED",
+      variant: "default",
+    });
+  }
+  return actions;
+}
 
 function toFormValues(post?: NewsPost | null): NewsPostAdminInput {
   return {
@@ -66,43 +230,99 @@ export function NewsForm({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [requesting, setRequesting] = useState<NextStepAction | null>(null);
+  const [requestReason, setRequestReason] = useState("");
   const slugTouched = useRef(!!post); // an existing post's slug is never auto-derived
 
-  // Always validate against the full (admin) shape client-side; the UI below only
-  // ever offers a non-privileged user the DRAFT/PENDING_REVIEW options, and the
+  // Always validate against the full (admin) shape client-side; the button bar below only
+  // ever offers a non-privileged user the transitions they're allowed to make, and the
   // server independently enforces who may reach PUBLISHED/PAUSED either way.
   const form = useForm<NewsPostAdminInput>({
     resolver: zodResolver(newsPostAdminInputSchema),
     defaultValues: toFormValues(post),
   });
 
-  // Un autor sin news:approve que edita una nota que YA está publicada puede dejarla
-  // publicada mientras la corrige, así el artículo nunca se va del sitio por una corrección
-  // (milestone-12 D20). Sigue sin poder publicar algo que nunca estuvo en línea, ni pausar una
-  // que sí lo está: las dos siguen siendo de nivel aprobación. El servidor vuelve a chequear
-  // todo esto (`assertAuthorTransition` + el schema que elige la ruta); esto solo da forma al
-  // menú.
-  const canAmendInPlace = !canApprove && post?.status === "PUBLISHED";
-  const statusOptions = canApprove
-    ? (["DRAFT", "PENDING_REVIEW", "PUBLISHED", "PAUSED"] as const)
-    : canAmendInPlace
-      ? (["PUBLISHED", "DRAFT", "PENDING_REVIEW"] as const)
-      : (["DRAFT", "PENDING_REVIEW"] as const);
+  const pendingAction = (post?.pendingAction as PendingAction | null) ?? null;
+  const nextStepActions = getNextStepActions(
+    post?.status as NewsStatus | undefined,
+    canApprove,
+    pendingAction,
+  );
 
-  const onSubmit = async (values: NewsPostAdminInput) => {
+  const saveContent = (values: NewsPostAdminInput, status: NewsStatus) => {
+    const payload = { ...values, status };
+    return post
+      ? apiSend(`/api/admin/news/${post.id}`, "PUT", payload)
+      : apiSend("/api/admin/news", "POST", payload);
+  };
+
+  const runRequest = async (
+    values: NewsPostAdminInput,
+    action: NextStepAction,
+    reason: string,
+  ) => {
+    if (!post) return;
     setBusy(true);
     try {
-      if (post) {
-        await apiSend(`/api/admin/news/${post.id}`, "PUT", values);
-        toast.success("Nota actualizada");
-      } else {
-        await apiSend("/api/admin/news", "POST", values);
+      await apiSend(`/api/admin/news/${post.id}/request`, "POST", {
+        action: action.request,
+        reason: reason.trim() || null,
+        content:
+          action.request === "EDIT"
+            ? {
+                title: values.title,
+                slug: values.slug,
+                summary: values.summary,
+                body: values.body,
+                coverImageUrl: values.coverImageUrl,
+              }
+            : undefined,
+      });
+      toast.success("Solicitud enviada — un administrador la va a revisar");
+      setRequesting(null);
+      router.push("/admin/news");
+      router.refresh();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "No se pudo enviar la solicitud"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Runs one "next step" button. Approve/reject go through the decision endpoint (not a
+   * plain status write) so the author gets notified and the audit trail reads as a review
+   * decision — but any content edits made alongside it still need saving, so those go first,
+   * keeping the reviewed status unchanged.
+   */
+  const runAction = async (
+    values: NewsPostAdminInput,
+    action: NextStepAction,
+  ) => {
+    setBusy(true);
+    try {
+      if (action.decision && post) {
+        await saveContent(values, post.status as NewsStatus);
+        await apiSend(`/api/admin/news/${post.id}/decision`, "POST", {
+          decision: action.decision,
+          reason: action.decision === "REJECTED" ? rejectReason.trim() : null,
+        });
         toast.success(
-          values.status === "PENDING_REVIEW"
+          action.decision === "APPROVED"
+            ? "Nota aprobada y publicada"
+            : "Nota rechazada",
+        );
+      } else {
+        await saveContent(values, action.status);
+        toast.success(
+          !post && action.status === "PENDING_REVIEW"
             ? "Nota enviada a revisión"
             : "Nota guardada",
         );
       }
+      setRejecting(false);
       router.push("/admin/news");
       router.refresh();
     } catch (err) {
@@ -112,9 +332,36 @@ export function NewsForm({
     }
   };
 
+  const handleAction = (action: NextStepAction) => {
+    if (action.decision === "REJECTED") {
+      setRejectReason("");
+      setRejecting(true);
+      return;
+    }
+    if (action.request === "PAUSE" || action.request === "DELETE") {
+      setRequestReason(post?.pendingReason ?? "");
+      setRequesting(action);
+      return;
+    }
+    void form.handleSubmit((values) => runAction(values, action))();
+  };
+
+  const confirmReject = () => {
+    const action = nextStepActions.find((a) => a.decision === "REJECTED");
+    if (!action) return;
+    void form.handleSubmit((values) => runAction(values, action))();
+  };
+
+  const confirmRequest = () => {
+    if (!requesting) return;
+    void form.handleSubmit((values) =>
+      runRequest(values, requesting, requestReason),
+    )();
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
         <Card className="glass-card dark:glass-card-dark">
           <CardContent className="space-y-4 pt-6">
             <FormField
@@ -226,41 +473,55 @@ export function NewsForm({
             <CardTitle>Publicación</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {statusOptions.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {STATUS_LABELS[s]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {canAmendInPlace ? (
-                    <FormDescription>
-                      Si la dejás publicada, los cambios se ven en el sitio al
-                      instante y un administrador los revisa después. Si elegís
-                      otro estado, la nota sale del sitio hasta que la aprueben.
-                    </FormDescription>
-                  ) : !canApprove ? (
-                    <FormDescription>
-                      Un administrador revisa y publica las notas enviadas.
-                    </FormDescription>
-                  ) : null}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Estado actual:{" "}
+                <span className="font-medium text-foreground">
+                  {STATUS_LABELS[post?.status ?? "DRAFT"]}
+                </span>
+              </p>
+              {post?.status === "REJECTED" && post.decisionReason ? (
+                <p className="mt-1 text-sm text-destructive">
+                  Motivo del rechazo: {post.decisionReason}
+                </p>
+              ) : null}
+              {post?.status === "PUBLISHED" && !canApprove ? (
+                pendingAction ? (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Tenés {PENDING_ACTION_LABELS[pendingAction]} pendiente de
+                    revisión. La nota sigue publicada tal cual está hasta que un
+                    administrador decida.
+                    {post.pendingReason ? (
+                      <>
+                        {" "}
+                        Tu nota para el administrador:{" "}
+                        <span className="italic">
+                          &ldquo;{post.pendingReason}&rdquo;
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Esta nota está publicada — no se puede editar ni bajar
+                      directamente. Los cambios se envían a revisión y la nota
+                      publicada no cambia hasta que un administrador los
+                      apruebe.
+                    </p>
+                    {post.decisionReason ? (
+                      <p className="mt-1 text-sm text-destructive">
+                        Última decisión: {post.decisionReason}
+                      </p>
+                    ) : null}
+                  </>
+                )
+              ) : !canApprove ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Un administrador revisa y publica las notas enviadas.
+                </p>
+              ) : null}
+            </div>
 
             <div className="space-y-4 rounded-md border p-4">
               <FormField
@@ -313,19 +574,108 @@ export function NewsForm({
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={() => router.push("/admin/news")}
+            disabled={busy}
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={busy}>
-            {post ? "Guardar cambios" : "Crear nota"}
-          </Button>
+          {nextStepActions.map((action) => (
+            <Button
+              key={action.key}
+              type="button"
+              variant={action.variant}
+              disabled={busy}
+              onClick={() => handleAction(action)}
+            >
+              {action.label}
+            </Button>
+          ))}
         </div>
       </form>
+
+      <Dialog open={rejecting} onOpenChange={setRejecting}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rechazar nota</DialogTitle>
+            <DialogDescription>
+              El motivo es obligatorio y se muestra al autor para que sepa qué
+              corregir antes de reenviarla a revisión.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Motivo (obligatorio)"
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRejecting(false)}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={busy || !rejectReason.trim()}
+              onClick={confirmReject}
+            >
+              Rechazar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!requesting}
+        onOpenChange={(open) => !open && setRequesting(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {requesting?.request === "DELETE"
+                ? "Solicitar eliminación"
+                : "Solicitar pausa"}
+            </DialogTitle>
+            <DialogDescription>
+              La nota sigue publicada tal cual está hasta que un administrador
+              apruebe el pedido. Podés dejarle una nota explicando por qué
+              (opcional).
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={requestReason}
+            onChange={(e) => setRequestReason(e.target.value)}
+            placeholder="Nota para el administrador (opcional)"
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRequesting(null)}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant={
+                requesting?.request === "DELETE" ? "destructive" : "default"
+              }
+              disabled={busy}
+              onClick={confirmRequest}
+            >
+              Enviar solicitud
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 }

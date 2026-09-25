@@ -134,6 +134,12 @@ export enum NewsPostStatus {
   PAUSED = "PAUSED",
 }
 
+export enum NewsPendingAction {
+  EDIT = "EDIT",
+  PAUSE = "PAUSE",
+  DELETE = "DELETE",
+}
+
 /** Mirrors the `NewsPost` row for client components (see prisma/models/news.prisma). */
 export type NewsPost = {
   id: string;
@@ -145,11 +151,20 @@ export type NewsPost = {
   authorId: string | null;
   authorLabel: string;
   status: NewsPostStatus;
+  pendingAction: NewsPendingAction | null;
+  pendingTitle: string | null;
+  pendingSlug: string | null;
+  pendingSummary: string | null;
+  pendingBody: string | null;
+  pendingCoverImageUrl: string | null;
+  pendingReason: string | null;
+  pendingRequestedAt: number | null;
   isFeatured: boolean;
   featuredOrder: number;
   publishedAt: number | null;
   decisionReason: string | null;
   decidedAt: number | null;
+  deletedAt: number | null;
   createdAt: number;
   updatedAt: number;
 };

@@ -96,6 +96,16 @@ enum NewsPostStatus {
   @@map("news_post_statuses")
 }
 
+// A request pending decision against an already-PUBLISHED Noticia — see
+// prisma/models/news.prisma. Null (no row) means nothing is pending.
+enum NewsPendingAction {
+  EDIT
+  PAUSE
+  DELETE
+
+  @@map("news_pending_actions")
+}
+
 enum FormFieldType {
   SHORT_TEXT
   LONG_TEXT

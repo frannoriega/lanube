@@ -8,7 +8,6 @@ import { getPermissionSetForUser } from "@/lib/db/roles";
 import { hasPermission } from "@/lib/rbac";
 import {
   newsPostAdminInputSchema,
-  newsPostAmendInputSchema,
   newsPostInputSchema,
 } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
@@ -73,15 +72,16 @@ export async function PUT(
   );
   if (ownErr) return ownErr;
 
-  // Un autor sin news:approve puede dejar publicada su propia nota ya publicada mientras la
-  // corrige (milestone-12 D20), así que el conjunto de estados permitidos depende del estado
-  // guardado de la nota. `assertAuthorTransition` vuelve a chequear la misma regla en la capa
-  // de dominio — esto solo decide qué estados parsean.
-  const schema = canApprove
-    ? newsPostAdminInputSchema
-    : before?.status === "PUBLISHED"
-      ? newsPostAmendInputSchema
-      : newsPostInputSchema;
+  // Un autor sin news:approve no puede escribir sobre una nota ya PUBLISHED en absoluto —
+  // propone un cambio por /request en su lugar (ver esa ruta). `assertAuthorTransition`
+  // vuelve a chequear el estado destino en la capa de dominio; esto solo bloquea temprano.
+  if (!canApprove && before?.status === "PUBLISHED") {
+    return apiError(
+      "Esta nota está publicada — pedí una edición, pausa o eliminación en su lugar",
+      403,
+    );
+  }
+  const schema = canApprove ? newsPostAdminInputSchema : newsPostInputSchema;
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -127,6 +127,15 @@ export async function DELETE(
     canApprove,
   );
   if (ownErr) return ownErr;
+
+  // Same gate as PUT: a plain author can't take a live post down on their own, even by
+  // deleting it — they request it and an admin decides.
+  if (!canApprove && before?.status === "PUBLISHED") {
+    return apiError(
+      "Esta nota está publicada — pedí que la eliminen en su lugar",
+      403,
+    );
+  }
 
   try {
     await deleteNewsPost(id);

@@ -37,11 +37,18 @@ const STATUS_VARIANTS: Record<
   PAUSED: "outline",
 };
 
+const PENDING_ACTION_LABELS: Record<string, string> = {
+  EDIT: "Edición pendiente",
+  PAUSE: "Pausa solicitada",
+  DELETE: "Eliminación solicitada",
+};
+
 interface NewsSearchParams {
   page?: string;
   status?: string;
   mine?: string;
   review?: string;
+  deleted?: string;
 }
 
 /** Arma un href de `/admin/news`, manteniendo los otros filtros activos y soltando `page`. */
@@ -49,11 +56,13 @@ function newsFilterHref(params: {
   status?: string;
   mine?: boolean;
   review?: boolean;
+  deleted?: boolean;
 }): string {
   const qs = new URLSearchParams();
   if (params.status) qs.set("status", params.status);
   if (params.mine) qs.set("mine", "1");
   if (params.review) qs.set("review", "1");
+  if (params.deleted) qs.set("deleted", "1");
   const query = qs.toString();
   return query ? `/admin/news?${query}` : "/admin/news";
 }
@@ -70,10 +79,11 @@ export default async function AdminNewsPage({
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const mine = sp.mine === "1";
-  // Notas corregidas por su autor después de salir a la luz (milestone-12 D20). Se mantiene
-  // como filtro propio y no como estado, porque el estado de la nota sigue siendo PUBLISHED:
-  // nunca dejó el sitio.
-  const needsReview = sp.review === "1";
+  // Notas con una solicitud EDIT/PAUSE/DELETE pendiente contra su versión publicada. Se
+  // mantiene como filtro propio y no como estado, porque el estado de la nota sigue siendo
+  // PUBLISHED: nunca dejó el sitio mientras se decide.
+  const hasPendingAction = sp.review === "1";
+  const deleted = sp.deleted === "1" && canApprove;
   const { items, total } = await listAdminNewsPosts({
     authorId: canApprove
       ? mine
@@ -81,7 +91,8 @@ export default async function AdminNewsPage({
         : undefined
       : session?.userId,
     status: sp.status,
-    needsReview: needsReview ? true : undefined,
+    hasPendingAction: hasPendingAction ? true : undefined,
+    deleted,
     page,
   });
   const pageSize = 20;
@@ -152,8 +163,15 @@ export default async function AdminNewsPage({
             </Link>
             {canApprove && (
               <Link href={newsFilterHref({ mine, review: true })}>
-                <Badge variant={needsReview ? "default" : "outline"}>
-                  Editadas — revisar
+                <Badge variant={hasPendingAction ? "default" : "outline"}>
+                  Solicitudes pendientes
+                </Badge>
+              </Link>
+            )}
+            {canApprove && (
+              <Link href={newsFilterHref({ mine, deleted: true })}>
+                <Badge variant={deleted ? "default" : "outline"}>
+                  Eliminadas
                 </Badge>
               </Link>
             )}
@@ -184,15 +202,24 @@ export default async function AdminNewsPage({
                     <Badge variant={STATUS_VARIANTS[post.status]}>
                       {STATUS_LABELS[post.status]}
                     </Badge>
-                    {/* Un autor corrigió esta nota mientras estaba en línea, así que siguió
-                        en el sitio y en cambio quedó en cola para una revisión posterior
-                        (milestone-12 D20). Que un admin la abra y la guarde baja la marca. */}
-                    {post.needsReview && (
+                    {/* Un autor pidió un cambio contra esta nota mientras estaba en línea, así
+                        que sigue en el sitio (o eliminada, si el pedido era eso) hasta que un
+                        admin decida — nunca se aplica solo. */}
+                    {post.pendingAction && (
                       <Badge
                         variant="outline"
-                        title="Editada después de publicarse"
+                        title="Solicitud de un autor pendiente de decisión"
                       >
-                        Editada — revisar
+                        {PENDING_ACTION_LABELS[post.pendingAction] ??
+                          post.pendingAction}
+                      </Badge>
+                    )}
+                    {post.deletedAt && (
+                      <Badge
+                        variant="destructive"
+                        title="Eliminada (soft delete)"
+                      >
+                        Eliminada
                       </Badge>
                     )}
                   </div>
@@ -212,7 +239,11 @@ export default async function AdminNewsPage({
                     id={post.id}
                     title={post.title}
                     canApprove={canApprove}
-                    showDecision={post.status === "PENDING_REVIEW"}
+                    showDecision={
+                      post.status === "PENDING_REVIEW" || !!post.pendingAction
+                    }
+                    isPublished={post.status === "PUBLISHED"}
+                    isDeleted={!!post.deletedAt}
                   />
                 </TableCell>
               </TableRow>
@@ -228,7 +259,8 @@ export default async function AdminNewsPage({
         query={{
           status: sp.status,
           mine: mine ? "1" : undefined,
-          review: needsReview ? "1" : undefined,
+          review: hasPendingAction ? "1" : undefined,
+          deleted: deleted ? "1" : undefined,
         }}
       />
     </div>

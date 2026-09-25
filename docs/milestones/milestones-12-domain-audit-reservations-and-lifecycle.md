@@ -1182,6 +1182,44 @@ común publicando un borrador, o pausando una nota en línea).
 **También incluido:** `news.ts` ahora usa `nowMs()` de `@/lib/clock` en lugar de `Date.now()`,
 siguiendo la convención del resto del código para el tiempo simulado.
 
+**Follow-up (2026-09-25) — "corregir en el lugar" reemplazado por pedido/decisión.** El
+mecanismo de arriba (`needsReview` + `isAmendInPlace`) dejaba la corrección en línea de
+inmediato y la marca era la única señal de que había pasado — sin que un admin pudiera negarla
+antes de que el público la viera. Se reemplazó (migración `20260925120000_news_pending_actions`)
+por un ciclo de pedido/decisión igual al de `PENDING_REVIEW`, pero contra una nota ya
+`PUBLISHED`:
+
+- Un autor sin `news:approve` ya no puede escribir sobre su propia nota publicada en absoluto —
+  `newsPostInputSchema` volvió a ser la única entrada de un `PUT` de autor (se borró
+  `newsPostAmendInputSchema`) — sino que propone una acción vía `POST
+/api/admin/news/[id]/request`: `EDIT` (contenido propuesto guardado en columnas
+  `pending_*`, la nota en vivo sin tocar), `PAUSE` o `DELETE`. `assertCanRequestPendingAction`
+  (`src/lib/news/transitions.ts`) exige que la nota esté `PUBLISHED` y que no haya ya un pedido
+  pendiente _distinto_; volver a pedir la misma acción está permitido y pisa el pedido anterior
+  (corregir un typo en un pedido no decidido no necesita empezar de nuevo).
+- `POST /api/admin/news/[id]/decision` (ya existente para `PENDING_REVIEW`) ahora también
+  resuelve el pedido pendiente de una nota `PUBLISHED`: aprobar un `EDIT` aplica el snapshot
+  `pending_*` a los campos en vivo, aprobar un `PAUSE`/`DELETE` ejecuta esa transición
+  (`DELETE` es soft — ver `shouldSoftDelete`, mismo criterio que `shouldRetireSlug`: si
+  `publishedAt` no es null hay slug/historia que conservar, así que es `deletedAt`, no un
+  `DELETE` de fila), y rechazar en cualquiera de los dos casos limpia `pending_*` sin tocar la
+  nota. `decideNewsPost` elige entre "hay una revisión pendiente" y "hay un pedido pendiente"
+  mirando `status`/`pendingAction`, así que la ruta de decisión no cambió de forma.
+- `POST /api/admin/news/[id]/restore` (nuevo, `news:approve`) limpia un `deletedAt`.
+- `needsReview`, `isAmendInPlace`, `shouldFlagForReview` y `newsPostAmendInputSchema` se
+  eliminaron enteros — ya no hay una tercera rama de la compuerta de aprobación, solo "propuesta
+  pendiente sí/no".
+- La UI: la lista de admin cambia la insignia "Editada — revisar" por el pedido pendiente
+  (`EDIT`/`PAUSE`/`DELETE`) con las mismas acciones de aprobar/rechazar que ya tenía
+  `PENDING_REVIEW`; `news-form.tsx` deja de ofrecer "Publicada" como destino de guardado para un
+  autor común y en su lugar arma el pedido.
+- ⚠️ **`src/lib/email/news-decision.ts` se borró sin reemplazo**, y con él el aviso por mail al
+  autor de _cualquier_ decisión — la de una revisión `PENDING_REVIEW` incluida, no solo la de un
+  pedido nuevo sobre una nota `PUBLISHED`. `decision/route.ts` ya no llama a nada de correo. Esto
+  no está en el enunciado del follow-up (que es sobre el mecanismo de pedido, no sobre avisos);
+  si la pérdida del mail de decisión no fue intencional, restaurarlo es cablear el envío de
+  vuelta en esa ruta contra el `NewsPost` que ya devuelve `decideNewsPost`.
+
 ### Slice F — Integridad de las inscripciones (D10, D11, D12) — **HECHA**
 
 **D10 — la carrera de sobreventa.** `submitForm` ahora toma un advisory lock con alcance de

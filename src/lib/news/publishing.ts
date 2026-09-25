@@ -40,25 +40,16 @@ export function shouldRetireSlug(
 }
 
 /**
- * ¿Hay que marcar la nota para que un admin la vuelva a revisar?
+ * ¿Una nota que se está por eliminar debe ser un soft delete (`deletedAt`) en lugar de un
+ * `DELETE` físico de la fila?
  *
- * Solo cuando un autor con `news:manage` a secas corrige una nota que ya está publicada y la
- * deja publicada (milestone-12 D20). La nota sigue en línea — una corrección no debería bajar
- * la página — y la marca es la forma en que el cambio igual llega a alguien que revise.
- *
- * Un autor con `news:approve` nunca la marca: su edición *es* la revisión. Tampoco la marca
- * ninguna grabación que no sea una corrección en el lugar, porque esas ya pasan por la
- * compuerta normal DRAFT -> PENDING_REVIEW -> PUBLISHED.
- *
- * Notar la asimetría con `assertAuthorTransition`: esa función decide si la grabación está
- * *permitida*, esta decide si necesita *seguimiento*. Están separadas a propósito, para que
- * ampliar una nunca amplíe la otra en silencio.
+ * Mismo criterio que `shouldRetireSlug`: si estuvo pública alguna vez, su slug puede tener
+ * links entrando y su fila puede tener historia (`NewsPostSlug`, decisiones, autoría) que vale
+ * conservar — igual que `Event.deletedAt`. Una nota que nunca salió a la luz (DRAFT/REJECTED
+ * sin `publishedAt`) no tiene nada de eso que preservar, así que se borra de verdad.
  */
-export function shouldFlagForReview(
-  inputStatus: string,
-  existingStatus: string,
-  canPublishDirectly: boolean,
+export function shouldSoftDelete(
+  existingPublishedAt: bigint | number | null,
 ): boolean {
-  if (canPublishDirectly) return false;
-  return inputStatus === "PUBLISHED" && existingStatus === "PUBLISHED";
+  return existingPublishedAt != null;
 }
