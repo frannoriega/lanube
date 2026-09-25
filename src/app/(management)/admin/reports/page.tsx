@@ -23,6 +23,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { ReportData } from "@/types/stats/report";
+import { LocalDate } from "@/components/molecules/local-date";
 import AdminReport from "@/components/templates/admin/report";
 
 const ADMIN_TZ = "America/Argentina/Buenos_Aires";
@@ -308,6 +309,25 @@ export default function AdminReportsPage() {
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300 print:hidden">
           {error}
+        </div>
+      )}
+
+      {/* Parte del rango pedido ya pasó la retención de detalle crudo: sin este aviso el
+          reporte devolvería cero reservas para ese tramo, indistinguible de un período sin
+          actividad (ver src/lib/constants/retention.ts). */}
+      {report?.coverage.hasPrunedPortion && !loading && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
+          <p className="font-medium">
+            Parte del período elegido ya no tiene detalle individual.
+          </p>
+          <p className="mt-1">
+            Las reservas anteriores al{" "}
+            <LocalDate ms={report.coverage.rawFromMs} /> se conservan solo como
+            resumen mensual, así que no están contadas en los totales de arriba.
+            {report.coverage.snapshots.length > 0
+              ? ` Hay ${report.coverage.snapshots.length} resúmenes mensuales disponibles para ese tramo.`
+              : " No hay resúmenes mensuales guardados para ese tramo."}
+          </p>
         </div>
       )}
 
