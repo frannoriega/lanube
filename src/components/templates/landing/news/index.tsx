@@ -34,7 +34,7 @@ export default async function NewsSection() {
               </p>
             </div>
             <Link
-              href="/noticias"
+              href="/news"
               className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Ver todas
