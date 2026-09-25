@@ -61,7 +61,9 @@ FAKETIME='@2026-01-01 00:00:00' docker compose -f docker/docker-compose.yml -f d
 ```
 src/
 ├── app/                          # Next.js App Router (pages & API routes)
-│   ├── (public)/                 # Public pages (landing, about, spaces, noticias, events, policies)
+│   ├── (public)/                 # Public pages (landing, about, spaces, news, events, policies)
+│   │   └── news/[yyyy]/[mm]/[dd]/[slug]/  # Noticia detail. Public URLs are English:
+│   │                             #   "/noticias" 308-redirects here (next.config.ts)
 │   ├── forms/                    # Public, UNAUTHENTICATED event registration
 │   │   ├── [slug]/               # Submit a registration (+ /submitted confirmation)
 │   │   └── response/[token]/     # Edit/cancel via the participant's editToken
@@ -345,8 +347,12 @@ src/
   Participant email uses the same normalization + `displayEmail` rules as registration.
   Public pages show the **event** name + description + image (`EventHero`); the internal
   form name is never exposed (`getPublicForm` returns `eventName/eventDescription/eventImageUrl`).
-- **Event image**: optional `Event.imageUrl`, uploaded via `POST /api/admin/events/upload`
-  → `getStorage().upload()`. The reusable `ImageUpload` molecule drives it.
+- **Event image**: `Event.imageUrl`, uploaded via `POST /api/admin/events/upload`
+  → `getStorage().upload()`. The reusable `ImageUpload` molecule drives it. **Required**
+  at the schema layer (`eventInputSchema`) — same for a Noticia's `coverImageUrl`
+  (`newsPostInputSchema`). The DB columns stay nullable for pre-existing rows, so the
+  cover-less fallbacks in `EventCover` / `NewsCard` must stay; `eventToFormDefaults`
+  maps a null to `""` so editing a legacy row surfaces the validation error.
 - **Form picker**: events choose a template via `FormPicker` — a searchable dialog (shadcn
   Command) showing each template as a card with a field-type-chip preview. `listFormTemplates`
   includes a lightweight `fields` summary for the preview. Field-type labels/icons live in
@@ -538,7 +544,32 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   (`signin`/`reset`/`signup`), so they render light-theme colors in dark mode.
   Tracked in `docs/OPEN_QUESTIONS.md` as a design pass, not a mechanical sweep.
 
-### 10. Audit trail
+### 10. Navigation
+
+- **Management pages don't hand-roll a back button.** `ManagementLayout` renders
+  `ManagementBreadcrumbs` above every page in both shells; the trail comes from
+  `managementCrumbs(pathname, userType, spaceNav)` in
+  `src/lib/constants/management-crumbs.ts`, so a **new page under `/admin` or `/user`
+  gets navigation for free** — there is nothing to opt into. Breadcrumbs rather than a
+  bare back link because the section reaches four levels
+  (`/admin/events/[id]/participants`), where "back" is ambiguous, and because no sidebar
+  item highlights on a detail page, so the trail is also the "where am I".
+- **Adding a route means adding its label** to `SEGMENT_LABELS` (or
+  `SECTION_LEAF_LABELS` when Spanish gender needs "Nueva" instead of "Nuevo"). A segment
+  with no entry is treated as a **dynamic** one and labelled with the action ("Editar"),
+  never the raw cuid2 — which is also the fallback if you forget. A grouping prefix with
+  no page of its own goes in `NON_NAVIGABLE` so its crumb isn't a dead link
+  (`/user/spaces` is the only one today). `management-crumbs.test.ts` covers all of this.
+- **Public URLs are English** (`/news`, `/spaces`, `/events`, `/forms`) even though the
+  UI copy is Spanish. Renaming one means adding a permanent redirect from the old path in
+  `next.config.ts` — shared links live forever (`/services` → `/spaces`,
+  `/noticias` → `/news`).
+- **The logo is always a link to `/`** — public header (desktop + mobile drawer), the
+  `/forms` shell, the sign-in card, and both management sidebars. Sign-in additionally has
+  an explicit "Volver al inicio", since **signing out lands there** (`signOut({ callbackUrl:
+"/auth/signin" })` in `user-profile`) and there may be no history to go back through.
+
+### 11. Audit trail
 
 - **Every admin route that mutates state must write an audit entry.** This is enforced:
   `src/lib/audit/actions.test.ts` walks `src/app/api/admin/**/route.ts` and fails if a

@@ -74,7 +74,7 @@ flowchart LR
     subgraph Public["Public (no auth)"]
         Landing["Landing / about / policies"]
         FormsPublic["/forms/[slug] — event registration"]
-        Noticias["/noticias — news"]
+        Noticias["/news — noticias"]
     end
 
     subgraph UserArea["Authenticated: USER"]

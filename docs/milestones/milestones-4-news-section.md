@@ -1,5 +1,10 @@
 # Milestone 4 — "Noticias" news section + Comunicador role
 
+> **Path note (milestone 11, 2026-09-24):** every `/noticias/...` URL in this
+> document was later renamed to `/news/...` for consistency with the other English
+> public routes. `next.config.ts` holds permanent redirects from the old paths. The
+> design below is otherwise unchanged.
+
 > **Progress (2026-09-22):** the feature is substantially built: `NewsPost`
 > model + migration,
 > `news:manage`/`news:approve` in `rbac.ts`, Comunicador-scoped nav, admin
@@ -96,7 +101,8 @@ anything. Today there's no way to publish this kind of content at all. The ask a
 
 A `NewsPost` model: `id`, `title`, `slug` (unique, for the detail URL), `summary`
 (short, plain text, for cards — same role as `Event.summary`), `body` (markdown,
-same role as `Event.description`), `coverImageUrl` (optional), `authorId` (FK to
+same role as `Event.description`), `coverImageUrl` (nullable in the DB for legacy rows, but **required** by
+`newsPostInputSchema`), `authorId` (FK to
 `RegisteredUser` — whoever wrote it, shown as a byline), `publishedAt` (BigInt
 ms, set the moment status becomes `PUBLISHED` — drives "newest first" ordering
 independent of `createdAt`), `isFeatured` + `featuredOrder`,

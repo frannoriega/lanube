@@ -1,6 +1,7 @@
 "use client";
 
 import Logo from "@/components/atoms/logos/lanube";
+import { ManagementBreadcrumbs } from "@/components/molecules/management-breadcrumbs";
 import { ThemeToggle } from "@/components/molecules/theme";
 import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
@@ -318,11 +319,9 @@ export default function ManagementLayout({
           <div className="fixed inset-y-0 left-0 flex w-64 flex-col glass-sidebar dark:glass-sidebar-dark shadow-xl">
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center space-x-2">
-                <Logo />
-                {/* <div className="h-8 w-8 rounded-full bg-la-nube-primary flex items-center justify-center">
-                  <span className="text-sm">🌩️</span>
-                </div>
-                <span className="text-xl font-bold text-la-nube-primary">La Nube</span> */}
+                <Link href="/" aria-label="Ir al inicio de La Nube">
+                  <Logo />
+                </Link>
               </div>
               <Button
                 variant="ghost"
@@ -346,11 +345,9 @@ export default function ManagementLayout({
           <div className="flex min-h-0 flex-1 flex-col glass-sidebar dark:glass-sidebar-dark shadow">
             <div className="flex h-16 items-center px-4">
               <div className="flex items-center space-x-2">
-                <Logo />
-                {/* <div className="h-8 w-8 rounded-full bg-la-nube-primary flex items-center justify-center">
-                  <span className="text-sm">🌩️</span>
-                </div>
-                <span className="text-xl font-bold text-la-nube-primary">La Nube</span> */}
+                <Link href="/" aria-label="Ir al inicio de La Nube">
+                  <Logo />
+                </Link>
               </div>
             </div>
             <nav className="flex-1 space-y-1 px-2 py-4">
@@ -422,7 +419,8 @@ export default function ManagementLayout({
 
           {/* Page content */}
           <main id="main-content" className="py-6">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 sm:px-6 lg:px-8">
+              <ManagementBreadcrumbs userType={userType} spaceNav={spaceNav} />
               {children}
             </div>
           </main>
