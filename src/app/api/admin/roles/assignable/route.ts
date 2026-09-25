@@ -9,12 +9,18 @@ import { listRoles } from "@/lib/db/roles";
  * Returns identity only, never the permission lists.
  */
 export async function GET() {
-  const { error } = await requirePermission("users:roles:manage");
+  const { session, error } = await requirePermission("users:roles:manage");
   if (error) return error;
   try {
     const roles = await listRoles();
+    // Los roles superadmin solo se ofrecen a un superadmin: el PATCH los rechaza igual
+    // (milestone-12 D27), pero no tiene sentido mostrar en el selector una opción que va a
+    // dar 403.
+    const assignable = session.isSuperadmin
+      ? roles
+      : roles.filter((role) => !role.isSuperadmin);
     return apiSuccess(
-      roles.map(({ id, key, name, isSystem, isSuperadmin }) => ({
+      assignable.map(({ id, key, name, isSystem, isSuperadmin }) => ({
         id,
         key,
         name,

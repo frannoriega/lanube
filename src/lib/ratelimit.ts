@@ -45,9 +45,17 @@ export async function checkRateLimit(
           THEN ${atMs}
           ELSE rate_limits."windowStart"
         END,
+      -- Se limpia al rotar la ventana y se vuelve a poner cuando se excede de nuevo.
+      -- Antes la condición exigía blockedUntil IS NULL, y nada volvía a ponerlo en
+      -- NULL: una vez que una clave se bloqueaba y el bloqueo vencía, ya nunca podía
+      -- volver a bloquearse. El límite por ventana seguía aplicando, pero la penalidad
+      -- extendida (blockDurationMs) solo servía una vez por clave (milestone-12 D26).
       "blockedUntil" = CASE
-        WHEN rate_limits.attempts + 1 > ${maxAttempts} AND rate_limits."blockedUntil" IS NULL
-          THEN ${blockUntilMs}
+        WHEN rate_limits.attempts + 1 > ${maxAttempts}
+             AND rate_limits."windowStart" >= ${windowStartMs}
+          THEN COALESCE(rate_limits."blockedUntil", ${blockUntilMs})
+        WHEN rate_limits."windowStart" < ${windowStartMs}
+          THEN NULL
           ELSE rate_limits."blockedUntil"
         END,
       "updatedAt" = ${atMs}

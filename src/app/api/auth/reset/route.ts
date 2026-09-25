@@ -10,8 +10,8 @@ import {
 import { sendResetEmail } from "@/lib/email/reset";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/request-ip";
 import { resetSchema } from "@/lib/schemas/auth";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 function firstZodMessage(error: { issues: { message?: string }[] }): string {
@@ -36,14 +36,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const headersList = await headers();
-    const ip =
-      headersList.get("cf-connecting-ip") ??
-      headersList.get("x-real-ip") ??
-      (process.env.NODE_ENV === "development"
-        ? (headersList.get("x-forwarded-for")?.split(",")[0].trim() ??
-          "127.0.0.1")
-        : null);
+    const ip = await getClientIp();
     if (!ip) {
       return NextResponse.json(
         { message: "IP no encontrada" },

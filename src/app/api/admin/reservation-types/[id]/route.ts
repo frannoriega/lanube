@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
 import { diffFields } from "@/lib/audit/diff";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import {
   deleteReservationType,
@@ -43,7 +44,7 @@ export async function PUT(
     const diff = diffFields(before, type, [...AUDITED_RESERVATION_TYPE_FIELDS]);
     if (diff) {
       await recordAuditFromSession(session, {
-        action: "reservationType.update",
+        action: AUDIT_ACTIONS.reservationTypeUpdate,
         entityType: "ReservationType",
         entityId: id,
         ...diff,
@@ -72,7 +73,7 @@ export async function DELETE(
     await deleteReservationType(id);
     if (before) {
       await recordAuditFromSession(session, {
-        action: "reservationType.delete",
+        action: AUDIT_ACTIONS.reservationTypeDelete,
         entityType: "ReservationType",
         entityId: id,
         before: { name: before.name },

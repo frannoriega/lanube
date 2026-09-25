@@ -6,6 +6,7 @@ import {
   apiSuccess,
 } from "@/lib/api/response";
 import { diffFields } from "@/lib/audit/diff";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { deleteSpace, getSpaceById, updateSpace } from "@/lib/db/spaces";
 import { Prisma } from "@/generated/prisma/client";
@@ -49,7 +50,7 @@ export async function PUT(
       const diff = diffFields(before, space, [...AUDITED_SPACE_FIELDS]);
       if (diff) {
         await recordAuditFromSession(session, {
-          action: "space.update",
+          action: AUDIT_ACTIONS.spaceUpdate,
           entityType: "Space",
           entityId: id,
           ...diff,
@@ -81,7 +82,7 @@ export async function DELETE(
     await deleteSpace(id);
     if (before) {
       await recordAuditFromSession(session, {
-        action: "space.delete",
+        action: AUDIT_ACTIONS.spaceDelete,
         entityType: "Space",
         entityId: id,
         before: { name: before.name, slug: before.slug },

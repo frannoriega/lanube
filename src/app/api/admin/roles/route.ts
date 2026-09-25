@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { createRole, listRolesWithUsage, RoleWriteError } from "@/lib/db/roles";
 import { PERMISSIONS } from "@/lib/rbac";
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
   try {
     const role = await createRole(parsed.data);
     await recordAuditFromSession(session, {
-      action: "role.create",
+      action: AUDIT_ACTIONS.roleCreate,
       entityType: "Role",
       entityId: role.id,
       after: {

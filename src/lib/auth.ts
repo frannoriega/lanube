@@ -10,6 +10,7 @@ import {
   getUserByEmailAndPassword,
 } from "./db/users";
 import { normalizeEmailForIdentityServer } from "./email/identity-server";
+import { logger } from "@/lib/logger";
 import { prisma } from "./prisma";
 import { CredentialsSignin } from "next-auth";
 import { signInSchema } from "./schemas/auth";
@@ -173,22 +174,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
+/**
+ * Valida un token de Turnstile contra Cloudflare.
+ *
+ * ⚠️ El fallback anterior era `1x0000000000000000000000000000000AA`, que es la clave de
+ * **prueba** de Turnstile: la que siempre responde `success: true`. Es decir, si
+ * `TURNSTILE_SECRET_KEY` faltaba en producción el captcha quedaba desactivado en silencio
+ * justo en los dos endpoints que más lo necesitan (registro y reset de contraseña), y no
+ * había forma de notarlo desde afuera. Ahora fuera de desarrollo la falta de clave hace
+ * fallar la verificación (milestone-12 D25).
+ */
 async function verifyCaptcha(captcha: string): Promise<boolean> {
-  const res = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secret:
-          process.env.TURNSTILE_SECRET_KEY ??
-          "1x0000000000000000000000000000000AA",
-        response: captcha,
-      }),
-    },
-  );
-  const data = await res.json();
-  return data.success === true;
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      logger.error(
+        "verifyCaptcha: falta TURNSTILE_SECRET_KEY — se rechaza la verificación",
+      );
+      return false;
+    }
+    logger.warn(
+      "verifyCaptcha: sin TURNSTILE_SECRET_KEY, usando la clave de prueba de Turnstile (solo desarrollo)",
+    );
+  }
+
+  try {
+    const res = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secret: secret ?? "1x0000000000000000000000000000000AA",
+          response: captcha,
+        }),
+      },
+    );
+    const data = await res.json();
+    return data.success === true;
+  } catch (error) {
+    // Falla cerrada: si no se pudo verificar, no se asume que el usuario es humano.
+    logger.error("verifyCaptcha falló", error);
+    return false;
+  }
 }
 
 export { verifyCaptcha };
