@@ -1,5 +1,6 @@
 "use client";
 
+import { DatePicker } from "@/components/molecules/date-picker";
 import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { Button } from "@/components/ui/button";
@@ -610,13 +611,7 @@ function FieldInput({
       );
 
     case FormFieldType.DATE:
-      return (
-        <Input
-          type="date"
-          value={str}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      );
+      return <DatePicker value={str} onChange={onChange} />;
 
     case FormFieldType.TIME:
       return (
