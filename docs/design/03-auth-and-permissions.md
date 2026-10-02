@@ -44,6 +44,7 @@ migration SQL so it cannot drift. All four are ordinary rows; `ADMIN` and
 | `news:manage`                                                                                                                | ✓     | ✓          | ✓           |
 | `news:approve`                                                                                                               | ✓     | ✓          |             |
 | everything else (`users:roles:manage`, `spaces:manage`, …, `roles:manage`, `audit:view`)                                     |       | ✓          |             |
+| `users:profile-requests:review` (added by migration `20261002100000`, milestone 17)                                          | ✓     | ✓          |             |
 
 `COMUNICADOR` is deliberately narrow: it can enter `/admin` and manage Noticias
 content (including submitting for review), but nothing else — not even approving its
@@ -55,7 +56,8 @@ own posts (`news:approve` is withheld).
    `admin:access`, and the subpaths listed in `ADMIN_PATH_PERMISSIONS` on a specific
    permission each — `/admin/spaces`, `/admin/resources`,
    `/admin/reservation-types`, `/admin/site` and `/admin/themes` on their `*:manage`,
-   `/admin/roles` on `roles:manage`, `/admin/audit` on `audit:view`. That table is the
+   `/admin/roles` on `roles:manage`, `/admin/audit` on `audit:view`,
+   `/admin/profile-requests` on `users:profile-requests:review`. That table is the
    source of truth; this list mirrors it and both must move together.
 
    Because roles are data, the token carries the **resolved permission list**

@@ -1,0 +1,56 @@
+/// Campos del perfil que el usuario **no** puede editar por su cuenta (milestone 17): para
+/// cambiarlos pide el cambio y un admin lo aprueba o rechaza. Ni el usuario los edita
+/// directo (abre la puerta al fraude: el DNI identifica a la persona en el check-in y en
+/// los reportes) ni el admin los edita directo (abre la puerta al abuso): el admin solo
+/// puede **decidir** sobre un valor que propuso el propio usuario.
+enum ProfileChangeField {
+  DNI
+  REASON_TO_JOIN
+
+  @@map("profile_change_fields")
+}
+
+/// Ciclo de vida de una solicitud. PENDING espera a un admin; APPROVED aplicó el valor
+/// pedido; REJECTED lo descartó un admin; CANCELLED la retiró el propio usuario.
+enum ProfileChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@map("profile_change_statuses")
+}
+
+/// Una solicitud de cambio de un dato protegido del perfil (ver `ProfileChangeField`).
+///
+/// - Una sola PENDING por (usuario, campo): lo garantiza un índice único parcial escrito a
+///   mano en la migración `20261002100000_profile_change_requests_and_passkeys` (Prisma no
+///   modela índices parciales), además del chequeo en `src/lib/db/profileChangeRequests.ts`.
+/// - `currentValue` es una foto del valor **al momento de pedir**: así el admin ve qué se
+///   reemplaza aunque el valor real cambie después, y el historial queda legible.
+/// - Quien decide nunca puede ser quien pidió (se valida en la capa de datos): un admin no
+///   puede aprobarse su propio cambio de DNI.
+model ProfileChangeRequest {
+  id             String              @id @default(cuid())
+  requesterId    String              @map("requester_id")
+  requester      RegisteredUser      @relation("ProfileChangeRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  field          ProfileChangeField
+  /// Valor vigente cuando se creó la solicitud (foto, no referencia).
+  currentValue   String              @map("current_value")
+  /// Valor que el usuario quiere que pase a tener el campo.
+  requestedValue String              @map("requested_value")
+  /// Por qué pide el cambio — lo lee el admin para decidir. Obligatorio.
+  justification  String
+  status         ProfileChangeStatus @default(PENDING)
+  /// Admin que decidió. `SetNull` para no perder la solicitud si se borra esa cuenta.
+  decidedById    String?             @map("decided_by_id")
+  decidedBy      RegisteredUser?     @relation("ProfileChangeDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  /// Motivo opcional del admin; el usuario lo ve en su historial.
+  decisionReason String?             @map("decision_reason")
+  decidedAt      BigInt?             @map("decided_at")
+  createdAt      BigInt              @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([requesterId, createdAt])
+  @@map("profile_change_requests")
+}

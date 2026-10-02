@@ -36,6 +36,7 @@ model User {
   image          String?
   passwordHash   String?
   accounts       Account[]
+  passkeys       PasskeyCredential[]
   registeredUser RegisteredUser?
   sessions       Session[]
 
@@ -74,6 +75,8 @@ model RegisteredUser {
   eventParticipations EventParticipant[]
   PasswordResetToken PasswordResetToken[]
   newsPosts           NewsPost[]
+  profileChangeRequests  ProfileChangeRequest[] @relation("ProfileChangeRequester")
+  profileChangeDecisions ProfileChangeRequest[] @relation("ProfileChangeDecider")
 
   @@map("registered_users")
 }

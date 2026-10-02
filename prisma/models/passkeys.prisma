@@ -1,0 +1,52 @@
+/// Una passkey (credencial WebAuthn) de una cuenta (milestone 17).
+///
+/// Sigue la forma propuesta en `docs/design/06-rust-migration.md` ("Multi-credential
+/// schema"): una tabla tipada por clase de credencial, ligada por `user_id`, en vez de una
+/// tabla polimórfica con un JSON. Cuelga de `User` (la identidad de NextAuth), no de
+/// `RegisteredUser`, porque es un medio de **inicio de sesión**, igual que `passwordHash`.
+///
+/// Política (confirmada en ese doc): una passkey nunca es la única credencial de la cuenta.
+/// Hoy toda cuenta tiene contraseña y no hay forma de quitarla, así que la regla se cumple
+/// sola; el chequeo explícito vive en `src/lib/db/passkeys.ts` para cuando exista OAuth.
+model PasskeyCredential {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Id de la credencial WebAuthn, en base64url. Único en todo el sistema.
+  credentialId String   @unique @map("credential_id")
+  /// Clave pública COSE tal como la devuelve el autenticador.
+  publicKey    Bytes    @map("public_key")
+  /// Contador de firmas; si un autenticador devuelve uno menor, la credencial pudo haber
+  /// sido clonada y `@simplewebauthn/server` rechaza la autenticación.
+  counter      BigInt   @default(0)
+  /// Transportes que informó el autenticador ("internal", "hybrid", "usb"…).
+  transports   String[] @default([])
+  /// "singleDevice" | "multiDevice" (sincronizada en la nube, p. ej. iCloud Keychain).
+  deviceType   String   @map("device_type")
+  backedUp     Boolean  @default(false) @map("backed_up")
+  /// Nombre que le pone el usuario ("MacBook", "Celular") para distinguirlas.
+  label        String
+  createdAt    BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  lastUsedAt   BigInt?  @map("last_used_at")
+
+  @@index([userId])
+  @@map("passkey_credentials")
+}
+
+/// Desafío WebAuthn de un solo uso. Se guarda en la base (no en una cookie) por la misma
+/// razón que el rate limit: el despliegue es serverless y no hay memoria compartida entre
+/// instancias. Se consume (borra) al verificarse; los vencidos los poda el cron de
+/// mantenimiento junto con el resto de las tablas transitorias.
+model WebAuthnChallenge {
+  id        String  @id @default(cuid())
+  /// Dueño del desafío en un **registro** (alta de passkey). NULL en un inicio de sesión:
+  /// ahí todavía no se sabe quién es — lo dice la passkey que elija el navegador.
+  userId    String? @map("user_id")
+  /// "registration" | "authentication".
+  purpose   String
+  challenge String
+  expiresAt BigInt  @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("webauthn_challenges")
+}

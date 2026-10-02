@@ -279,66 +279,43 @@ export async function getRegisteredUsersSummary(): Promise<UsersSummary> {
   };
 }
 
-export async function updateRegisteredUserProfileByEmail(
-  email: string,
+/**
+ * Actualiza los datos personales **editables** del propio usuario: nombre, apellido e
+ * institución.
+ *
+ * El DNI y el motivo para unirse quedaron fuera a propósito (milestone 17): no se editan
+ * directo ni por el usuario ni por un admin, solo a través de una solicitud aprobada
+ * (`src/lib/db/profileChangeRequests.ts`). Por eso esta función ni siquiera los acepta —
+ * así ninguna ruta nueva puede volver a escribirlos por accidente pasándolos acá.
+ */
+export async function updateOwnPersonalInfo(
+  registeredUserId: string,
   data: {
-    name?: string;
-    lastName?: string;
-    dni?: string;
-    institution?: string | null;
-    reasonToJoin?: string;
+    name: string;
+    lastName: string;
+    institution: string | null;
   },
 ) {
-  email = await normalizeEmailForIdentityServer(email);
-  const currentUser = await prisma.registeredUser.findFirst({
-    where: { user: { email } },
-    select: { id: true },
-  });
-
-  if (!currentUser) {
-    throw new DomainError("Usuario no encontrado", 404);
-  }
-
-  // If DNI provided, ensure unique per user (skip same user)
-  if (data.dni) {
-    const existing = await prisma.registeredUser.findFirst({
-      where: {
-        dni: data.dni,
-        user: {
-          email: {
-            not: email,
-          },
-        },
+  const updated = await prisma.registeredUser
+    .update({
+      where: { id: registeredUserId },
+      data: {
+        name: data.name,
+        lastName: data.lastName,
+        institution: data.institution,
       },
-      select: { id: true },
+      include: {
+        user: { select: { email: true, displayEmail: true } },
+        roleRef: { select: { id: true, name: true } },
+      },
+    })
+    .catch((err: unknown) => {
+      // P2025: la fila no existe (cuenta borrada con un JWT todavía vivo).
+      if ((err as { code?: string }).code === "P2025") {
+        throw new DomainError("Usuario no encontrado", 404);
+      }
+      throw err;
     });
-    if (existing) {
-      throw new DomainError("DNI ya registrado por otro usuario", 409);
-    }
-  }
-
-  const updated = await prisma.registeredUser.update({
-    where: { id: currentUser.id },
-    data: {
-      ...(data.name !== undefined ? { name: data.name } : {}),
-      ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
-      ...(data.dni !== undefined ? { dni: data.dni } : {}),
-      ...(data.institution !== undefined
-        ? { institution: data.institution ?? null }
-        : {}),
-      ...(data.reasonToJoin !== undefined
-        ? { reasonToJoin: data.reasonToJoin }
-        : {}),
-    },
-    include: {
-      user: {
-        select: { email: true, displayEmail: true },
-      },
-      roleRef: {
-        select: { id: true, name: true },
-      },
-    },
-  });
 
   return {
     id: updated.id,

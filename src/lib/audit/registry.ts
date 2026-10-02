@@ -85,6 +85,11 @@ const DECISION_LABELS: Record<string, string> = {
   reject: "Rechazar",
 };
 
+const PROFILE_CHANGE_FIELD_LABELS: Record<string, string> = {
+  DNI: "DNI",
+  REASON_TO_JOIN: "Motivo para unirse",
+};
+
 // ---------------------------------------------------------------------------
 // Entidades
 // ---------------------------------------------------------------------------
@@ -343,6 +348,24 @@ export const AUDIT_EVENTS = {
     kind: "custom",
     label: "Cambió el rol de un usuario",
     verb: "Cambio de rol",
+  },
+  /**
+   * Un admin resolvió una solicitud de cambio de DNI / motivo (milestone 17). Al aprobar,
+   * `before`/`after` llevan el valor real del campo (así el diff muestra el cambio); al
+   * rechazar, el perfil no cambió y solo se guarda qué se pidió.
+   */
+  "user.profileChange.decide": {
+    entity: "RegisteredUser",
+    kind: "custom",
+    label: "Resolvió una solicitud de cambio de datos",
+    verb: "Cambio de datos",
+    fields: {
+      decision: enumOf("Decisión", DECISION_LABELS),
+      field: enumOf("Dato", PROFILE_CHANGE_FIELD_LABELS),
+      dni: text("DNI"),
+      reasonToJoin: longText("Motivo para unirse"),
+      requestedValue: longText("Valor pedido"),
+    },
   },
   "role.create": {
     entity: "Role",

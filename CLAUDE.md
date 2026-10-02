@@ -73,7 +73,8 @@ src/
 │   │   │   ├── dashboard/        # User dashboard with stats
 │   │   │   ├── spaces/[slug]/    # Reservation booking UI (dynamic; resolves Space by slug)
 │   │   │   ├── events/           # Events the user can see/register for
-│   │   │   └── settings/         # User profile configuration
+│   │   │   └── settings/         # Sectioned settings (milestone 17): profile/ identity/
+│   │   │                         #   security/ account/ — /user/settings redirects to profile
 │   │   ├── admin/                # Admin-only section (guards by role in middleware)
 │   │   │   ├── dashboard/        # Admin overview
 │   │   │   ├── reservations/     # Admin reservation management
@@ -92,7 +93,8 @@ src/
 │   │   │   ├── reservation-types/# Superadmin: ReservationType CRUD
 │   │   │   ├── site/             # Superadmin: site config
 │   │   │   ├── themes/           # Superadmin: seasonal landing themes
-│   │   │   └── roles/            # Superadmin: Role CRUD + permission checklist
+│   │   │   ├── roles/            # Superadmin: Role CRUD + permission checklist
+│   │   │   └── profile-requests/ # Approve/reject DNI & reasonToJoin change requests
 │   │   └── banned/               # Fallback page when user is banned
 │   │
 │   └── api/
@@ -102,9 +104,12 @@ src/
 │       │   ├── confirm-email/    # Email verification
 │       │   ├── signup/           # Profile completion after email verify
 │       │   ├── reset/            # Password reset request
-│       │   └── magic-link/       # Magic-link sign-in
+│       │   ├── magic-link/       # Magic-link sign-in
+│       │   └── passkey/options/  # Public: WebAuthn sign-in challenge (milestone 17)
 │       ├── user/
-│       │   ├── profile/          # GET/PUT user profile
+│       │   ├── profile/          # GET/PUT user profile (PUT: name/lastName/institution only)
+│       │   │   └── change-requests/ # Own DNI/reason change requests (create/list/cancel)
+│       │   ├── passkeys/         # List/register/rename/delete own passkeys
 │       │   ├── events/           # GET events for the current user
 │       │   └── stats/            # GET user dashboard stats
 │       ├── admin/                # reservations, users, stats, incidents, events,
@@ -198,6 +203,8 @@ src/
 - `ReservationType`: Catalog of reservation/event types (was the `event_types` Postgres enum). `code` is the stable identifier stored on `Event.eventType` / `Reservation.eventType` (text FK, `ON UPDATE CASCADE`, delete restricted while in use); `name` is the display name. Superadmin CRUD at `/admin/reservation-types`; public read at `GET /api/reservation-types`. Migration `20260706110000` seeded MEETING/WORKSHOP/CONFERENCE/OTHER and recreated the SQL functions with `text` params.
 - `Role`: RBAC role (milestone 9) — `key`, `name`, `permissions String[]`, `isSystem` (protected from edit/delete), `isSuperadmin` (implicit all-permissions). `RegisteredUser.roleId` FKs here with `onDelete: Restrict`, so an in-use role can't be deleted. Superadmin CRUD at `/admin/roles`.
 - `Ban`: User suspension record (time-bounded)
+- `ProfileChangeRequest`: a user's request to change their **DNI** or **reasonToJoin** (milestone 17) — those fields are never edited directly by anyone; see §14 below.
+- `PasskeyCredential` (→ `User`) + `WebAuthnChallenge`: WebAuthn passkeys and their single-use challenges (milestone 17).
 
 **Features** (expanding):
 
@@ -254,11 +261,11 @@ src/
 1. **Sign-up**: `/auth/signup` → POST `/api/auth/register` → email + password hashed (bcryptjs, 12 rounds)
 2. **Email Verification**: GET `/api/auth/confirm-email?token=...` → marks `emailVerified`
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
-4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`
+4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`. Or **passkey** (milestone 17): `POST /api/auth/passkey/options` → browser → `signIn("passkey", …)`, a second `Credentials` provider whose `authorize` verifies the WebAuthn assertion (`src/lib/passkeys/server.ts`); same `jwt()` pipeline after that
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status checked in `jwt()` callback
 6. **Role-based (RBAC)** — ⚠️ **roles are DATA, not an enum** (milestone 9). A role is a row in `roles` (`prisma/models/roles.prisma`); `RegisteredUser.roleId` replaced the old `UserRole` enum column, and **NULL means the base tier**. The permission _catalog_ stays code-defined in `src/lib/rbac.ts` (`PERMISSIONS`, `hasPermission()`, `isAdminRole()`) because each string maps to a real call site; _which_ of those a role carries is `Role.permissions`, edited by a superadmin at `/admin/roles` (`roles:manage`). Full rationale: `docs/design/03-auth-and-permissions.md`.
    - **Protected rows**: `Role.isSystem` blocks rename/delete/re-scope (403) — seeded on `USER` and `SUPERADMIN`. `Role.isSuperadmin` makes `hasPermission()` return true for _everything_, including permissions added in a later deploy; it can never be set from the UI (`createRole` hardcodes both flags false). Seeded roles: USER / ADMIN / SUPERADMIN / COMUNICADOR, with the exact permission sets they had pre-migration. COMUNICADOR is an admin-panel role scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts.
-   - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles` and `/admin/audit` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
+   - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles`, `/admin/audit` and `/admin/profile-requests` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
    - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) resolves fresh from the DB via `getPermissionSetForUser()` and returns 401/403. Authoritative — the JWT claim can lag by one request.
    - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`); the admin/user layouts resolve the set and pass it into `UserProvider`, so client components call `hasPermission(user, "…")` on the user object directly (both `Session` and `CurrentUser` structurally _are_ a `PermissionSet`).
    - **Role cache**: `src/lib/db/roles.ts` keeps a module-scoped snapshot (30 s TTL) invalidated by every role write. Call `invalidateRoleCache()` if you add a new write path. It is the seam for a future Vercel Global Config provider (see `docs/OPEN_QUESTIONS.md`).
@@ -717,6 +724,26 @@ onSave)` + `ReorderBar` (`molecules/table-reorder.tsx`) and `DataTable`'s `reord
   `.mobile-shots/baseline/`.
 - The management nav drawer is a `Sheet` at `z-[120]` (the sticky header is `z-100`); the
   WhatsApp floating button is hidden under `/admin` and `/user`.
+
+### 14. Account settings, protected profile fields & passkeys (milestone 17)
+
+Full design + decisions: `docs/milestones/milestones-17-account-settings-and-passkeys.md`.
+
+- **`/user/settings` is sectioned, one route per section** (`profile`, `identity`,
+  `security`, `account`; `SETTINGS_SECTIONS` in `organisms/settings/settings-nav.tsx`). A new
+  section = a route + an entry there + its crumb label.
+- **DNI and `reasonToJoin` are never edited directly — by the user or by an admin.** The user
+  files a `ProfileChangeRequest`; someone with `users:profile-requests:review` approves or
+  rejects it at `/admin/profile-requests` (never their own; reject requires a reason; approval
+  writes the field in the same transaction). `updateOwnPersonalInfo` deliberately can't take
+  those fields — don't add a path that writes them outside `decideProfileChangeRequest`.
+- **Passkeys** use `@simplewebauthn` (not NextAuth's experimental Passkey provider). Policy: a
+  passkey is never the only credential (`hasNonPasskeyCredential`), max 10 per account.
+  The rpID/origin come from the request's `Host`/`X-Forwarded-*` headers, **not
+  `request.url`** (it says `0.0.0.0` under `next dev -H 0.0.0.0`); `WEBAUTHN_RP_ID` /
+  `WEBAUTHN_ORIGIN` override. A passkey only works on the domain it was created on.
+- Show passkey errors with `passkeyErrorMessage()` — `apiErrorMessage()` drops non-`ApiError`
+  messages.
 
 ## Testing & Seeding
 

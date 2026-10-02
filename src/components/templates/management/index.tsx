@@ -36,6 +36,7 @@ import {
   Sparkles,
   Tags,
   User,
+  UserCheck,
   Users,
   Wrench,
   X,
@@ -98,6 +99,12 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/admin/users",
       icon: Users,
       permission: "users:manage",
+    },
+    {
+      name: "Cambios de datos",
+      href: "/admin/profile-requests",
+      icon: UserCheck,
+      permission: "users:profile-requests:review",
     },
     {
       name: "Reservas",
