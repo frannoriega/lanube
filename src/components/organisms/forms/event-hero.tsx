@@ -1,5 +1,5 @@
 import { Markdown } from "@/components/molecules/markdown";
-import Image from "next/image";
+import { FramedImage } from "@/components/molecules/framed-image";
 
 /**
  * Participant-facing header for the public form pages. Shows the event's name,
@@ -21,16 +21,15 @@ export function EventHero({
   return (
     <div className="space-y-4">
       {imageUrl && (
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border bg-muted">
-          <Image
-            src={imageUrl}
-            alt={name}
-            fill
-            sizes="(max-width: 672px) 100vw, 672px"
-            className="object-cover"
-            priority
-          />
-        </div>
+        // Sin recorte: suele ser un flyer vertical (ver `FramedImage`). 4:3 para que no quede
+        // diminuto en la columna angosta del formulario.
+        <FramedImage
+          src={imageUrl}
+          alt={name}
+          sizes="(max-width: 672px) 100vw, 672px"
+          priority
+          className="aspect-4/3 w-full rounded-lg border"
+        />
       )}
       <div className="space-y-3">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">

@@ -7,7 +7,10 @@ import {
 } from "@/components/organisms/admin/form-picker";
 import { DateRangePicker } from "@/components/molecules/date-range-picker";
 import { DateTimePicker } from "@/components/molecules/date-time-picker";
-import { ImageUpload } from "@/components/molecules/image-upload";
+import {
+  CoverImageHint,
+  ImageUpload,
+} from "@/components/molecules/image-upload";
 import { InlineRichTextInput } from "@/components/molecules/inline-rich-text-input";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { TimeSelect } from "@/components/molecules/time-select";
@@ -445,6 +448,7 @@ export function EventForm({
                             onChange={(url) => field.onChange(url ?? "")}
                             uploadUrl={`/api/admin/events/upload${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
                             alt={watch("name") || "Imagen del evento"}
+                            hint={<CoverImageHint />}
                           />
                         </FormControl>
                         <FormMessage />

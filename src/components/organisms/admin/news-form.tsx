@@ -1,6 +1,9 @@
 "use client";
 
-import { ImageUpload } from "@/components/molecules/image-upload";
+import {
+  CoverImageHint,
+  ImageUpload,
+} from "@/components/molecules/image-upload";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { Button } from "@/components/ui/button";
 import {
@@ -495,6 +498,7 @@ export function NewsForm({
                         value={field.value || null}
                         onChange={(url) => field.onChange(url ?? "")}
                         uploadUrl={`/api/admin/news/upload${post ? `?postId=${encodeURIComponent(post.id)}` : ""}`}
+                        hint={<CoverImageHint />}
                       />
                     </FormControl>
                     <FormMessage />
