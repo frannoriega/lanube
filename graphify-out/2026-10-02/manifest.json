@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1790920776.8298275,
-    "ast_hash": "7226868f3831a99b1bd008cf00e45773",
+    "mtime": 1790920945.558194,
+    "ast_hash": "42e19a7d9476ebb049c680ec622eeff1",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -330,8 +330,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/users/columns.tsx": {
-    "mtime": 1790872436.0389378,
-    "ast_hash": "c3a4ad9435d1f292a0fbbbfefd48431a",
+    "mtime": 1790921107.678478,
+    "ast_hash": "1627709555a587b2fb8613f6bea25c49",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/users/page.tsx": {
@@ -990,9 +990,9 @@
     "semantic_hash": ""
   },
   "src/components/ui/data-table.tsx": {
-    "mtime": 1788565052.8901508,
-    "ast_hash": "f2fce918c7e2e1e8a4f903351d20cb16",
-    "semantic_hash": "f2fce918c7e2e1e8a4f903351d20cb16"
+    "mtime": 1790921086.7873907,
+    "ast_hash": "614842f884ce26d9ec31bf526cea9c26",
+    "semantic_hash": ""
   },
   "src/components/ui/dialog.tsx": {
     "mtime": 1790872436.0795603,
@@ -2295,8 +2295,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/participants-table.tsx": {
-    "mtime": 1790918076.7836316,
-    "ast_hash": "6841443c80fc98606c390f5f412a5212",
+    "mtime": 1790921108.271328,
+    "ast_hash": "44f70de785f5b41ea0c6de2d08f3091c",
     "semantic_hash": ""
   },
   "prisma/migrations/20260801100000_event_summary_featured/migration.sql": {
@@ -3200,8 +3200,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-14-mobile-redesign.md": {
-    "mtime": 1790920922.583174,
-    "ast_hash": "731051255bc18fdb817d823d1f63b850",
+    "mtime": 1790921173.0939193,
+    "ast_hash": "98ad25fe3006f3f8a18775ce6db47407",
     "semantic_hash": ""
   },
   "src/components/molecules/responsive-dialog.tsx": {

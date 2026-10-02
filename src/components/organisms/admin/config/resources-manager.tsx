@@ -26,14 +26,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import { resourceInputSchema, type ResourceInput } from "@/lib/schemas/config";
@@ -118,9 +112,63 @@ export function ResourcesManager() {
     }
   };
 
+  /*
+   * Columnas del `DataTable` (milestone 14): tabla desde `md`, tarjetas por debajo. Cada
+   * columna declara su rol en la tarjeta con `meta.mobile` (ver `MobileColumnRole`).
+   */
+  const columns: ColumnDef<(typeof resources)[number]>[] = [
+    {
+      id: "name",
+      header: "Nombre",
+      meta: { mobile: "title", label: "Nombre" },
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    },
+    {
+      id: "serialNumber",
+      header: "Número de serie",
+      meta: { label: "Nº de serie" },
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">
+          {row.original.serialNumber ?? "—"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Acciones</div>,
+      meta: { mobile: "actions", label: "Acciones" },
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEdit(item)}
+              aria-label={`Editar ${item.name}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleting(item)}
+              aria-label={`Eliminar ${item.name}`}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+  const table = useStaticTable(resources, columns);
+
   return (
     <Card className="glass-card dark:glass-card-dark">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>Recursos</CardTitle>
           <CardDescription>
@@ -144,53 +192,10 @@ export function ResourcesManager() {
             ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Número de serie</TableHead>
-                <TableHead className="w-28 text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {resources.map((resource) => (
-                <TableRow key={resource.id}>
-                  <TableCell className="font-medium">{resource.name}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {resource.serialNumber ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEdit(resource)}
-                      aria-label={`Editar ${resource.name}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleting(resource)}
-                      aria-label={`Eliminar ${resource.name}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {resources.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center text-muted-foreground"
-                  >
-                    No hay recursos registrados.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable
+            table={table}
+            emptyMessage="No hay recursos registrados."
+          />
         )}
       </CardContent>
 

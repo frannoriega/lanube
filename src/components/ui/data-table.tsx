@@ -2,9 +2,12 @@
 
 import {
   type Cell,
+  type ColumnDef,
   type RowData,
   type Table as ReactTable,
   flexRender,
+  getCoreRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
 
@@ -66,11 +69,59 @@ function cellLabel<TData>(cell: Cell<TData, unknown>): string {
   return cell.column.id;
 }
 
+/**
+ * Instancia de TanStack Table para listas chicas y estáticas (sin orden, filtro ni
+ * paginación del lado de la tabla): las de configuración del admin, que antes eran `<Table>`
+ * escritas a mano y se migraron al `DataTable` en el milestone 14 para ganar la vista de
+ * tarjetas en teléfonos. `getRowId` usa el `id` de la fila cuando existe, así las filas
+ * conservan su identidad (y su foco) al reordenar o refrescar.
+ */
+export function useStaticTable<TData>(
+  data: TData[],
+  columns: ColumnDef<TData, unknown>[],
+): ReactTable<TData> {
+  return useReactTable<TData>({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row, index) => {
+      const id = (row as { id?: unknown }).id;
+      return typeof id === "string" ? id : String(index);
+    },
+  });
+}
+
 interface DataTableProps<TData> {
   table: ReactTable<TData>;
   isLoading?: boolean;
   emptyMessage?: React.ReactNode;
   loadingMessage?: React.ReactNode;
+  /**
+   * Si se pasa, la fila entera (o la tarjeta) es clickeable y operable con teclado (Enter /
+   * Espacio) — p. ej. la auditoría, donde cada fila abre su detalle. No usar junto con
+   * controles interactivos dentro de las celdas.
+   */
+  onRowClick?: (row: TData) => void;
+}
+
+/** Props de accesibilidad + handlers para una fila clickeable (tabla o tarjeta). */
+function clickableRowProps<TData>(
+  original: TData,
+  onRowClick: ((row: TData) => void) | undefined,
+) {
+  if (!onRowClick) return {};
+  return {
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-haspopup": "dialog" as const,
+    onClick: () => onRowClick(original),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onRowClick(original);
+      }
+    },
+  };
 }
 
 export function DataTable<TData>({
@@ -78,6 +129,7 @@ export function DataTable<TData>({
   isLoading = false,
   emptyMessage = "No se encontraron resultados.",
   loadingMessage = "Cargando…",
+  onRowClick,
 }: DataTableProps<TData>) {
   const rows = table.getRowModel().rows;
   // Tabla desde `md`; tarjetas por debajo. Se decide en JS (no con `hidden md:block`) para no
@@ -91,6 +143,7 @@ export function DataTable<TData>({
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         loadingMessage={loadingMessage}
+        onRowClick={onRowClick}
       />
     );
   }
@@ -142,6 +195,8 @@ export function DataTable<TData>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={onRowClick ? "cursor-pointer" : undefined}
+                  {...clickableRowProps(row.original, onRowClick)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -170,7 +225,9 @@ function DataTableCards<TData>({
   isLoading,
   emptyMessage,
   loadingMessage,
-}: Required<DataTableProps<TData>>) {
+  onRowClick,
+}: Omit<Required<DataTableProps<TData>>, "onRowClick"> &
+  Pick<DataTableProps<TData>, "onRowClick">) {
   const rows = table.getRowModel().rows;
 
   if (isLoading && rows.length === 0) {
@@ -210,7 +267,12 @@ function DataTableCards<TData>({
           <li
             key={row.id}
             data-state={row.getIsSelected() ? "selected" : undefined}
-            className="flex flex-col gap-2 p-4 data-[state=selected]:bg-muted"
+            className={cn(
+              "flex flex-col gap-2 p-4 data-[state=selected]:bg-muted",
+              onRowClick &&
+                "cursor-pointer hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+            )}
+            {...clickableRowProps(row.original, onRowClick)}
           >
             {(leading.length > 0 || titles.length > 0 || badges.length > 0) && (
               <div className="flex items-start gap-3">
