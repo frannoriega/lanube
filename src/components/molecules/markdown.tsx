@@ -43,6 +43,14 @@ export function Markdown({
     <div
       className={cn(
         "space-y-3 text-sm leading-relaxed",
+        // Milestone 14 (hallazgo O): una palabra o URL larga sin espacios se salía de la
+        // tarjeta del formulario público en el teléfono. `overflow-wrap: anywhere` permite
+        // cortarla en cualquier punto *solo si no entra*; el texto normal sigue cortando en
+        // los espacios. (`break-words` / `break-word` no alcanza: no reduce el ancho mínimo
+        // del contenido, así que en un flex/grid igual empuja el contenedor.)
+        "[overflow-wrap:anywhere]",
+        // Las tablas GFM scrollean dentro de su propio bloque en vez de ensanchar la página.
+        "[&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto",
         // Headings — GitHub-style tiers (size + weight + border), with breathing room above.
         "[&_h1]:mt-6 [&_h1]:mb-1 [&_h1]:border-b [&_h1]:border-border [&_h1]:pb-1 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight",
         "[&_h2]:mt-6 [&_h2]:mb-1 [&_h2]:border-b [&_h2]:border-border [&_h2]:pb-1 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight",
