@@ -12,7 +12,7 @@ export default async function LandingThemesPage() {
         <p className="text-gray-600 dark:text-gray-300">
           Fechas especiales (aniversario, fin de año, …) en las que la portada
           celebra con la comunidad. Solo un tema está activo a la vez — el de
-          mayor prioridad cuya ventana incluya la fecha de hoy.
+          más arriba en la lista cuya ventana incluya la fecha de hoy.
         </p>
       </div>
       <LandingThemesManager />

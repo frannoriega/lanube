@@ -1,6 +1,5 @@
 "use client";
 
-import { DateRangePicker } from "@/components/molecules/date-range-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,84 +17,18 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ReorderList } from "@/components/molecules/reorder-list";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
-import { endOfDateKeyMs, startOfDateKeyMs } from "@/lib/admin/admin-timezone";
-import {
-  landingThemeInputSchema,
-  type LandingThemeInput,
-} from "@/lib/schemas/config";
 import type { LandingTheme } from "@/types/prisma";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, Plus, Trash2, ArrowUpDown } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { LoadError } from "@/components/molecules/load-error";
-
-const EMPTY: LandingThemeInput = {
-  name: "",
-  isEnabled: true,
-  recurring: true,
-  startMonthDay: "",
-  endMonthDay: "",
-  startDate: null,
-  endDate: null,
-  entranceEffect: "EMOJI_SHOWER",
-  emojiList: "🎉 🎊",
-  particleCount: 40,
-  heroEyebrowOverride: "",
-  heroKeywords: "",
-  heroKeywordsMode: "APPEND",
-};
-
-function themeToFormValues(t: LandingTheme): LandingThemeInput {
-  return {
-    name: t.name,
-    isEnabled: t.isEnabled,
-    recurring: t.recurring,
-    startMonthDay: t.startMonthDay ?? "",
-    endMonthDay: t.endMonthDay ?? "",
-    startDate: t.startDate == null ? null : Number(t.startDate),
-    endDate: t.endDate == null ? null : Number(t.endDate),
-    entranceEffect: t.entranceEffect,
-    emojiList: t.emojiList ?? "",
-    particleCount: t.particleCount ?? 40,
-    heroEyebrowOverride: t.heroEyebrowOverride ?? "",
-    heroKeywords: t.heroKeywords ?? "",
-    heroKeywordsMode: t.heroKeywordsMode,
-  };
-}
-
-/** "yyyy-MM-dd" key (DateRangePicker's format) from a ms timestamp, or undefined. */
-function msToDateKey(ms: number | null | undefined): string | undefined {
-  if (ms == null) return undefined;
-  const d = new Date(ms);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
 
 function windowSummary(t: LandingTheme): string {
   if (t.recurring) {
@@ -110,50 +43,8 @@ export function LandingThemesManager() {
   const { data, error, firstTime, refetch } =
     useApi<LandingTheme[]>("/api/admin/themes");
   const themes = data ?? [];
-  const [editing, setEditing] = useState<LandingTheme | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState<LandingTheme | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const form = useForm<LandingThemeInput>({
-    resolver: zodResolver(landingThemeInputSchema),
-    defaultValues: EMPTY,
-  });
-
-  const recurring = form.watch("recurring");
-  const entranceEffect = form.watch("entranceEffect");
-
-  const openCreate = () => {
-    setEditing(null);
-    form.reset(EMPTY);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (theme: LandingTheme) => {
-    setEditing(theme);
-    form.reset(themeToFormValues(theme));
-    setDialogOpen(true);
-  };
-
-  const onSubmit = async (values: LandingThemeInput) => {
-    setBusy(true);
-    try {
-      if (editing) {
-        await apiSend(`/api/admin/themes/${editing.id}`, "PUT", values);
-        toast.success("Tema actualizado");
-      } else {
-        await apiSend("/api/admin/themes", "POST", values);
-        toast.success("Tema creado");
-      }
-      setDialogOpen(false);
-      invalidateApi("/api/admin/themes");
-      await refetch();
-    } catch (err) {
-      toast.error(apiErrorMessage(err, "No se pudo guardar el tema"));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   /*
    * Modo "Reordenar" (milestone 14, decisión Part B.3): la lista se reordena arrastrando,
@@ -247,10 +138,12 @@ export function LandingThemesManager() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => openEdit(theme)}
+              asChild
               aria-label={`Editar ${theme.name}`}
             >
-              <Pencil className="h-4 w-4" />
+              <Link href={`/admin/themes/${theme.id}/edit`}>
+                <Pencil className="h-4 w-4" />
+              </Link>
             </Button>
             <Button
               variant="ghost"
@@ -290,8 +183,11 @@ export function LandingThemesManager() {
           >
             <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
           </Button>
-          <Button onClick={openCreate}>
-            <Plus className="mr-1 h-4 w-4" /> Nuevo tema
+          {/* Milestone 14, propuesta 4: el tema se crea/edita en su propia página. */}
+          <Button asChild>
+            <Link href="/admin/themes/new">
+              <Plus className="mr-1 h-4 w-4" /> Nuevo tema
+            </Link>
           </Button>
         </div>
       </CardHeader>
@@ -324,313 +220,6 @@ export function LandingThemesManager() {
       </CardContent>
 
       {/* Create / edit */}
-      <ResponsiveDialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <ResponsiveDialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>
-              {editing ? "Editar tema" : "Nuevo tema"}
-            </ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              Los colores y textos disponibles están acotados a lo que ya usa la
-              marca — no es un editor de estilos libre.
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Aniversario" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div>
-                <FormField
-                  control={form.control}
-                  name="isEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
-                      <FormLabel className="mb-0">Habilitado</FormLabel>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                {/* Sin "Prioridad" (milestone 14): la prioridad es el orden de la lista. */}
-              </div>
-
-              <FormField
-                control={form.control}
-                name="recurring"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
-                    <div>
-                      <FormLabel className="mb-0">
-                        Se repite todos los años
-                      </FormLabel>
-                      <FormDescription>
-                        Ej: aniversario, fin de año. Si no, elegí un rango de
-                        fechas puntual.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {recurring ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="startMonthDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Desde (MM-DD)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="09-25"
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="endMonthDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hasta (MM-DD)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="09-25"
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              ) : (
-                <FormItem>
-                  <FormLabel>Rango de fechas</FormLabel>
-                  <DateRangePicker
-                    value={{
-                      from: msToDateKey(form.watch("startDate")),
-                      to: msToDateKey(form.watch("endDate")),
-                    }}
-                    onChange={(range) => {
-                      form.setValue(
-                        "startDate",
-                        range.from ? startOfDateKeyMs(range.from) : null,
-                        { shouldValidate: true },
-                      );
-                      form.setValue(
-                        "endDate",
-                        range.to ? endOfDateKeyMs(range.to) : null,
-                        { shouldValidate: true },
-                      );
-                    }}
-                    clearable
-                  />
-                  <FormMessage>
-                    {form.formState.errors.startDate?.message ??
-                      form.formState.errors.endDate?.message}
-                  </FormMessage>
-                </FormItem>
-              )}
-
-              <FormField
-                control={form.control}
-                name="entranceEffect"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Efecto al entrar</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="NONE">Ninguno</SelectItem>
-                        <SelectItem value="EMOJI_SHOWER">
-                          Lluvia de emojis
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Se muestra una vez por visitante por día, mientras el tema
-                      esté activo.
-                    </FormDescription>
-                  </FormItem>
-                )}
-              />
-
-              {entranceEffect === "EMOJI_SHOWER" ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="emojiList"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emojis</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="🎉 🎊 🥳"
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Separados por espacio.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="particleCount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cantidad</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={5}
-                            max={150}
-                            value={field.value ?? 40}
-                            onChange={(e) =>
-                              field.onChange(
-                                Number.isNaN(e.target.valueAsNumber)
-                                  ? 40
-                                  : e.target.valueAsNumber,
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              ) : null}
-
-              <FormField
-                control={form.control}
-                name="heroEyebrowOverride"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Línea sobre el título (opcional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="🎉 Celebrando nuestro aniversario"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Reemplaza &ldquo;Una iniciativa de Concepción del
-                      Uruguay&rdquo; mientras el tema esté activo.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="heroKeywords"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Palabras para la rotación del título (opcional)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="10 años, celebración, fiesta"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Separadas por coma. Se combinan con la rotación de
-                      &ldquo;un espacio de …&rdquo; del inicio según la opción
-                      de abajo.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="heroKeywordsMode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cómo combinarlas</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="APPEND">
-                          Agregar a las palabras habituales
-                        </SelectItem>
-                        <SelectItem value="REPLACE">
-                          Reemplazar las palabras habituales
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      &ldquo;Reemplazar&rdquo; solo aplica mientras el tema esté
-                      activo; después vuelven las palabras de siempre.
-                    </FormDescription>
-                  </FormItem>
-                )}
-              />
-
-              <ResponsiveDialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={busy}>
-                  {editing ? "Guardar" : "Crear"}
-                </Button>
-              </ResponsiveDialogFooter>
-            </form>
-          </Form>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
-
-      {/* Delete confirm */}
       <ResponsiveDialog
         open={!!deleting}
         onOpenChange={(o) => !o && setDeleting(null)}
