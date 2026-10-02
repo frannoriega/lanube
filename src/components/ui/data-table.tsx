@@ -260,6 +260,10 @@ function DataTableCards<TData>({
         const badges = byRole("badge");
         const metas = byRole("meta");
         const actions = byRole("actions");
+        // Tarjeta mínima (solo título + acciones, p. ej. tipos de reserva): las acciones van en
+        // la misma línea que el título en vez de en una fila propia casi vacía.
+        const inlineActions =
+          metas.length === 0 && badges.length === 0 && actions.length > 0;
         const render = (cell: Cell<TData, unknown>) =>
           flexRender(cell.column.columnDef.cell, cell.getContext());
 
@@ -293,6 +297,15 @@ function DataTableCards<TData>({
                     ))}
                   </div>
                 )}
+                {inlineActions && (
+                  <div className="-my-1.5 flex shrink-0 items-center gap-1">
+                    {actions.map((cell) => (
+                      <React.Fragment key={cell.id}>
+                        {render(cell)}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {metas.length > 0 && (
@@ -312,7 +325,7 @@ function DataTableCards<TData>({
                 ))}
               </dl>
             )}
-            {actions.length > 0 && (
+            {actions.length > 0 && !inlineActions && (
               <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
                 {actions.map((cell) => (
                   <React.Fragment key={cell.id}>{render(cell)}</React.Fragment>

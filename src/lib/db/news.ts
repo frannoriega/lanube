@@ -265,7 +265,7 @@ export async function createNewsPost(
       authorLabel: author.label,
       status: input.status,
       isFeatured: input.isFeatured,
-      featuredOrder: input.featuredOrder,
+      featuredOrder: input.featuredOrder ?? 0,
       publishedAt: isPublishing ? BigInt(nowMs()) : null,
     },
   });
@@ -325,6 +325,7 @@ export async function updateNewsPost(
         coverImageUrl: input.coverImageUrl ?? null,
         status: input.status,
         isFeatured: input.isFeatured,
+        // `undefined` = no tocar (milestone 14: se ordena con "Reordenar destacadas").
         featuredOrder: input.featuredOrder,
         publishedAt: firstPublish ? BigInt(nowMs()) : existing.publishedAt,
       },

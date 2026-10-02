@@ -214,7 +214,6 @@ function toFormValues(post?: NewsPost | null): NewsPostAdminInput {
     body: post?.body ?? "",
     coverImageUrl: post?.coverImageUrl ?? "",
     isFeatured: post?.isFeatured ?? false,
-    featuredOrder: post?.featuredOrder ?? 0,
     status: (post?.status as NewsPostAdminInput["status"]) ?? "DRAFT",
   };
 }
@@ -540,36 +539,8 @@ export function NewsForm({
                 )}
               />
 
-              {form.watch("isFeatured") && (
-                <FormField
-                  control={form.control}
-                  name="featuredOrder"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Orden entre destacadas</FormLabel>
-                      <FormDescription>
-                        Menor número aparece primero (0, 1, 2…).
-                      </FormDescription>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(
-                              Number.isNaN(e.target.valueAsNumber)
-                                ? 0
-                                : e.target.valueAsNumber,
-                            )
-                          }
-                          className="max-w-32"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              {/* Sin "Orden entre destacadas" (milestone 14): se ordena con "Reordenar
+                  destacadas" en la lista de noticias. */}
             </div>
           </CardContent>
         </Card>

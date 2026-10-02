@@ -58,7 +58,6 @@ import { LoadError } from "@/components/molecules/load-error";
 const EMPTY: LandingThemeInput = {
   name: "",
   isEnabled: true,
-  priority: 0,
   recurring: true,
   startMonthDay: "",
   endMonthDay: "",
@@ -76,7 +75,6 @@ function themeToFormValues(t: LandingTheme): LandingThemeInput {
   return {
     name: t.name,
     isEnabled: t.isEnabled,
-    priority: t.priority,
     recurring: t.recurring,
     startMonthDay: t.startMonthDay ?? "",
     endMonthDay: t.endMonthDay ?? "",
@@ -353,7 +351,7 @@ export function LandingThemesManager() {
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div>
                 <FormField
                   control={form.control}
                   name="isEnabled"
@@ -369,32 +367,7 @@ export function LandingThemesManager() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prioridad</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(
-                              Number.isNaN(e.target.valueAsNumber)
-                                ? 0
-                                : e.target.valueAsNumber,
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Si dos ventanas se superponen, gana la mayor.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
+                {/* Sin "Prioridad" (milestone 14): la prioridad es el orden de la lista. */}
               </div>
 
               <FormField
