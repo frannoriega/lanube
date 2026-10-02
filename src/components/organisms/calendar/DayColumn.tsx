@@ -97,6 +97,10 @@ export interface DayColumnProps {
   selectionOverlay: { top: string; height: string } | null;
   onPointerDownSlot: (e: React.PointerEvent<HTMLDivElement>) => void;
   onPointerMoveSlot: (e: React.PointerEvent<HTMLDivElement>) => void;
+  /** Fin del toque (táctil): si no hubo desplazamiento, abre el formulario en ese horario. */
+  onPointerUpSlot: (e: React.PointerEvent<HTMLDivElement>) => void;
+  /** El navegador canceló el puntero (lo tomó como scroll). */
+  onPointerCancelSlot: () => void;
   onSelectOccurrence: (occ: ReservationOccurrence) => void;
 }
 
@@ -113,6 +117,8 @@ export function DayColumn({
   selectionOverlay,
   onPointerDownSlot,
   onPointerMoveSlot,
+  onPointerUpSlot,
+  onPointerCancelSlot,
   onSelectOccurrence,
 }: DayColumnProps) {
   const hours = BUSINESS_HOURS.END - BUSINESS_HOURS.START;
@@ -128,6 +134,8 @@ export function DayColumn({
       data-day={format(day, "yyyy-MM-dd")}
       onPointerDown={blocked ? undefined : onPointerDownSlot}
       onPointerMove={blocked ? undefined : onPointerMoveSlot}
+      onPointerUp={blocked ? undefined : onPointerUpSlot}
+      onPointerCancel={blocked ? undefined : onPointerCancelSlot}
     >
       {/* Hour lines */}
       {Array.from({ length: hours }, (_, i) => i + 1).map((hour) => (

@@ -576,8 +576,16 @@ lanube-app` (this repo's container only).
       compact icon nav; no swipe.
       — `DayStrip` in `DayColumn.tsx`; icon-only prev/next with aria-labels + short range
       ("5 – 9 oct 2026"). The focused day starts on the week's first bookable day (part of F).
-- [ ] Tap empty slot → booking drawer prefilled (start = slot, +1h); drag kept for fine
+- [x] Tap empty slot → booking drawer prefilled (start = slot, +1h); drag kept for fine
       pointers (finding A); "Reservar este día" kept.
+      — `WeekCalendar` tap handlers (pointerdown/up with a 10px slop so a scroll isn't a tap;
+      start = tapped 15-min slot rounded down; end = +1h capped at closing and at the next
+      busy block; busy / <24h taps toast instead). New `calendar/BookingForm.tsx` (+ test):
+      shadcn Form + RHF + Zod, one "Horario 14:15 → 15:15 · 1 h" row, Tipo, Motivo, sticky
+      `ResponsiveDialogFooter` (proposal 8); the dead `isWholeDay` state was dropped.
+      Verified with Playwright: touch tap at 14:20 opens the drawer with 14:15 → 15:15, and a
+      desktop mouse drag 10:00→11:00 still opens the dialog with 10:00 → 11:00
+      (`.mobile-shots/s3-tap/tap-drawer.png`).
 - [ ] Open on the first week / day with a bookable slot (F); touch-aware hint copy (G).
 - [ ] 24h minimum-notice gating and the detail dialog unchanged (regression-check).
 

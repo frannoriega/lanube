@@ -8,15 +8,6 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useServerTime } from "@/components/providers/server-time";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
@@ -41,7 +32,6 @@ import {
   BUSINESS_HOURS,
   firstBookableDayIndex,
   fromUtcMs,
-  generateTimeOptions,
   isDayFullyBlocked,
   minutesToTime,
   TIME_INTERVAL_MINUTES,
@@ -50,6 +40,7 @@ import {
   visibleDayIndices,
   WORK_WEEK_DAYS,
 } from "./calendar-utils";
+import { BookingForm, type BookingFormValues } from "./BookingForm";
 import {
   DayColumn,
   DayHeaderCell,
@@ -160,12 +151,21 @@ export function WeekCalendar({
   // ResponsiveDialog and form state
   const [selection, setSelection] = useState<DragSelection | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [eventType, setEventType] = useState(defaultEventType);
-  const [isWholeDay, setIsWholeDay] = useState(false);
+  // Horario inicial del formulario de reserva (lo fijan el arrastre, el toque o "Reservar").
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("10:00");
   const [submitting, setSubmitting] = useState(false);
+  /*
+   * Toque en curso sobre una columna (punteros táctiles / lápiz). Se guarda dónde empezó
+   * para distinguir un toque (abrir el formulario en ese horario) de un scroll (el dedo se
+   * movió): solo cuenta como toque si el dedo no se desplazó más de TAP_SLOP_PX.
+   */
+  const tapRef = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+    dayIdx: number;
+  } | null>(null);
 
   // View details / delete dialog state
   const [selectedOccurrence, setSelectedOccurrence] =
@@ -482,6 +482,127 @@ export function WeekCalendar({
     setDialogOpen(true);
   }, []);
 
+  /**
+   * Bloques ocupados de un día como intervalos [inicio, fin) en minutos desde medianoche:
+   * franjas no disponibles + reservas vigentes (pendientes o aprobadas) de cualquiera.
+   */
+  const busyIntervalsForDay = useCallback(
+    (day: Date): Array<[number, number]> => {
+      const toMin = (ms: number) => {
+        const d = fromUtcMs(ms);
+        return d.getHours() * 60 + d.getMinutes();
+      };
+      return [
+        ...unavailableSlots
+          .filter((slot) => isSameDay(fromUtcMs(slot.startTime), day))
+          .map((slot): [number, number] => [
+            toMin(slot.startTime),
+            toMin(slot.endTime),
+          ]),
+        ...occurrences
+          .filter(
+            (occ) =>
+              (occ.status === "PENDING" || occ.status === "APPROVED") &&
+              isSameDay(fromUtcMs(occ.occurrenceStartTime), day),
+          )
+          .map((occ): [number, number] => [
+            toMin(occ.occurrenceStartTime),
+            toMin(occ.occurrenceEndTime),
+          ]),
+      ];
+    },
+    [unavailableSlots, occurrences],
+  );
+
+  /*
+   * Tocar un horario libre → formulario de reserva precargado (milestone 14, hallazgo A).
+   *
+   * El arrastre para seleccionar nunca funcionó en pantallas táctiles: un dedo solo genera
+   * eventos de mouse al *tocar*, nunca al arrastrar, y arrastrar con el dedo tiene que seguir
+   * siendo scroll. Así que en táctil la interacción es el toque: se registra dónde apoyó el
+   * dedo (pointerdown) y, si al levantarlo (pointerup) no se movió más de TAP_SLOP_PX, se
+   * abre el formulario con inicio = el turno de 15 min tocado y fin = una hora después
+   * (recortado al cierre y al próximo bloque ocupado). Si el dedo se movió, fue un scroll y
+   * no pasa nada. El mouse sigue usando el arrastre (`handleMouseDown` & co.).
+   */
+  const TAP_SLOP_PX = 10;
+
+  const handleTapStart = useCallback(
+    (e: React.PointerEvent, dayIdx: number) => {
+      if (e.pointerType === "mouse") return;
+      tapRef.current = {
+        pointerId: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        dayIdx,
+      };
+    },
+    [],
+  );
+
+  const handleTapMove = useCallback((e: React.PointerEvent) => {
+    const tap = tapRef.current;
+    if (!tap || tap.pointerId !== e.pointerId) return;
+    if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > TAP_SLOP_PX) {
+      tapRef.current = null; // fue un scroll, no un toque
+    }
+  }, []);
+
+  const handleTapEnd = useCallback(
+    (e: React.PointerEvent) => {
+      const tap = tapRef.current;
+      tapRef.current = null;
+      if (!tap || tap.pointerId !== e.pointerId || !calendarRef.current) return;
+
+      // Turno de 15 min bajo el dedo (redondeo hacia abajo: tocar dentro de 10:00–10:15 es 10:00).
+      const rect = calendarRef.current.getBoundingClientRect();
+      const businessStart = BUSINESS_HOURS.START * 60;
+      const businessEnd = BUSINESS_HOURS.END * 60;
+      const raw =
+        businessStart +
+        ((e.clientY - rect.top) / rect.height) * (businessEnd - businessStart);
+      const start = Math.max(
+        businessStart,
+        Math.min(
+          businessEnd - TIME_INTERVAL_MINUTES,
+          Math.floor(raw / TIME_INTERVAL_MINUTES) * TIME_INTERVAL_MINUTES,
+        ),
+      );
+      const day = weekDays[tap.dayIdx];
+      if (!day) return;
+
+      const busy = busyIntervalsForDay(day);
+      if (
+        busy.some(
+          ([bs, be]) => bs < start + TIME_INTERVAL_MINUTES && be > start,
+        )
+      ) {
+        toast.error("Ese horario no está disponible");
+        return;
+      }
+
+      const startAt = new Date(day);
+      startAt.setHours(0, start, 0, 0);
+      if (!hasMinimumNotice(startAt.getTime(), now().getTime())) {
+        toast.error(MINIMUM_NOTICE_MESSAGE);
+        return;
+      }
+
+      // Fin: una hora después, sin pasar el cierre ni pisar el próximo bloque ocupado.
+      const nextBusyStart = Math.min(
+        businessEnd,
+        ...busy.filter(([bs]) => bs > start).map(([bs]) => bs),
+      );
+      const end = Math.min(start + 60, nextBusyStart);
+
+      setSelection({ day, startMinutes: start, endMinutes: end });
+      setStartTime(minutesToTime(start));
+      setEndTime(minutesToTime(end));
+      setDialogOpen(true);
+    },
+    [weekDays, busyIntervalsForDay, now],
+  );
+
   // Calculate drag selection style
   const getDragSelectionStyle = useCallback(() => {
     if (!isDragging || !dragStart || !dragCurrent) return null;
@@ -523,108 +644,54 @@ export function WeekCalendar({
     });
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle form submission (los valores ya vienen validados por el schema Zod del formulario)
+  const handleSubmit = async (values: BookingFormValues) => {
+    if (!selection) return;
 
-    if (!selection || !reason) {
-      toast.error("Por favor completa todos los campos");
+    const startMinutes = timeToMinutes(values.startTime);
+    const endMinutes = timeToMinutes(values.endTime);
+    const startDateTime = new Date(selection.day);
+    startDateTime.setHours(0, startMinutes, 0, 0);
+    const endDateTime = new Date(selection.day);
+    endDateTime.setHours(0, endMinutes, 0, 0);
+
+    // Reglas que dependen del reloj del servidor: se chequean acá, en un solo lugar.
+    const clock = now();
+    if (startDateTime < clock) {
+      toast.error("No se pueden hacer reservas en el pasado");
+      return;
+    }
+    if (!hasMinimumNotice(startDateTime.getTime(), clock.getTime())) {
+      toast.error(MINIMUM_NOTICE_MESSAGE);
       return;
     }
 
     setSubmitting(true);
-
     try {
-      let startDateTime: Date;
-      let endDateTime: Date;
-
-      if (isWholeDay) {
-        startDateTime = new Date(selection.day);
-        startDateTime.setHours(BUSINESS_HOURS.START, 0, 0, 0);
-        endDateTime = new Date(selection.day);
-        endDateTime.setHours(BUSINESS_HOURS.END, 0, 0, 0);
-      } else {
-        const startMinutes = timeToMinutes(startTime);
-        const endMinutes = timeToMinutes(endTime);
-
-        if (startMinutes >= endMinutes) {
-          toast.error("La hora de inicio debe ser anterior a la hora de fin");
-          setSubmitting(false);
-          return;
-        }
-
-        startDateTime = new Date(selection.day);
-        startDateTime.setHours(
-          Math.floor(startMinutes / 60),
-          startMinutes % 60,
-          0,
-          0,
-        );
-
-        endDateTime = new Date(selection.day);
-        endDateTime.setHours(
-          Math.floor(endMinutes / 60),
-          endMinutes % 60,
-          0,
-          0,
-        );
-      }
-
-      const clock = now();
-      if (startDateTime < clock) {
-        toast.error("No se pueden hacer reservas en el pasado");
-        setSubmitting(false);
-        return;
-      }
-
-      if (!hasMinimumNotice(startDateTime.getTime(), clock.getTime())) {
-        toast.error(MINIMUM_NOTICE_MESSAGE);
-        setSubmitting(false);
-        return;
-      }
-
-      try {
-        await apiSend(apiEndpoint, "POST", {
-          startTime: startDateTime.getTime(),
-          endTime: endDateTime.getTime(),
-          reason,
-          eventType,
-        });
-        // Success - close dialog and reset form
-        setDialogOpen(false);
-        setReason("");
-        setEventType(defaultEventType);
-        setIsWholeDay(false);
-        setSelection(null);
-
-        await refetchReservations();
-      } catch (err) {
-        toast.error(apiErrorMessage(err, "Error al crear la reserva"));
-      }
+      await apiSend(apiEndpoint, "POST", {
+        startTime: startDateTime.getTime(),
+        endTime: endDateTime.getTime(),
+        reason: values.reason,
+        eventType: values.eventType,
+      });
+      // Success - close dialog and reset
+      setDialogOpen(false);
+      setSelection(null);
+      await refetchReservations();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Error al crear la reserva"));
     } finally {
       setSubmitting(false);
     }
   };
 
+  /** Valores con los que abre el formulario: el horario elegido + el tipo por defecto. */
+  const bookingDefaults = useMemo<BookingFormValues>(
+    () => ({ startTime, endTime, eventType: defaultEventType, reason: "" }),
+    [startTime, endTime, defaultEventType],
+  );
+
   const dragSelection = getDragSelectionStyle();
-
-  const bookingEndOptions = useMemo(() => {
-    const all = generateTimeOptions();
-    const startM = timeToMinutes(startTime);
-    return all.filter((o) => timeToMinutes(o.value) > startM);
-  }, [startTime]);
-
-  useEffect(() => {
-    if (!dialogOpen) return;
-    const sm = timeToMinutes(startTime);
-    const em = timeToMinutes(endTime);
-    if (em <= sm) {
-      const bumped = sm + TIME_INTERVAL_MINUTES;
-      if (bumped <= BUSINESS_HOURS.END * 60) {
-        setEndTime(minutesToTime(bumped));
-      }
-    }
-  }, [dialogOpen, startTime, endTime]);
 
   if (!currentWeekStart) {
     return (
@@ -807,9 +874,18 @@ export function WeekCalendar({
                   // pantallas táctiles el dedo hace scroll, no selección (hallazgo A).
                   onPointerDownSlot={(e) => {
                     if (e.pointerType === "mouse") handleMouseDown(e, dayIdx);
+                    else handleTapStart(e, dayIdx);
                   }}
                   onPointerMoveSlot={(e) => {
                     if (e.pointerType === "mouse") handleMouseMove(e, dayIdx);
+                    else handleTapMove(e);
+                  }}
+                  onPointerUpSlot={(e) => {
+                    if (e.pointerType !== "mouse") handleTapEnd(e);
+                  }}
+                  onPointerCancelSlot={() => {
+                    // El navegador tomó el gesto como scroll: no es un toque.
+                    tapRef.current = null;
                   }}
                   onSelectOccurrence={setSelectedOccurrence}
                 />
@@ -832,90 +908,17 @@ export function WeekCalendar({
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Hora de inicio</Label>
-                <Select value={startTime} onValueChange={setStartTime}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {generateTimeOptions().map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endTime">Hora de fin</Label>
-                <Select value={endTime} onValueChange={setEndTime}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bookingEndOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="eventType">Tipo de evento</Label>
-              <Select value={eventType} onValueChange={setEventType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {eventTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reason">
-                {description || "Motivo de la reserva"}
-              </Label>
-              <Textarea
-                id="reason"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Describe el propósito de la reserva..."
-                rows={3}
-                required
-                className="max-h-60"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setDialogOpen(false);
-                  setReason("");
-                  setEventType(defaultEventType);
-                  setIsWholeDay(false);
-                  setSelection(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "Creando..." : "Crear Reserva"}
-              </Button>
-            </div>
-          </form>
+          <BookingForm
+            defaultValues={bookingDefaults}
+            eventTypes={eventTypes}
+            reasonLabel={description}
+            submitting={submitting}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setDialogOpen(false);
+              setSelection(null);
+            }}
+          />
         </ResponsiveDialogContent>
       </ResponsiveDialog>
 

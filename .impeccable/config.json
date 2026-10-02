@@ -23,6 +23,15 @@
         "value": "arial",
         "createdAt": "2026-09-22T20:32:52.192Z",
         "reason": "Email HTML inline styles must use web-safe fonts for client compatibility; mirrors the pre-existing event-decision.ts pattern this file was modeled on"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "files": [
+          "src/components/organisms/calendar/DayColumn.tsx"
+        ],
+        "createdAt": "2026-10-02T05:46:01.297Z",
+        "reason": "Claude: text-[10px] time label moved verbatim from WeekCalendar.tsx (pre-existing design, not introduced by milestone 14)"
       }
     ]
   }
