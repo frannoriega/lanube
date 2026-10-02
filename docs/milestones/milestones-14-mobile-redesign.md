@@ -724,7 +724,15 @@ lanube-app` (this repo's container only).
       prefix) and breadcrumbs ("Nuevo" / "Editar" generic) already covered the new routes;
       the themes page copy now says "el de más arriba en la lista". Screenshot script:
       `admin-theme-dialog` → `admin-theme-new` / `admin-theme-edit` (`.mobile-shots/s6-theme/`).
-- [ ] Role → `/admin/roles/new` + `/[id]/edit` per proposal 5; same wiring.
+- [x] Role → `/admin/roles/new` + `/[id]/edit` per proposal 5; same wiring.
+      — new `organisms/admin/config/role-form.tsx` (Rol / Permisos (groups in two columns
+      on `lg`) / Puede otorgar estos roles, `StickySaveBar`, unsaved guard; loads from
+      `GET /api/admin/roles` since there's no per-id GET and the list is needed for the
+      grantable options; system roles render a read-only notice), pages `admin/roles/new`
+      and `admin/roles/[id]/edit` (`roles:manage`). The manager lost its dialog/form; edit is
+      a link (still disabled for system roles). Middleware prefix + generic breadcrumbs
+      already covered the routes. Screenshot script: `admin-role-dialog` → `admin-role-new`
+      / `admin-role-edit` (`.mobile-shots/s6-role/`).
 
 **Close-out**
 

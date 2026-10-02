@@ -41,6 +41,7 @@ const ids = {
   space: q("select id from spaces limit 1"),
   form: q("select id from forms where is_template limit 1"),
   theme: q("select id from landing_themes limit 1"),
+  role: q("select id from roles where not is_system limit 1"),
   slug: q(
     "select ef.slug from event_forms ef join events e on e.id=ef.event_id where e.status='PUBLISHED' and e.deleted_at is null limit 1",
   ),
@@ -183,13 +184,12 @@ const SHOTS = [
     url: `/admin/themes/${ids.theme}/edit`,
   },
   { name: "admin-roles", user: "admin", url: "/admin/roles" },
+  // Milestone 14: el rol se edita en su propia página (antes, un diálogo).
+  { name: "admin-role-new", user: "admin", url: "/admin/roles/new" },
   {
-    name: "admin-role-dialog",
+    name: "admin-role-edit",
     user: "admin",
-    url: "/admin/roles",
-    action: async (p) => {
-      await p.getByRole("button", { name: /Nuevo rol/ }).click();
-    },
+    url: `/admin/roles/${ids.role}/edit`,
   },
 ];
 
