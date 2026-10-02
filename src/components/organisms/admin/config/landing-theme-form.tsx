@@ -18,7 +18,7 @@ import {
   FormSection,
   StickySaveBar,
 } from "@/components/molecules/form-layout";
-import { MonthDayPicker } from "@/components/molecules/month-day-picker";
+import { AnnualRangePicker } from "@/components/molecules/annual-range-picker";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -105,8 +105,11 @@ export function LandingThemeForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl">
+      {/* El ancho máximo va en el contenido, no en el `<form>`: la barra de guardar tiene que
+          ocupar todo el ancho del área (si no, terminaba cortada a mitad de pantalla). */}
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <FormPageLayout
+          className="max-w-3xl"
           main={
             <>
               <FormSection
@@ -173,33 +176,36 @@ export function LandingThemeForm({
                   )}
                 />
                 {recurring ? (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {(
-                      [
-                        ["startMonthDay", "Desde"],
-                        ["endMonthDay", "Hasta"],
-                      ] as const
-                    ).map(([fieldName, label]) => (
-                      <FormField
-                        key={fieldName}
-                        control={form.control}
-                        name={fieldName}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{label}</FormLabel>
-                            <FormControl>
-                              <MonthDayPicker
-                                value={field.value ?? ""}
-                                onChange={field.onChange}
-                                ariaLabel={label}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
+                  // Un solo calendario de rango sin año (milestone 16), en vez de dos
+                  // pares de selects mes/día: se ve el rango entero y puede cruzar el
+                  // fin de año (ver `AnnualRangePicker`).
+                  <FormItem>
+                    <FormLabel>Fechas (cada año)</FormLabel>
+                    <AnnualRangePicker
+                      value={{
+                        start: form.watch("startMonthDay") ?? "",
+                        end: form.watch("endMonthDay") ?? "",
+                      }}
+                      onChange={({ start, end }) => {
+                        // Los dos campos primero y después una sola validación: la regla
+                        // "inicio y fin" mira ambos, y validar uno con el otro todavía
+                        // viejo dejaba un error colgado.
+                        form.setValue("startMonthDay", start || null, {
+                          shouldDirty: true,
+                        });
+                        form.setValue("endMonthDay", end || null, {
+                          shouldDirty: true,
+                        });
+                        if (end) {
+                          void form.trigger(["startMonthDay", "endMonthDay"]);
+                        }
+                      }}
+                    />
+                    <FormMessage>
+                      {form.formState.errors.startMonthDay?.message ??
+                        form.formState.errors.endMonthDay?.message}
+                    </FormMessage>
+                  </FormItem>
                 ) : (
                   <FormItem>
                     <FormLabel>Rango de fechas</FormLabel>
@@ -265,7 +271,10 @@ export function LandingThemeForm({
                   )}
                 />
                 {entranceEffect === "EMOJI_SHOWER" ? (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
+                  // `items-start`: sin él la grilla estira el campo sin descripción ("Cantidad") a la
+                  // altura del otro y el `FormItem` (también grilla) reparte el espacio entre sus
+                  // filas, bajando el rótulo — quedaban desalineados.
+                  <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
                     <FormField
                       control={form.control}
                       name="emojiList"
