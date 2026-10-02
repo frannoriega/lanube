@@ -40,6 +40,11 @@ CTAs didn't line up.
 
 ### 2. Noticia detail layout
 
+> **Nota (milestone 15, 2026-10-02):** el layout de dos columnas se mantiene, pero la
+> tira de autor separada y las `NewsCard` completas del riel fueron reemplazadas: el byline
+> ahora vive dentro del encabezado del artículo y el riel usa filas compactas
+> (`NewsRailItem`). Ver [`milestones-15-news-redesign.md`](./milestones-15-news-redesign.md).
+
 `/news/[yyyy]/[mm]/[dd]/[slug]` went from a single centered article to the requested
 two-column layout:
 
