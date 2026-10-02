@@ -12,6 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  StatGrid,
+  StatGridSkeleton,
+  StatTile,
+} from "@/components/molecules/stat-grid";
 import { useCheckedInUsers } from "@/hooks/api";
 import { apiErrorMessage } from "@/lib/api/client";
 import { checkOutUser } from "@/lib/api/mutations";
@@ -130,11 +135,7 @@ export default function AdminCheckInPage() {
           <Skeleton className="h-8 w-64" />
           <Skeleton className="mt-2 h-4 w-80" />
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-28 w-full" />
-          ))}
-        </div>
+        <StatGridSkeleton />
         <Skeleton className="h-40 w-full" />
       </div>
     );
@@ -152,60 +153,36 @@ export default function AdminCheckInPage() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Usuarios Actuales
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentUsers.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Terminan Pronto
-            </CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {endingSoonUsers.length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tiempo Agotado
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {overdueUsers.length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Actualizado</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm font-medium text-green-600 dark:text-green-400">
-              {now().toLocaleTimeString()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats — grilla compartida, 2×2 compacta en teléfonos */}
+      <StatGrid>
+        <StatTile
+          title="Usuarios Actuales"
+          icon={Users}
+          value={currentUsers.length}
+        />
+        <StatTile
+          title="Terminan Pronto"
+          icon={Clock}
+          tone="warning"
+          value={endingSoonUsers.length}
+        />
+        <StatTile
+          title="Tiempo Agotado"
+          icon={AlertTriangle}
+          tone="danger"
+          value={overdueUsers.length}
+        />
+        <StatTile
+          title="Actualizado"
+          icon={CheckCircle}
+          tone="success"
+          value={now().toLocaleTimeString("es-AR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          })}
+        />
+      </StatGrid>
 
       {/* Search */}
       <Card className="glass-card dark:glass-card-dark">

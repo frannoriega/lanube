@@ -16,7 +16,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { StatGrid, StatTile } from "@/components/molecules/stat-grid";
 import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
 import { useAdminStats } from "@/hooks/api";
@@ -33,6 +33,7 @@ import {
   Presentation,
   TrendingUp,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -155,17 +156,16 @@ export default function AdminDashboard() {
     return end.getTime() < t.getTime();
   };
 
-  const statCards: { title: string; icon: React.ElementType; value: number }[] =
-    [
-      { title: "Usuarios Hoy", icon: Users, value: stats?.todayUsers || 0 },
-      { title: "Esta Semana", icon: TrendingUp, value: stats?.weekUsers || 0 },
-      { title: "Este Mes", icon: Calendar, value: stats?.monthUsers || 0 },
-      {
-        title: "Reservas Pendientes",
-        icon: Clock,
-        value: stats?.pendingReservations || 0,
-      },
-    ];
+  const statCards: { title: string; icon: LucideIcon; value: number }[] = [
+    { title: "Usuarios Hoy", icon: Users, value: stats?.todayUsers || 0 },
+    { title: "Esta Semana", icon: TrendingUp, value: stats?.weekUsers || 0 },
+    { title: "Este Mes", icon: Calendar, value: stats?.monthUsers || 0 },
+    {
+      title: "Reservas Pendientes",
+      icon: Clock,
+      value: stats?.pendingReservations || 0,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -187,24 +187,18 @@ export default function AdminDashboard() {
         ) : null}
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map(({ title, icon: Icon, value }) => (
-          <Card key={title} className="glass-card dark:glass-card-dark">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{title}</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {firstTime ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold">{value}</div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Stats cards — grilla compartida, 2×2 compacta en teléfonos */}
+      <StatGrid>
+        {statCards.map(({ title, icon, value }) => (
+          <StatTile
+            key={title}
+            title={title}
+            icon={icon}
+            value={value}
+            loading={firstTime}
+          />
         ))}
-      </div>
+      </StatGrid>
 
       {/* Current users */}
       {stats?.currentUsers && stats.currentUsers.length > 0 && (
