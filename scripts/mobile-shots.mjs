@@ -84,7 +84,7 @@ const SHOTS = [
       // Go to next week (this week may be fully blocked by the 24h notice rule); JS click
       // because on narrow viewports the nav buttons are clipped by overflow-hidden.
       await p
-        .getByRole("button", { name: /Siguiente/ })
+        .getByRole("button", { name: /siguiente/i })
         .evaluate((b) => b.click());
       await settle(p);
       await p
