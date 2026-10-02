@@ -2,6 +2,7 @@
 
 import Logo from "@/components/atoms/logos/lanube";
 import { ManagementBreadcrumbs } from "@/components/molecules/management-breadcrumbs";
+import { NotificationBell } from "@/components/molecules/notification-bell";
 import { ThemeToggle } from "@/components/molecules/theme";
 import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
@@ -406,6 +407,9 @@ export default function ManagementLayout({
                     </Link>
                   </nav>
                 )}
+                {/* Notifications */}
+                <NotificationBell />
+
                 {/* Theme toggle */}
                 <div className="flex items-center gap-x-2">
                   <ThemeToggle />

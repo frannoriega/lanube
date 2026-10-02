@@ -60,6 +60,7 @@ model RegisteredUser {
   checkIns         CheckIn[]
   incidentUsers    IncidentUser[]
   inventories      Inventory[]
+  notifications    Notification[]
   orgMemberships   OrgMembership[]
   commentLikes     ProposalCommentLike[]
   proposalComments ProposalComment[]

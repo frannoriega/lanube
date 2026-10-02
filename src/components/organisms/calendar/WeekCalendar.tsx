@@ -21,16 +21,17 @@ import { useServerTime } from "@/components/providers/server-time";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
+import {
+  hasMinimumNotice,
+  MINIMUM_NOTICE_MESSAGE,
+} from "@/lib/reservations/booking-window";
 import { toCapitalCase } from "@/lib/utils/string";
 import {
   addDays,
   addWeeks,
   format,
   getDay,
-  isAfter,
-  isBefore,
   isSameDay,
-  startOfDay,
   startOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
@@ -54,13 +55,24 @@ const BUSINESS_HOURS = {
 
 const TIME_INTERVAL_MINUTES = 15;
 
+/** Last minute-of-day a slot can start at and still fit a minimum-length booking before close. */
+const LAST_BOOKABLE_START_MINUTES =
+  BUSINESS_HOURS.END * 60 - TIME_INTERVAL_MINUTES;
+
 function fromUtcMs(ms: number): Date {
   return new Date(ms);
 }
 
-/** New reservations only from tomorrow onward (local calendar day vs `clock`). */
-function isBookableReservationDay(day: Date, clock: Date): boolean {
-  return isAfter(startOfDay(day), startOfDay(clock));
+/**
+ * A day is fully blocked once even its latest possible slot can't meet the real 24h minimum
+ * notice (`hasMinimumNotice`) — e.g. after ~18:00 today, tomorrow's last slot (17:45) is less
+ * than 24h away, so tomorrow greys out too. Earlier slots within an otherwise-open day are
+ * still rejected individually (drag-start, submit) by the same real-time check.
+ */
+function isDayFullyBlocked(day: Date, clock: Date): boolean {
+  const lastSlot = new Date(day);
+  lastSlot.setHours(0, LAST_BOOKABLE_START_MINUTES, 0, 0);
+  return !hasMinimumNotice(lastSlot.getTime(), clock.getTime());
 }
 
 export type UnavailableSlotKind = "resource_full" | "cross_resource";
@@ -347,14 +359,10 @@ export function WeekCalendar({
       }
 
       const clock = now();
-      if (!isBookableReservationDay(posInfo.day, clock)) {
-        return;
-      }
-
       const selectedDateTime = new Date(posInfo.day);
       selectedDateTime.setHours(0, posInfo.minutes, 0, 0);
 
-      if (selectedDateTime < clock) {
+      if (!hasMinimumNotice(selectedDateTime.getTime(), clock.getTime())) {
         return;
       }
 
@@ -598,8 +606,8 @@ export function WeekCalendar({
         return;
       }
 
-      if (!isBookableReservationDay(selection.day, clock)) {
-        toast.error("Las reservas solo están disponibles a partir de mañana");
+      if (!hasMinimumNotice(startDateTime.getTime(), clock.getTime())) {
+        toast.error(MINIMUM_NOTICE_MESSAGE);
         setSubmitting(false);
         return;
       }
@@ -706,10 +714,7 @@ export function WeekCalendar({
             <div className="w-14 flex-shrink-0"></div>
             <div className="flex-1 grid grid-cols-5 gap-0">
               {weekDays.map((day, idx) => {
-                const bookable = !isBefore(
-                  startOfDay(day),
-                  startOfDay(addDays(now(), 1)),
-                );
+                const bookable = !isDayFullyBlocked(day, now());
                 return (
                   <div
                     key={idx}
@@ -798,11 +803,7 @@ export function WeekCalendar({
             >
               {weekDays.map((day, dayIdx) => {
                 const clock = now();
-                const earliestBookableDayStart = startOfDay(addDays(clock, 1));
-                const isPastOrUnavailableDay = isBefore(
-                  startOfDay(day),
-                  earliestBookableDayStart,
-                );
+                const isPastOrUnavailableDay = isDayFullyBlocked(day, clock);
                 const dayReservations = getReservationsForDay(day);
                 const unavailableSlots = getUnavailableSlotsForDay(day);
 

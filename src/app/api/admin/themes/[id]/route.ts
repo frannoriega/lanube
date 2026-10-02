@@ -51,6 +51,7 @@ export async function PUT(
       action: AUDIT_ACTIONS.themeUpdate,
       entityType: "LandingTheme",
       entityId: id,
+      context: { Tema: theme.name },
       ...(diff ?? { after: { name: theme.name } }),
     });
     return NextResponse.json(serializeJson(theme));

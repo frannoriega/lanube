@@ -99,6 +99,7 @@ export async function PUT(
           action: AUDIT_ACTIONS.newsUpdate,
           entityType: "NewsPost",
           entityId: id,
+          context: { Noticia: post.title },
           ...diff,
         });
       }
