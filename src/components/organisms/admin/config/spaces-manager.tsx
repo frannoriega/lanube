@@ -11,13 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -227,24 +227,29 @@ export function SpacesManager() {
       </CardContent>
 
       {/* Delete confirm */}
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Eliminar {deleting?.name}?</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+      >
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              ¿Eliminar {deleting?.name}?
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Solo puede eliminarse si no tiene eventos ni reservas asociadas.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setDeleting(null)}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={onDelete} disabled={busy}>
               Eliminar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </Card>
   );
 }

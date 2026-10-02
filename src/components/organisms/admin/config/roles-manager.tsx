@@ -11,13 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import {
   Form,
   FormControl,
@@ -266,16 +266,18 @@ export function RolesManager() {
         )}
       </CardContent>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar rol" : "Nuevo rol"}</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <ResponsiveDialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              {editing ? "Editar rol" : "Nuevo rol"}
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Elegí qué puede hacer este rol. Los permisos son los que la
               aplicación verifica realmente; no se pueden inventar nuevos desde
               acá.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -439,7 +441,7 @@ export function RolesManager() {
                 }}
               />
 
-              <DialogFooter>
+              <ResponsiveDialogFooter>
                 <Button
                   type="button"
                   variant="outline"
@@ -451,24 +453,24 @@ export function RolesManager() {
                 <Button type="submit" disabled={busy}>
                   {busy ? "Guardando…" : "Guardar"}
                 </Button>
-              </DialogFooter>
+              </ResponsiveDialogFooter>
             </form>
           </Form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
-      <Dialog
+      <ResponsiveDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Eliminar rol</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Eliminar rol</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               ¿Eliminar «{deleting?.name}»? Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -485,9 +487,9 @@ export function RolesManager() {
             >
               {busy ? "Eliminando…" : "Eliminar"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </Card>
   );
 }
