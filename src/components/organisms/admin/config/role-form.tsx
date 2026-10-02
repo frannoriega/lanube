@@ -337,7 +337,7 @@ export function RoleForm({ roleId }: { roleId?: string }) {
           </FormSection>
         </div>
 
-        <StickySaveBar className="mt-6" dirty={form.formState.isDirty}>
+        <StickySaveBar dirty={form.formState.isDirty}>
           <Button
             type="button"
             variant="outline"

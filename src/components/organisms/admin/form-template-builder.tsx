@@ -703,7 +703,7 @@ export function FormTemplateBuilder({
           </FormSection>
         </div>
 
-        <StickySaveBar className="mt-6" dirty={formState.isDirty}>
+        <StickySaveBar dirty={formState.isDirty}>
           <Button
             type="button"
             variant="outline"
