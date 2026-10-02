@@ -141,7 +141,11 @@ export function StickySaveBar({
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-30 -mx-4 flex flex-wrap items-center justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+        // Márgenes negativos = el padding del `<main>` de `ManagementLayout` (`px-4 sm:px-6
+        // lg:px-8` a los lados, `py-6` abajo): la barra llega a los bordes del área y, al final
+        // del scroll, al borde inferior de la ventana — sin `-mb-6` quedaba una franja vacía
+        // debajo. Si cambia ese padding, cambiar estos valores.
+        "sticky bottom-0 z-30 -mx-4 -mb-6 flex flex-wrap items-center justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
         // Respeta el área segura inferior del iPhone (barra de gestos).
         "pb-[max(0.75rem,env(safe-area-inset-bottom))]",
         className,
