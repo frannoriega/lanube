@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Capturas del script scripts/mobile-shots.mjs (milestone 14)
 /.mobile-shots/
+
+# Claude local
+.claude/settings.local.json
