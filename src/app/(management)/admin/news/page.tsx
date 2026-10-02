@@ -1,47 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { LocalTimestamp } from "@/components/molecules/local-date";
 import { Pagination } from "@/components/molecules/pagination";
-import { NewsRowActions } from "@/components/organisms/admin/news-row-actions";
+import { NewsAdminTable } from "@/components/organisms/admin/news-admin-table";
 import { auth } from "@/lib/auth";
 import { listAdminNewsPosts } from "@/lib/db/news";
 import { requirePagePermission } from "@/lib/page-auth";
 import { hasPermission } from "@/lib/rbac";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Borrador",
-  PENDING_REVIEW: "En revisión",
-  PUBLISHED: "Publicada",
-  REJECTED: "Rechazada",
-  PAUSED: "Pausada",
-};
-
-const STATUS_VARIANTS: Record<
-  string,
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  DRAFT: "outline",
-  PENDING_REVIEW: "secondary",
-  PUBLISHED: "default",
-  REJECTED: "destructive",
-  PAUSED: "outline",
-};
-
-const PENDING_ACTION_LABELS: Record<string, string> = {
-  EDIT: "Edición pendiente",
-  PAUSE: "Pausa solicitada",
-  DELETE: "Eliminación solicitada",
-};
 
 interface NewsSearchParams {
   page?: string;
@@ -182,74 +148,19 @@ export default async function AdminNewsPage({
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">No hay notas todavía.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Título</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Autor</TableHead>
-              <TableHead>Destacada</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((post) => (
-              <TableRow key={post.id}>
-                <TableCell className="font-medium">{post.title}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge variant={STATUS_VARIANTS[post.status]}>
-                      {STATUS_LABELS[post.status]}
-                    </Badge>
-                    {/* Un autor pidió un cambio contra esta nota mientras estaba en línea, así
-                        que sigue en el sitio (o eliminada, si el pedido era eso) hasta que un
-                        admin decida — nunca se aplica solo. */}
-                    {post.pendingAction && (
-                      <Badge
-                        variant="outline"
-                        title="Solicitud de un autor pendiente de decisión"
-                      >
-                        {PENDING_ACTION_LABELS[post.pendingAction] ??
-                          post.pendingAction}
-                      </Badge>
-                    )}
-                    {post.deletedAt && (
-                      <Badge
-                        variant="destructive"
-                        title="Eliminada (soft delete)"
-                      >
-                        Eliminada
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {post.authorLabel}
-                </TableCell>
-                <TableCell>{post.isFeatured ? "Sí" : "—"}</TableCell>
-                <TableCell>
-                  <LocalTimestamp
-                    ms={Number(post.publishedAt ?? post.createdAt)}
-                    className="text-sm text-muted-foreground"
-                  />
-                </TableCell>
-                <TableCell>
-                  <NewsRowActions
-                    id={post.id}
-                    title={post.title}
-                    canApprove={canApprove}
-                    showDecision={
-                      post.status === "PENDING_REVIEW" || !!post.pendingAction
-                    }
-                    isPublished={post.status === "PUBLISHED"}
-                    isDeleted={!!post.deletedAt}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <NewsAdminTable
+          canApprove={canApprove}
+          rows={items.map((post) => ({
+            id: post.id,
+            title: post.title,
+            status: post.status,
+            pendingAction: post.pendingAction ?? null,
+            deleted: !!post.deletedAt,
+            authorLabel: post.authorLabel,
+            isFeatured: post.isFeatured,
+            dateMs: Number(post.publishedAt ?? post.createdAt),
+          }))}
+        />
       )}
 
       <Pagination
