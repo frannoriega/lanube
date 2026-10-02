@@ -713,8 +713,17 @@ lanube-app` (this repo's container only).
 
 **Slice 6 — dialogs → pages**
 
-- [ ] Landing theme → `/admin/themes/new` + `/[id]/edit` per proposal 4 (month+day range
+- [x] Landing theme → `/admin/themes/new` + `/[id]/edit` per proposal 4 (month+day range
       picker for yearly windows); middleware/nav/breadcrumbs updated.
+      — new `organisms/admin/config/landing-theme-form.tsx` (Básico / Cuándo / Efecto / Texto
+      sections, `StickySaveBar`, unsaved guard), `molecules/month-day-picker.tsx` (Mes + Día
+      selects → "MM-DD", days capped per month, Feb 29 allowed),
+      `lib/landing-themes/form-values.ts` (shared defaults + BigInt-safe row → values),
+      pages `admin/themes/new` and `admin/themes/[id]/edit` (`landing-themes:manage`). The
+      manager lost its dialog/form and links to the pages. Middleware (`/admin/themes`
+      prefix) and breadcrumbs ("Nuevo" / "Editar" generic) already covered the new routes;
+      the themes page copy now says "el de más arriba en la lista". Screenshot script:
+      `admin-theme-dialog` → `admin-theme-new` / `admin-theme-edit` (`.mobile-shots/s6-theme/`).
 - [ ] Role → `/admin/roles/new` + `/[id]/edit` per proposal 5; same wiring.
 
 **Close-out**

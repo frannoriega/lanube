@@ -1,7 +1,7 @@
 # Graph Report - lanube  (2026-10-02)
 
 ## Corpus Check
-- 626 files · ~1,331,881 words
+- 626 files · ~1,331,937 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9fa2f110`
+- Built from commit: `46e256f7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -454,12 +454,12 @@ Cohesion: 0.03
 Nodes (61): dependencies, @auth/prisma-adapter, bcryptjs, class-variance-authority, clsx, cmdk, cn, date-fns (+53 more)
 
 ### Community 3 - "Forms & Notification Layer"
-Cohesion: 0.09
-Nodes (35): POST(), POST(), AUDITED_NEWS_FIELDS, decideNewsPendingAction(), decideNewsPost(), deleteNewsPost(), FeaturedNewsItem, getNewsPostById() (+27 more)
+Cohesion: 0.10
+Nodes (37): POST(), POST(), AUDITED_NEWS_FIELDS, nowMs(), createNewsPost(), decideNewsPendingAction(), decideNewsPost(), deleteNewsPost() (+29 more)
 
 ### Community 4 - "Admin Dashboard & Reports"
-Cohesion: 0.14
-Nodes (21): POST(), notifyReservationDecision(), PATCH(), AUDITED_THEME_FIELDS, DELETE(), PUT(), actorLabelFor(), ActorSource (+13 more)
+Cohesion: 0.09
+Nodes (32): notifyReservationDecision(), PATCH(), AUDITED_RESOURCE_FIELDS, DELETE(), PUT(), GET(), POST(), AUDITED_THEME_FIELDS (+24 more)
 
 ### Community 5 - "Resource Reservation API"
 Cohesion: 0.12
@@ -570,8 +570,8 @@ Cohesion: 0.48
 Nodes (6): approvedHtml(), DecisionRecipient, escapeHtml(), notifyParticipantsDecision(), rejectedHtml(), transporter
 
 ### Community 33 - "Week Calendar Component"
-Cohesion: 0.09
-Nodes (46): EventsSearchParams, STATUS_BADGE_CLASS, SignUpPage(), signUpSchema, formSchema, SettingsFormValues, SettingsPage(), CopyField() (+38 more)
+Cohesion: 0.11
+Nodes (40): SignUpPage(), signUpSchema, formSchema, SettingsFormValues, SettingsPage(), CopyField(), CopyFieldProps, Pagination() (+32 more)
 
 ### Community 34 - "admin-reservation-detail-sheet.tsx"
 Cohesion: 0.10
@@ -606,8 +606,8 @@ Cohesion: 0.17
 Nodes (12): NewNewsPage(), ReservationTypesPage(), ResourcesPage(), RolesPage(), SitePage(), EditSpacePage(), NewSpacePage(), SpacesPage() (+4 more)
 
 ### Community 43 - "Navigation Header"
-Cohesion: 0.33
-Nodes (10): DELETE(), GET(), POST(), requireActiveSession(), nowMs(), isOnLedgerGrid(), createReservation(), createReservationException() (+2 more)
+Cohesion: 0.21
+Nodes (13): DELETE(), GET(), POST(), GET(), requireActiveSession(), isOnLedgerGrid(), listNotificationsForUser(), NotificationListItem (+5 more)
 
 ### Community 45 - "page.tsx"
 Cohesion: 0.12
@@ -627,7 +627,7 @@ Nodes (21): 1. Same Calendar Interface, 1. WeekCalendar Component, 2. Generic Re
 
 ### Community 50 - "Cron Jobs"
 Cohesion: 0.04
-Nodes (78): Github(), Instagram(), WhatsApp(), INCIDENT_STATUSES, IncidentStatusBadge(), RESERVATION_STATUSES, StatusTone, TONE_CLASSES (+70 more)
+Nodes (85): Github(), Instagram(), WhatsApp(), MarkdownMark(), INCIDENT_STATUSES, IncidentStatusBadge(), RESERVATION_STATUSES, StatusTone (+77 more)
 
 ### Community 51 - "App Layout & Fonts"
 Cohesion: 0.16
@@ -726,8 +726,8 @@ Cohesion: 0.09
 Nodes (22): API Reference, Business Rules, Configuration, Database Integration, Database Setup, Features, For Users, Future Enhancements (+14 more)
 
 ### Community 118 - "index.tsx"
-Cohesion: 0.07
-Nodes (42): MarkdownMark(), FormJumpIndex(), FormPageLayout(), FormSection(), StickySaveBar(), ImageUpload(), ImageUploadProps, InlineRichTextInput() (+34 more)
+Cohesion: 0.08
+Nodes (35): FormJumpIndex(), FormPageLayout(), FormSection(), StickySaveBar(), ImageUpload(), ImageUploadProps, InlineRichTextInput(), InlineRichTextInputProps (+27 more)
 
 ### Community 119 - "Política de Privacidad de La Nube"
 Cohesion: 0.25
@@ -803,11 +803,11 @@ Nodes (7): 1. Drag-and-Drop Selection, 2. 15-Minute Intervals, 3. Continuous Cal
 
 ### Community 138 - "Meeting Room Calendar V2 - Drag & Drop Implementation"
 Cohesion: 0.29
-Nodes (7): 📊 Comparison Table, 🎉 Conclusion, Meeting Room Calendar V2 - Drag & Drop Implementation, New Validations, 📋 Overview, Retained Validations, 🔒 Validation Changes
+Nodes (7): 📊 Comparison Table, 🎉 Conclusion, 📚 Documentation Updates, Meeting Room Calendar V2 - Drag & Drop Implementation, New Documents, 📋 Overview, Updated Documents
 
 ### Community 139 - "page.tsx"
 Cohesion: 0.10
-Nodes (49): PATCH(), GET(), POST(), POST(), DELETE(), GET(), PUT(), POST() (+41 more)
+Nodes (48): GET(), POST(), POST(), DELETE(), GET(), PUT(), POST(), DELETE() (+40 more)
 
 ### Community 140 - "weekdaysFromRrule"
 Cohesion: 0.12
@@ -1046,8 +1046,8 @@ Cohesion: 0.08
 Nodes (44): GET(), EditEventPage(), EventsSection(), SPOT_HOLDING_STATUSES, applySessionActions(), assertEventOccurrencesFree(), assertRescheduleFree(), createEvent() (+36 more)
 
 ### Community 199 - "🎉 Success!"
-Cohesion: 0.07
-Nodes (31): AUDITED_RESOURCE_FIELDS, DELETE(), PUT(), GET(), POST(), GET(), DEFAULT_SITE_CONFIG, NotificationListItem (+23 more)
+Cohesion: 0.13
+Nodes (16): GET(), DEFAULT_SITE_CONFIG, updateSiteConfig(), emojiListSchema, LandingThemeInput, landingThemeInputSchema, monthDaySchema, ReservationTypeInput (+8 more)
 
 ### Community 200 - "nowMs"
 Cohesion: 0.08
@@ -1066,8 +1066,8 @@ Cohesion: 0.67
 Nodes (3): For Developers, For Existing Users, 🔄 Migration Path
 
 ### Community 204 - "index.tsx"
-Cohesion: 0.09
-Nodes (29): adminUsersBaseColumns, AdminUsersColumnsOptions, buildAdminUsersColumns(), DataTableColumnHeaderProps, resolveRoleLabel(), PAGE_SIZE_OPTIONS, UsersResponse, AdminUser (+21 more)
+Cohesion: 0.07
+Nodes (35): EventsSearchParams, STATUS_BADGE_CLASS, adminUsersBaseColumns, AdminUsersColumnsOptions, buildAdminUsersColumns(), DataTableColumnHeaderProps, resolveRoleLabel(), PAGE_SIZE_OPTIONS (+27 more)
 
 ### Community 205 - "mobile-shots.mjs"
 Cohesion: 0.12
@@ -1179,7 +1179,7 @@ Nodes (5): Component Architecture, Layout Changes, Position Calculations, State 
 
 ### Community 375 - "🗄️ Database Requirements"
 Cohesion: 0.67
-Nodes (3): 📚 Documentation Updates, New Documents, Updated Documents
+Nodes (3): New Validations, Retained Validations, 🔒 Validation Changes
 
 ### Community 376 - "🎨 Design Highlights"
 Cohesion: 0.67
@@ -1231,7 +1231,7 @@ Nodes (5): Implementation plan, Milestone 2 — Audit trail, Open questions, Use
 
 ### Community 388 - "spaces.ts"
 Cohesion: 0.09
-Nodes (43): GET(), ALLOWED_TYPES, POST(), GET(), GET(), ALLOWED_TYPES, POST(), GET() (+35 more)
+Nodes (43): GET(), PATCH(), ALLOWED_TYPES, POST(), GET(), GET(), ALLOWED_TYPES, POST() (+35 more)
 
 ### Community 389 - "🚀 Performance Considerations"
 Cohesion: 0.11

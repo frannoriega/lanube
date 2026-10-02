@@ -40,6 +40,7 @@ const ids = {
   news: q("select id from news_posts limit 1"),
   space: q("select id from spaces limit 1"),
   form: q("select id from forms where is_template limit 1"),
+  theme: q("select id from landing_themes limit 1"),
   slug: q(
     "select ef.slug from event_forms ef join events e on e.id=ef.event_id where e.status='PUBLISHED' and e.deleted_at is null limit 1",
   ),
@@ -174,13 +175,12 @@ const SHOTS = [
   },
   { name: "admin-site", user: "admin", url: "/admin/site" },
   { name: "admin-themes", user: "admin", url: "/admin/themes" },
+  // Milestone 14: el tema se edita en su propia página (antes, un diálogo).
+  { name: "admin-theme-new", user: "admin", url: "/admin/themes/new" },
   {
-    name: "admin-theme-dialog",
+    name: "admin-theme-edit",
     user: "admin",
-    url: "/admin/themes",
-    action: async (p) => {
-      await p.getByRole("button", { name: /Nuevo tema/ }).click();
-    },
+    url: `/admin/themes/${ids.theme}/edit`,
   },
   { name: "admin-roles", user: "admin", url: "/admin/roles" },
   {
