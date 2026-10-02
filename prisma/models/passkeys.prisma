@@ -50,3 +50,27 @@ model WebAuthnChallenge {
   @@index([expiresAt])
   @@map("webauthn_challenges")
 }
+
+/// Código de recuperación de un solo uso (milestone 17). Sirve para el caso que ni la
+/// contraseña ni el email resuelven: la persona olvidó su contraseña **y** perdió acceso
+/// a su email (ver `docs/design/06-rust-migration.md`, "Recovery codes"). Con un código,
+/// su email y una contraseña nueva, recupera la cuenta desde el ingreso.
+///
+/// - Se generan de a 10 desde Configuración → Seguridad, **pidiendo la contraseña actual**
+///   (una sesión robada no puede fabricarse una puerta de entrada permanente), se muestran
+///   una sola vez y regenerar borra el juego anterior.
+/// - Se guarda el SHA-256 del código, no el código: tienen 60 bits de azar, así que (igual
+///   que los tokens de `password_reset_tokens`) un hash rápido alcanza y permite buscarlo
+///   por índice. bcrypt obligaría a comparar contra los 10 hashes en cada intento.
+model RecoveryCode {
+  id        String  @id @default(cuid())
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String  @map("code_hash")
+  /// Se marca al canjearlo; un código usado no vuelve a servir.
+  usedAt    BigInt? @map("used_at")
+  createdAt BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@unique([userId, codeHash])
+  @@map("recovery_codes")
+}

@@ -22,6 +22,19 @@ function shell(heading: string, bodyHtml: string): string {
       </div>`;
 }
 
+/**
+ * Escapa texto escrito por personas (un valor pedido, un motivo) antes de meterlo en el
+ * HTML del email — sin esto, un motivo con `<a href=…>` se renderizaría como link.
+ */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const p = (text: string) =>
   `<p style="color:#555;line-height:1.6;">${text}</p>`;
 
@@ -90,6 +103,35 @@ export function renderEmail(event: NotificationEvent): EmailRendered | null {
           p(
             `Se ${verb === "aprobada" ? "aprobó" : "rechazó"} ${what} <strong>"${d.title}"</strong>.`,
           ) + reasonHtml,
+        ),
+      };
+    }
+    case "profileChange.decided": {
+      const d = event.data;
+      const approved = d.decision === "APPROVED";
+      const verb = approved ? "aprobado" : "rechazado";
+      const what =
+        d.field === "DNI"
+          ? `tu pedido de cambio de DNI a <strong>${escapeHtml(d.requestedValue)}</strong>`
+          : "tu pedido de cambio del <strong>motivo para unirte</strong>";
+      const reasonHtml = d.reason
+        ? p(
+            `<strong>${approved ? "Comentario" : "Motivo"}:</strong> ${escapeHtml(d.reason)}`,
+          )
+        : "";
+      return {
+        subject: `Cambio de datos ${verb} - La Nube`,
+        html: shell(
+          `Cambio de datos ${verb}`,
+          p(
+            `El equipo de La Nube revisó ${what} y lo <strong style="color:${approved ? "#27ae60" : "#c0392b"};">${verb === "aprobado" ? "aprobó" : "rechazó"}</strong>.`,
+          ) +
+            reasonHtml +
+            p(
+              approved
+                ? "El dato ya quedó actualizado en tu perfil."
+                : "Si querés, podés enviar una nueva solicitud desde Configuración → Identidad.",
+            ),
         ),
       };
     }

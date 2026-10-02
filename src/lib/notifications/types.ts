@@ -53,10 +53,24 @@ export interface NewsDecidedData {
   reason?: string | null;
 }
 
+/**
+ * Un admin resolvió una solicitud de cambio de DNI / motivo para unirse (milestone 17).
+ * `requestedValue` va en el aviso para que la persona sepa de cuál de sus pedidos se trata.
+ */
+export interface ProfileChangeDecidedData {
+  requestId: string;
+  field: "DNI" | "REASON_TO_JOIN";
+  requestedValue: string;
+  decision: "APPROVED" | "REJECTED";
+  /** Obligatorio al rechazar; opcional al aprobar. */
+  reason?: string | null;
+}
+
 export type NotificationEvent =
   | BaseEvent<"reservation.approved", ReservationDecidedData>
   | BaseEvent<"reservation.rejected", ReservationDecidedData>
   | BaseEvent<"event.sessionChanged", EventSessionChangedData>
-  | BaseEvent<"news.decided", NewsDecidedData>;
+  | BaseEvent<"news.decided", NewsDecidedData>
+  | BaseEvent<"profileChange.decided", ProfileChangeDecidedData>;
 
 export type NotificationEventType = NotificationEvent["type"];

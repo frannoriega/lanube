@@ -41,7 +41,7 @@ export const SETTINGS_SECTIONS: ReadonlyArray<{
   {
     href: "/user/settings/security",
     title: "Seguridad",
-    description: "Passkeys y contraseña",
+    description: "Passkeys, contraseña y recuperación",
     icon: KeyRound,
   },
   {

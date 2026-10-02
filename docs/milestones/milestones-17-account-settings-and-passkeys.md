@@ -246,7 +246,11 @@ passkeys y desafíos, y `prune_transient_rows()` recreada.
   una prueba manual en un dispositivo real, idealmente en una preview de Vercel (HTTPS de
   verdad, dominio distinto de `localhost`). El modo oscuro no se capturó en esta pasada.
 
-## No hecho (y por qué)
+## No hecho en la primera pasada (y por qué)
+
+> Las preguntas abiertas de esta lista las respondió el usuario el mismo día: ver
+> "Segunda pasada" más abajo. Se deja la lista como estaba, para que se entienda qué se
+> preguntó y por qué.
 
 - **OAuth (Google/GitHub)**. El pedido decía "o al menos las passkeys". Hacerlo bien según el
   doc de diseño requiere decisiones que no se pueden tomar solas: credenciales de cada
@@ -268,3 +272,83 @@ passkeys y desafíos, y `prune_transient_rows()` recreada.
   el botón explícito, más predecible en todos los navegadores.
 - **Marcar `docs/design/06-rust-migration.md` como superado**: no se tocó en esta sesión
   (no era el pedido); queda señalado.
+
+## Segunda pasada (2026-10-02): respuestas del usuario
+
+Respuestas textuales, resumidas, a las preguntas de "No hecho":
+
+1. **OAuth**: queda para más adelante. Pero ya hay dos decisiones: **pedir la contraseña
+   antes de vincular** una identidad externa a una cuenta existente (nunca vincular solo por
+   coincidir el email), y la vinculación vive en **Configuración → Seguridad** como
+   "Conectar tu cuenta de X".
+2. **Códigos de recuperación**: "lo más importante" — hacerlo ahora. **Hecho**, abajo.
+3. **Cambiar la contraseña** en Seguridad: idealmente sí (sobre todo para no cargar el
+   servidor SMTP con mails de reset), pero **por ahora alcanza con la recuperación**. Queda
+   pendiente, ya decidido que va en Seguridad.
+4. **Notificar la decisión** sobre una solicitud de cambio: **sí**. **Hecho**, abajo.
+
+### Códigos de recuperación
+
+Para el caso que ni la contraseña ni el email resuelven: la persona olvidó su contraseña
+**y** perdió acceso a su email (el doc de diseño los confirmó como red de seguridad general,
+no como algo de passkeys).
+
+- **Modelo** `RecoveryCode` (`prisma/models/passkeys.prisma`, migración
+  `20261002200000_recovery_codes`): `userId` → `User`, `codeHash`, `usedAt`, `createdAt`;
+  único en `(userId, codeHash)`.
+- **Formato**: 10 códigos de 12 símbolos del Base32 de Crockford (sin I/L/O/U), mostrados
+  `XXXX-XXXX-XXXX` → 60 bits de azar cada uno, generados con `crypto.randomInt`. Al canjear
+  se normaliza (minúsculas, espacios, guiones, O→0, I/L→1), así un código copiado a mano
+  igual funciona (`src/lib/recovery-codes/codes.ts`, con tests).
+- **Hash: SHA-256, no bcrypt** — desvío consciente del doc de diseño, que decía "mismo
+  tratamiento que una contraseña". Una contraseña necesita un hash lento porque tiene poca
+  entropía; un código de 60 bits al azar no se puede adivinar por fuerza bruta aunque se
+  filtre el hash, y SHA-256 permite buscarlo por índice (con bcrypt habría que comparar
+  contra los 10 hashes en cada intento, ~3 s). Es el mismo criterio que ya usan los tokens de
+  `password_reset_tokens`.
+- **Generar** (Configuración → Seguridad → "Generar códigos"): **pide la contraseña
+  actual** (decisión de Claude). Sin eso, una sesión robada podría fabricarse una forma
+  permanente de "recuperar" (= tomar) la cuenta. Se muestran **una sola vez**, con Copiar y
+  Descargar `.txt`, y "Listo" se habilita recién al tildar "Los guardé en un lugar seguro".
+  Regenerar borra el juego anterior. La sección muestra "Te quedan N de 10" y avisa con 2 o
+  menos.
+- **Canjear** (ingreso → "Olvidé mi contraseña" → "¿Ya no tenés acceso a tu email? Usá un
+  código de recuperación"): email + código + contraseña nueva (+ confirmación) + captcha.
+  `POST /api/auth/recovery` marca el código como usado y pone la contraseña nueva **en una
+  transacción** (`updateMany ... used_at IS NULL`, así dos canjes simultáneos del mismo
+  código no ganan los dos); después el cliente entra con la contraseña nueva. Que el canje
+  **cambie la contraseña** (y no solo "deje entrar") es lo que hace útil al código aunque no
+  exista todavía "cambiar contraseña" en Seguridad.
+- **Defensas**: captcha (como el reset por email), rate limit por IP (5/min, bloqueo 15 min)
+  **y** por email (10/hora, para quien rote IPs), y **un único mensaje** para todo fallo
+  (email inexistente, código mal formado, inválido o usado) — no revela qué cuentas existen.
+
+### Notificar la decisión de una solicitud
+
+Evento nuevo del sistema de notificaciones (milestone 13): `profileChange.decided`
+(`requestId`, `field`, `requestedValue`, `decision`, `reason`). La ruta de decisión llama a
+`notify()` después de guardar y auditar, así sale por **todos los canales**: campana in-app
+y email. Los renderers (`render/in-app.ts`, `render/email.ts`) tienen tests. El email
+**escapa** el texto escrito por personas (valor pedido, motivo) — el renderer de noticias
+existente no lo hace (`news.decided` interpola el motivo crudo); queda anotado como deuda en
+`OPEN_QUESTIONS.md`, no se tocó en esta pasada.
+
+### Verificación de la segunda pasada
+
+- Tests: 3 de renderers + 4 de formato de códigos; suite completa verde.
+- E2E (Playwright contra Docker): generar con contraseña incorrecta → "La contraseña no es
+  correcta"; con la correcta → 10 códigos, "Listo" deshabilitado hasta tildar, estado "10 de
+  10", 10 hashes hex de 64 en la base. Cerrar sesión → "Olvidé mi contraseña" → "Usá un
+  código" → código en **minúsculas** + contraseña nueva + captcha de prueba → entra a
+  `/user/dashboard`; 1 código marcado usado. Por API: código usado, inventado, mal formado y
+  email inexistente → los cuatro 400 con el mismo mensaje; el rate limit devolvió 429 cuando
+  correspondía. Rechazo de una solicitud → fila en `notifications` ("Cambio de datos
+  rechazado: …") y email en Mailpit a `u1@lanube.local`.
+- Límite: el captcha usó las claves de prueba de Turnstile (siempre pasan).
+
+### Sigue sin hacer
+
+- **OAuth** (con las dos decisiones de arriba ya tomadas) y **cambiar la contraseña en
+  Seguridad** — ver `OPEN_QUESTIONS.md`.
+- **Avisar cuando se usa un código de recuperación** (email a la cuenta: si no fue la
+  persona, se entera). No se sumó sin preguntar.
