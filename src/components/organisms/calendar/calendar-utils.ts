@@ -5,6 +5,7 @@
  * (`calendar-utils.test.ts`).
  */
 import { hasMinimumNotice } from "@/lib/reservations/booking-window";
+import { addDays, addWeeks, getDay, startOfWeek } from "date-fns";
 
 /** Horario de atención: el eje vertical del calendario va de START a END. */
 export const BUSINESS_HOURS = {
@@ -127,4 +128,33 @@ export function visibleDayIndices(
  */
 export function firstBookableDayIndex(days: Date[], clock: Date): number {
   return days.findIndex((d) => !isDayFullyBlocked(d, clock));
+}
+
+/**
+ * Lunes de la "semana de trabajo actual" del calendario: la de hoy de lunes a jueves; la
+ * siguiente si hoy es viernes, sábado o domingo (en esos días ya no queda nada reservable
+ * de la semana en curso por la anticipación de 24h).
+ */
+export function getCurrentWorkWeekStart(now: Date): Date {
+  const dayOfWeek = getDay(now); // 0 = domingo, 6 = sábado
+  const monday = startOfWeek(now, { weekStartsOn: 1 });
+  return dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6
+    ? addWeeks(monday, 1)
+    : monday;
+}
+
+/**
+ * Semana con la que abre el calendario (milestone 14, hallazgo F): la semana de trabajo
+ * actual, salvo que **todos** sus días ya estén bloqueados por la anticipación de 24h (p. ej.
+ * un jueves a la noche) — en ese caso, la siguiente. Antes abría en una semana enteramente
+ * rayada, sin un solo botón "Reservar", y parecía que no había lugar.
+ */
+export function firstBookableWeekStart(now: Date): Date {
+  const current = getCurrentWorkWeekStart(now);
+  const days = Array.from({ length: WORK_WEEK_DAYS }, (_, i) =>
+    addDays(current, i),
+  );
+  return firstBookableDayIndex(days, now) === -1
+    ? addWeeks(current, 1)
+    : current;
 }

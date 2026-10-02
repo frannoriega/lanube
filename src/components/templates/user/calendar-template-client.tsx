@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
 import { LayoutGrid } from "lucide-react";
@@ -34,6 +35,8 @@ export function CalendarTemplateClient({
   const Icon = iconName ? getSpaceIcon(iconName) : LayoutGrid;
   // Provided server-side by the layout — available on first render.
   const user = useUser();
+  // Puntero "grueso" = pantalla táctil como entrada principal (teléfonos, tablets).
+  const isTouch = useMediaQuery("(pointer: coarse)");
 
   return (
     <div className="space-y-6">
@@ -50,7 +53,13 @@ export function CalendarTemplateClient({
             <Icon className="h-5 w-5" />
             Calendario de Reservas
           </CardTitle>
-          <CardDescription>Haz clic y arrastra para reservar</CardDescription>
+          {/* Indicación según el tipo de puntero (hallazgo G): en táctil no hay arrastre,
+              se reserva tocando un horario libre. */}
+          <CardDescription>
+            {isTouch
+              ? "Tocá un horario libre para reservar"
+              : "Haz clic y arrastra para reservar"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <WeekCalendar
