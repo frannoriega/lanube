@@ -612,8 +612,16 @@ lanube-app` (this repo's container only).
       Annotated `admin/users/columns.tsx` (Nombre+Apellido title, Estado badge) and
       `participants-table.tsx` (checkbox leading, Email title, Estado badge). Users verified on
       phone (`.mobile-shots/s4-cards/`); the participants sample event has no registrations.
-- [ ] Migrate spaces, resources, reservation types, themes, audit, news, roles, reports
+- [x] Migrate spaces, resources, reservation types, themes, audit, news, roles, reports
       table(s) onto it; hide reservation-type `code` (P). Overflow report clean on all.
+      — `useStaticTable()` helper + `onRowClick` (keyboard-operable rows/cards) in
+      `ui/data-table.tsx`. Migrated: spaces/resources/reservation-types/landing-themes/roles
+      managers (card headers also stack below `sm`), `audit-log-table.tsx` (summary as card
+      title, clamped to 3 lines; row opens the detail sheet), news (new client
+      `organisms/admin/news-admin-table.tsx`; the page passes serializable rows), reports
+      (`PerResourceTable` + `DurationTable` in `templates/admin/report`). Spaces' slug and
+      order arrows are hidden on cards (order moves to reorder mode next). Overflow report
+      clean on all 8 screens × 4 viewports (`.mobile-shots/s4-tables/`).
 - [ ] Shared reorder mode: "Reordenar" button → grip handle at row end, drag-and-drop
       (`@dnd-kit`, keyboard sensor), Guardar/Cancelar; persists via an audited bulk-reorder
       endpoint per entity. Applies to spaces, reservation types, themes (order = priority,

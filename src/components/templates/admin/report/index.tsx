@@ -19,14 +19,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
 interface AdminReportParams {
   data: ReportData;
@@ -454,80 +448,7 @@ export default function AdminReport({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table className="w-full text-sm">
-                <TableHeader>
-                  <TableRow className="border-b border-gray-200 dark:border-gray-700 text-left">
-                    <TableHead className="pb-2 font-medium text-gray-600 dark:text-gray-300">
-                      Servicio
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
-                      Total
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-emerald-600 dark:text-emerald-400">
-                      Aprobadas
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-yellow-600 dark:text-yellow-400">
-                      Pendientes
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-red-500 dark:text-red-400">
-                      Rechazadas
-                    </TableHead>
-                    {data.comparison && (
-                      <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
-                        vs anterior
-                      </TableHead>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.reservations.perResource
-                    .slice()
-                    .sort((a, b) => b.count - a.count)
-                    .map((row) => {
-                      const cmpRow =
-                        data.comparison?.reservations.perResource.find(
-                          (r) => r.resourceType === row.resourceType,
-                        );
-                      return (
-                        <TableRow
-                          key={row.resourceType}
-                          className="border-b border-gray-100 dark:border-gray-800 last:border-0"
-                        >
-                          <TableCell className="py-2">
-                            {RESOURCE_LABELS[row.resourceType] ??
-                              row.resourceType}
-                          </TableCell>
-                          <TableCell className="py-2 text-right font-semibold">
-                            {row.count}
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-emerald-600 dark:text-emerald-400">
-                            {row.byStatus.approved}
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-yellow-600 dark:text-yellow-400">
-                            {row.byStatus.pending}
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-red-500 dark:text-red-400">
-                            {row.byStatus.rejected}
-                          </TableCell>
-                          {data.comparison && (
-                            <TableCell className="py-2 text-right">
-                              {cmpRow ? (
-                                <DeltaBadge
-                                  current={row.count}
-                                  previous={cmpRow.count}
-                                />
-                              ) : (
-                                <span className="text-xs text-muted-foreground">
-                                  —
-                                </span>
-                              )}
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
+              <PerResourceTable data={data} />
             </CardContent>
           </Card>
         )}
@@ -544,80 +465,7 @@ export default function AdminReport({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table className="w-full text-sm">
-                <TableHeader>
-                  <TableRow className="border-b border-gray-200 dark:border-gray-700 text-left">
-                    <TableHead className="pb-2 font-medium text-gray-600 dark:text-gray-300">
-                      Servicio
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
-                      Total
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
-                      Mínima
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
-                      Promedio
-                    </TableHead>
-                    <TableHead className="pb-2 text-right font-medium text-gray-600 dark:text-gray-300">
-                      Máxima
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
-                    <TableCell className="py-2 font-medium">General</TableCell>
-                    <TableCell className="py-2 text-right font-semibold text-la-nube-selected dark:text-la-nube-secondary print:text-black">
-                      {minutesToDisplay(
-                        data.reservations.durationStats.overall.total,
-                      )}
-                    </TableCell>
-                    <TableCell className="py-2 text-right">
-                      {minutesToDisplay(
-                        data.reservations.durationStats.overall.min,
-                      )}
-                    </TableCell>
-                    <TableCell className="py-2 text-right font-semibold">
-                      {minutesToDisplay(
-                        data.reservations.durationStats.overall.avg,
-                      )}
-                    </TableCell>
-                    <TableCell className="py-2 text-right">
-                      {minutesToDisplay(
-                        data.reservations.durationStats.overall.max,
-                      )}
-                    </TableCell>
-                  </TableRow>
-                  {data.reservations.durationStats.perResource
-                    .slice()
-                    .sort(
-                      (a: ResourceStats, b: ResourceStats) => b.count - a.count,
-                    )
-                    .map((row: ResourceStats) => (
-                      <TableRow
-                        key={row.resourceType}
-                        className="border-b border-gray-100 dark:border-gray-800 last:border-0"
-                      >
-                        <TableCell className="py-2">
-                          {RESOURCE_LABELS[row.resourceType] ??
-                            row.resourceType}
-                        </TableCell>
-                        <TableCell className="py-2 text-right font-semibold">
-                          {minutesToDisplay(row.totalMinutes)}
-                        </TableCell>
-                        <TableCell className="py-2 text-right">
-                          {minutesToDisplay(row.minMinutes)}
-                        </TableCell>
-                        <TableCell className="py-2 text-right font-semibold">
-                          {minutesToDisplay(row.avgMinutes)}
-                        </TableCell>
-                        <TableCell className="py-2 text-right">
-                          {minutesToDisplay(row.maxMinutes)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+              <DurationTable data={data} />
             </CardContent>
           </Card>
         )}
@@ -630,4 +478,189 @@ export default function AdminReport({
       </section>
     </div>
   );
+}
+
+/*
+ * Tablas del reporte sobre el `DataTable` compartido (milestone 14): tabla desde `md`,
+ * tarjetas por debajo. Antes eran `<Table>` de 5–6 columnas numéricas que en un teléfono
+ * ensanchaban toda la página a ~630px. Son componentes propios porque `useStaticTable` es un
+ * hook y las tablas se muestran condicionalmente.
+ */
+
+type PerResourceRow = ReportData["reservations"]["perResource"][number];
+
+/** Reservas por servicio: total y desglose por estado (+ variación vs el período anterior). */
+function PerResourceTable({ data }: { data: ReportData }) {
+  const rows = data.reservations.perResource
+    .slice()
+    .sort((a, b) => b.count - a.count);
+  const columns: ColumnDef<PerResourceRow>[] = [
+    {
+      id: "service",
+      header: "Servicio",
+      meta: { mobile: "title", label: "Servicio" },
+      cell: ({ row }) =>
+        RESOURCE_LABELS[row.original.resourceType] ?? row.original.resourceType,
+    },
+    {
+      id: "total",
+      header: () => <div className="text-right">Total</div>,
+      meta: { label: "Total" },
+      cell: ({ row }) => (
+        <div className="font-semibold md:text-right">{row.original.count}</div>
+      ),
+    },
+    {
+      id: "approved",
+      header: () => (
+        <div className="text-right text-emerald-700 dark:text-emerald-400">
+          Aprobadas
+        </div>
+      ),
+      meta: { label: "Aprobadas" },
+      cell: ({ row }) => (
+        <div className="text-emerald-700 md:text-right dark:text-emerald-400">
+          {row.original.byStatus.approved}
+        </div>
+      ),
+    },
+    {
+      id: "pending",
+      header: () => (
+        <div className="text-right text-yellow-700 dark:text-yellow-400">
+          Pendientes
+        </div>
+      ),
+      meta: { label: "Pendientes" },
+      cell: ({ row }) => (
+        <div className="text-yellow-700 md:text-right dark:text-yellow-400">
+          {row.original.byStatus.pending}
+        </div>
+      ),
+    },
+    {
+      id: "rejected",
+      header: () => (
+        <div className="text-right text-red-600 dark:text-red-400">
+          Rechazadas
+        </div>
+      ),
+      meta: { label: "Rechazadas" },
+      cell: ({ row }) => (
+        <div className="text-red-600 md:text-right dark:text-red-400">
+          {row.original.byStatus.rejected}
+        </div>
+      ),
+    },
+    ...(data.comparison
+      ? [
+          {
+            id: "delta",
+            header: () => <div className="text-right">vs anterior</div>,
+            meta: { mobile: "badge", label: "vs anterior" },
+            cell: ({ row }) => {
+              const cmpRow = data.comparison?.reservations.perResource.find(
+                (r) => r.resourceType === row.original.resourceType,
+              );
+              return (
+                <div className="md:text-right">
+                  {cmpRow ? (
+                    <DeltaBadge
+                      current={row.original.count}
+                      previous={cmpRow.count}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </div>
+              );
+            },
+          } satisfies ColumnDef<PerResourceRow>,
+        ]
+      : []),
+  ];
+  const table = useStaticTable(rows, columns);
+  return <DataTable table={table} />;
+}
+
+/** Fila de la tabla de duraciones: la fila "General" + una por servicio. */
+interface DurationRow {
+  id: string;
+  label: string;
+  total: number;
+  min: number;
+  avg: number;
+  max: number;
+  overall: boolean;
+}
+
+/** Duración de las reservas aprobadas: total / mínima / promedio / máxima. */
+function DurationTable({ data }: { data: ReportData }) {
+  const stats = data.reservations.durationStats;
+  const rows: DurationRow[] = [
+    ...(stats.overall
+      ? [
+          {
+            id: "overall",
+            label: "General",
+            total: stats.overall.total,
+            min: stats.overall.min,
+            avg: stats.overall.avg,
+            max: stats.overall.max,
+            overall: true,
+          },
+        ]
+      : []),
+    ...stats.perResource
+      .slice()
+      .sort((a: ResourceStats, b: ResourceStats) => b.count - a.count)
+      .map((r: ResourceStats) => ({
+        id: r.resourceType,
+        label: RESOURCE_LABELS[r.resourceType] ?? r.resourceType,
+        total: r.totalMinutes,
+        min: r.minMinutes,
+        avg: r.avgMinutes,
+        max: r.maxMinutes,
+        overall: false,
+      })),
+  ];
+  const num = (
+    key: "total" | "min" | "avg" | "max",
+    label: string,
+    bold = false,
+  ) =>
+    ({
+      id: key,
+      header: () => <div className="text-right">{label}</div>,
+      meta: { label },
+      cell: ({ row }) => (
+        <div
+          className={`md:text-right ${bold ? "font-semibold" : ""} ${
+            key === "total" && row.original.overall
+              ? "text-la-nube-selected dark:text-la-nube-secondary print:text-black"
+              : ""
+          }`}
+        >
+          {minutesToDisplay(row.original[key])}
+        </div>
+      ),
+    }) satisfies ColumnDef<DurationRow>;
+  const columns: ColumnDef<DurationRow>[] = [
+    {
+      id: "service",
+      header: "Servicio",
+      meta: { mobile: "title", label: "Servicio" },
+      cell: ({ row }) => (
+        <span className={row.original.overall ? "font-medium" : ""}>
+          {row.original.label}
+        </span>
+      ),
+    },
+    num("total", "Total", true),
+    num("min", "Mínima"),
+    num("avg", "Promedio", true),
+    num("max", "Máxima"),
+  ];
+  const table = useStaticTable(rows, columns);
+  return <DataTable table={table} />;
 }
