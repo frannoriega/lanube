@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 import { getNewsPostById, requestNewsPostAction } from "@/lib/db/news";
 import { newsPostRequestSchema } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
@@ -33,17 +33,13 @@ export async function POST(
   }
 
   try {
+    const audit = await beginAudit("NewsPost", id);
     const post = await requestNewsPostAction(id, parsed.data.action, {
       reason: parsed.data.reason,
       content: parsed.data.content,
     });
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.newsRequest,
-      entityType: "NewsPost",
-      entityId: id,
-      context: { Noticia: post.title },
-      after: { pendingAction: post.pendingAction },
-    });
+    // La foto incluye los campos `pending*`: la entrada muestra qué se pidió cambiar.
+    await audit.commit(session, AUDIT_ACTIONS.newsRequest);
     return apiSuccess(post);
   } catch (err) {
     return apiCatch("admin/news/[id]/request POST", err);

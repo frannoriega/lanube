@@ -4,7 +4,7 @@ import { serializeJson } from "@/lib/json-bigint";
 import { resourceInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 // Physical resources (equipment inventory). The event-form space picker moved to
 // /api/admin/spaces?reservable=1.
@@ -33,12 +33,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const audit = await beginAudit("Resource", null);
     const resource = await createResource(parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.resourceCreate,
-      entityType: "Resource",
+    await audit.commit(session, AUDIT_ACTIONS.resourceCreate, {
       entityId: resource.id,
-      after: { name: resource.name, serialNumber: resource.serialNumber },
     });
     return NextResponse.json(serializeJson(resource), { status: 201 });
   } catch {

@@ -1,7 +1,8 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { emitAudit } from "@/lib/audit/emit";
+import { snapshotOrder } from "@/lib/db/auditOrder";
 import { reorderLandingThemes } from "@/lib/db/landingThemes";
 import { reorderInputSchema } from "@/lib/schemas/reorder";
 import { NextRequest } from "next/server";
@@ -22,12 +23,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Fotos con nombre antes y después: la auditoría muestra qué se movió y adónde, no
+    // una lista de ids (ver `src/lib/db/auditOrder.ts`).
+    const before = await snapshotOrder("LandingTheme");
     await reorderLandingThemes(parsed.data.orderedIds);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.themeReorder,
-      entityType: "LandingTheme",
+    const after = await snapshotOrder("LandingTheme");
+    await emitAudit(session, AUDIT_ACTIONS.themeReorder, {
       entityId: "*",
-      after: { orderedIds: parsed.data.orderedIds },
+      before: { order: before },
+      after: { order: after },
     });
     return apiSuccess({ ok: true });
   } catch (err) {
