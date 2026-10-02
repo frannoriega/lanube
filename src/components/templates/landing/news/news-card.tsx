@@ -88,26 +88,18 @@ function DateChip({ ms, className }: { ms: number; className?: string }) {
  * con la flecha que avanza en hover/foco. Siempre visible (en touch no hay hover, así que
  * la invitación no puede depender de él).
  *
- * En la grilla el pie se ancla abajo (`mt-auto`) para que las tarjetas de una fila alineen
- * su pie aunque los resúmenes tengan largos distintos. En la nota principal no: el texto va
- * centrado como un bloque, y un pie anclado dejaba un hueco grande con resúmenes cortos.
+ * Anclado abajo (`mt-auto`) en todas las tarjetas, la principal incluida, para que los pies
+ * de una misma fila queden alineados aunque los resúmenes tengan largos distintos.
  */
 function CardFooter({
   minutes,
   cta = "Leer",
-  anchored = true,
 }: {
   minutes: number;
   cta?: string;
-  anchored?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-3 pt-2 font-mono text-xs",
-        anchored && "mt-auto",
-      )}
-    >
+    <div className="mt-auto flex items-center justify-between gap-3 pt-2 font-mono text-xs">
       <span className="text-muted-foreground">{minutes} min de lectura</span>
       <span
         className={cn("flex items-center gap-1 font-medium", BRAND_TEXT)}
@@ -212,7 +204,10 @@ export function NewsLeadCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-6 md:justify-center lg:p-8">
+      {/* Texto arriba (no centrado) y pie anclado abajo. El padding inferior es el mismo
+          `p-5` de `NewsCard`, así "Leer nota" queda a la misma altura que el "Leer" de la
+          tarjeta vecina en la fila. */}
+      <div className="flex flex-1 flex-col gap-3 p-5 lg:px-8 lg:pt-8">
         <h2
           className={cn(
             "text-2xl font-bold leading-tight text-balance text-foreground transition-colors lg:text-3xl",
@@ -224,11 +219,7 @@ export function NewsLeadCard({
         <p className="line-clamp-4 text-base text-pretty text-muted-foreground">
           {post.summary}
         </p>
-        <CardFooter
-          minutes={post.readingMinutes}
-          cta="Leer nota"
-          anchored={false}
-        />
+        <CardFooter minutes={post.readingMinutes} cta="Leer nota" />
       </div>
     </LandingCard>
   );
