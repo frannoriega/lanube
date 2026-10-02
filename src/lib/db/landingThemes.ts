@@ -66,7 +66,8 @@ export async function getLandingTheme(
 export interface LandingThemeInput {
   name: string;
   isEnabled: boolean;
-  priority: number;
+  /** Ignorado al editar: la prioridad es el orden de la lista (`reorderLandingThemes`). */
+  priority?: number;
   recurring: boolean;
   startMonthDay?: string | null;
   endMonthDay?: string | null;
@@ -85,7 +86,9 @@ function toWriteData(input: LandingThemeInput) {
   return {
     name: input.name,
     isEnabled: input.isEnabled,
-    priority: input.priority,
+    // Solo si viene (clientes viejos); el formulario ya no la manda. Al crear, sin valor, queda
+    // el default 0 (abajo de la lista); al editar no se toca.
+    ...(input.priority !== undefined ? { priority: input.priority } : {}),
     recurring: input.recurring,
     startMonthDay: input.recurring ? (input.startMonthDay ?? null) : null,
     endMonthDay: input.recurring ? (input.endMonthDay ?? null) : null,

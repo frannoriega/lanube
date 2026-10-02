@@ -43,7 +43,9 @@ export const spaceInputSchema = z.object({
   isExclusive: z.boolean(),
   isReservable: z.boolean(),
   isFeatured: z.boolean(),
-  displayOrder: z.number().int().min(0),
+  // Milestone 14: ya no se edita desde el formulario (se ordena con el modo "Reordenar").
+  // Queda opcional para no romper clientes viejos; las escrituras lo ignoran al editar.
+  displayOrder: z.number().int().min(0).optional(),
   iconName: z.string().trim().optional().nullable(),
   imageUrl: z
     .string()
@@ -69,7 +71,9 @@ export const reservationTypeInputSchema = z.object({
     .trim()
     .min(1, { message: "El nombre es obligatorio" })
     .max(80),
-  displayOrder: z.number().int().min(0),
+  // Milestone 14: ya no se edita desde el formulario (se ordena con el modo "Reordenar").
+  // Queda opcional para no romper clientes viejos; las escrituras lo ignoran al editar.
+  displayOrder: z.number().int().min(0).optional(),
 });
 
 export type ReservationTypeInput = z.infer<typeof reservationTypeInputSchema>;
@@ -138,7 +142,9 @@ export const landingThemeInputSchema = z
       .min(1, { message: "El nombre es obligatorio" })
       .max(80),
     isEnabled: z.boolean(),
-    priority: z.number().int().min(0).max(100),
+    // Milestone 14: la prioridad es el orden de la lista ("Reordenar"); el formulario ya no la
+    // edita. Opcional y se ignora al editar (ver `toWriteData`).
+    priority: z.number().int().min(0).max(100).optional(),
     recurring: z.boolean(),
     startMonthDay: monthDaySchema.optional().nullable(),
     endMonthDay: monthDaySchema.optional().nullable(),

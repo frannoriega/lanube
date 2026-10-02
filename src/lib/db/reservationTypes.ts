@@ -53,11 +53,15 @@ export async function createReservationType(
   for (let i = 2; await getReservationTypeByCode(code); i++) {
     code = `${base}_${i}`;
   }
+  // Un tipo nuevo va al final de la lista; el orden se cambia después con "Reordenar".
+  const last = await prisma.reservationType.aggregate({
+    _max: { displayOrder: true },
+  });
   return prisma.reservationType.create({
     data: {
       code,
       name: input.name,
-      displayOrder: input.displayOrder ?? 0,
+      displayOrder: (last._max.displayOrder ?? -1) + 1,
     },
   });
 }
@@ -69,7 +73,8 @@ export async function updateReservationType(
 ): Promise<ReservationType> {
   return prisma.reservationType.update({
     where: { id },
-    data: { name: input.name, displayOrder: input.displayOrder ?? 0 },
+    // Solo el nombre: el orden lo maneja `reorderReservationTypes` (milestone 14).
+    data: { name: input.name },
   });
 }
 
