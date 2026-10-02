@@ -1,14 +1,27 @@
-import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
-import { LocalDate, LocalDateTime } from "@/components/molecules/local-date";
 import { RegistrationCta } from "@/components/molecules/registration-cta";
+import type { RegistrationPhase } from "@/lib/db/events";
 import { getPublicEventDetail } from "@/lib/db/events";
 import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { nowMs } from "@/lib/clock";
 import { cn } from "@/lib/utils";
+import { MapPin, Tag } from "lucide-react";
 import { notFound } from "next/navigation";
+import { Fact } from "./event-fact";
+import { EventScheduleFacts, EventSessionList } from "./event-schedule";
 import { ScrollToTop } from "./scroll-to-top";
 
+/**
+ * Página pública de un evento (rediseño del milestone 17).
+ *
+ * Desde `lg` son dos columnas: a la izquierda el contenido (portada, título, descripción y
+ * sesiones) y a la derecha una ficha fija con lo que el visitante viene a buscar —qué es,
+ * cuándo, dónde y si se puede inscribir—. En teléfono la ficha va justo debajo del título,
+ * antes de la descripción, para que la inscripción no quede al fondo de la página.
+ *
+ * Antes la ficha era un renglón chico (tipo · días · lugar) y la inscripción cerrada un
+ * recuadro punteado que se cortaba; las sesiones, una caja por fecha a todo el ancho.
+ */
 export default async function EventDetailPage({
   params,
 }: {
@@ -21,122 +34,141 @@ export default async function EventDetailPage({
   const now = nowMs();
   const occurrences = expandAllEventOccurrences(event.reservations);
 
-  // First future occurrence (not cancelled) for the "next session" highlight.
-  const nextIdx = occurrences.findIndex(
-    (o) => o.status !== "cancelled" && o.startMs > now,
-  );
-
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-4 py-10">
+    <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-12 lg:px-8">
       <ScrollToTop />
-      <EventHero
-        name={event.name}
-        description={event.description}
-        imageUrl={event.imageUrl}
-      />
 
-      {/* Meta + registration: one clean header bar (stacks on mobile). */}
-      <div className="flex flex-col gap-4 border-y border-border py-5 sm:flex-row sm:items-center sm:justify-between">
-        <EventMeta
-          eventTypeName={event.eventTypeName}
-          resourceName={event.resourceName}
-          weekdays={event.weekdays}
+      <div className="flex min-w-0 flex-col gap-10">
+        <EventHero
+          name={event.name}
+          description={event.description}
+          imageUrl={event.imageUrl}
+          size="page"
+          // En teléfono la ficha se intercala entre el título y la descripción.
+          afterTitle={
+            <div className="lg:hidden">
+              <EventFactsCard event={event} occurrences={occurrences} />
+            </div>
+          }
         />
-        <div className="w-full sm:w-auto sm:min-w-[13rem]">
-          <RegistrationCta
-            event={{
-              registration: event.registration,
-              formSlug: event.formSlug,
-              formOpensAt: event.formOpensAt,
-              formClosesAt: event.formClosesAt,
-            }}
-          />
-        </div>
+
+        {occurrences.length > 0 && (
+          <section
+            aria-labelledby="sesiones-heading"
+            className="flex flex-col gap-4"
+          >
+            <h2
+              id="sesiones-heading"
+              className="text-2xl font-bold tracking-tight text-la-nube-ink dark:text-white"
+            >
+              Sesiones
+            </h2>
+            <EventSessionList occurrences={occurrences} nowMs={now} />
+          </section>
+        )}
       </div>
 
-      {/* Agenda */}
-      {occurrences.length > 0 && (
-        <section aria-labelledby="sesiones-heading">
-          <h2 id="sesiones-heading" className="mb-4 text-xl font-semibold">
-            Sesiones
-          </h2>
-          <ol className="space-y-2">
-            {occurrences.map((occ, idx) => {
-              const isPast = occ.endMs <= now;
-              const isNext = idx === nextIdx;
-              const isCancelled = occ.status === "cancelled";
-              const isRescheduled = occ.status === "rescheduled";
+      <aside className="hidden lg:block">
+        <div className="sticky top-28">
+          <EventFactsCard event={event} occurrences={occurrences} />
+        </div>
+      </aside>
+    </div>
+  );
+}
 
-              return (
-                <li
-                  key={`${occ.reservationId}-${occ.occurrenceDateMs}`}
-                  className={cn(
-                    // Every session gets the same solid surface so it always reads clearly.
-                    "flex flex-col gap-1 rounded-lg border bg-card px-4 py-3 text-sm",
-                    isNext
-                      ? "border-la-nube-primary/50 bg-la-nube-primary/5 ring-1 ring-la-nube-primary/20 dark:bg-la-nube-primary/10"
-                      : "border-border",
-                    // Past sessions are de-emphasized by text color, not transparency.
-                    isPast &&
-                      !isCancelled &&
-                      !isNext &&
-                      "text-muted-foreground",
-                  )}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isNext && (
-                      <span className="rounded-full bg-la-nube-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-la-nube-selected dark:text-la-nube-secondary">
-                        Próxima
-                      </span>
-                    )}
-                    {isCancelled ? (
-                      <span className="line-through opacity-70">
-                        <LocalDateTime
-                          startMs={occ.occurrenceDateMs}
-                          endMs={
-                            occ.occurrenceDateMs + (occ.endMs - occ.startMs)
-                          }
-                        />
-                      </span>
-                    ) : isRescheduled ? (
-                      <span className="flex flex-wrap items-center gap-2">
-                        {/* Only the original date is available for rescheduled (no original end time in EventOccurrence). */}
-                        <span className="line-through opacity-70">
-                          <LocalDate ms={occ.occurrenceDateMs} />
-                        </span>
-                        <span className="text-muted-foreground">→</span>
-                        <LocalDateTime
-                          startMs={occ.startMs}
-                          endMs={occ.endMs}
-                        />
-                      </span>
-                    ) : (
-                      <LocalDateTime startMs={occ.startMs} endMs={occ.endMs} />
-                    )}
+type EventDetail = NonNullable<
+  Awaited<ReturnType<typeof getPublicEventDetail>>
+>;
 
-                    {isCancelled && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                        Cancelada
-                      </span>
-                    )}
-                    {isRescheduled && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                        Reprogramada
-                      </span>
-                    )}
-                  </div>
+/** La ficha: tipo, horario, fechas, lugar y el bloque de inscripción. */
+function EventFactsCard({
+  event,
+  occurrences,
+}: {
+  event: EventDetail;
+  occurrences: ReturnType<typeof expandAllEventOccurrences>;
+}) {
+  return (
+    <div className="flex flex-col gap-5 rounded-2xl border bg-card p-5 shadow-sm">
+      <Fact icon={Tag} label="Tipo">
+        <span>{event.eventTypeName}</span>
+      </Fact>
+      <EventScheduleFacts occurrences={occurrences} />
+      <Fact icon={MapPin} label="Lugar">
+        <span>{event.resourceName}</span>
+      </Fact>
+      <RegistrationBlock
+        event={{
+          registration: event.registration,
+          formSlug: event.formSlug,
+          formOpensAt: event.formOpensAt,
+          formClosesAt: event.formClosesAt,
+        }}
+      />
+    </div>
+  );
+}
 
-                  {occ.reason && (
-                    <p className="text-xs text-muted-foreground">
-                      {occ.reason}
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </section>
+/** Título y explicación de cada fase de inscripción. */
+const PHASE_COPY: Record<RegistrationPhase, { title: string; body?: string }> =
+  {
+    open: { title: "Inscripciones abiertas" },
+    upcoming: { title: "Inscripciones próximamente" },
+    closed: {
+      title: "Inscripción cerrada",
+      body: "Las inscripciones para este evento ya cerraron o se completó el cupo.",
+    },
+    none: {
+      title: "Sin inscripción online",
+      body: "Este evento no tiene un formulario de inscripción.",
+    },
+  };
+
+/**
+ * Bloque de inscripción de la ficha. Abierta o próxima, muestra el botón de siempre
+ * (`RegistrationCta`); cerrada o sin formulario, un texto que explica por qué en lugar del
+ * recuadro punteado que usa la tarjeta chica de la landing.
+ */
+function RegistrationBlock({
+  event,
+}: {
+  event: React.ComponentProps<typeof RegistrationCta>["event"];
+}) {
+  const copy = PHASE_COPY[event.registration];
+  const actionable =
+    (event.registration === "open" && event.formSlug) ||
+    (event.registration === "upcoming" && event.formOpensAt !== null);
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-xl p-4",
+        event.registration === "open"
+          ? "bg-la-nube-primary/10 dark:bg-la-nube-primary/15"
+          : "bg-muted dark:bg-white/5",
       )}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className={cn(
+            "size-2 rounded-full",
+            event.registration === "open"
+              ? "bg-emerald-500"
+              : event.registration === "upcoming"
+                ? "bg-amber-500"
+                : "bg-muted-foreground/60",
+          )}
+        />
+        <span className="text-sm font-semibold text-foreground">
+          {copy.title}
+        </span>
+      </div>
+      {copy.body && (
+        <p className="text-sm text-muted-foreground">{copy.body}</p>
+      )}
+      {actionable && <RegistrationCta event={event} />}
     </div>
   );
 }

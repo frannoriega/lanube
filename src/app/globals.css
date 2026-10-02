@@ -47,6 +47,12 @@
   --color-la-nube-selected: #2a6297;
   --color-la-nube-secondary: #75e3f1;
   --color-la-nube-accent: #c8f1fc;
+  /* Experimento de marca (milestone 17): un azul noche derivado del #1c62a3 del logo.
+     `ink` tiñe los títulos públicos en modo claro (en lugar del gris #424242), y `night`
+     es el fondo de las franjas oscuras (cifras, footer). Blanco sobre `night` ≈ 17:1;
+     `ink` sobre --background ≈ 12:1. */
+  --color-la-nube-ink: #0e2a47;
+  --color-la-nube-night: #0a1a2e;
 
   /* Container configuration */
   --container-center: true;

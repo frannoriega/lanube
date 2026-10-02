@@ -44,9 +44,9 @@ export function ReservationCard({
               {reservation.registeredUser.lastName}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-300">
-              {new Date(reservation.startTime).toLocaleDateString()}{" "}
-              {new Date(reservation.startTime).toLocaleTimeString()} -{" "}
-              {new Date(reservation.endTime).toLocaleTimeString()}
+              {new Date(reservation.startTime).toLocaleDateString("es-AR")}{" "}
+              {new Date(reservation.startTime).toLocaleTimeString("es-AR")} -{" "}
+              {new Date(reservation.endTime).toLocaleTimeString("es-AR")}
             </div>
             <StatusBadge status={reservation.status} />
           </div>

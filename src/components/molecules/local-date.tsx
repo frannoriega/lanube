@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 /**
- * Renders a UNIX-ms timestamp as a date in the *viewer's* timezone + locale — the only place
+ * Renders a UNIX-ms timestamp as a date in the *viewer's* timezone, in Spanish (`es-AR`) — the only place
  * timezones are resolved (see the date-handling principle). The backend always speaks UTC ms.
  *
  * Hydration-safe: server and client both render empty on first paint (state starts ""), then
@@ -11,6 +11,14 @@ import { useEffect, useState } from "react";
  * without freezing the displayed value to the server's locale.
  */
 type LocalDateFormat = "numeric" | "dayMonth" | "long";
+
+/**
+ * Locale fijo de la app: toda la interfaz está en español, así que las fechas también. Antes se
+ * pasaba `undefined` (el locale del navegador) y un visitante con el navegador en inglés veía
+ * "Mon, Apr 13, 2026, 10:00 AM" en medio de una página en castellano. La **zona horaria** sigue
+ * siendo la del visitante (no se fija `timeZone`): sólo el idioma y el orden dd/mm/aaaa son fijos.
+ */
+const LOCALE = "es-AR";
 
 const FORMATS: Record<LocalDateFormat, Intl.DateTimeFormatOptions> = {
   // dd/mm/YYYY for es-AR (locale decides the order).
@@ -22,9 +30,7 @@ const FORMATS: Record<LocalDateFormat, Intl.DateTimeFormatOptions> = {
 };
 
 function format(ms: number, fmt: LocalDateFormat): string {
-  return new Date(ms)
-    .toLocaleDateString(undefined, FORMATS[fmt])
-    .replace(".", "");
+  return new Date(ms).toLocaleDateString(LOCALE, FORMATS[fmt]).replace(".", "");
 }
 
 export function LocalDate({
@@ -103,13 +109,17 @@ export function LocalDateTime({
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      // Reloj de 24 h, como se usa en Argentina: "10:00 – 13:00", no "10:00 a. m. – 01:00 p. m.".
+      hourCycle: "h23",
     };
-    const startStr = new Date(startMs).toLocaleString(undefined, opts);
+    const startStr = new Date(startMs).toLocaleString(LOCALE, opts);
     const endOpts: Intl.DateTimeFormatOptions = {
       hour: "2-digit",
       minute: "2-digit",
+      // Reloj de 24 h, como se usa en Argentina: "10:00 – 13:00", no "10:00 a. m. – 01:00 p. m.".
+      hourCycle: "h23",
     };
-    const endStr = new Date(endMs).toLocaleTimeString(undefined, endOpts);
+    const endStr = new Date(endMs).toLocaleTimeString(LOCALE, endOpts);
     setText(`${startStr} – ${endStr}`);
   }, [startMs, endMs]);
   return (
@@ -142,8 +152,10 @@ export function LocalTimestamp({
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      // Reloj de 24 h, como se usa en Argentina: "10:00 – 13:00", no "10:00 a. m. – 01:00 p. m.".
+      hourCycle: "h23",
     };
-    setText(new Date(ms).toLocaleString(undefined, opts));
+    setText(new Date(ms).toLocaleString(LOCALE, opts));
   }, [ms]);
   return (
     <time
