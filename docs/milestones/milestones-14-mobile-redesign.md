@@ -538,7 +538,10 @@ lanube-app` (this repo's container only).
       `form-picker.tsx` (searchable picker), `ui/command.tsx`, the non-functional incidents
       page. The booking drawer is only verifiable on a phone after slice 3 (the calendar's
       `min-w-[800px]` still widens the page).
-- [ ] WhatsApp floating button hidden inside the management area (I).
+- [x] WhatsApp floating button hidden inside the management area (I).
+      — `molecules/whatsapp-float-button.tsx` is now a client component that returns `null`
+      under `/admin` and `/user` (verified: present on `/`, absent on `/user/dashboard` and
+      `/admin/site`). Still shown on public pages, auth pages and `/forms`.
 - [ ] Shared KPI stat grid, 2×2 compact below `md` (user/admin dashboard, check-in, users) (J).
 - [ ] Audit filter chips + entity names in Spanish (L).
 - [ ] User dashboard "Reservas recientes" time format `dd/MM/yyyy · HH:mm a HH:mm` (N).
