@@ -18,6 +18,8 @@ import type {
   Incident,
   UserDashboardStats,
   UserProfile,
+  PasskeyItem,
+  ProfileChangeRequestItem,
 } from "@/types/api";
 
 export function useAdminStats(): UseApiResult<AdminStats> {
@@ -71,4 +73,21 @@ export function useUserStats(): UseApiResult<UserDashboardStats> {
 
 export function useUserProfile(): UseApiResult<UserProfile> {
   return useApi<UserProfile>("/api/user/profile");
+}
+
+/** Historial de solicitudes de cambio de DNI / motivo del usuario (milestone 17). */
+export function useOwnProfileChangeRequests(): UseApiResult<
+  ProfileChangeRequestItem[]
+> {
+  return useApi<ProfileChangeRequestItem[]>(
+    "/api/user/profile/change-requests",
+  );
+}
+
+/** Passkeys del usuario y el máximo permitido (milestone 17). */
+export function usePasskeys(): UseApiResult<{
+  passkeys: PasskeyItem[];
+  max: number;
+}> {
+  return useApi<{ passkeys: PasskeyItem[]; max: number }>("/api/user/passkeys");
 }

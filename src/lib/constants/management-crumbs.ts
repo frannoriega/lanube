@@ -29,7 +29,13 @@ const SEGMENT_LABELS: Record<string, string> = {
   themes: "Temas del landing",
   roles: "Roles y permisos",
   audit: "Auditoría",
-  settings: "Mi perfil",
+  "profile-requests": "Cambios de datos",
+  // Configuración del usuario (milestone 17): una ruta por sección.
+  settings: "Configuración",
+  profile: "Perfil",
+  identity: "Identidad",
+  security: "Seguridad",
+  account: "Cuenta",
   // Leaf actions.
   new: "Nuevo",
   edit: "Editar",
@@ -54,9 +60,10 @@ const ROOTS = {
 /**
  * Paths that are a real URL segment but have no page of their own, so their crumb renders
  * as plain text instead of a dead link. `/user/spaces` is a grouping prefix only — the
- * user shell has just the per-space route `/user/spaces/[slug]`.
+ * user shell has just the per-space route `/user/spaces/[slug]`. `/user/settings` only
+ * redirects to its first section (milestone 17), so linking it would just bounce.
  */
-const NON_NAVIGABLE = new Set(["/user/spaces"]);
+const NON_NAVIGABLE = new Set(["/user/spaces", "/user/settings"]);
 
 /** A segment Next.js filled in from a dynamic route param, i.e. not a known static one. */
 function isDynamic(segment: string): boolean {

@@ -21,6 +21,7 @@ const ADMIN_PATH_PERMISSIONS: Array<[prefix: string, permission: Permission]> =
     ["/admin/themes", "landing-themes:manage"],
     ["/admin/roles", "roles:manage"],
     ["/admin/audit", "audit:view"],
+    ["/admin/profile-requests", "users:profile-requests:review"],
   ];
 
 export async function middleware(request: NextRequest) {

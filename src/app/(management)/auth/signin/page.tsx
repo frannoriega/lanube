@@ -4,7 +4,7 @@ import Logo from "@/components/atoms/logos/lanube";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +23,12 @@ import { Separator } from "@/components/ui/separator";
 import { registerSchema, resetSchema, signInSchema } from "@/lib/schemas/auth";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { signIn } from "next-auth/react";
+import {
+  browserSupportsWebAuthn,
+  PasskeyCancelledError,
+  passkeyErrorMessage,
+  signInWithPasskey,
+} from "@/lib/passkeys/client";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -81,6 +87,35 @@ export default function LandingPage() {
     },
   });
   const [error, setError] = useState<boolean>(false);
+  // Passkeys (milestone 17). `null` hasta montar: la detección mira `window`.
+  const [passkeySupported, setPasskeySupported] = useState<boolean | null>(
+    null,
+  );
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+
+  useEffect(() => {
+    setPasskeySupported(browserSupportsWebAuthn());
+  }, []);
+
+  const onPasskeySignIn = async () => {
+    setError(false);
+    setPasskeyBusy(true);
+    try {
+      const url = await signInWithPasskey("/user/dashboard");
+      // Navegación completa por la misma razón que en `onSubmit` (Router Cache).
+      window.location.href = url;
+    } catch (err) {
+      if (!(err instanceof PasskeyCancelledError)) {
+        toast.error(
+          passkeyErrorMessage(
+            err,
+            "No pudimos iniciar sesión. Intenta de nuevo.",
+          ),
+        );
+      }
+      setPasskeyBusy(false);
+    }
+  };
 
   useEffect(() => {
     setTimeout(() => {
@@ -276,6 +311,19 @@ export default function LandingPage() {
                 )}
               </form>
             </Form>
+            {passkeySupported ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-slate-400 bg-white hover:bg-slate-100 text-slate-900 font-semibold py-6 text-base"
+                size="lg"
+                onClick={onPasskeySignIn}
+                disabled={passkeyBusy}
+              >
+                <KeyRound className="h-5 w-5" aria-hidden />
+                {passkeyBusy ? "Esperando tu passkey…" : "Entrar con passkey"}
+              </Button>
+            ) : null}
             <div className="flex flex-row w-full h-fit items-center gap-2 py-2">
               <Separator
                 orientation="horizontal"
