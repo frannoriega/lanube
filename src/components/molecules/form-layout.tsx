@@ -149,7 +149,7 @@ export function StickySaveBar({
     >
       {dirty ? (
         <span
-          className="mr-auto text-sm text-muted-foreground"
+          className="mr-auto w-full text-sm text-muted-foreground sm:w-auto"
           aria-live="polite"
         >
           Cambios sin guardar

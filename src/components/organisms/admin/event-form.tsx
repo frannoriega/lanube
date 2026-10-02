@@ -66,7 +66,19 @@ const SELECTABLE_STATUSES: EventStatus[] = [
 import { EventSessions } from "@/components/organisms/admin/event-sessions";
 import { useServerTime } from "@/components/providers/server-time";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarCog } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
+import Link from "next/link";
+import { DeleteEventButton } from "@/components/organisms/admin/delete-event-button";
+import {
+  FormJumpIndex,
+  FormPageLayout,
+  FormSection,
+  StickySaveBar,
+} from "@/components/molecules/form-layout";
+import {
+  UnsavedChangesDialog,
+  useUnsavedChangesGuard,
+} from "@/hooks/use-unsaved-changes-guard";
 import { createId } from "@paralleldrive/cuid2";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -142,6 +154,10 @@ interface EventFormProps {
   defaults?: EventFormDefaults;
   /** Saved session exceptions (edit mode) — the session editor overlays staged changes on these. */
   existingExceptions?: ExistingException[];
+  /** Cantidad de inscriptos (edit): se muestra en el aside de Publicación. */
+  participantCount?: number;
+  /** Evento cancelado (soft delete): no se muestra la zona de peligro. */
+  cancelled?: boolean;
 }
 
 export function EventForm({
@@ -149,6 +165,8 @@ export function EventForm({
   eventId,
   defaults,
   existingExceptions = [],
+  participantCount,
+  cancelled = false,
 }: EventFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -203,10 +221,9 @@ export function EventForm({
     capacity: number;
     values: EventInput;
   } | null>(null);
-  // Opened via the ?sessions=1 shortcut (from the admin card) or the "Sesiones" button.
-  const [sessionsOpen, setSessionsOpen] = useState(
-    mode === "edit" && searchParams.get("sessions") === "1",
-  );
+  // Atajo `?sessions=1` desde la tarjeta del evento: abre la lista de sesiones desplegada.
+  const sessionsShortcut =
+    mode === "edit" && searchParams.get("sessions") === "1";
   // Staged per-session changes — applied (and emailed) only when the event is saved.
   const [sessionActions, setSessionActions] = useState<SessionAction[]>([]);
   // Single reason shared by all staged cancels/reschedules (asked once, at the end).
@@ -217,6 +234,10 @@ export function EventForm({
     defaultValues: (defaults as EventInput | undefined) ?? EMPTY_DEFAULTS,
   });
   const { control, handleSubmit, watch, getValues, setValue, formState } = form;
+
+  // Cambios sin guardar = campos del formulario o sesiones en staging (milestone 14).
+  const isDirty = formState.isDirty || sessionActions.length > 0;
+  const guard = useUnsavedChangesGuard(isDirty && !formState.isSubmitting);
 
   // Picking a template opens the binding section with empty dates; null clears it. The slug
   // (public link key) is generated client-side so the URL is known before saving, and reused
@@ -257,7 +278,9 @@ export function EventForm({
     // A batch of cancels/reschedules needs the single shared reason before it can be saved.
     if (mode === "edit" && needsSessionReason && sessionReason.trim() === "") {
       toast.error("Indicá el motivo de los cambios de sesiones");
-      setSessionsOpen(true);
+      document
+        .getElementById("sesiones")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
       return false;
     }
     try {
@@ -302,6 +325,7 @@ export function EventForm({
     setSessionActions([]);
     setSessionReason("");
     toast.success(mode === "create" ? "Evento creado" : "Evento actualizado");
+    guard.release();
     router.push("/admin/events");
     router.refresh();
     return true;
@@ -312,7 +336,7 @@ export function EventForm({
   return (
     <>
       {loadFailures.length > 0 && (
-        <div className="mb-4 max-w-2xl space-y-2">
+        <div className="mb-4 space-y-2">
           {loadFailures.map((failure) => (
             <LoadError
               key={failure.label}
@@ -323,415 +347,526 @@ export function EventForm({
         </div>
       )}
       <Form {...form}>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="max-w-2xl space-y-6"
-          noValidate
-        >
-          <FormField
-            control={control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej.: Taller de impresión 3D" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descripción</FormLabel>
-                <FormDescription>
-                  La ven los participantes. Admite formato (negrita, cursiva,
-                  listas…).
-                </FormDescription>
-                <FormControl>
-                  <MarkdownEditor
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    rows={5}
-                    minLength={100}
-                    maxLength={2000}
-                    placeholder="Contá de qué se trata el evento. Usá la barra de formato para resaltar lo importante."
-                    uploadUrl={`/api/admin/events/attachment${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="summary"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Resumen (opcional)</FormLabel>
-                <FormDescription>
-                  Texto corto que se muestra en las tarjetas del inicio. Admite
-                  negrita, cursiva y subrayado. Si lo dejás vacío, la tarjeta no
-                  muestra descripción.
-                </FormDescription>
-                <FormControl>
-                  <InlineRichTextInput
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    rows={2}
-                    maxLength={200}
-                    placeholder="Ej.: Aprendé a modelar e imprimir tus propias piezas en 3D."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Imagen</FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    value={field.value || null}
-                    onChange={(url) => field.onChange(url ?? "")}
-                    uploadUrl={`/api/admin/events/upload${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
-                    alt={watch("name") || "Imagen del evento"}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Estado</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {SELECTABLE_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {EVENT_STATUS_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Publicado: visible con link de inscripción. Pausado: se da de
-                  baja temporalmente sin borrarlo.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="space-y-4 rounded-md border p-4">
-            <FormField
-              control={control}
-              name="isFeatured"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between gap-4 space-y-0">
-                  <div className="space-y-1">
-                    <FormLabel>Destacar en el inicio</FormLabel>
-                    <FormDescription>
-                      Los eventos destacados encabezan la sección de eventos con
-                      mayor protagonismo.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {/* Sin campo "Orden entre destacados" (milestone 14): el orden se cambia con
-                "Reordenar destacados" en la lista de eventos. */}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              control={control}
-              name="eventType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de evento</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Elegí un tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {reservationTypes.map((t) => (
-                        <SelectItem key={t.code} value={t.code}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={control}
-              name="spaceId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recurso</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Elegí un recurso" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {resources.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormItem>
-            <FormLabel>Fechas del evento</FormLabel>
-            <DateRangePicker
-              value={{ from: watch("startDate"), to: watch("endDate") }}
-              onChange={(range) => {
-                setValue("startDate", range.from ?? "", {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                });
-                setValue("endDate", range.to ?? "", {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                });
-              }}
-              today={serverToday}
-              ariaLabel="Fechas del evento"
-            />
-            {(formState.errors.startDate || formState.errors.endDate) && (
-              <p className="text-sm text-destructive">
-                {formState.errors.startDate?.message ??
-                  formState.errors.endDate?.message}
-              </p>
-            )}
-            <FormDescription>
-              El evento se repite cada semana en los días elegidos, dentro de
-              este rango.
-            </FormDescription>
-          </FormItem>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              control={control}
-              name="startTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora de inicio</FormLabel>
-                  <FormControl>
-                    <TimeSelect
-                      value={field.value}
-                      onChange={field.onChange}
-                      ariaLabel="Hora de inicio"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="endTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora de fin</FormLabel>
-                  <FormControl>
-                    <TimeSelect
-                      value={field.value}
-                      onChange={field.onChange}
-                      ariaLabel="Hora de fin"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={control}
-            name="weekdays"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Días de la semana</FormLabel>
-                <FormControl>
-                  <ToggleGroup
-                    type="multiple"
-                    variant="outline"
-                    value={field.value.map(String)}
-                    onValueChange={(vals) =>
-                      field.onChange(vals.map(Number).sort((a, b) => a - b))
-                    }
-                    className="flex-wrap justify-start"
-                  >
-                    {WEEKDAYS.map((d) => (
-                      <ToggleGroupItem key={d.value} value={d.value}>
-                        {d.label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="capacity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cupo de participantes (opcional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={field.value ?? ""}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === "" ? null : Number(e.target.value),
-                      )
-                    }
-                    placeholder={
-                      selectedResource
-                        ? `Por defecto: ${selectedResource.capacity}`
-                        : "Por defecto: capacidad del recurso"
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="requiresApproval"
-            render={({ field }) => (
-              <FormItem className="flex items-center justify-between gap-4 space-y-0 rounded-md border p-4">
-                <div className="space-y-1">
-                  <FormLabel>Requiere aprobación</FormLabel>
-                  <FormDescription>
-                    Las inscripciones quedan pendientes hasta que las apruebes o
-                    rechaces. El cupo limita cuántas personas pueden inscribirse
-                    (los aprobados pueden ser menos).
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <div className="space-y-4 rounded-md border p-4">
-            <div className="space-y-2">
-              <Label>Formulario de inscripción (opcional)</Label>
-              <FormPicker
-                templates={templates}
-                value={binding?.templateId ?? null}
-                onSelect={onSelectTemplate}
-              />
-              <p className="text-sm text-muted-foreground">
-                Se crea una copia del formulario para este evento. Editar la
-                plantilla más adelante no afecta a los eventos ya creados.
-              </p>
-            </div>
-
-            {binding && (
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {/*
+           * Estructura del formulario (milestone 14, propuesta 1): tres secciones con título
+           * en la columna principal —Información / Agenda / Inscripción— y un aside de
+           * *Publicación* (sticky desde `lg`, último en el teléfono) con la zona de peligro.
+           * Antes eran ~20 campos en una sola columna, con los controles de publicación
+           * mezclados con los de agenda y los botones recién al final.
+           */}
+          <FormPageLayout
+            main={
               <>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormSection
+                  id="informacion"
+                  title="Información"
+                  description="Lo que ven los participantes en la tarjeta y en el formulario de inscripción."
+                >
                   <FormField
                     control={control}
-                    name="form.opensAt"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Apertura de inscripción</FormLabel>
+                        <FormLabel>Nombre</FormLabel>
                         <FormControl>
-                          <DateTimePicker
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            today={serverToday}
-                            defaultTime="09:00"
-                            ariaLabel="Apertura de inscripción"
+                          <Input
+                            placeholder="Ej.: Taller de impresión 3D"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={control}
-                    name="form.closesAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cierre de inscripción</FormLabel>
-                        <FormControl>
-                          <DateTimePicker
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            today={serverToday}
-                            defaultTime="18:00"
-                            ariaLabel="Cierre de inscripción"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
-                {watch("status") === EventStatus.PUBLISHED && (
-                  <CopyFormUrl slug={binding.slug} />
+                  {/* Resumen (corto, tarjeta) antes que la Descripción (larga, detalle). */}
+                  <FormField
+                    control={control}
+                    name="summary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Resumen (opcional)</FormLabel>
+                        <FormDescription>
+                          Texto corto que se muestra en las tarjetas del inicio.
+                          Si lo dejás vacío, la tarjeta no muestra descripción.
+                        </FormDescription>
+                        <FormControl>
+                          <InlineRichTextInput
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            rows={2}
+                            maxLength={200}
+                            placeholder="Ej.: Aprendé a modelar e imprimir tus propias piezas en 3D."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descripción</FormLabel>
+                        <FormDescription>
+                          La ven los participantes. Admite formato (negrita,
+                          cursiva, listas…).
+                        </FormDescription>
+                        <FormControl>
+                          <MarkdownEditor
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            rows={5}
+                            minLength={100}
+                            maxLength={2000}
+                            placeholder="Contá de qué se trata el evento. Usá la barra de formato para resaltar lo importante."
+                            uploadUrl={`/api/admin/events/attachment${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Imagen</FormLabel>
+                        <FormControl>
+                          <ImageUpload
+                            value={field.value || null}
+                            onChange={(url) => field.onChange(url ?? "")}
+                            uploadUrl={`/api/admin/events/upload${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
+                            alt={watch("name") || "Imagen del evento"}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </FormSection>
+
+                <FormSection
+                  id="agenda"
+                  title="Agenda"
+                  description="Cuándo y dónde: el evento se repite cada semana en los días elegidos."
+                >
+                  {/* Tipo + Recurso: un par semántico, mismo ancho. */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={control}
+                      name="eventType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de evento</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Elegí un tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {reservationTypes.map((t) => (
+                                <SelectItem key={t.code} value={t.code}>
+                                  {t.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={control}
+                      name="spaceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recurso</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Elegí un recurso" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {resources.map((r) => (
+                                <SelectItem key={r.id} value={r.id}>
+                                  {r.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormItem>
+                    <FormLabel>Fechas del evento</FormLabel>
+                    <div className="max-w-sm">
+                      <DateRangePicker
+                        value={{
+                          from: watch("startDate"),
+                          to: watch("endDate"),
+                        }}
+                        onChange={(range) => {
+                          setValue("startDate", range.from ?? "", {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                          setValue("endDate", range.to ?? "", {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                        }}
+                        today={serverToday}
+                        ariaLabel="Fechas del evento"
+                      />
+                    </div>
+                    {(formState.errors.startDate ||
+                      formState.errors.endDate) && (
+                      <p className="text-sm text-destructive">
+                        {formState.errors.startDate?.message ??
+                          formState.errors.endDate?.message}
+                      </p>
+                    )}
+                  </FormItem>
+
+                  <FormField
+                    control={control}
+                    name="weekdays"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Días de la semana</FormLabel>
+                        <FormControl>
+                          <ToggleGroup
+                            type="multiple"
+                            variant="outline"
+                            value={field.value.map(String)}
+                            onValueChange={(vals) =>
+                              field.onChange(
+                                vals.map(Number).sort((a, b) => a - b),
+                              )
+                            }
+                            className="flex-wrap justify-start"
+                          >
+                            {WEEKDAYS.map((d) => (
+                              <ToggleGroupItem key={d.value} value={d.value}>
+                                {d.label}
+                              </ToggleGroupItem>
+                            ))}
+                          </ToggleGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Horario como una fila "10:00 → 13:00" con dos selects angostos. */}
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm leading-none font-medium">
+                      Horario
+                    </legend>
+                    <div className="flex flex-wrap items-start gap-2">
+                      <FormField
+                        control={control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="sr-only">
+                              Hora de inicio
+                            </FormLabel>
+                            <FormControl>
+                              <TimeSelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                ariaLabel="Hora de inicio"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <ArrowRight
+                        className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <FormField
+                        control={control}
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="sr-only">
+                              Hora de fin
+                            </FormLabel>
+                            <FormControl>
+                              <TimeSelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                ariaLabel="Hora de fin"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </fieldset>
+
+                  <EventSessions
+                    editable={mode === "edit" && !!eventId}
+                    defaultExpanded={sessionsShortcut}
+                    recipe={{
+                      weekdays: watch("weekdays"),
+                      startDate: watch("startDate"),
+                      endDate: watch("endDate"),
+                      startTime: watch("startTime"),
+                      endTime: watch("endTime"),
+                    }}
+                    existing={existingExceptions}
+                    actions={sessionActions}
+                    onActionsChange={setSessionActions}
+                    reason={sessionReason}
+                    onReasonChange={setSessionReason}
+                  />
+                </FormSection>
+
+                <FormSection
+                  id="inscripcion"
+                  title="Inscripción"
+                  description="Cómo se anotan los participantes y cuántos lugares hay."
+                >
+                  <div className="space-y-2">
+                    <Label>Formulario de inscripción (opcional)</Label>
+                    <FormPicker
+                      templates={templates}
+                      value={binding?.templateId ?? null}
+                      onSelect={onSelectTemplate}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Se crea una copia del formulario para este evento. Editar
+                      la plantilla más adelante no afecta a los eventos ya
+                      creados.
+                    </p>
+                  </div>
+
+                  {binding && (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={control}
+                        name="form.opensAt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Apertura de inscripción</FormLabel>
+                            <FormControl>
+                              <DateTimePicker
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                today={serverToday}
+                                defaultTime="09:00"
+                                ariaLabel="Apertura de inscripción"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={control}
+                        name="form.closesAt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cierre de inscripción</FormLabel>
+                            <FormControl>
+                              <DateTimePicker
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                today={serverToday}
+                                defaultTime="18:00"
+                                ariaLabel="Cierre de inscripción"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  <FormField
+                    control={control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cupo de participantes (opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            className="max-w-56"
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : Number(e.target.value),
+                              )
+                            }
+                            placeholder={
+                              selectedResource
+                                ? `Por defecto: ${selectedResource.capacity}`
+                                : "Por defecto: capacidad"
+                            }
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Si lo dejás vacío, el cupo es la capacidad del
+                          recurso.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="requiresApproval"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 space-y-0 rounded-md border p-4">
+                        <div className="space-y-1">
+                          <FormLabel>Requiere aprobación</FormLabel>
+                          <FormDescription>
+                            Las inscripciones quedan pendientes hasta que las
+                            apruebes o rechaces. El cupo limita cuántas personas
+                            pueden inscribirse (los aprobados pueden ser menos).
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </FormSection>
+              </>
+            }
+            aside={
+              <>
+                <FormJumpIndex
+                  sections={[
+                    { id: "informacion", label: "Información" },
+                    { id: "agenda", label: "Agenda" },
+                    { id: "inscripcion", label: "Inscripción" },
+                    { id: "publicacion", label: "Publicación" },
+                  ]}
+                />
+                <FormSection
+                  id="publicacion"
+                  title="Publicación"
+                  description="Quién lo ve y cómo aparece en el inicio."
+                >
+                  <FormField
+                    control={control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {SELECTABLE_STATUSES.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {EVENT_STATUS_LABELS[s]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Publicado: visible con link de inscripción. Pausado:
+                          se da de baja temporalmente sin borrarlo.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="isFeatured"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 space-y-0">
+                        <div className="space-y-1">
+                          <FormLabel>Destacar en el inicio</FormLabel>
+                          <FormDescription>
+                            Encabeza la sección de eventos. El orden entre
+                            destacados se cambia desde la lista.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {binding && watch("status") === EventStatus.PUBLISHED && (
+                    <CopyFormUrl slug={binding.slug} />
+                  )}
+
+                  {mode === "edit" && eventId && (
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href={`/admin/events/${eventId}/participants`}>
+                        <Users className="h-4 w-4" />
+                        Participantes ({participantCount ?? 0})
+                      </Link>
+                    </Button>
+                  )}
+                </FormSection>
+
+                {mode === "edit" && eventId && !cancelled && (
+                  <FormSection
+                    title="Zona de peligro"
+                    description="Cancela el evento: libera el recurso y cierra las inscripciones. Los inscriptos quedan registrados."
+                    tone="danger"
+                  >
+                    <DeleteEventButton id={eventId} onDone={guard.release} />
+                  </FormSection>
                 )}
               </>
-            )}
-          </div>
+            }
+          />
 
-          <div className="flex flex-wrap justify-end gap-2">
+          <StickySaveBar dirty={isDirty} className="mt-6">
             <Button
               type="button"
               variant="outline"
@@ -739,18 +874,6 @@ export function EventForm({
             >
               Cancelar
             </Button>
-            {mode === "edit" && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSessionsOpen(true)}
-                disabled={formState.isSubmitting}
-              >
-                <CalendarCog className="h-4 w-4" />
-                Sesiones
-                {sessionActions.length > 0 && ` (${sessionActions.length})`}
-              </Button>
-            )}
             <Button type="submit" disabled={formState.isSubmitting}>
               {formState.isSubmitting
                 ? "Guardando..."
@@ -758,28 +881,11 @@ export function EventForm({
                   ? "Crear evento"
                   : "Guardar cambios"}
             </Button>
-          </div>
+          </StickySaveBar>
         </form>
       </Form>
 
-      {mode === "edit" && eventId && (
-        <EventSessions
-          open={sessionsOpen}
-          onOpenChange={setSessionsOpen}
-          recipe={{
-            weekdays: watch("weekdays"),
-            startDate: watch("startDate"),
-            endDate: watch("endDate"),
-            startTime: watch("startTime"),
-            endTime: watch("endTime"),
-          }}
-          existing={existingExceptions}
-          actions={sessionActions}
-          onActionsChange={setSessionActions}
-          reason={sessionReason}
-          onReasonChange={setSessionReason}
-        />
-      )}
+      <UnsavedChangesDialog guard={guard} />
 
       <ResponsiveDialog
         open={dropWarning !== null}
