@@ -61,6 +61,52 @@
 > will be auto-rejected" warning shows nothing before an admin confirms. Same family as the
 > `$executeRaw` bug but on the preview path, and replicating the SQL conflict logic in TS is
 > a reservations-domain change, not an audit one.
+>
+> ### Seguimiento (2026-10-02): diffs legibles en el detalle
+>
+> Pedido: todo lo que muestra el detalle de una entrada (salvo "Información del sistema")
+> tiene que poder leerlo una persona — sin ids del sistema y sin diffs que confundan.
+>
+> - **El panel lateral quedaba detrás del header.** `Sheet` usaba el `z-50` de shadcn y el
+>   header sticky de management vive en `z-100`, así que el título del detalle quedaba
+>   tapado. El default de `Sheet` (overlay + contenido) pasó a `z-[120]`, como ya hacía a
+>   mano el menú móvil (que dejó de necesitar el override). Riesgo anotado en
+>   `sheet.tsx`: un Popover/Select/Dialog abierto desde dentro de un Sheet quedaría detrás;
+>   hoy ninguno lo hace (revisado: menú móvil, detalle de reserva, detalle de auditoría).
+> - **Reordenamientos ilegibles.** Las 5 rutas (`spaces/reorder`, `reservation-types/reorder`,
+>   `themes/reorder`, `events|news/featured-order`) guardaban solo `after.orderedIds`:
+>   cuid2 sin orden anterior, que el diff rojo/verde mostraba como "(vacío) → ids" — se
+>   leía como un alta, no como un reordenamiento. Ahora guardan
+>   `before/after: { order: [{ id, name }] }` (fotos tomadas de la base antes y después de
+>   escribir, con el nombre de ese momento — `src/lib/db/auditOrder.ts`). El detalle muestra
+>   la lista final numerada con "Subió/Bajó desde el Nº" por fila, lo movido resaltado y lo
+>   que quedó en su lugar atenuado; el resumen dice "Reordenó los espacios — Sala de
+>   reuniones: 3º → 1º, …".
+>   - **Entradas viejas** (solo `orderedIds`): `listAuditLogs` resuelve los ids a nombres
+>     **actuales** del lado del servidor (`AuditLogListItem.names`; un id borrado se muestra
+>     "(eliminado)"). Como no hay orden anterior, se muestra solo el orden final con una
+>     aclaración. Decisión: no se migraron las filas viejas — no se puede reconstruir el
+>     orden anterior, y reescribir historia de auditoría no corresponde.
+> - **El resumen mostraba "#\*"** para las entradas sobre una colección (`entityId: "*"`).
+>   `entitySubject` devuelve `null` en ese caso y el resumen usa la etiqueta de la acción.
+> - **Ids en el diff legible.** Campos `*Id` / `*Ids` (`roleId`, `participantIds`) ya no
+>   aparecen en "Cambios": quien registra guarda al lado el equivalente con nombre (`role`),
+>   y el id sigue en "Información del sistema".
+> - **Listas como conjunto.** Los permisos de un rol se mostraban como la lista entera
+>   tachada y otra vez en verde, con ids tipo `events:manage`. Ahora `FieldChange` es una
+>   unión (`value` | `set` | `order`): las listas se comparan como conjunto (solo lo
+>   agregado y lo quitado) y los permisos se traducen con `PERMISSION_LABELS`.
+> - **Filas de distinta altura** en la tabla de escritorio: los chips de tags envolvían
+>   ("Espacios" + "Reordenamiento"). `md:flex-nowrap` los deja en una línea; la tarjeta
+>   móvil puede seguir envolviendo.
+>
+> Verificado en el navegador contra la base local (reordenamiento nuevo, entrada vieja y
+> edición de rol) y con tests nuevos en `humanize.test.ts`.
+>
+> **Continúa en el milestone 16** (`milestones-16-audit-registry-and-admin-lists.md`): el
+> mismo nivel de detalle para todas las acciones, con un registro tipado de entidades/campos/
+> eventos y `beginAudit(...).commit(...)` en lugar de que cada ruta elija qué guardar. La
+> regla "log the changed slice" de abajo sigue valiendo — ahora la aplica `pickAuditSides`.
 
 ## Use case
 
