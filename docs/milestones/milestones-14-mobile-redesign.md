@@ -707,7 +707,9 @@ lanube-app` (this repo's container only).
       — `organisms/forms/public-form.tsx`: `FormFieldType.TIME` renders `TimeSelect`
       (24h, 15-min grid, off-grid saved values preserved) in a `max-w-40` box. Not
       screenshot-verified: no seeded public form has a TIME field (typecheck/lint only).
-- [ ] Sign-up: stack DNI/Institución below `sm`.
+- [x] Sign-up: stack DNI/Institución below `sm`.
+      — `auth/signup/page.tsx`: DNI and Institución are `col-span-2 sm:col-span-1` (Nombre +
+      Apellido stay paired) (`.mobile-shots/s5-signup/`).
 
 **Slice 6 — dialogs → pages**
 
