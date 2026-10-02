@@ -10,9 +10,11 @@ import { useId } from "react";
  * trazos gruesos que forman la nube, diez conectores finos y ocho nodos de color.
  *
  * Cambios respecto del SVG original, ninguno visible en el resultado final:
- * - Los anillos blancos de los nodos y los trazos blancos que "cortan" la nube se pintan con
- *   `var(--background)` en vez de `#fff`, así se leen como huecos tanto en claro como en
- *   oscuro (en blanco puro, en modo oscuro aparecían como bandas blancas).
+ * - Los trazos blancos que "cortan" la nube se pintan con `var(--background)` en vez de
+ *   `#fff`, así se leen como cortes tanto en claro como en oscuro (en blanco puro, en modo
+ *   oscuro aparecían como bandas blancas). Los **anillos de los nodos sí quedan blancos**: son
+ *   un borde del nodo, no un hueco (en una versión anterior también iban con el color del fondo
+ *   y en oscuro el borde desaparecía).
  * - Los círculos venían con `transform="translate(..) rotate(..)"` de Illustrator; rotar un
  *   círculo sobre su centro no lo cambia, así que se usan `cx/cy` directos (mismo lugar) para
  *   que framer-motion pueda moverlos sin pelearse con ese transform.
@@ -349,12 +351,9 @@ export function AnimatedIsologo({
       {NODES.map((n, i) => (
         <motion.g key={`${n.cx}-${n.cy}`} custom={i} variants={nodes}>
           {n.ring && (
-            <circle
-              cx={n.ring.cx}
-              cy={n.ring.cy}
-              r={n.ring.r}
-              fill="var(--background)"
-            />
+            // Anillo blanco, como en el logo oficial (también en modo oscuro: es parte de la
+            // marca, no un hueco).
+            <circle cx={n.ring.cx} cy={n.ring.cy} r={n.ring.r} fill="#ffffff" />
           )}
           <circle cx={n.cx} cy={n.cy} r={n.r} fill={n.fill} />
         </motion.g>
