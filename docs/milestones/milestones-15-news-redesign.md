@@ -1,11 +1,14 @@
 # Milestone 15 — Rediseño visual de Noticias (listado y detalle)
 
-> **Estado: implementado (2026-10-02)** en la rama `preview`, en tres commits sin firmar
-> (el usuario los rebasea y firma después de revisar):
+> **Estado: implementado (2026-10-02)** en la rama `preview`, en commits sin firmar (el
+> usuario los rebasea y firma después de revisar):
 >
 > 1. `feat(noticias): tiempo de lectura, portada generada por slug, fecha larga y escala de lectura en Markdown`
 > 2. `feat(noticias): listado con nota principal, tarjetas más vivas y filtros livianos`
 > 3. `feat(noticias): el detalle se lee como artículo — encabezado con copete y byline, riel compacto y cierre`
+> 4. Segunda ronda, tras la revisión del usuario (ver "Revisión del usuario"): la nota
+>    principal alinea su pie con la grilla, y la línea con degradé del detalle se reemplaza
+>    por un progreso de lectura real.
 >
 > Un milestone de **diseño**: no cambia el modelo, ni las consultas, ni las rutas.
 
@@ -94,7 +97,10 @@ Igual se cambió el byline a fecha larga (ver abajo), por legibilidad, no por co
 
 - **Nota principal** (`NewsLeadCard`): la primera nota de la **página 1** ocupa 2
   columnas (`sm:col-span-2`: fila completa en 2 columnas, 2/3 en `lg`), portada al 55% a un
-  lado y título `text-2xl`/`lg:text-3xl` + resumen al otro; en teléfono se apila. Cuál es
+  lado y título `text-2xl`/`lg:text-3xl` + resumen al otro; en teléfono se apila. El texto
+  va **arriba** (no centrado) y el pie "N min de lectura · Leer nota →" anclado abajo, con
+  el mismo padding inferior que `NewsCard` (`p-5`, con `lg:px-8 lg:pt-8`), así queda a la
+  misma altura que el "Leer" de la tarjeta vecina en la fila. Cuál es
   la primera lo decide la consulta existente (destacada → más reciente, o mejor
   coincidencia si hay búsqueda). **No** hay principal en páginas siguientes (no significa
   nada en la página 3) ni cuando hay una sola nota (no hay grilla que encabezar).
@@ -132,9 +138,33 @@ Igual se cambió el byline a fecha larga (ver abajo), por legibilidad, no por co
   3. **Copete**: el `summary` en `text-lg`/`sm:text-xl` gris.
   4. **Byline** tras un divisor: avatar con iniciales, autor, y en mono "25 de septiembre de
      2026 · N min de lectura".
-- Portada a todo el ancho de la tarjeta; sin portada, una línea de 4px con el degradé de
-  marca separa encabezado y cuerpo (en el detalle **no** se usa la portada generada: un
-  artículo sin imagen no necesita una ilustración grande inventada).
+- Portada a todo el ancho de la tarjeta; sin portada, un hairline (`<hr>`) separa
+  encabezado y cuerpo (en el detalle **no** se usa la portada generada: un artículo sin
+  imagen no necesita una ilustración grande inventada). En la primera ronda era una línea
+  de 4px con el degradé de marca; se quitó porque se leía como una barra de progreso que no
+  avanzaba (ver "Revisión del usuario").
+- **Progreso de lectura** (`ReadingProgress`, `templates/landing/news/reading-progress.tsx`):
+  píldora flotante abajo con el porcentaje leído, una barra **sólida** (sin degradé:
+  `la-nube-selected` / `la-nube-secondary` en oscuro) y "quedan N min" ("terminaste" al
+  final). Mide sobre el **cuerpo** (`#news-body`), no sobre la página: 0% cuando el inicio
+  del cuerpo llega al borde superior de la ventana, 100% cuando su final llega al borde
+  inferior. Aparece cuando el cuerpo ya ocupa la mitad superior de la ventana y desaparece
+  (fade + desplazamiento, sin animación con `prefers-reduced-motion`) cuando su final sube
+  por encima del tercio inferior; si el cuerpo entra entero en la ventana nunca aparece. Un
+  cálculo por frame (`requestAnimationFrame`), listeners `passive`. Es
+  `pointer-events-none` (no tapa clics) y la barra es un `role="progressbar"` con
+  `aria-valuenow`. Posición: en teléfonos se estira entre el borde izquierdo y el botón de
+  WhatsApp (`left-4 right-22`), desde `sm` va centrada. Fondo `bg-card` en claro y
+  `bg-background` (Night Station) en oscuro — con `bg-card` se fundía con la tarjeta del
+  artículo — más un borde `la-nube-primary/40` y la sombra azul.
+  - **Se renderiza con un portal en `document.body`.** Dentro del árbol de la página, un
+    ancestro del layout público se vuelve el bloque contenedor de los `position: fixed`
+    (verificado en el navegador: la píldora quedaba en `y=1803` con la ventana en 900px,
+    es decir anclada al final del contenido); el portal la saca de ese contexto. No se
+    identificó qué propiedad del ancestro lo causa — las candidatas habituales
+    (`transform`, `filter`, `will-change`, `contain`) dieron `none` en toda la cadena —; el
+    portal lo resuelve sin depender de eso. **Cualquier otro elemento `fixed` dentro de
+    `(public)` puede tener el mismo problema.**
 - Cuerpo con `Markdown size="reading"`.
 - **Pie del artículo**: "← Todas las noticias" y "Seguí leyendo → {título}" (la primera de
   las "otras noticias", es decir destacada/más reciente — no hay noción de "siguiente
@@ -166,20 +196,36 @@ Igual se cambió el byline a fecha larga (ver abajo), por legibilidad, no por co
 
 ## Iteraciones tras la revisión visual
 
-1. **Nota principal con resumen corto**: el pie anclado abajo (`mt-auto`) dejaba un hueco
-   grande entre el resumen y "Leer nota". `CardFooter` ganó `anchored` (default `true` —
-   en la grilla alinea los pies de una fila); la principal pasa `false` y su texto queda
-   centrado como bloque.
+1. **Nota principal con resumen corto** (revertido después): el pie anclado abajo dejaba
+   un hueco entre el resumen y "Leer nota", así que se probó centrar todo el texto y no
+   anclar el pie. El usuario lo rechazó (ver abajo) y se volvió al pie anclado.
 2. **Títulos del cuerpo**: los títulos se emiten un nivel más abajo (F2.9 de
    milestone-10), así que el `##` que usan los autores para secciones llega como `<h3>`;
    con el cuerpo en `text-lg`, un `text-xl` casi no se distinguía. Escala final en lectura:
    h2 `text-3xl`, h3 `text-2xl`, h4 `text-xl`, h5 `text-lg`.
 
+## Revisión del usuario (2026-10-02, segunda ronda)
+
+1. **"Leer nota" desalineado** entre la nota principal y la tarjeta vecina, y el texto de
+   la principal centrado verticalmente. Lo correcto: texto arriba y pie abajo, alineado con
+   la fila. Se quitó la opción `anchored` de `CardFooter` (todas las tarjetas anclan el pie)
+   y se igualó el padding inferior (ver "Listado").
+2. **"La barra de progreso con degradé no funciona"**: el usuario interpretó la línea de 4px
+   con degradé (un separador estático) como una barra de progreso — no seguía el scroll ni
+   cambiaba. Sugirió quitarla o poner una barra normal (sin degradé), flotante abajo, con
+   porcentaje; dejó la decisión a criterio. Decisión: **ambas cosas** — el separador pasa a
+   hairline (nada que se parezca a un indicador) y se agrega `ReadingProgress` (ver
+   "Detalle"), con porcentaje **y** minutos restantes, que es la información más útil para
+   decidir si seguir leyendo. Se descartaron una barra fina pegada al borde superior
+   (compite con el header flotante) y una barra de ancho completo abajo (choca con el botón
+   de WhatsApp en teléfonos).
+
 ## Propuesto y no hecho (el usuario no los eligió)
 
 - Botones de compartir (copiar link / WhatsApp) bajo el byline.
-- Barra de progreso de lectura con el degradé de marca.
 - Separadores por mes en el listado (`── septiembre 2026 ──`).
+- (La "barra de progreso con el degradé de marca" de la propuesta original terminó hecha,
+  sin degradé, como `ReadingProgress` — ver "Revisión del usuario".)
 
 ## Fuera de alcance / notas
 
