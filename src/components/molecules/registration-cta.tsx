@@ -17,7 +17,7 @@ export function RegistrationCta({ event }: { event: RegistrationCtaProps }) {
   if (event.registration === "open" && event.formSlug) {
     return (
       <div className="flex flex-col gap-1.5">
-        <Button asChild size="sm" className="w-full">
+        <Button asChild size="sm" variant="brand" className="w-full">
           <Link
             href={`/forms/${event.formSlug}`}
             onClick={(e) => e.stopPropagation()}
@@ -46,7 +46,7 @@ export function RegistrationCta({ event }: { event: RegistrationCtaProps }) {
   }
 
   return (
-    <span className="rounded-md border border-dashed border-border py-1.5 text-center text-xs text-muted-foreground">
+    <span className="rounded-md border border-dashed border-border px-3 py-1.5 text-center text-xs text-muted-foreground">
       {event.registration === "closed" ? "Inscripción cerrada" : "Próximamente"}
     </span>
   );
