@@ -17,7 +17,12 @@ import Link from "next/link";
 
 export default async function Footer({ className }: { className?: string }) {
   const contact = await getSiteConfig();
-  const cns = cn(`w-full h-fit bg-slate-950 dark:bg-slate-950/80`, className);
+  // Azul noche de marca (milestone 17) en vez de `slate-950`: el casi-negro neutro no
+  // pertenecía a ninguna paleta del sitio; éste es el mismo fondo de la franja de cifras.
+  const cns = cn(
+    `w-full h-fit bg-la-nube-night border-t border-la-nube-primary/20`,
+    className,
+  );
   return (
     <footer className={cns}>
       <Container>
@@ -62,7 +67,9 @@ export default async function Footer({ className }: { className?: string }) {
           </section>
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 w-fit">
             <div className="flex flex-col gap-2 w-fit">
-              <h2 className="text-xl font-bold">Enlaces Rápidos</h2>
+              <h2 className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-la-nube-secondary">
+                Enlaces Rápidos
+              </h2>
               <nav>
                 <ul className="text-foreground flex flex-col">
                   {links.map((item) => (
@@ -79,7 +86,9 @@ export default async function Footer({ className }: { className?: string }) {
               </nav>
             </div>
             <div className="flex flex-col gap-2 w-fit">
-              <h2 className="text-xl font-bold">Políticas</h2>
+              <h2 className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-la-nube-secondary">
+                Políticas
+              </h2>
               <nav>
                 <ul className="text-foreground flex flex-col">
                   <li>
@@ -94,7 +103,9 @@ export default async function Footer({ className }: { className?: string }) {
               </nav>
             </div>
             <div className="flex flex-col gap-2 max-w-100 w-fit">
-              <h2 className="text-xl font-bold">Contacto</h2>
+              <h2 className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-la-nube-secondary">
+                Contacto
+              </h2>
               <ul className="text-foreground flex flex-col">
                 <li>
                   <a

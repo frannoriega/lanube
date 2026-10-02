@@ -10,11 +10,15 @@ export default function SignIn() {
     <div className="flex flex-col items-center">
       {status === "authenticated" ? (
         <Link href="/user/dashboard" className="rounded-full">
-          <Button className="rounded-full">Ir a mi perfil</Button>
+          <Button variant="brand" className="rounded-full">
+            Ir a mi perfil
+          </Button>
         </Link>
       ) : (
         <Link href="/auth/signin" className="lg:rounded-full">
-          <Button className="lg:rounded-full">Iniciar sesión</Button>
+          <Button variant="brand" className="lg:rounded-full">
+            Iniciar sesión
+          </Button>
         </Link>
       )}
     </div>

@@ -14,8 +14,18 @@ import type { UpcomingEventCardData } from "./event-card";
  * Full-width, high-emphasis presentation of a featured event: a large cover on one side
  * and a bold headline + blurb + registration CTA on the other. Rendered one-at-a-time by
  * {@link FeaturedCarousel}. Much louder than the compact {@link EventCard} grid tile.
+ *
+ * `badge={false}` (milestone 17): la misma tarjeta grande sin la etiqueta "Destacado". La
+ * landing la usa para el *próximo* evento cuando ninguno está destacado, así la sección nunca
+ * arranca con una tarjeta chica sola en una esquina; no dice "Destacado" porque no lo es.
  */
-export function FeaturedEventCard({ event }: { event: UpcomingEventCardData }) {
+export function FeaturedEventCard({
+  event,
+  badge = true,
+}: {
+  event: UpcomingEventCardData;
+  badge?: boolean;
+}) {
   const cta: RegistrationCtaProps = {
     registration: event.registration,
     formSlug: event.formSlug,
@@ -35,10 +45,12 @@ export function FeaturedEventCard({ event }: { event: UpcomingEventCardData }) {
           sizes="(max-width: 768px) 100vw, 60vw"
           priority
         />
-        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-la-nube-primary px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
-          <Star className="h-3.5 w-3.5 fill-current" />
-          Destacado
-        </span>
+        {badge && (
+          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-la-nube-primary px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
+            <Star className="h-3.5 w-3.5 fill-current" />
+            Destacado
+          </span>
+        )}
       </div>
 
       {/* Body */}

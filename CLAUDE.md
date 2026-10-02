@@ -295,6 +295,9 @@ src/
 1. **Server clock**: `src/lib/clock.ts` returns `new Date()` / `Date.now()`
 2. **Under libfaketime** (Docker + timemock overlay): Node process sees faked time
 3. **Client time**: Browser sends real time; ServerTimeProvider syncs client to server via `serverNowMs`
+   - **Display language is always Spanish**: format with `"es-AR"` (24 h, `hourCycle: "h23"`), never the
+     browser locale (`undefined`) — the viewer's _timezone_ is kept, the _language_ is not. `LocalDate*`
+     (`molecules/local-date.tsx`) already do this; a bare `toLocaleDateString()` is a bug.
 4. **Verification**: `/api/dev/server-time` endpoint (dev-only) lets you verify fake time is working
 5. **RRULE expansion**: Calculated in SQL (`generate_series`) using Postgres `now()`; must be in sync
 
@@ -565,6 +568,15 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   `--border` or `--input` drop below AA. If you change a token and that test fails,
   the token is wrong — don't relax the test. (This exists because
   `--muted-foreground` had silently drifted to 3.06:1 across ~220 usages.)
+- **Public-site brand pieces (milestone 17, experiment on branch `experimental`).**
+  `la-nube-ink` (#0e2a47, public headings in light mode) and `la-nube-night` (#0a1a2e, dark
+  bands + footer) live in `@theme`; the `brand` Button variant is the public primary action
+  (admin keeps shadcn's neutral `--primary`). Public section headers use `SectionHeading`
+  (`templates/landing/shared/section-heading.tsx`) — don't hand-roll the `~/ eyebrow▌` block
+  again. Scroll effects are limited to `Reveal` (fade-up once, never in the hero) and
+  `ParallaxImage` (content photos only); both no-op under `prefers-reduced-motion`. The hero's
+  `AnimatedIsologo` intro plays once per session (`sessionStorage`). Ecosystem numbers live in
+  `src/lib/constants/ecosystem-stats.ts` (landing + about share `StatsBand`).
 - **Brand-colored text uses `text-la-nube-selected dark:text-la-nube-secondary`.**
   `text-la-nube-primary` measures 3.06:1 on the light background and fails AA at
   body size. It is fine for borders, icons, spinners, gradient stops, and large

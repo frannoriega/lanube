@@ -19,6 +19,11 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Acción principal del sitio público (milestone 17): el azul de marca en vez del negro
+        // neutro de shadcn. Blanco sobre la-nube-selected mide 6.38:1 (AA). En oscuro, el cian
+        // sobre fondo noche lleva texto oscuro.
+        brand:
+          "bg-la-nube-selected text-white shadow-sm shadow-la-nube-selected/25 hover:bg-la-nube-selected/90 dark:bg-la-nube-secondary dark:text-la-nube-night dark:hover:bg-la-nube-secondary/90",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

@@ -16,7 +16,10 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import Image from "next/image";
+import { IsologoInView } from "@/components/atoms/logos/lanube/isologo-in-view";
+import { ParallaxImage } from "@/components/molecules/parallax-image";
+import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
+import { StatsBand } from "@/components/templates/landing/stats";
 
 const TINT = "bg-la-nube-accent/40 dark:bg-la-nube-selected/15";
 
@@ -136,7 +139,10 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Landing-style section header — always left-aligned for a consistent rhythm. */
+/**
+ * Encabezado de sección de esta página: el `SectionHeading` compartido con la landing (desde el
+ * milestone 17, títulos en azul noche). `heading` ya trae su palabra en degradé.
+ */
 function SectionHeader({
   eyebrow,
   heading,
@@ -149,24 +155,7 @@ function SectionHeader({
   id?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
-        ~/ {eyebrow}
-        <span className="animate-blink">▌</span>
-      </span>
-      <h2
-        id={id}
-        className="text-4xl font-bold md:text-5xl"
-        style={{ textWrap: "balance" } as React.CSSProperties}
-      >
-        {heading}
-      </h2>
-      {lead && (
-        <p className="max-w-prose text-lg text-muted-foreground text-pretty">
-          {lead}
-        </p>
-      )}
-    </div>
+    <SectionHeading eyebrow={eyebrow} title={heading} lead={lead} id={id} />
   );
 }
 
@@ -180,7 +169,7 @@ export default function AboutPage() {
           <Pill>Plan 2026–2030</Pill>
         </div>
         <h1
-          className="animate-fade-up text-4xl font-bold tracking-tight text-balance md:text-6xl"
+          className="animate-fade-up text-4xl font-bold tracking-tight text-balance text-la-nube-ink md:text-6xl dark:text-white"
           style={{ animationDelay: "80ms" }}
         >
           Quiénes <GradientWord>somos</GradientWord>
@@ -229,15 +218,12 @@ export default function AboutPage() {
               promover el desarrollo económico local basado en la tecnología.
             </p>
           </div>
-          <div className="w-full overflow-hidden rounded-2xl border shadow-sm md:max-w-md">
-            <Image
-              src="/images/stock/coworking.webp"
-              alt="Espacio de coworking del Polo Tecnológico La Nube"
-              width={1024}
-              height={1024}
-              className="h-auto w-full object-cover"
-            />
-          </div>
+          <ParallaxImage
+            src="/images/stock/coworking.webp"
+            alt="Espacio de coworking del Polo Tecnológico La Nube"
+            sizes="(min-width: 768px) 28rem, 100vw"
+            className="aspect-[4/3] w-full rounded-2xl border shadow-lg md:max-w-md"
+          />
         </div>
       </section>
 
@@ -272,24 +258,8 @@ export default function AboutPage() {
         </Container>
       </Breakout>
 
-      {/* La Nube en números */}
-      <section className="flex flex-col gap-8 border-t border-la-nube-primary/15 py-16 md:py-20">
-        <SectionHeader
-          eyebrow="cifras"
-          heading={
-            <>
-              La Nube en <GradientWord>números</GradientWord>
-            </>
-          }
-          lead="El ecosistema educativo y tecnológico de Concepción del Uruguay, en datos (2026)."
-        />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatTile data="4" title="Universidades · UNER, UCU, UTN y UADER" />
-          <StatTile data="+130" title="Carreras superiores" />
-          <StatTile data="+250" title="Profesionales SSI" />
-          <StatTile data="+25" title="Empresas SSI con representación local" />
-        </div>
-      </section>
+      {/* La Nube en números — la misma franja oscura de la landing (mismas cifras). */}
+      <StatsBand />
 
       {/* El origen — the official logo legend (tinted feature). */}
       <Breakout className={TINT}>
@@ -304,36 +274,40 @@ export default function AboutPage() {
               }
               lead="Cómo nació La Nube, contada en los trazos de su marca."
             />
-            <div className="flex max-w-3xl flex-col gap-6">
-              <p className="text-2xl font-bold tracking-tight text-balance md:text-3xl">
-                En Concepción del Uruguay, una nube decidió quedarse. No estaba
-                hecha de vapor, sino de encuentros.
-              </p>
-              <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
-                El primer trazo nació cuando el{" "}
-                <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-                  Estado
-                </b>{" "}
-                dijo «hagámoslo posible». El segundo, cuando la{" "}
-                <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-                  Academia
-                </b>{" "}
-                dijo «hagámoslo saber». El tercero, cuando la{" "}
-                <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-                  Industria y el emprendimiento
-                </b>{" "}
-                dijeron «hagámoslo realidad».
-              </p>
-              <p className="text-xl font-medium text-balance md:text-2xl">
-                Al unirse, los trazos dibujaron una nube: un espacio común donde
-                las ideas se condensan hasta llover oportunidades.
-              </p>
-              <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
-                Luego llegaron los nodos —
-                <b>personas, pymes, universidades, organismos y escuelas</b>—:
-                los actores que le dan fuerza al Polo y representan el camino
-                que queremos construir juntos.
-              </p>
+            <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+              {/* El logo se dibuja en el orden del relato: trazos, conectores, nodos. */}
+              <IsologoInView className="mx-auto w-48 sm:w-60 lg:order-2 lg:w-full" />
+              <div className="flex max-w-3xl flex-col gap-6">
+                <p className="text-2xl font-bold tracking-tight text-balance md:text-3xl">
+                  En Concepción del Uruguay, una nube decidió quedarse. No
+                  estaba hecha de vapor, sino de encuentros.
+                </p>
+                <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
+                  El primer trazo nació cuando el{" "}
+                  <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
+                    Estado
+                  </b>{" "}
+                  dijo «hagámoslo posible». El segundo, cuando la{" "}
+                  <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
+                    Academia
+                  </b>{" "}
+                  dijo «hagámoslo saber». El tercero, cuando la{" "}
+                  <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
+                    Industria y el emprendimiento
+                  </b>{" "}
+                  dijeron «hagámoslo realidad».
+                </p>
+                <p className="text-xl font-medium text-balance md:text-2xl">
+                  Al unirse, los trazos dibujaron una nube: un espacio común
+                  donde las ideas se condensan hasta llover oportunidades.
+                </p>
+                <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
+                  Luego llegaron los nodos —
+                  <b>personas, pymes, universidades, organismos y escuelas</b>—:
+                  los actores que le dan fuerza al Polo y representan el camino
+                  que queremos construir juntos.
+                </p>
+              </div>
             </div>
           </section>
         </Container>
@@ -428,19 +402,6 @@ export default function AboutPage() {
           </section>
         </Container>
       </Breakout>
-    </div>
-  );
-}
-
-/** Terminal-style stat tile — echoes the landing space-card's capacity box. */
-function StatTile({ data, title }: { data: string; title: string }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-la-nube-primary/20 bg-card/60 p-6">
-      <span className="text-4xl font-black text-la-nube-primary md:text-6xl">
-        {data}
-      </span>
-      <div className="h-px w-full bg-la-nube-primary/15" />
-      <span className="text-sm font-semibold text-foreground/80">{title}</span>
     </div>
   );
 }

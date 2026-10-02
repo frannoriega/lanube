@@ -375,16 +375,24 @@ export default function IncidentsPage() {
                         </p>
                         <p className="text-sm">
                           Creado:{" "}
-                          {new Date(incident.createdAt).toLocaleDateString()} a
-                          las{" "}
-                          {new Date(incident.createdAt).toLocaleTimeString()}
+                          {new Date(incident.createdAt).toLocaleDateString(
+                            "es-AR",
+                          )}{" "}
+                          a las{" "}
+                          {new Date(incident.createdAt).toLocaleTimeString(
+                            "es-AR",
+                          )}
                         </p>
                         {incident.resolvedAt && (
                           <p className="text-sm">
                             Resuelto:{" "}
-                            {new Date(incident.resolvedAt).toLocaleDateString()}{" "}
+                            {new Date(incident.resolvedAt).toLocaleDateString(
+                              "es-AR",
+                            )}{" "}
                             a las{" "}
-                            {new Date(incident.resolvedAt).toLocaleTimeString()}
+                            {new Date(incident.resolvedAt).toLocaleTimeString(
+                              "es-AR",
+                            )}
                           </p>
                         )}
                       </div>

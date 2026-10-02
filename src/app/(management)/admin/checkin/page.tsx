@@ -240,7 +240,9 @@ export default function AdminCheckInPage() {
                         <p>Servicio: {getServiceName(user.service)}</p>
                         <p>
                           Check-in:{" "}
-                          {new Date(user.checkInTime).toLocaleTimeString()}
+                          {new Date(user.checkInTime).toLocaleTimeString(
+                            "es-AR",
+                          )}
                         </p>
                         <p>
                           Tiempo en La Nube:{" "}
@@ -252,7 +254,7 @@ export default function AdminCheckInPage() {
                           user.reservationEndTime > 0
                             ? new Date(
                                 user.reservationEndTime,
-                              ).toLocaleTimeString()
+                              ).toLocaleTimeString("es-AR")
                             : "—"}
                         </p>
                       </div>

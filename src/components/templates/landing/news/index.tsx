@@ -1,6 +1,8 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
+import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
+import { Reveal } from "@/components/molecules/reveal";
 import {
   NewsCard,
   toNewsCardData,
@@ -20,34 +22,28 @@ export default async function NewsSection() {
     <Breakout className={LANDING_SECTION_BG}>
       <section className="w-full" aria-labelledby="noticias">
         <Container className="flex flex-col gap-8 px-8 py-16">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col gap-3">
-              <span className="font-mono text-sm font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
-                ~/ noticias
-                <span className="animate-blink">▌</span>
-              </span>
-              <h2 id="noticias" className="text-5xl font-bold">
-                Últimas{" "}
-                <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
-                  noticias
-                </span>
-              </h2>
-              <p className="max-w-prose text-lg text-muted-foreground">
-                Novedades y anuncios de la comunidad de La Nube.
-              </p>
-            </div>
-            <Link
-              href="/news"
-              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Ver todas
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          <SectionHeading
+            eyebrow="noticias"
+            title="Últimas"
+            accent="noticias"
+            lead="Novedades y anuncios de la comunidad de La Nube."
+            id="noticias"
+            action={
+              <Link
+                href="/news"
+                className="flex items-center gap-1.5 text-sm font-medium text-la-nube-selected transition-colors hover:text-la-nube-ink dark:text-la-nube-secondary dark:hover:text-white"
+              >
+                Ver todas
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            }
+          />
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[...featured, ...rest].map((post) => (
-              <NewsCard key={post.id} post={toNewsCardData(post)} />
+            {[...featured, ...rest].map((post, i) => (
+              <Reveal key={post.id} delay={(i % 3) * 0.08} className="h-full">
+                <NewsCard post={toNewsCardData(post)} />
+              </Reveal>
             ))}
           </div>
         </Container>

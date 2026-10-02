@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         {getServiceName(user.service)} • Ingresó:{" "}
-                        {new Date(user.checkInTime).toLocaleTimeString()}
+                        {new Date(user.checkInTime).toLocaleTimeString("es-AR")}
                       </p>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 import AlliesSection from "@/components/templates/landing/allies";
+import ClosingCta from "@/components/templates/landing/cta";
 import EventsSection from "@/components/templates/landing/events";
 import HeroSection from "@/components/templates/landing/hero";
 import { EmojiShower } from "@/components/templates/landing/theme/emoji-shower";
@@ -6,6 +7,7 @@ import MembersSection from "@/components/templates/landing/members";
 import NewsSection from "@/components/templates/landing/news";
 import PartnersSection from "@/components/templates/landing/partners";
 import SpacesSection from "@/components/templates/landing/spaces";
+import { StatsBand } from "@/components/templates/landing/stats";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
 import { BASE_KEYWORDS } from "@/lib/constants/hero";
@@ -36,6 +38,11 @@ export default async function Home() {
   // so an extra sibling shifts every section's parity — including Hero's — for as long
   // as it's present. EmojiShower is a `position: fixed` full-viewport overlay with no
   // layout footprint of its own, so it renders as a sibling of (outside) that container.
+  //
+  // Milestone 17 (experimento de marca): `StatsBand` (franja azul noche) y `ClosingCta`
+  // son siempre visibles y pintan su propio fondo, así que no usan LANDING_SECTION_BG pero sí
+  // ocupan un lugar en el conteo de nth-child. La franja oscura corta el ritmo claro/tintado a
+  // propósito; las secciones a sus lados siguen alternando bien entre sí.
   return (
     <>
       {theme?.entranceEffect === "EMOJI_SHOWER" && emojis.length > 0 ? (
@@ -52,11 +59,13 @@ export default async function Home() {
         />
         {/* Right after the hero; hidden automatically when there are no upcoming events. */}
         <EventsSection />
+        <StatsBand />
         <NewsSection />
         <SpacesSection />
         <MembersSection />
         <PartnersSection />
         <AlliesSection />
+        <ClosingCta />
       </div>
     </>
   );
