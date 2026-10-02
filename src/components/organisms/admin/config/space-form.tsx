@@ -57,7 +57,6 @@ const EMPTY: SpaceInput = {
   isExclusive: false,
   isReservable: true,
   isFeatured: false,
-  displayOrder: 0,
   iconName: "",
   imageUrl: null,
 };
@@ -109,7 +108,6 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
           isExclusive: editing.isExclusive,
           isReservable: editing.isReservable,
           isFeatured: editing.isFeatured,
-          displayOrder: editing.displayOrder,
           iconName: editing.iconName ?? "",
           imageUrl: editing.imageUrl,
         }

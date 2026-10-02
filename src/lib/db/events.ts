@@ -584,7 +584,9 @@ export async function updateEvent(
           description: input.description ?? null,
           summary: input.summary?.trim() || null,
           isFeatured: input.isFeatured ?? false,
-          featuredOrder: input.featuredOrder ?? 0,
+          // `undefined` = no tocar: el orden de los destacados se cambia con "Reordenar
+          // destacados" (milestone 14), no desde el formulario.
+          featuredOrder: input.featuredOrder,
           eventType: input.eventType,
           status: input.status,
           spaceId: input.spaceId,
@@ -937,7 +939,6 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
     description: event.description ?? "",
     summary: event.summary ?? "",
     isFeatured: event.isFeatured,
-    featuredOrder: event.featuredOrder,
     eventType: event.eventType,
     status: event.status,
     spaceId: event.spaceId,

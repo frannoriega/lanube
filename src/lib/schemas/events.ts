@@ -75,7 +75,8 @@ export const eventInputSchema = z
       .nullable(),
     // Featured events lead the landing section; featuredOrder sorts them (ascending).
     isFeatured: z.boolean(),
-    featuredOrder: z.number().int().min(0),
+    // Milestone 14: se ordena con "Reordenar destacados" en la lista; opcional e ignorado al editar.
+    featuredOrder: z.number().int().min(0).optional(),
     // Code of a ReservationType row; existence is validated server-side (FK).
     eventType: z.string().trim().min(1, { message: "Elegí un tipo de evento" }),
     // Lifecycle state set by the admin. ENDED is derived, so it's not a valid input.
