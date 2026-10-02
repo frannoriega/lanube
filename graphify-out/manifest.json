@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1790923322.9454343,
-    "ast_hash": "3e6e964c58810b421a843bd5f5ebca0d",
+    "mtime": 1790923650.4946017,
+    "ast_hash": "0843b248e24525fa359ec8b51c009ad6",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -275,9 +275,9 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/events/[id]/page.tsx": {
-    "mtime": 1788565052.8555274,
-    "ast_hash": "f61241af23d385b8ac52bd77f3dc6d36",
-    "semantic_hash": "f61241af23d385b8ac52bd77f3dc6d36"
+    "mtime": 1790923650.6185155,
+    "ast_hash": "557b69dad6659c1bfc7523511d049234",
+    "semantic_hash": ""
   },
   "src/app/(management)/admin/events/[id]/participants/page.tsx": {
     "mtime": 1790872436.03459,
@@ -780,9 +780,9 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/delete-event-button.tsx": {
-    "mtime": 1785506761.612714,
-    "ast_hash": "420b0a4d3625ac76dd4974ae3fd497f1",
-    "semantic_hash": "420b0a4d3625ac76dd4974ae3fd497f1"
+    "mtime": 1790923656.4720523,
+    "ast_hash": "50b26634db0e852deb53948a934cbb4f",
+    "semantic_hash": ""
   },
   "src/components/organisms/admin/delete-form-button.tsx": {
     "mtime": 1785506761.6130345,
@@ -800,14 +800,14 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/event-form.tsx": {
-    "mtime": 1790922687.0036488,
-    "ast_hash": "c785658acffea6b8a6844b63ba7a3951",
+    "mtime": 1790923832.991207,
+    "ast_hash": "9f6166cda10dd527a9b45e2a4527dff0",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/event-sessions.tsx": {
-    "mtime": 1788565052.8796132,
-    "ast_hash": "877f073eba28314d385ffe7e677c65c2",
-    "semantic_hash": "877f073eba28314d385ffe7e677c65c2"
+    "mtime": 1790923832.9908812,
+    "ast_hash": "f57718b11e7fc5bfec2c63e643d252b5",
+    "semantic_hash": ""
   },
   "src/components/organisms/admin/form-picker.tsx": {
     "mtime": 1788565052.8800309,
@@ -3200,8 +3200,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-14-mobile-redesign.md": {
-    "mtime": 1790923357.3807116,
-    "ast_hash": "6547e3059ecddb60b358ba33422e0b1f",
+    "mtime": 1790923979.0157688,
+    "ast_hash": "aeb55b2a60ace341c8997435765ab51f",
     "semantic_hash": ""
   },
   "src/components/molecules/responsive-dialog.tsx": {
@@ -3290,8 +3290,8 @@
     "semantic_hash": ""
   },
   "src/components/molecules/form-layout.tsx": {
-    "mtime": 1790923322.201447,
-    "ast_hash": "9b6e67d17a187df33c167d9e22f06f4e",
+    "mtime": 1790923978.3373504,
+    "ast_hash": "6d049b5edcb9e8e0959a977349e9a215",
     "semantic_hash": ""
   },
   "src/hooks/use-unsaved-changes-guard.tsx": {
