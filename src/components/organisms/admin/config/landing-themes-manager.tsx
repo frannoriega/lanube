@@ -20,7 +20,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ReorderList } from "@/components/molecules/reorder-list";
+import {
+  ReorderBar,
+  useTableReorder,
+} from "@/components/molecules/table-reorder";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import type { LandingTheme } from "@/types/prisma";
@@ -51,15 +54,14 @@ export function LandingThemesManager() {
   const [busy, setBusy] = useState(false);
 
   /*
-   * Modo "Reordenar" (milestone 14, decisión Part B.3): la lista se reordena arrastrando,
-   * solo después de activar el modo, y se guarda de una vez con "Guardar orden".
+   * Modo "Reordenar" (milestone 14, decisión Part B.3; en la misma tabla desde el
+   * milestone 16): la lista se reordena arrastrando, solo después de activar el modo, y se
+   * guarda de una vez con "Guardar orden".
    */
-  const [reorderMode, setReorderMode] = useState(false);
-  const saveOrder = async (orderedIds: string[]) => {
+  const reorder = useTableReorder(themes, async (orderedIds) => {
     try {
       await apiSend("/api/admin/themes/reorder", "POST", { orderedIds });
       toast.success("Orden guardado");
-      setReorderMode(false);
       invalidateApi("/api/admin/themes");
       await refetch();
     } catch (err) {
@@ -68,7 +70,7 @@ export function LandingThemesManager() {
       );
       throw err;
     }
-  };
+  });
 
   const onDelete = async () => {
     if (!deleting) return;
@@ -162,7 +164,7 @@ export function LandingThemesManager() {
       },
     },
   ];
-  const table = useStaticTable(themes, columns);
+  const table = useStaticTable(reorder.rows, columns);
 
   return (
     <Card className="glass-card dark:glass-card-dark">
@@ -182,8 +184,8 @@ export function LandingThemesManager() {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={() => setReorderMode(true)}
-            disabled={reorderMode || themes.length < 2}
+            onClick={reorder.start}
+            disabled={reorder.active || themes.length < 2}
           >
             <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
           </Button>
@@ -207,19 +209,22 @@ export function LandingThemesManager() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
-        ) : reorderMode ? (
-          <ReorderList
-            items={themes.map((item) => ({
-              id: item.id,
-              label: item.name,
-              description: windowSummary(item),
-            }))}
-            hint="Si dos temas coinciden en fecha, gana el de más arriba."
-            onSave={saveOrder}
-            onCancel={() => setReorderMode(false)}
-          />
         ) : (
-          <DataTable table={table} emptyMessage="No hay temas definidos." />
+          <div className="space-y-3">
+            <ReorderBar
+              reorder={reorder}
+              hint="Si dos temas coinciden en fecha, gana el de más arriba."
+            />
+            <DataTable
+              table={table}
+              emptyMessage="No hay temas definidos."
+              reorder={
+                reorder.active
+                  ? { onMove: reorder.move, nameOf: (r) => r.name }
+                  : undefined
+              }
+            />
+          </div>
         )}
       </CardContent>
 
