@@ -1,7 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  StatGrid,
+  StatGridSkeleton,
+  StatTile,
+} from "@/components/molecules/stat-grid";
 import { useUserStats } from "@/hooks/api";
 import useUser from "@/hooks/use-user";
 import { Calendar, Clock, TrendingUp } from "lucide-react";
@@ -25,11 +30,7 @@ export default function DashboardPage() {
           <Skeleton className="h-8 w-72" />
           <Skeleton className="mt-2 h-4 w-96" />
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-28 w-full" />
-          ))}
-        </div>
+        <StatGridSkeleton />
       </div>
     );
   }
@@ -50,60 +51,29 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Próximas Reservas
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.upcomingReservations || 0}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.totalTimeThisWeek || 0}h
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Este Mes</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.totalTimeThisMonth || 0}h
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Reservas Totales
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.recentReservations?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats cards — grilla compartida, 2×2 compacta en teléfonos */}
+      <StatGrid>
+        <StatTile
+          title="Próximas Reservas"
+          icon={Calendar}
+          value={stats?.upcomingReservations || 0}
+        />
+        <StatTile
+          title="Esta Semana"
+          icon={Clock}
+          value={`${stats?.totalTimeThisWeek || 0}h`}
+        />
+        <StatTile
+          title="Este Mes"
+          icon={TrendingUp}
+          value={`${stats?.totalTimeThisMonth || 0}h`}
+        />
+        <StatTile
+          title="Reservas Totales"
+          icon={Calendar}
+          value={stats?.recentReservations?.length || 0}
+        />
+      </StatGrid>
 
       {/* Recent reservations */}
       {stats?.recentReservations && stats.recentReservations.length > 0 && (

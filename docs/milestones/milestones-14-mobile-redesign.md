@@ -542,7 +542,11 @@ lanube-app` (this repo's container only).
       — `molecules/whatsapp-float-button.tsx` is now a client component that returns `null`
       under `/admin` and `/user` (verified: present on `/`, absent on `/user/dashboard` and
       `/admin/site`). Still shown on public pages, auth pages and `/forms`.
-- [ ] Shared KPI stat grid, 2×2 compact below `md` (user/admin dashboard, check-in, users) (J).
+- [x] Shared KPI stat grid, 2×2 compact below `md` (user/admin dashboard, check-in, users) (J).
+      — new `molecules/stat-grid.tsx` (`StatGrid`, `StatTile` with tones that carry their
+      own `dark:` variants, `StatGridSkeleton`); applied to `user/dashboard`,
+      `admin/dashboard`, `admin/checkin` (its "Actualizado" tile now `HH:mm`, 24h), `admin/users`
+      (descriptions only from `md`).
 - [ ] Audit filter chips + entity names in Spanish (L).
 - [ ] User dashboard "Reservas recientes" time format `dd/MM/yyyy · HH:mm a HH:mm` (N).
 - [ ] `Markdown` molecule breaks long words (O).
