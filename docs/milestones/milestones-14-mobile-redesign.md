@@ -586,7 +586,15 @@ lanube-app` (this repo's container only).
       Verified with Playwright: touch tap at 14:20 opens the drawer with 14:15 → 15:15, and a
       desktop mouse drag 10:00→11:00 still opens the dialog with 10:00 → 11:00
       (`.mobile-shots/s3-tap/tap-drawer.png`).
-- [ ] Open on the first week / day with a bookable slot (F); touch-aware hint copy (G).
+- [x] Open on the first week / day with a bookable slot (F); touch-aware hint copy (G).
+      — `calendar-utils.ts`: `getCurrentWorkWeekStart` (moved out of `WeekCalendar`) +
+      `firstBookableWeekStart` (next week when every day of the current one is <24h away;
+      tested). Opens there and "Hoy" goes there; the forward limit stays anchored to the
+      current work week + 1, so skipping a blocked week doesn't extend the booking horizon.
+      The focused day was already the first bookable one (previous item).
+      `templates/user/calendar-template-client.tsx`: hint is "Tocá un horario libre para
+      reservar" under `(pointer: coarse)`, else the old drag copy (verified in Playwright with
+      a touch context; SSR renders the desktop copy and it swaps after hydration).
 - [ ] 24h minimum-notice gating and the detail dialog unchanged (regression-check).
 
 **Slice 4 — tables + reorder**
