@@ -51,26 +51,55 @@ export interface ReorderItem {
   description?: string;
 }
 
-/** Textos para lectores de pantalla durante el arrastre con teclado. */
-function announcements(items: ReorderItem[]): Announcements {
-  const name = (id: string | number) =>
-    items.find((i) => i.id === id)?.label ?? String(id);
+/**
+ * Textos para lectores de pantalla durante el arrastre con teclado. Compartido con el modo
+ * reordenar del `DataTable` (milestone 16): recibe cómo nombrar cada id y el orden actual.
+ */
+export function reorderAnnouncements(
+  nameOf: (id: string) => string,
+  ids: string[],
+): Announcements {
+  const name = (id: string | number) => nameOf(String(id));
   const pos = (id: string | number | undefined) =>
-    id === undefined ? 0 : items.findIndex((i) => i.id === id) + 1;
+    id === undefined ? 0 : ids.indexOf(String(id)) + 1;
+  const total = ids.length;
   return {
     onDragStart: ({ active }) =>
-      `Levantaste ${name(active.id)}, posición ${pos(active.id)} de ${items.length}.`,
+      `Levantaste ${name(active.id)}, posición ${pos(active.id)} de ${total}.`,
     onDragOver: ({ active, over }) =>
       over
-        ? `${name(active.id)} pasó a la posición ${pos(over.id)} de ${items.length}.`
+        ? `${name(active.id)} pasó a la posición ${pos(over.id)} de ${total}.`
         : `${name(active.id)} está fuera de la lista.`,
     onDragEnd: ({ active, over }) =>
       over
-        ? `Soltaste ${name(active.id)} en la posición ${pos(over.id)} de ${items.length}.`
+        ? `Soltaste ${name(active.id)} en la posición ${pos(over.id)} de ${total}.`
         : `Soltaste ${name(active.id)}.`,
     onDragCancel: ({ active }) =>
       `Se canceló el movimiento de ${name(active.id)}.`,
   };
+}
+
+/** Instrucciones para lectores de pantalla sobre la manija. */
+export const REORDER_SCREEN_READER_INSTRUCTIONS = {
+  draggable:
+    "Para mover este elemento, presioná Espacio. Usá las flechas para cambiarlo de lugar y Espacio de nuevo para soltarlo. Escape cancela.",
+};
+
+/**
+ * Sensores del arrastre: mouse (con una distancia mínima, así un click no arrastra), táctil
+ * (mantener apretado un instante: un deslizamiento rápido sobre la manija sigue siendo
+ * scroll) y teclado.
+ */
+export function useReorderSensors() {
+  return useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 }
 
 export function ReorderList({
@@ -90,17 +119,7 @@ export function ReorderList({
   const [saving, setSaving] = useState(false);
   const dirty = items.some((item, i) => item.id !== initialItems[i]?.id);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    // En táctil, mantener apretado un instante antes de arrastrar: un deslizamiento rápido
-    // sobre la manija sigue siendo scroll de la página.
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 150, tolerance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  const sensors = useReorderSensors();
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -137,11 +156,11 @@ export function ReorderList({
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
         accessibility={{
-          announcements: announcements(items),
-          screenReaderInstructions: {
-            draggable:
-              "Para mover este elemento, presioná Espacio. Usá las flechas para cambiarlo de lugar y Espacio de nuevo para soltarlo. Escape cancela.",
-          },
+          announcements: reorderAnnouncements(
+            (id) => items.find((i) => i.id === id)?.label ?? id,
+            items.map((i) => i.id),
+          ),
+          screenReaderInstructions: REORDER_SCREEN_READER_INSTRUCTIONS,
         }}
       >
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
