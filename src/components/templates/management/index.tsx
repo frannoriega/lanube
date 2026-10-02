@@ -6,6 +6,13 @@ import { NotificationBell } from "@/components/molecules/notification-bell";
 import { ThemeToggle } from "@/components/molecules/theme";
 import UserProfile from "@/components/molecules/user-profile";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
@@ -309,37 +316,52 @@ export default function ManagementLayout({
   return (
     <div>
       <div className={`min-h-screen bg-slate-100 dark:bg-slate-800`}>
-        {/* Mobile sidebar */}
-        <div
-          className={`fixed inset-0 z-50 lg:hidden print:hidden ${sidebarOpen ? "block" : "hidden"}`}
-        >
-          <div
-            className="fixed inset-0 bg-gray-600 bg-opacity-75"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 flex w-64 flex-col glass-sidebar dark:glass-sidebar-dark shadow-xl">
-            <div className="flex h-16 items-center justify-between px-4">
-              <div className="flex items-center space-x-2">
-                <Link href="/" aria-label="Ir al inicio de La Nube">
-                  <Logo />
-                </Link>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
+        {/*
+         * Menú móvil (milestone 14, hallazgos 5 / C / H). Antes era un `div` fijo hecho a
+         * mano en `z-50`, y el header sticky (`z-100`) le pintaba encima: el logo y el botón
+         * de cerrar quedaban tapados. Ahora es un `Sheet` (Radix Dialog), que además trae
+         * gratis el focus trap, el cierre con Esc y el bloqueo del scroll del body.
+         *   - `z-[120]` en contenido + overlay: por encima del header (`z-100`) y del
+         *     popover de notificaciones (`z-[110]`).
+         *   - Fondo sólido `bg-background` en vez del `glass-sidebar` translúcido: sobre el
+         *     overlay gris, el vidrio dejaba los ítems inactivos gris sobre gris.
+         *   - El `<nav>` scrollea en vertical (`overflow-y-auto`) para que, con
+         *     "Configuración" expandido en un teléfono bajo, los últimos ítems sigan siendo
+         *     alcanzables, y recorta en horizontal (`overflow-x-hidden`) para eliminar la
+         *     barra de scroll horizontal que asomaba al pie del panel.
+         */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent
+            side="left"
+            showCloseButton={false}
+            overlayClassName="z-[120] lg:hidden"
+            className="z-[120] w-72 max-w-[85vw] gap-0 p-0 lg:hidden print:hidden"
+          >
+            <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
+            <SheetDescription className="sr-only">
+              Secciones disponibles para tu cuenta.
+            </SheetDescription>
+            <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+              <Link
+                href="/"
+                aria-label="Ir al inicio de La Nube"
                 onClick={() => setSidebarOpen(false)}
-                aria-label="Cerrar menu"
               >
-                <X className="h-5 w-5" />
-              </Button>
+                <Logo />
+              </Link>
+              <SheetClose asChild>
+                <Button variant="ghost" size="sm" aria-label="Cerrar menú">
+                  <X className="h-5 w-5" />
+                </Button>
+              </SheetClose>
             </div>
-            <nav className="flex-1 space-y-1 px-2 py-4">
+            <nav className="min-h-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto px-2 py-4">
               {navItems.map((item) => {
                 return recursiveRender(item);
               })}
             </nav>
-          </div>
-        </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Desktop sidebar */}
         <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col print:hidden">

@@ -104,6 +104,18 @@ const SHOTS = [
       await p.getByRole("button", { name: "Abrir menu" }).click();
     },
   },
+  {
+    // Menú de admin con "Configuración" expandido: el caso largo que no scrolleaba (hallazgo C).
+    name: "admin-drawer",
+    user: "admin",
+    url: "/admin/dashboard",
+    onlyNarrow: true,
+    action: async (p) => {
+      await p.getByRole("button", { name: "Abrir menu" }).click();
+      await p.waitForTimeout(600);
+      await p.getByRole("button", { name: /Configuración/ }).click();
+    },
+  },
   { name: "admin-dashboard", user: "admin", url: "/admin/dashboard" },
   { name: "admin-reservations", user: "admin", url: "/admin/reservations" },
   { name: "admin-users", user: "admin", url: "/admin/users" },
