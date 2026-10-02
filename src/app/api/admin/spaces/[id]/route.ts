@@ -53,6 +53,9 @@ export async function PUT(
           action: AUDIT_ACTIONS.spaceUpdate,
           entityType: "Space",
           entityId: id,
+          // The name itself may not be what changed — without this, editing e.g. just the
+          // capacity would leave no way to tell which space from the log alone.
+          context: { Espacio: space.name },
           ...diff,
         });
       }

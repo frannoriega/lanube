@@ -70,3 +70,21 @@ export const BOOKING_WINDOW_MESSAGES: Record<BookingWindowViolation, string> = {
   outside_hours: "Las reservas deben estar entre las 9:00 y las 18:00",
   overnight: "La reserva debe empezar y terminar el mismo día",
 };
+
+/**
+ * Anticipación mínima exigida para reservar, en horas.
+ *
+ * Reemplaza la regla anterior ("solo a partir de mañana", comparada por día calendario), que
+ * dejaba colar reservas con menos de 24hs reales de aviso: alguien reservando hoy a las 23:00
+ * para mañana a las 09:00 pasaba el chequeo por día pero tenía 10hs de anticipación, no 24.
+ */
+export const MINIMUM_NOTICE_HOURS = 24;
+export const MINIMUM_NOTICE_MS = MINIMUM_NOTICE_HOURS * 60 * 60 * 1000;
+
+export const MINIMUM_NOTICE_MESSAGE =
+  "Las reservas deben realizarse con un mínimo de 24 horas de anticipación. Por favor, seleccioná una fecha y un horario que cumplan con ese plazo.";
+
+/** true si `startMs` deja al menos `MINIMUM_NOTICE_HOURS` de margen desde `nowMs`. */
+export function hasMinimumNotice(startMs: number, nowMs: number): boolean {
+  return startMs - nowMs >= MINIMUM_NOTICE_MS;
+}

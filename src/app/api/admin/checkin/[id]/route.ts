@@ -38,6 +38,12 @@ export async function PATCH(
       action: AUDIT_ACTIONS.checkinUpdate,
       entityType: "CheckIn",
       entityId: updated.id,
+      context: {
+        Usuario: `${updated.registeredUser.name} ${updated.registeredUser.lastName}`,
+        ...(updated.reservation?.space?.name
+          ? { Espacio: updated.reservation.space.name }
+          : {}),
+      },
       before: { checkOutTime: null },
       after: { checkOutTime: Number(updated.checkOutTime ?? 0) },
     });

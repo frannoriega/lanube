@@ -3,6 +3,7 @@ import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
 import { decideNewsPost, getNewsPostById } from "@/lib/db/news";
+import { notify } from "@/lib/notifications/dispatch";
 import { newsPostDecisionSchema } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
 
@@ -52,8 +53,30 @@ export async function POST(
       entityId: id,
       before: { status: before.status, pendingAction: before.pendingAction },
       after: { status: post.status, pendingAction: post.pendingAction },
+      context: { Noticia: post.title },
       reason: parsed.data.reason ?? null,
     });
+
+    // A deleted-and-unreassigned author has no one to notify — SetNull leaves authorId
+    // null rather than orphaning the decision.
+    if (post.authorId) {
+      try {
+        await notify({
+          type: "news.decided",
+          recipient: { registeredUserId: post.authorId },
+          data: {
+            newsPostId: post.id,
+            title: post.title,
+            slug: post.slug,
+            kind,
+            decision: parsed.data.decision,
+            reason: parsed.data.reason ?? null,
+          },
+        });
+      } catch {
+        // Never fail the decision over a notification problem.
+      }
+    }
 
     return apiSuccess(post);
   } catch (err) {

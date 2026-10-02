@@ -18,6 +18,13 @@ model AuditLog {
   before      Json?
   /// Field-level snapshot of only the changed columns, after the write.
   after       Json?
+  /// Human-readable identifying info about the record acted on — e.g. a reservation's
+  /// space/time/owner — as flat `{ "Espacio": "Sala A", ... }` label→value pairs the call
+  /// site builds and the view renders verbatim (never diffed, never JSON on screen). Exists
+  /// because `before`/`after` only ever hold *changed* fields: approving a reservation only
+  /// changes `status`, so without this a reader had no way to tell WHICH reservation was
+  /// approved short of looking up `entityId` in the database by hand.
+  context     Json?
   reason      String?
   /// Correlates entries written by the same HTTP request (e.g. an approval's
   /// cascaded auto-rejections), so the UI can group them.

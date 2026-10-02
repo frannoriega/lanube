@@ -45,3 +45,6 @@ next-env.d.ts
 # Local dev uploads (LocalStorage provider)
 /public/uploads/
 /.private-uploads/
+
+# Capturas del script scripts/mobile-shots.mjs (milestone 14)
+/.mobile-shots/

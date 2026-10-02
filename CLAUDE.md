@@ -594,6 +594,32 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   `$executeRaw` returns a row count and silently discards the result set — that was a
   real bug that made the cascade invisible for months.
 
+### 12. Notification system
+
+- **Pluggable by design** (milestone 13, `src/lib/notifications/`): a call site builds a
+  typed `NotificationEvent` (`types.ts`) and calls `notify(event)` — it never talks to a
+  channel directly. `notify()` fans out to every `NotificationProvider` in `dispatch.ts`'s
+  `PROVIDERS` array (today: `in-app`, `email`); adding SMS/WhatsApp/push is a new provider
+  file plus one line there, no call site changes. Like `recordAudit`, `notify()` **never
+  throws** — a broken notification pipe must not fail the mutation that triggered it.
+- **Renderers are pure functions per channel** (`render/in-app.ts`, `render/email.ts`,
+  switched on `event.type`), so they're unit-tested without touching Prisma or nodemailer.
+  A renderer returning `null` means "this event type has nothing to say on this channel" —
+  used by `event.sessionChanged`'s email renderer, since that event's email is still sent
+  by the pre-existing batched sender (see below).
+- **In-app channel** writes one `Notification` row per (event, recipient) via
+  `src/lib/db/notifications.ts`; the bell UI (`NotificationBell`, in the shared
+  `ManagementLayout` header) polls `/api/user/notifications` every 60s.
+- **`event.sessionChanged` is additive, not a replacement**:
+  `notifyEventParticipantsBatch` (`src/lib/email/event-occurrence-update.ts`) keeps its own
+  bespoke **one email per participant covering a whole batch of changes** — a per-event
+  `notify()` call can't reproduce that batching — and separately calls `notify()` once per
+  (participant-with-an-account, change) for the in-app channel only.
+- Same synchronous-fan-out trade-off as every other email sender in this codebase (see the
+  `TODO(scale)` on `notifyEventParticipantsBatch`): `notify()` dispatches inline, inside the
+  triggering request. Fine at current scale; Vercel Queues is the named next step if that
+  changes. Full design: `docs/milestones/milestones-13-notifications.md`.
+
 ## Testing & Seeding
 
 **Vitest Configuration** (`vitest.config.ts`):

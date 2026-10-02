@@ -43,6 +43,7 @@ export async function PUT(
           action: AUDIT_ACTIONS.resourceUpdate,
           entityType: "Resource",
           entityId: id,
+          context: { Recurso: resource.name },
           ...diff,
         });
       }
