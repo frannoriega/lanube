@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1790918952.0998952,
-    "ast_hash": "83572e854244af7cdecfb46a7364d5df",
+    "mtime": 1790919166.2566555,
+    "ast_hash": "8437201b8fd254f4b533cf5a65afd926",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -380,8 +380,8 @@
     "semantic_hash": "8fcf8c6bee2e541c6b3170b73f69de9f"
   },
   "src/app/(management)/user/dashboard/page.tsx": {
-    "mtime": 1790918770.2425215,
-    "ast_hash": "5afe08d493388ff9a3c386e67b0053af",
+    "mtime": 1790919261.0247521,
+    "ast_hash": "4ff7593e6a451498d016307bb7a248fc",
     "semantic_hash": ""
   },
   "src/app/(management)/user/events/page.tsx": {
@@ -3200,8 +3200,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-14-mobile-redesign.md": {
-    "mtime": 1790919136.6652794,
-    "ast_hash": "7a3aec9d780b2af4f8a6faf6f649b622",
+    "mtime": 1790919305.1479633,
+    "ast_hash": "5ff39420e0cbf8f4e240c91e3160c0d4",
     "semantic_hash": ""
   },
   "src/components/molecules/responsive-dialog.tsx": {
