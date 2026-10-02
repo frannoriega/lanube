@@ -125,4 +125,38 @@ describe("renderInApp", () => {
     expect(rejectedEdit.body).toContain("pedido de edición");
     expect(rejectedEdit.body).toContain("Falta una fuente");
   });
+
+  it("renders a profile-change approval naming the requested DNI", () => {
+    const rendered = renderInApp({
+      type: "profileChange.decided",
+      recipient: { registeredUserId: "r1" },
+      data: {
+        requestId: "q1",
+        field: "DNI",
+        requestedValue: "20000999",
+        decision: "APPROVED",
+      },
+    });
+    expect(rendered.title).toBe("Cambio de datos aprobado");
+    expect(rendered.body).toBe(
+      "Tu pedido de cambio de DNI a 20000999 fue aprobado.",
+    );
+  });
+
+  it("renders a reason-to-join rejection with its reason", () => {
+    const rendered = renderInApp({
+      type: "profileChange.decided",
+      recipient: { registeredUserId: "r1" },
+      data: {
+        requestId: "q2",
+        field: "REASON_TO_JOIN",
+        requestedValue: "Otro motivo cualquiera, largo",
+        decision: "REJECTED",
+        reason: "Necesitamos más detalle",
+      },
+    });
+    expect(rendered.body).toBe(
+      "Tu pedido de cambio del motivo para unirte fue rechazado: Necesitamos más detalle",
+    );
+  });
 });

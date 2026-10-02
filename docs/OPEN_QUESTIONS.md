@@ -158,16 +158,16 @@ design-focused session rather than decided here:
 
 Contexto en
 [`milestones/milestones-17-account-settings-and-passkeys.md`](./milestones/milestones-17-account-settings-and-passkeys.md).
+Los códigos de recuperación y el aviso de decisiones ya están hechos (segunda pasada).
 
-- **OAuth (Google/GitHub)**: falta decidir la política de vinculación (¿un login con un email
-  que ya existe se vincula solo, o pide la contraseña primero?), dónde viven las
-  credenciales de cada proveedor (el doc de diseño pide configuración en runtime por el
-  superadmin, con secretos cifrados) y crear las apps en cada proveedor.
-- **Códigos de recuperación**: confirmados en `docs/design/06-rust-migration.md`, no
-  construidos todavía. ¿Van con OAuth o antes?
-- **Cambiar la contraseña desde Configuración → Seguridad** (actual + nueva): no se sumó sin
-  preguntar. Hoy remite a "Olvidé mi contraseña".
-- **Avisar al usuario cuando se resuelve su solicitud de cambio de DNI/motivo** (in-app
-  y/o email vía `notify()`): no se sumó sin preguntar. Hoy lo ve en su historial.
+- **OAuth (Google/GitHub)** — postergado. Ya decidido: se **pide la contraseña antes de
+  vincular** (nunca por coincidencia de email) y se conecta desde Seguridad ("Conectar tu
+  cuenta de X"). Falta: dónde viven las credenciales de cada proveedor (el doc de diseño pide
+  configuración en runtime por el superadmin, con secretos cifrados) y crear las apps.
+- **Cambiar la contraseña desde Seguridad** — decidido que va ahí (alivia el SMTP), pero
+  postergado: por ahora alcanza con el reset por email y los códigos de recuperación.
+- **¿Avisar por email cuando se usa un código de recuperación?** No se sumó sin preguntar.
+- **El email de `news.decided` no escapa el motivo** (lo interpola crudo en el HTML). El de
+  `profileChange.decided` sí; convendría alinear el de noticias.
 - **`docs/design/06-rust-migration.md`** describe una migración de este repo a Rust que quedó
   descartada; falta marcarlo como superado.
