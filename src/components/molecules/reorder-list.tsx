@@ -32,6 +32,7 @@ import {
   useSensor,
   useSensors,
   type Announcements,
+  type Modifier,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -102,6 +103,26 @@ export function useReorderSensors() {
   );
 }
 
+/**
+ * Fija el arrastre al eje vertical. Sin esto la fila sigue al puntero también en X: se sale
+ * del contenedor con `overflow-x-auto` de la tabla, lo agranda, y el auto-scroll lo persigue
+ * hacia la derecha sin fin. Reordenar es sólo arriba/abajo, así que X siempre vale 0.
+ * (Equivale a `restrictToVerticalAxis` de `@dnd-kit/modifiers`, sin sumar la dependencia.)
+ */
+export const restrictToVerticalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  x: 0,
+});
+
+/** Modificadores compartidos por todo arrastre de reordenar. */
+export const REORDER_MODIFIERS: Modifier[] = [restrictToVerticalAxis];
+
+/**
+ * Auto-scroll sólo vertical: con umbral X en 0 dnd-kit nunca desplaza un contenedor hacia los
+ * costados aunque el puntero se acerque al borde (p. ej. la tabla ancha en una pantalla chica).
+ */
+export const REORDER_AUTO_SCROLL = { threshold: { x: 0, y: 0.2 } } as const;
+
 export function ReorderList({
   items: initialItems,
   onSave,
@@ -155,6 +176,8 @@ export function ReorderList({
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
+        modifiers={REORDER_MODIFIERS}
+        autoScroll={REORDER_AUTO_SCROLL}
         accessibility={{
           announcements: reorderAnnouncements(
             (id) => items.find((i) => i.id === id)?.label ?? id,
