@@ -485,6 +485,10 @@ no numeric order fields, drawer below `md` for any remaining dialog).
 The design is **agreed**; implementation runs in a fresh session driven by `/loop`
 (the user is away, so the session works autonomously). Ground rules for that session:
 
+- **Commits (changed by the user when launching the run):** commit per item, **unsigned**
+  (`git -c commit.gpgsign=false`), never push; the user rebases + signs after review. The
+  unrelated pre-existing uncommitted work was committed first on its own
+  (`chore: trabajo previo sin commitear …`) so every milestone-14 commit holds only its item.
 - **Tracking:** the checklist below is the source of truth. Tick items as they land
   (`[x]`) and add a one-line note (files touched, anything deferred). Keep every other doc
   this touches in sync in the same pass (CLAUDE.md conventions, README index).
@@ -499,10 +503,7 @@ The design is **agreed**; implementation runs in a fresh session driven by `/loo
   `.mobile-shots/`; the agreed baseline is `.mobile-shots/baseline/`). A slice is done
   only when the overflow report is clean for the screens it touches.
 - **Don't:** touch the admin reservations Gantt (`admin-service-day-timeline.tsx`); touch
-  non-`lanube-*` Docker containers; commit (the working tree already holds unrelated
-  uncommitted work in overlapping files — e.g. `WeekCalendar.tsx`, `roles-manager.tsx`,
-  `templates/management/index.tsx` — so per-slice commits would sweep it in; leave
-  everything uncommitted for the user to review); change the DB schema (no slice needs it:
+  non-`lanube-*` Docker containers; change the DB schema (no slice needs it:
   order/priority columns stay and are written by the reorder UI).
 - **Conventions that apply:** shadcn Form + RHF + Zod for every form; code comments/JSDoc
   in Spanish and generous; design tokens (no raw palette classes without `dark:`); every
@@ -520,8 +521,11 @@ lanube-app` (this repo's container only).
 
 **Slice 2 — quick wins**
 
-- [ ] Nav drawer rebuilt on `ui/sheet.tsx`: header no longer covers it, readable contrast,
+- [x] Nav drawer rebuilt on `ui/sheet.tsx`: header no longer covers it, readable contrast,
       `overflow-y-auto overflow-x-hidden` nav (findings 5, C, H).
+      — `templates/management/index.tsx` (Sheet at `z-[120]`, solid `bg-background`),
+      `ui/sheet.tsx` (new `overlayClassName` prop), `scripts/mobile-shots.mjs` (new
+      `admin-drawer` shot with Configuración expanded).
 - [ ] Shared responsive dialog: Dialog ≥ `md`, bottom Drawer below; migrate every
       remaining form dialog (resource, reservation type, reject reason, decision confirm,
       deletes, booking).

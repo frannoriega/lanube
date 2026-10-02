@@ -49,14 +49,21 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  overlayClassName,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left";
   showCloseButton?: boolean;
+  /**
+   * Clases extra para el overlay. Existe para poder subir su `z-index` junto con el del
+   * contenido (p. ej. el menú móvil de management tiene que quedar por encima del header
+   * sticky, que vive en `z-100`).
+   */
+  overlayClassName?: string;
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay className={overlayClassName} />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
