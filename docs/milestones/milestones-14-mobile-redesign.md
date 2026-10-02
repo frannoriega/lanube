@@ -605,7 +605,13 @@ lanube-app` (this repo's container only).
 
 **Slice 4 — tables + reorder**
 
-- [ ] `DataTable` renders cards below `md` from column `meta` (`title|meta|badge|actions|hidden`).
+- [x] `DataTable` renders cards below `md` from column `meta` (`title|meta|badge|actions|hidden`).
+      — `ui/data-table.tsx`: `ColumnMeta` augmented with `mobile` (+ `leading` for selection
+      checkboxes) and `label` (card "Etiqueta: valor" text; participants already used it);
+      `DataTableCards` chosen via `useMediaQuery` so row controls aren't duplicated in the DOM.
+      Annotated `admin/users/columns.tsx` (Nombre+Apellido title, Estado badge) and
+      `participants-table.tsx` (checkbox leading, Email title, Estado badge). Users verified on
+      phone (`.mobile-shots/s4-cards/`); the participants sample event has no registrations.
 - [ ] Migrate spaces, resources, reservation types, themes, audit, news, roles, reports
       table(s) onto it; hide reservation-type `code` (P). Overflow report clean on all.
 - [ ] Shared reorder mode: "Reordenar" button → grip handle at row end, drag-and-drop

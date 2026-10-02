@@ -96,6 +96,7 @@ export function buildAdminUsersColumns({
 }: AdminUsersColumnsOptions): ColumnDef<AdminUser>[] {
   const roleColumn: ColumnDef<AdminUser> = {
     accessorKey: "role",
+    meta: { label: "Rol" },
     header: () => (
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
         Rol
@@ -143,6 +144,7 @@ export function buildAdminUsersColumns({
 const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   {
     accessorKey: "name",
+    meta: { mobile: "title", label: "Nombre" },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Nombre" />
     ),
@@ -155,6 +157,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "lastName",
+    meta: { mobile: "title", label: "Apellido" },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Apellido" />
     ),
@@ -167,6 +170,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "email",
+    meta: { label: "Correo" },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Correo" />
     ),
@@ -179,6 +183,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "dni",
+    meta: { label: "DNI" },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="DNI" />
     ),
@@ -191,6 +196,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "institution",
+    meta: { label: "Institución" },
     header: () => (
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
         Institución
@@ -205,6 +211,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "role",
+    meta: { label: "Rol" },
     header: () => (
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
         Rol
@@ -217,6 +224,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "status",
+    meta: { mobile: "badge", label: "Estado" },
     header: () => (
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
         Estado
@@ -227,6 +235,7 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   },
   {
     accessorKey: "createdAt",
+    meta: { label: "Fecha alta" },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Fecha alta" />
     ),
