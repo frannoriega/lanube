@@ -622,10 +622,23 @@ lanube-app` (this repo's container only).
       (`PerResourceTable` + `DurationTable` in `templates/admin/report`). Spaces' slug and
       order arrows are hidden on cards (order moves to reorder mode next). Overflow report
       clean on all 8 screens × 4 viewports (`.mobile-shots/s4-tables/`).
-- [ ] Shared reorder mode: "Reordenar" button → grip handle at row end, drag-and-drop
+- [x] Shared reorder mode: "Reordenar" button → grip handle at row end, drag-and-drop
       (`@dnd-kit`, keyboard sensor), Guardar/Cancelar; persists via an audited bulk-reorder
       endpoint per entity. Applies to spaces, reservation types, themes (order = priority,
       one-line note in the list header), featured events, featured news.
+      — deps `@dnd-kit/core|sortable|utilities`; `molecules/reorder-list.tsx` (mouse, touch
+      with 150ms hold, keyboard + Spanish screen-reader announcements; save disabled until
+      dirty). Endpoints (all `requirePermission` + `recordAudit`, `entityId: "*"`):
+      existing `spaces/reorder`, new `reservation-types/reorder`, `themes/reorder`
+      (priority = n-1-index; `listLandingThemes` now sorts by priority so the list IS the
+      priority), `events/featured-order` + `news/featured-order` (GET + POST; news needs
+      `news:approve`). New audit actions `reservationType.reorder`, `landingTheme.reorder`,
+      `event.featuredReorder`, `news.featuredReorder`; schema `lib/schemas/reorder.ts` (+test).
+      UI: "Reordenar" in the spaces / reservation-types / themes managers (spaces' up/down
+      arrows and the Orden/Prioridad columns removed), `FeaturedReorderButton` on the Events
+      and News lists. Verified: keyboard reorder of spaces persisted + audited, then
+      restored; featured dialogs load (seed has <2 featured items, so they show the empty
+      message) — `.mobile-shots/s4-reorder/`.
 - [ ] Remove numeric Orden / Prioridad / Orden entre destacados(as) fields from all forms.
 - [ ] Admin events list compact cards on phones with labeled actions (K).
 

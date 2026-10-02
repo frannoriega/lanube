@@ -24,6 +24,7 @@ import {
 import { listEvents, weekdaysFromRrule } from "@/lib/db/events";
 import { getPublicSpaces } from "@/lib/db/spaces";
 import { CalendarDays, Clock, Ticket, Users } from "lucide-react";
+import { FeaturedReorderButton } from "@/components/organisms/admin/featured-reorder-button";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -68,11 +69,21 @@ export default async function EventsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Eventos</h1>
-        <Button asChild>
-          <Link href="/admin/events/new">Nuevo evento</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {/* Orden de los destacados del landing (reemplaza el campo numérico del formulario). */}
+          <FeaturedReorderButton
+            endpoint="/api/admin/events/featured-order"
+            labelKey="name"
+            triggerLabel="Reordenar destacados"
+            title="Reordenar eventos destacados"
+            emptyMessage="Hace falta al menos dos eventos destacados para reordenar."
+          />
+          <Button asChild>
+            <Link href="/admin/events/new">Nuevo evento</Link>
+          </Button>
+        </div>
       </div>
 
       <Suspense>

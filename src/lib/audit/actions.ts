@@ -36,11 +36,15 @@ export const AUDIT_ACTIONS = {
   reservationTypeCreate: "reservationType.create",
   reservationTypeUpdate: "reservationType.update",
   reservationTypeDelete: "reservationType.delete",
+  /** Modo "Reordenar" (milestone 14): nuevo orden de los tipos de reserva. */
+  reservationTypeReorder: "reservationType.reorder",
 
   // Events & forms
   eventCreate: "event.create",
   eventUpdate: "event.update",
   eventDelete: "event.delete",
+  /** Modo "Reordenar destacados" (milestone 14): orden de los eventos destacados del landing. */
+  eventFeaturedReorder: "event.featuredReorder",
   formCreate: "form.create",
   formUpdate: "form.update",
   formDelete: "form.delete",
@@ -56,6 +60,10 @@ export const AUDIT_ACTIONS = {
   themeCreate: "landingTheme.create",
   themeUpdate: "landingTheme.update",
   themeDelete: "landingTheme.delete",
+  /** Modo "Reordenar" (milestone 14): el orden de la lista es la prioridad (arriba gana). */
+  themeReorder: "landingTheme.reorder",
+  /** Modo "Reordenar destacadas" (milestone 14): orden de las noticias destacadas. */
+  newsFeaturedReorder: "news.featuredReorder",
 
   // Configuration & operations
   siteConfigUpdate: "siteConfig.update",
@@ -86,10 +94,12 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "reservationType.create": "Creó un tipo de reserva",
   "reservationType.update": "Editó un tipo de reserva",
   "reservationType.delete": "Eliminó un tipo de reserva",
+  "reservationType.reorder": "Reordenó los tipos de reserva",
 
   "event.create": "Creó un evento",
   "event.update": "Editó un evento",
   "event.delete": "Canceló un evento",
+  "event.featuredReorder": "Reordenó los eventos destacados",
   "form.create": "Creó un formulario",
   "form.update": "Editó un formulario",
   "form.delete": "Eliminó un formulario",
@@ -104,6 +114,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "landingTheme.create": "Creó un tema de portada",
   "landingTheme.update": "Editó un tema de portada",
   "landingTheme.delete": "Eliminó un tema de portada",
+  "landingTheme.reorder": "Reordenó los temas de portada (prioridad)",
+  "news.featuredReorder": "Reordenó las noticias destacadas",
 
   "siteConfig.update": "Actualizó la configuración del sitio",
   "checkin.update": "Registró un ingreso o egreso",

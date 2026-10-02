@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ReorderList } from "@/components/molecules/reorder-list";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import {
@@ -37,7 +38,7 @@ import {
 } from "@/lib/schemas/config";
 import type { ReservationType } from "@/types/prisma";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -96,6 +97,31 @@ export function ReservationTypesManager() {
     }
   };
 
+  /*
+   * Modo "Reordenar" (milestone 14, decisión Part B.3): la lista se reordena arrastrando,
+   * solo después de activar el modo, y se guarda de una vez con "Guardar orden".
+   */
+  const [reorderMode, setReorderMode] = useState(false);
+  const saveOrder = async (orderedIds: string[]) => {
+    try {
+      await apiSend("/api/admin/reservation-types/reorder", "POST", {
+        orderedIds,
+      });
+      toast.success("Orden guardado");
+      setReorderMode(false);
+      invalidateApi("/api/admin/reservation-types");
+      await refetch();
+    } catch (err) {
+      toast.error(
+        apiErrorMessage(
+          err,
+          "No se pudo guardar el orden de los tipos de reserva",
+        ),
+      );
+      throw err;
+    }
+  };
+
   const onDelete = async () => {
     if (!deleting) return;
     setBusy(true);
@@ -126,14 +152,8 @@ export function ReservationTypesManager() {
       ),
     },
     // El `code` interno (p. ej. "CONFERENCE") ya no se muestra (hallazgo P): es un
-    // identificador técnico que el admin no necesita leer. La columna "Orden" sigue hasta que
-    // llegue el modo "Reordenar".
-    {
-      id: "displayOrder",
-      header: "Orden",
-      meta: { label: "Orden" },
-      cell: ({ row }) => row.original.displayOrder,
-    },
+    // identificador técnico que el admin no necesita leer. El orden se cambia con
+    // "Reordenar", no con un número.
     {
       id: "actions",
       header: () => <div className="text-right">Acciones</div>,
@@ -175,9 +195,18 @@ export function ReservationTypesManager() {
             reunión, …).
           </CardDescription>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-1 h-4 w-4" /> Nuevo tipo
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setReorderMode(true)}
+            disabled={reorderMode || types.length < 2}
+          >
+            <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-1 h-4 w-4" /> Nuevo tipo
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -191,6 +220,16 @@ export function ReservationTypesManager() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
+        ) : reorderMode ? (
+          <ReorderList
+            items={types.map((item) => ({
+              id: item.id,
+              label: item.name,
+            }))}
+            hint="Es el orden en que aparecen al reservar."
+            onSave={saveOrder}
+            onCancel={() => setReorderMode(false)}
+          />
         ) : (
           <DataTable table={table} emptyMessage="No hay tipos definidos." />
         )}
