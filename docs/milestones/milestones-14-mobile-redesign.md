@@ -665,8 +665,21 @@ lanube-app` (this repo's container only).
       tested). In-app navigation = capture-phase click interception of internal links.
       Known limit: the browser Back button isn't intercepted (App Router has no cancelable
       event for it). Exercised visually by the form items below.
-- [ ] Event form per proposal 1 (sessions summary + paginated sessions list replacing the
+- [x] Event form per proposal 1 (sessions summary + paginated sessions list replacing the
       dialog — keep the staging model: actions commit with the event save).
+      — `event-form.tsx` on `FormPageLayout`: Información (Nombre, Resumen, Descripción,
+      Imagen) / Agenda (Tipo+Recurso pair, Fechas, Días, Horario "10:00 → 13:00", Sesiones) /
+      Inscripción (Formulario, ventana, Cupo narrow, Requiere aprobación); aside Publicación
+      (Estado, Destacar, link, Participantes (n)) + Zona de peligro; `FormJumpIndex` on lg;
+      `StickySaveBar` + unsaved guard (dirty = form or staged sessions). `event-sessions.tsx`
+      is now an inline panel (live summary, "Gestionar sesiones" → 10/page list, shared
+      reason, Reprogramar on `ResponsiveDialog`); actions go straight to form state (no
+      draft/second "Guardar"), still committed only with the event save; `?sessions=1`
+      expands + scrolls to it. `delete-event-button.tsx`: responsive confirm + `apiSend`
+      (was `window.confirm` + raw `fetch`); edit page passes `participantCount`/`cancelled`.
+      Verified (Playwright, phone): staging a cancel shows "1 cambio sin guardar" + reason
+      box + save-bar notice, and a breadcrumb click opens "¿Salir sin guardar?" and stays on
+      "Seguir editando" (`.mobile-shots/s5-event/`).
 - [ ] News form per proposal 2 (slug auto-derived on create, stable, behind "Editar").
 - [ ] Space form per proposal 3 (slug auto-derived on create, stable, behind "Avanzado";
       collapsible FAQ items with reorder mode).
