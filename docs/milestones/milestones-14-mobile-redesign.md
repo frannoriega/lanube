@@ -696,7 +696,13 @@ lanube-app` (this repo's container only).
       `createSpace` now uniquifies (`-2`) instead of returning 409. FAQs collapsed to their
       question (expand to edit; errors force-expand; a new one opens expanded) and reorder
       via `ReorderList` (local, persisted with the space save) (`.mobile-shots/s5-space/`).
-- [ ] Form template builder per proposal 9 (collapsed fields, reorder mode).
+- [x] Form template builder per proposal 9 (collapsed fields, reorder mode).
+      — `form-template-builder.tsx`: fields render collapsed (`FieldSummary`: label, type
+      chip with icon, "Obligatorio") and expand one at a time (new fields open expanded,
+      fields with errors force-open); per-field up/down arrows replaced by `ReorderList`
+      (local, saved with the template); `FormSection`s instead of cards, `StickySaveBar` +
+      unsaved guard. Group children keep their inline editor (only top-level fields are
+      reorderable, as before) (`.mobile-shots/s5-builder/`).
 - [ ] Public registration form: shared 15-min time select instead of native `time`.
 - [ ] Sign-up: stack DNI/Institución below `sm`.
 
