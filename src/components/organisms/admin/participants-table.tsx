@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { DataTable, DataTablePagination } from "@/components/ui/data-table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -483,20 +483,20 @@ function DecisionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+    <ResponsiveDialog open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveDialogContent className="max-h-[85vh] overflow-y-auto">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>
             {decision === "approve"
               ? "Aprobar inscripciones"
               : "Rechazar inscripciones"}
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             {decision === "approve"
               ? "Se confirmará el lugar de estas personas y se les enviará un email."
               : "Se rechazarán estas inscripciones y se les enviará un email."}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <div className="space-y-4">
           <div className="rounded-md border">
@@ -542,7 +542,7 @@ function DecisionDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <ResponsiveDialogFooter>
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -564,8 +564,8 @@ function DecisionDialog({
                 ? "Aprobar"
                 : "Rechazar"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

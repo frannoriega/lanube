@@ -5,12 +5,12 @@ import type { SpaceOption } from "@/components/molecules/admin-resource-type-com
 import { AdminReservationsCardsPanel } from "@/components/templates/admin/admin-reservations-cards-panel";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import { apiErrorMessage } from "@/lib/api/client";
 import { reviewAdminReservation } from "@/lib/api/mutations";
 import { ALL_SPACES_ID } from "@/hooks/api";
@@ -144,19 +144,19 @@ export function ReservationsPageContent({
         refetchKey={refetchKey}
       />
 
-      <Dialog
+      <ResponsiveDialog
         open={!!confirmData}
         onOpenChange={(open) => !open && setConfirmData(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar aprobación</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Confirmar aprobación</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               {confirmData?.conflicts?.length
                 ? `Aprobar esta reserva rechazará automáticamente ${confirmData.conflicts.length} reservas pendientes.`
                 : "No hay conflictos detectados."}
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           {confirmData?.conflicts?.length ? (
             <div className="max-h-48 overflow-auto rounded border p-2 text-sm">
               {confirmData.conflicts.map((id) => (
@@ -177,8 +177,8 @@ export function ReservationsPageContent({
               {confirming ? "Aprobando..." : "Confirmar"}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }

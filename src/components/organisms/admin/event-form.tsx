@@ -13,13 +13,13 @@ import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { TimeSelect } from "@/components/molecules/time-select";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import {
   Form,
   FormControl,
@@ -809,18 +809,20 @@ export function EventForm({
         />
       )}
 
-      <Dialog
+      <ResponsiveDialog
         open={dropWarning !== null}
         onOpenChange={(o) => !o && setDropWarning(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Se perderán cambios de sesiones</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              Se perderán cambios de sesiones
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Con estas fechas, las siguientes sesiones modificadas dejarán de
               existir. Si continuás, se eliminarán.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <ul className="max-h-56 space-y-1 overflow-y-auto text-sm">
             {dropWarning?.dropped.map((d, i) => (
               <li key={i} className="flex items-start gap-2">
@@ -832,7 +834,7 @@ export function EventForm({
               </li>
             ))}
           </ul>
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -849,20 +851,20 @@ export function EventForm({
             >
               Continuar y eliminar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
-      <Dialog
+      <ResponsiveDialog
         open={capacityWarning !== null}
         onOpenChange={(o) => !o && setCapacityWarning(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
               El cupo queda por debajo de los inscriptos
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Hay {capacityWarning?.registered} inscriptos y el nuevo cupo es{" "}
               {capacityWarning?.capacity}. Nadie se da de baja automáticamente:
               si continuás, quedan{" "}
@@ -873,9 +875,9 @@ export function EventForm({
               )}{" "}
               inscriptos por encima del cupo y vas a tener que resolverlo desde
               la lista de inscriptos.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -893,9 +895,9 @@ export function EventForm({
             >
               Guardar igual
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }

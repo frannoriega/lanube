@@ -2,13 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import { Check, Pencil, Trash2, X } from "lucide-react";
@@ -141,20 +141,22 @@ export function NewsRowActions({
         </Button>
       ) : null}
 
-      <Dialog open={rejecting} onOpenChange={setRejecting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rechazar &ldquo;{title}&rdquo;</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog open={rejecting} onOpenChange={setRejecting}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              Rechazar &ldquo;{title}&rdquo;
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               El motivo se muestra al autor.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Motivo (obligatorio)"
           />
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setRejecting(false)}>
               Cancelar
             </Button>
@@ -165,30 +167,32 @@ export function NewsRowActions({
             >
               Rechazar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
-      <Dialog open={deleting} onOpenChange={setDeleting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Eliminar &ldquo;{title}&rdquo;?</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog open={deleting} onOpenChange={setDeleting}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              ¿Eliminar &ldquo;{title}&rdquo;?
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               {isPublished
                 ? "Deja de estar visible en el sitio. Se puede restaurar después."
                 : "Esta acción no se puede deshacer."}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setDeleting(false)}>
               Cancelar
             </Button>
             <Button variant="destructive" disabled={busy} onClick={onDelete}>
               Eliminar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }
