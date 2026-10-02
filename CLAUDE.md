@@ -671,7 +671,7 @@ Full design + decisions: `docs/milestones/milestones-14-mobile-redesign.md`.
 - **Page forms** use `molecules/form-layout.tsx`: `FormPageLayout` (main column + aside,
   aside sticky on `lg` and stacked **last** on phones), `FormSection` (title + one-line
   description; `tone="danger"` for a "Zona de peligro"), `FormJumpIndex` (lg only),
-  `StickySaveBar` (Guardar/Cancelar always reachable), plus
+  `StickySaveBar` (Guardar/Cancelar always reachable; `fixed` to the window bottom, right of the sidebar, with a measured spacer — not `sticky`, which floated mid-page on short forms / wide windows), plus
   `useUnsavedChangesGuard` + `UnsavedChangesDialog` (`hooks/use-unsaved-changes-guard.tsx`:
   `beforeunload` + internal-link interception; call `guard.release()` right before a
   post-save `router.push`). The browser Back button is not intercepted (known limit).
