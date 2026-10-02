@@ -1,6 +1,6 @@
 import { COVER_VIEWBOX, coverPattern } from "@/lib/news/cover-pattern";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { FramedImage } from "@/components/molecules/framed-image";
 
 /**
  * Degradés de marca para la portada generada, indexados por `CoverPattern.variant`. Todos
@@ -23,6 +23,9 @@ const GRADIENTS = [
  * cargó". La portada generada es decorativa (`aria-hidden`): el título de la nota ya está
  * en el texto de la tarjeta. El padre define el tamaño vía `className` (aspect ratio o alto).
  *
+ * La imagen subida nunca se recorta (salvo `fit="cover"`, para miniaturas): se ve completa
+ * sobre un fondo difuminado de sí misma — ver `FramedImage`.
+ *
  * `zoomOnHover` escala el contenido cuando el ancestro `group` está en hover o tiene el foco
  * — lo usan las tarjetas, no el detalle.
  */
@@ -34,6 +37,7 @@ export function NewsCover({
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
   priority,
   zoomOnHover = false,
+  fit,
 }: {
   slug: string;
   title: string;
@@ -42,25 +46,32 @@ export function NewsCover({
   sizes?: string;
   priority?: boolean;
   zoomOnHover?: boolean;
+  /** Ver `FramedImage`: `"cover"` sólo para miniaturas chicas. */
+  fit?: "contain" | "cover";
 }) {
   const zoom =
     zoomOnHover &&
     "transition-transform duration-500 ease-out group-hover:scale-105 group-focus-within:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100";
 
+  // La imagen subida se muestra entera dentro del marco (ver `FramedImage`): las portadas
+  // suelen ser flyers verticales y recortarlas se comía el título.
+  if (imageUrl) {
+    return (
+      <FramedImage
+        src={imageUrl}
+        alt={title}
+        sizes={sizes}
+        priority={priority}
+        fit={fit}
+        className={className}
+        imageClassName={zoom || undefined}
+      />
+    );
+  }
+
   return (
     <div className={cn("relative overflow-hidden bg-muted", className)}>
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={title}
-          fill
-          sizes={sizes}
-          className={cn("object-cover", zoom)}
-          priority={priority}
-        />
-      ) : (
-        <GeneratedCover slug={slug} className={cn("absolute inset-0", zoom)} />
-      )}
+      <GeneratedCover slug={slug} className={cn("absolute inset-0", zoom)} />
     </div>
   );
 }

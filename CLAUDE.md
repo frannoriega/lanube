@@ -356,6 +356,15 @@ src/
   `NewsCover`'s fallback is a generated brand cover, **deterministic per slug**
   (`coverPattern()` in `src/lib/news/cover-pattern.ts` — pure, no `Math.random`, so it
   renders identically on server and client). Public news pages: milestone 15.
+- **Uploaded covers are never cropped**: `FramedImage` (`molecules/framed-image.tsx`) keeps a
+  fixed frame (set by the parent) and draws the whole image `object-contain` over a blurred,
+  darkened copy of itself — uploaders reuse Instagram flyers (4:5, 9:16) and `object-cover`
+  was cutting off their titles. `NewsCover`, `EventCover`, `EventHero`, the news detail page
+  (4:3, `max-h-[70vh]`) and the `ImageUpload` preview all use it; only tiny thumbnails pass
+  `fit="cover"`. Don't reintroduce `object-cover` for user-uploaded images. The upload widget
+  takes `hint={<CoverImageHint />}`: recommended size **in px** (1920 × 1080, Canva's
+  «Presentación») with the ratio in parentheses — uploaders aren't specialists — plus a
+  non-blocking toast if the image's long side is < 1080 px.
 - **Form picker**: events choose a template via `FormPicker` — a searchable dialog (shadcn
   Command) showing each template as a card with a field-type-chip preview. `listFormTemplates`
   includes a lightweight `fields` summary for the preview. Field-type labels/icons live in
