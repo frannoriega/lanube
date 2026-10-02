@@ -1,7 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FormSection, StickySaveBar } from "@/components/molecules/form-layout";
+import { ReorderList } from "@/components/molecules/reorder-list";
+import {
+  UnsavedChangesDialog,
+  useUnsavedChangesGuard,
+} from "@/hooks/use-unsaved-changes-guard";
+import { cn } from "@/lib/utils";
 import {
   Form,
   FormControl,
@@ -24,6 +31,7 @@ import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import {
   BOOLEAN_FIELD_TYPES,
+  FIELD_TYPE_ICONS,
   FIELD_TYPE_LABELS,
   FILE_FIELD_TYPES,
   NUMERIC_FIELD_TYPES,
@@ -44,7 +52,13 @@ import {
 import { FormFieldType } from "@/types/prisma";
 import { createId } from "@paralleldrive/cuid2";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDown, ArrowUp, FileText, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  FileText,
+  Repeat,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -402,11 +416,37 @@ export function FormTemplateBuilder({
     defaultValues: { name: "", description: "", fields: [] },
   });
   const { control, handleSubmit, reset, formState } = form;
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: "fields",
     keyName: "fieldKey",
   });
+
+  /*
+   * Milestone 14, propuesta 9: cada campo se muestra **colapsado** (rótulo + tipo +
+   * "Obligatorio") y se expande de a uno para editarlo — antes eran tarjetas altas siempre
+   * abiertas (3 campos ≈ 2 pantallas de teléfono). El orden se cambia con el modo
+   * "Reordenar" compartido en vez de flechas arriba/abajo por campo.
+   */
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+  // El campo recién agregado abre expandido (su `fieldKey` aparece en el render siguiente).
+  const openNext = useRef(false);
+  const lastKey = fields.at(-1)?.fieldKey;
+  useEffect(() => {
+    if (openNext.current && lastKey) {
+      openNext.current = false;
+      setOpenKey(lastKey);
+    }
+  }, [lastKey]);
+  const addField = (kind: "input" | "group") => {
+    append(newField(kind));
+    openNext.current = true;
+  };
+
+  const guard = useUnsavedChangesGuard(
+    formState.isDirty && !formState.isSubmitting,
+  );
 
   const {
     data: template,
@@ -453,6 +493,7 @@ export function FormTemplateBuilder({
     toast.success(
       mode === "create" ? "Formulario creado" : "Formulario actualizado",
     );
+    guard.release();
     router.push("/admin/forms");
     router.refresh();
   };
@@ -474,147 +515,187 @@ export function FormTemplateBuilder({
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Datos del formulario</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ej.: Inscripción a talleres"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-6">
+        <FormSection
+          id="datos"
+          title="Datos del formulario"
+          description="Nombre interno de la plantilla (los participantes ven el del evento)."
+        >
+          <FormField
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej.: Inscripción a talleres" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descripción (opcional)</FormLabel>
+                <FormControl>
+                  <Textarea rows={3} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </FormSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Campos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Email</span> —
-              siempre presente y obligatorio (clave del participante).
-            </div>
+        <FormSection
+          id="campos"
+          title="Campos"
+          description="Tocá un campo para editarlo. El orden de la lista es el del formulario."
+        >
+          <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Email</span> — siempre
+            presente y obligatorio (clave del participante).
+          </div>
 
-            {fields.map((item, index) => (
-              <div
-                key={item.fieldKey}
-                className="space-y-3 rounded-md border p-4"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="w-48">
-                    <FormField
-                      control={control}
-                      name={`fields.${index}.kind`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
+          {reordering ? (
+            <ReorderList
+              items={fields.map((item, i) => ({
+                id: item.fieldKey,
+                label: form.getValues(`fields.${i}.label`) || `Campo ${i + 1}`,
+              }))}
+              hint="El cambio se guarda junto con el formulario."
+              onSave={async (orderedKeys) => {
+                // Reordenamiento local: se persiste con "Guardar formulario".
+                const current = form.getValues("fields");
+                const byKey = new Map(
+                  fields.map((f, i) => [f.fieldKey, current[i]]),
+                );
+                replace(
+                  orderedKeys
+                    .map((k) => byKey.get(k))
+                    .filter((v): v is BuilderValues["fields"][number] => !!v),
+                );
+                setOpenKey(null);
+                setReordering(false);
+              }}
+              onCancel={() => setReordering(false)}
+            />
+          ) : (
+            <>
+              {fields.length > 0 && (
+                <ul className="divide-y overflow-hidden rounded-md border">
+                  {fields.map((item, index) => {
+                    const hasError = !!formState.errors.fields?.[index];
+                    const open = openKey === item.fieldKey || hasError;
+                    return (
+                      <li key={item.fieldKey} className="bg-card">
+                        <div className="flex items-center gap-2 px-3 py-2">
+                          <button
+                            type="button"
+                            className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+                            aria-expanded={open}
+                            onClick={() =>
+                              setOpenKey(open ? null : item.fieldKey)
+                            }
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="input">Campo</SelectItem>
-                              <SelectItem value="group">
-                                Grupo repetible
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Mover arriba"
-                      onClick={() => move(index, index - 1)}
-                      disabled={index === 0}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Mover abajo"
-                      onClick={() => move(index, index + 1)}
-                      disabled={index === fields.length - 1}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Eliminar"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                                open && "rotate-180",
+                              )}
+                              aria-hidden
+                            />
+                            <FieldSummary
+                              control={looseControl}
+                              namePrefix={`fields.${index}`}
+                              index={index}
+                              hasError={hasError}
+                            />
+                          </button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            aria-label={`Eliminar campo ${index + 1}`}
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                        {open && (
+                          <div className="space-y-3 border-t bg-muted/30 p-3 sm:p-4">
+                            <FormField
+                              control={control}
+                              name={`fields.${index}.kind`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Tipo de bloque</FormLabel>
+                                  <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="w-full sm:w-56">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="input">
+                                        Campo
+                                      </SelectItem>
+                                      <SelectItem value="group">
+                                        Grupo repetible
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </FormItem>
+                              )}
+                            />
+                            <FieldCard
+                              control={looseControl}
+                              index={index}
+                              namePrefix={`fields.${index}`}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
 
-                <FieldCard
-                  control={looseControl}
-                  index={index}
-                  namePrefix={`fields.${index}`}
-                />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addField("input")}
+                >
+                  Agregar campo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addField("group")}
+                >
+                  Agregar grupo repetible
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={fields.length < 2}
+                  onClick={() => setReordering(true)}
+                >
+                  <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
+                </Button>
               </div>
-            ))}
+            </>
+          )}
+        </FormSection>
 
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => append(newField("input"))}
-              >
-                Agregar campo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => append(newField("group"))}
-              >
-                Agregar grupo repetible
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end gap-2">
+        <StickySaveBar dirty={formState.isDirty}>
           <Button
             type="button"
             variant="outline"
@@ -625,9 +706,59 @@ export function FormTemplateBuilder({
           <Button type="submit" disabled={formState.isSubmitting}>
             {formState.isSubmitting ? "Guardando…" : "Guardar formulario"}
           </Button>
-        </div>
+        </StickySaveBar>
       </form>
+      <UnsavedChangesDialog guard={guard} />
     </Form>
+  );
+}
+
+/**
+ * Resumen de un campo colapsado: rótulo (o "Campo sin título"), chip con el tipo (ícono +
+ * nombre; "Grupo repetible" para grupos) y "Obligatorio" si corresponde. Lee los valores en
+ * vivo (`useWatch`) para que el resumen siga a lo que se edita.
+ */
+function FieldSummary({
+  control,
+  namePrefix,
+  index,
+  hasError,
+}: {
+  control: Control<FieldValues>;
+  namePrefix: string;
+  index: number;
+  hasError: boolean;
+}) {
+  const kind = useWatch({ control, name: `${namePrefix}.kind` }) as string;
+  const label = useWatch({ control, name: `${namePrefix}.label` }) as string;
+  const type = useWatch({ control, name: `${namePrefix}.type` }) as string;
+  const required = useWatch({
+    control,
+    name: `${namePrefix}.required`,
+  }) as boolean;
+  const isGroup = kind === "group";
+  const Icon = isGroup ? Repeat : (FIELD_TYPE_ICONS[type] ?? FileText);
+  return (
+    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+      <span
+        className={cn(
+          "min-w-0 truncate text-sm font-medium",
+          !label && "text-muted-foreground",
+          hasError && "text-destructive",
+        )}
+      >
+        {label || `Campo ${index + 1} (sin título)`}
+      </span>
+      <Badge variant="secondary" className="gap-1 font-normal">
+        <Icon className="h-3 w-3" aria-hidden />
+        {isGroup ? "Grupo repetible" : (FIELD_TYPE_LABELS[type] ?? type)}
+      </Badge>
+      {!isGroup && required && (
+        <Badge variant="outline" className="font-normal">
+          Obligatorio
+        </Badge>
+      )}
+    </span>
   );
 }
 
