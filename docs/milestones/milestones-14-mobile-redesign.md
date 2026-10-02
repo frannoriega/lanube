@@ -1,5 +1,9 @@
 # Milestone 14 — Mobile redesign
 
+> **Status (2026-10-02, night): implemented** — every checklist item in "Implementation
+> hand-off" is done (slices 2–6), one unsigned commit per item on `preview` (not pushed). No
+> blockers. Close-out screenshot run: `.mobile-shots/final/` (158 captures, 0 overflow). New conventions are summarized in CLAUDE.md §13.
+>
 > **Status (2026-10-02): design agreed, ready to implement** — baseline screenshots
 > reviewed, per-form proposals decided; implementation tracked in the "Implementation
 > hand-off" checklist at the end of this doc. Nothing implemented yet.
@@ -736,9 +740,19 @@ lanube-app` (this repo's container only).
 
 **Close-out**
 
-- [ ] Full screenshot run; compare against `.mobile-shots/baseline/`; overflow report
+- [x] Full screenshot run; compare against `.mobile-shots/baseline/`; overflow report
       clean on every screen.
-- [ ] Status line + README index updated; CLAUDE.md gains the new conventions (responsive
+      — `.mobile-shots/final/`: 158 captures (38 screens × phone light/dark, tablet, desktop),
+      **0 overflow, 0 errors** (baseline had page-level overflow on 6 screens: spaces,
+      themes, news, reports, reservation types, and the booking dialog at 768px).
+- [x] Status line + README index updated; CLAUDE.md gains the new conventions (responsive
       dialog, reorder mode, form layout, stat grid, mobile screenshot script).
-- [ ] `milestones-14-BLOCKERS.md` deleted if empty; final summary lists what's done, what's
+      — CLAUDE.md §13 "Mobile layout & form conventions" + updated event-sessions and
+      featured-order notes; README entry and this doc's status line say "implemented".
+- [x] `milestones-14-BLOCKERS.md` deleted if empty; final summary lists what's done, what's
       partial, and every open blocker.
+      — no blockers were ever recorded, so the file was never created. Partial / not
+      verified with real data: featured-reorder drag (seed has <2 featured items), the
+      public form TIME select (no seeded TIME field), participants cards (sample event has
+      no registrations); known limit: the unsaved-changes guard doesn't catch the browser
+      Back button.
