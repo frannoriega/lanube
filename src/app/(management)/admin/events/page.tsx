@@ -139,24 +139,43 @@ export default async function EventsPage({
                   key={event.id}
                   className={`flex h-full flex-col overflow-hidden pb-0 transition-colors ${cancelled ? "opacity-70" : ""}`}
                 >
+                  {/*
+                   * Portada grande solo desde `sm` (milestone 14, hallazgo K): en un teléfono la
+                   * imagen 16:9 (casi siempre el degradé de relleno) hacía que cada evento ocupara
+                   * una pantalla entera. Ahí va una miniatura al lado del título.
+                   */}
                   <EventCover
                     imageUrl={event.imageUrl}
                     name={event.name}
                     eventType={event.eventType}
-                    className="-mt-6 mb-4 aspect-video w-full border-b"
+                    className="-mt-6 mb-4 hidden aspect-video w-full border-b sm:block"
                   />
                   <CardHeader>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="font-normal text-la-nube-selected dark:text-la-nube-secondary"
-                      >
-                        {event.type?.name ?? eventTypeLabel(event.eventType)}
-                      </Badge>
-                      <StatusBadge status={status} />
+                    <div className="flex gap-3">
+                      <EventCover
+                        imageUrl={event.imageUrl}
+                        name={event.name}
+                        eventType={event.eventType}
+                        sizes="64px"
+                        className="h-16 w-16 shrink-0 rounded-md border sm:hidden [&_svg]:h-7 [&_svg]:w-7"
+                      />
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="font-normal text-la-nube-selected dark:text-la-nube-secondary"
+                          >
+                            {event.type?.name ??
+                              eventTypeLabel(event.eventType)}
+                          </Badge>
+                          <StatusBadge status={status} />
+                        </div>
+                        <CardTitle className="[overflow-wrap:anywhere]">
+                          {event.name}
+                        </CardTitle>
+                        <CardDescription>{event.space.name}</CardDescription>
+                      </div>
                     </div>
-                    <CardTitle>{event.name}</CardTitle>
-                    <CardDescription>{event.space.name}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-1.5 text-sm text-muted-foreground">
                     {weekdays.length > 0 && (

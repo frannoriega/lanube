@@ -647,7 +647,11 @@ lanube-app` (this repo's container only).
       types append at the end, theme `toWriteData` only writes `priority` if sent, event/news
       updates pass `featuredOrder: undefined` (Prisma no-op), `eventToFormDefaults` no longer
       returns it. Also: `DataTable` cards with only title + actions render the actions inline.
-- [ ] Admin events list compact cards on phones with labeled actions (K).
+- [x] Admin events list compact cards on phones with labeled actions (K).
+      — `admin/events/page.tsx`: 16:9 cover only from `sm`; below it a 64px `EventCover`
+      thumbnail beside type/status/title. `event-card-actions.tsx`: below `sm` a 2×2 grid of
+      icon + text (Inscriptos / Copiar link / Sesiones / Editar); from `sm` icon-only with
+      tooltips as before (`.mobile-shots/s4-events/`).
 
 **Slice 5 — form conventions on existing page forms**
 

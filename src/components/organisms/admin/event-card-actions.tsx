@@ -11,10 +11,19 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+/** En teléfono: botón con ícono + texto a lo ancho de su celda; desde `sm`: ícono de 32px. */
+const ACTION_CLASSES =
+  "h-9 w-full justify-start gap-2 px-3 sm:h-8 sm:w-8 sm:justify-center sm:gap-0 sm:px-0";
+
 /**
  * Quick actions for an event card: participants, copy form link, edit. Icon-only with
  * tooltips. Replaces the old whole-card link — the card body is now static and these are the
  * explicit, accessible affordances (no nested-interactive controls inside a giant link).
+ *
+ * Milestone 14 (hallazgo K): en un teléfono no hay hover, así que los tooltips no se ven y
+ * cuatro íconos sueltos eran adivinanzas. Por debajo de `sm` cada acción muestra su texto en
+ * una grilla de 2×2; desde `sm` vuelven a ser solo íconos con tooltip (el texto queda como
+ * `sr-only`).
  */
 export function EventCardActions({
   eventId,
@@ -49,15 +58,21 @@ export function EventCardActions({
   };
 
   return (
-    <div className="mt-auto flex items-center justify-end gap-0.5 border-t px-4 py-2">
+    <div className="mt-auto grid grid-cols-2 gap-1 border-t px-4 py-2 sm:flex sm:items-center sm:justify-end sm:gap-0.5">
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className={ACTION_CLASSES}
+          >
             <Link
               href={`/admin/events/${eventId}/participants`}
               aria-label="Ver inscriptos"
             >
               <Users className="h-4 w-4" />
+              <span className="sm:sr-only">Inscriptos</span>
             </Link>
           </Button>
         </TooltipTrigger>
@@ -69,7 +84,7 @@ export function EventCardActions({
           <Button
             variant="ghost"
             size="icon"
-            className={`h-8 w-8 ${canCopy ? "" : "text-muted-foreground/60"}`}
+            className={`${ACTION_CLASSES} ${canCopy ? "" : "text-muted-foreground/60"}`}
             aria-label="Copiar link de inscripción"
             onClick={copyLink}
           >
@@ -78,6 +93,7 @@ export function EventCardActions({
             ) : (
               <Link2 className="h-4 w-4" />
             )}
+            <span className="sm:sr-only">Copiar link</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -89,12 +105,18 @@ export function EventCardActions({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className={ACTION_CLASSES}
+          >
             <Link
               href={`/admin/events/${eventId}?sessions=1`}
               aria-label="Gestionar sesiones"
             >
               <CalendarCog className="h-4 w-4" />
+              <span className="sm:sr-only">Sesiones</span>
             </Link>
           </Button>
         </TooltipTrigger>
@@ -103,9 +125,15 @@ export function EventCardActions({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className={ACTION_CLASSES}
+          >
             <Link href={`/admin/events/${eventId}`} aria-label="Editar evento">
               <Pencil className="h-4 w-4" />
+              <span className="sm:sr-only">Editar</span>
             </Link>
           </Button>
         </TooltipTrigger>
