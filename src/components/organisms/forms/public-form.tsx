@@ -1,5 +1,6 @@
 "use client";
 
+import { TimeSelect } from "@/components/molecules/time-select";
 import { DatePicker } from "@/components/molecules/date-picker";
 import { EventMeta } from "@/components/molecules/event-meta";
 import { EventHero } from "@/components/organisms/forms/event-hero";
@@ -614,12 +615,14 @@ function FieldInput({
       return <DatePicker value={str} onChange={onChange} />;
 
     case FormFieldType.TIME:
+      // Milestone 14 (Part B.4, "control correcto por tipo de dato"): el `type="time"`
+      // nativo se veía y se comportaba distinto en cada navegador (rueda en iOS, campo con
+      // AM/PM según el sistema). Se usa el mismo selector de 15 minutos en 24h que el resto
+      // de la app; un valor fuera de la grilla (respuesta vieja) se conserva igual.
       return (
-        <Input
-          type="time"
-          value={str}
-          onChange={(e) => onChange(e.target.value)}
-        />
+        <div className="max-w-40">
+          <TimeSelect value={str} onChange={onChange} />
+        </div>
       );
 
     case FormFieldType.SINGLE_SELECT:
