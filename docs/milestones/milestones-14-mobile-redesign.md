@@ -473,7 +473,8 @@ no numeric order fields, drawer below `md` for any remaining dialog).
 
 - **Event form on phones:** the Publicación aside stacks **last**.
 - **Featured ordering:** "Reordenar destacados" on the Events and News lists, opening the
-  same drag-and-drop reorder mode (filtered to featured items). This _is_ the drag-and-drop
+  same drag-and-drop reorder mode (filtered to featured items). _(Milestone 16: the modal was
+  replaced by reordering inside the list's own table, on a "Destacados/as" view.)_ This _is_ the drag-and-drop
   idea from Part B.3 — one reorder mechanism for every ordered list.
 - **Slugs (news, space): auto-derived, never typed.** The user doesn't see value in
   hand-written slugs. Design note (Claude): keep them **human-readable** (slugified from the
@@ -721,7 +722,8 @@ lanube-app` (this repo's container only).
       picker for yearly windows); middleware/nav/breadcrumbs updated.
       — new `organisms/admin/config/landing-theme-form.tsx` (Básico / Cuándo / Efecto / Texto
       sections, `StickySaveBar`, unsaved guard), `molecules/month-day-picker.tsx` (Mes + Día
-      selects → "MM-DD", days capped per month, Feb 29 allowed),
+      selects → "MM-DD", days capped per month, Feb 29 allowed — _replaced in milestone 16 by
+      `AnnualRangePicker`, a range calendar without year_),
       `lib/landing-themes/form-values.ts` (shared defaults + BigInt-safe row → values),
       pages `admin/themes/new` and `admin/themes/[id]/edit` (`landing-themes:manage`). The
       manager lost its dialog/form and links to the pages. Middleware (`/admin/themes`
