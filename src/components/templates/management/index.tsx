@@ -322,7 +322,7 @@ export default function ManagementLayout({
          * de cerrar quedaban tapados. Ahora es un `Sheet` (Radix Dialog), que además trae
          * gratis el focus trap, el cierre con Esc y el bloqueo del scroll del body.
          *   - `z-[120]` en contenido + overlay: por encima del header (`z-100`) y del
-         *     popover de notificaciones (`z-[110]`).
+         *     popover de notificaciones (`z-[110]`). Hoy es el default de `Sheet`.
          *   - Fondo sólido `bg-background` en vez del `glass-sidebar` translúcido: sobre el
          *     overlay gris, el vidrio dejaba los ítems inactivos gris sobre gris.
          *   - El `<nav>` scrollea en vertical (`overflow-y-auto`) para que, con
@@ -334,8 +334,8 @@ export default function ManagementLayout({
           <SheetContent
             side="left"
             showCloseButton={false}
-            overlayClassName="z-[120] lg:hidden"
-            className="z-[120] w-72 max-w-[85vw] gap-0 p-0 lg:hidden print:hidden"
+            overlayClassName="lg:hidden"
+            className="w-72 max-w-[85vw] gap-0 p-0 lg:hidden print:hidden"
           >
             <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
             <SheetDescription className="sr-only">

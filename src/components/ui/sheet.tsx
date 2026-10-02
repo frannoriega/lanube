@@ -28,6 +28,13 @@ function SheetPortal({
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
+/*
+ * Capas: overlay y contenido viven en `z-[120]`, no en el `z-50` de shadcn. El header sticky
+ * de management está en `z-100` y el popover de notificaciones en `z-[110]`; con `z-50` el
+ * header le pintaba encima a cualquier panel lateral (el detalle de auditoría quedaba con el
+ * título tapado). ⚠️ Un Popover/Select/Dialog abierto *desde dentro* de un Sheet (todos en
+ * `z-50`) quedaría detrás: si alguna vez hace falta, subile el `z-index` a ese contenido.
+ */
 function SheetOverlay({
   className,
   ...props
@@ -36,7 +43,7 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-[120] bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className,
       )}
       {...props}
@@ -54,11 +61,7 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left";
   showCloseButton?: boolean;
-  /**
-   * Clases extra para el overlay. Existe para poder subir su `z-index` junto con el del
-   * contenido (p. ej. el menú móvil de management tiene que quedar por encima del header
-   * sticky, que vive en `z-100`).
-   */
+  /** Clases extra para el overlay (p. ej. `lg:hidden` en el menú móvil de management). */
   overlayClassName?: string;
 }) {
   return (
@@ -67,7 +70,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500",
+          "fixed z-[120] flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500",
           side === "right" &&
             "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
           side === "left" &&
