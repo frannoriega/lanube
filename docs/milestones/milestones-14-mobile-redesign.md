@@ -595,7 +595,13 @@ lanube-app` (this repo's container only).
       `templates/user/calendar-template-client.tsx`: hint is "Tocá un horario libre para
       reservar" under `(pointer: coarse)`, else the old drag copy (verified in Playwright with
       a touch context; SSR renders the desktop copy and it swaps after hydration).
-- [ ] 24h minimum-notice gating and the detail dialog unchanged (regression-check).
+- [x] 24h minimum-notice gating and the detail dialog unchanged (regression-check).
+      — Playwright with `serverNowMs` rewritten to Sun 4 Oct 20:00 ART: Monday's chip is
+      disabled ("sin turnos disponibles") and the view opens on Tuesday; next week, tapping
+      own reservation (Tue 13) opens "Detalle de la reserva" (Horario / Motivo / Estado /
+      Eliminar) as a drawer (`.mobile-shots/s3-regression/`). The logic itself is unit-tested
+      in `calendar-utils.test.ts`; `hasMinimumNotice` still guards drag-start, tap and submit.
+      Not touched (pre-existing): the detail shows the raw status ("PENDING").
 
 **Slice 4 — tables + reorder**
 
