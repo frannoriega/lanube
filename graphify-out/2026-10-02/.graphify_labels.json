@@ -402,8 +402,6 @@
   "400": "page.tsx",
   "401": "builder-conditions.ts",
   "402": "dateKeyFromUnixMs",
-  "403": "🔒 Validation Changes",
-  "406": "page.tsx",
   "407": "emoji-shower.tsx",
   "408": "notifyEventParticipantsBatch",
   "409": "roles.grantable.test.ts"

@@ -563,10 +563,19 @@ lanube-app` (this repo's container only).
 
 **Slice 3 — booking calendar**
 
-- [ ] Extract `DayColumn`; visible days 1 (`<640`) / 3 (`640–767`) / 5 (`≥768`); remove
+- [x] Extract `DayColumn`; visible days 1 (`<640`) / 3 (`640–767`) / 5 (`≥768`); remove
       `min-w-[800px]` + `overflow-hidden` (findings 1, B, E).
-- [ ] Narrow views: day strip (chips, blocked days disabled, dot for own reservations),
+      — new `calendar/calendar-utils.ts` (+ `.test.ts`: `visibleDayIndices`,
+      `firstBookableDayIndex`, …) and `calendar/DayColumn.tsx` (`DayColumn`,
+      `DayHeaderCell`, `OccurrenceBlock`); `WeekCalendar` keeps data/submit/24h gating/detail
+      dialog. Grid columns = visible days (`repeat(n, minmax(0,1fr))`). Drag now listens to
+      pointer events but only acts on `pointerType === "mouse"`. Verified phone (1 day),
+      tablet (5 days, Friday + "Siguiente" no longer clipped), and the phone booking drawer
+      deferred from slice 2.
+- [x] Narrow views: day strip (chips, blocked days disabled, dot for own reservations),
       compact icon nav; no swipe.
+      — `DayStrip` in `DayColumn.tsx`; icon-only prev/next with aria-labels + short range
+      ("5 – 9 oct 2026"). The focused day starts on the week's first bookable day (part of F).
 - [ ] Tap empty slot → booking drawer prefilled (start = slot, +1h); drag kept for fine
       pointers (finding A); "Reservar este día" kept.
 - [ ] Open on the first week / day with a bookable slot (F); touch-aware hint copy (G).
