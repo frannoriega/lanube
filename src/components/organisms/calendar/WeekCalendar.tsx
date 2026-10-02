@@ -18,19 +18,14 @@ import {
   MINIMUM_NOTICE_MESSAGE,
 } from "@/lib/reservations/booking-window";
 import { toCapitalCase } from "@/lib/utils/string";
-import {
-  addDays,
-  addWeeks,
-  format,
-  getDay,
-  isSameDay,
-  startOfWeek,
-} from "date-fns";
+import { addDays, addWeeks, format, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   BUSINESS_HOURS,
   firstBookableDayIndex,
+  firstBookableWeekStart,
+  getCurrentWorkWeekStart,
   fromUtcMs,
   isDayFullyBlocked,
   minutesToTime,
@@ -89,26 +84,6 @@ interface WeekCalendarProps {
   userId?: string; // Current user's ID for visual differentiation
 }
 
-// Helper function to get the current work week start
-function getCurrentWorkWeekStart(now: Date): Date {
-  const dayOfWeek = getDay(now); // 0 = Sunday, 6 = Saturday
-
-  // If it's weekend (Saturday or Sunday), get next Monday
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
-    return addWeeks(monday, 1); // Next week's Monday
-  }
-
-  // Friday: skip the current work week (show next Monday onward)
-  if (dayOfWeek === 5) {
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
-    return addWeeks(monday, 1);
-  }
-
-  // Otherwise, get this week's Monday
-  return startOfWeek(now, { weekStartsOn: 1 });
-}
-
 export function WeekCalendar({
   apiEndpoint,
   eventTypes,
@@ -125,7 +100,8 @@ export function WeekCalendar({
 
   useLayoutEffect(() => {
     setCurrentWeekStart((prev) => {
-      const correct = getCurrentWorkWeekStart(now());
+      // Abre en la primera semana con algún día reservable (hallazgo F).
+      const correct = firstBookableWeekStart(now());
       if (prev && prev.getTime() === correct.getTime()) return prev;
       return correct;
     });
@@ -216,8 +192,17 @@ export function WeekCalendar({
     [visibleCount, focusedDayIdx],
   );
 
-  const todayWeekStart = useMemo(() => getCurrentWorkWeekStart(now()), [now]);
-  const maxWeekStart = addWeeks(todayWeekStart, 1);
+  /*
+   * "Hoy" lleva a la primera semana con algo reservable (la misma con la que abre), y es
+   * también el límite hacia atrás. El límite hacia adelante sigue anclado a la semana de
+   * trabajo actual + 1, como antes: saltar una semana bloqueada no extiende el horizonte de
+   * reserva.
+   */
+  const todayWeekStart = useMemo(() => firstBookableWeekStart(now()), [now]);
+  const maxWeekStart = useMemo(
+    () => addWeeks(getCurrentWorkWeekStart(now()), 1),
+    [now],
+  );
   const canGoNext = !!(
     currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart
   );
