@@ -1,5 +1,6 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
+import { FramedImage } from "@/components/molecules/framed-image";
 import { LocalDate } from "@/components/molecules/local-date";
 import { Markdown } from "@/components/molecules/markdown";
 import {
@@ -15,7 +16,6 @@ import {
 import { readingMinutes } from "@/lib/news/reading-time";
 import { authorDisplayName, newsDetailPath } from "@/lib/news/url";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
@@ -155,16 +155,16 @@ export default async function NoticiaDetailPage({
                 una línea con el degradé de marca: se leía como una barra de progreso que no
                 avanzaba — el progreso real ahora es `ReadingProgress`.) */}
             {post.coverImageUrl ? (
-              <div className="relative aspect-16/9 w-full bg-muted">
-                <Image
-                  src={post.coverImageUrl}
-                  alt={post.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 900px"
-                  className="object-cover"
-                  priority
-                />
-              </div>
+              // Marco 4:3 (más alto que el 16:9 de las tarjetas) para que un flyer vertical no
+              // quede diminuto, con tope de 70vh para no empujar el texto fuera de pantalla. La
+              // imagen se ve completa, sin recorte (ver `FramedImage`).
+              <FramedImage
+                src={post.coverImageUrl}
+                alt={post.title}
+                sizes="(max-width: 1024px) 100vw, 900px"
+                priority
+                className="aspect-4/3 max-h-[70vh] w-full"
+              />
             ) : (
               <hr className="border-border" />
             )}
