@@ -821,6 +821,11 @@ export interface EventListFilters {
   /** Date range (admin-tz "yyyy-MM-dd" keys); an event matches if it overlaps the range. */
   from?: string;
   to?: string;
+  /**
+   * Solo los destacados del landing, en su orden (milestone 16): la vista donde se los
+   * reordena en la misma tabla. Sin paginar — son pocos y el orden es uno solo.
+   */
+  featured?: boolean;
 }
 
 /**
@@ -861,6 +866,10 @@ function buildEventListWhere(
     and.push({ spaceId: filters.spaceId });
   }
 
+  if (filters.featured) {
+    and.push({ isFeatured: true, deletedAt: null });
+  }
+
   // Overlap with [from, to]: starts on/before `to` AND last occurrence on/after `from`.
   if (filters.to && isValidDateKey(filters.to)) {
     and.push({ startTime: { lte: BigInt(endOfDateKeyMs(filters.to)) } });
@@ -880,13 +889,16 @@ function buildEventListWhere(
 
 /** Paginated events, newest first, with optional filters. Returns items + total. */
 export async function listEvents(filters: EventListFilters = {}) {
-  const page = filters.page ?? 1;
-  const pageSize = filters.pageSize ?? 9;
+  // Los destacados se muestran todos juntos (ver `EventListFilters.featured`).
+  const page = filters.featured ? 1 : (filters.page ?? 1);
+  const pageSize = filters.featured ? 100 : (filters.pageSize ?? 20);
   const where = buildEventListWhere(filters);
   const [events, total] = await prisma.$transaction([
     prisma.event.findMany({
       where,
-      orderBy: { startTime: "desc" },
+      orderBy: filters.featured
+        ? [{ featuredOrder: "asc" }, { startTime: "desc" }]
+        : { startTime: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
@@ -1302,6 +1314,45 @@ export async function listFeaturedEvents(): Promise<FeaturedEventItem[]> {
     where: { isFeatured: true, deletedAt: null },
     orderBy: [{ featuredOrder: "asc" }, { startTime: "desc" }],
     select: { id: true, name: true },
+  });
+}
+
+/**
+ * Destaca o quita de destacados varios eventos (acción en lote, milestone 16). Los que se
+ * destacan van **al final** del orden actual de destacados, en el orden recibido — así una
+ * acción en lote nunca le pasa por encima al orden que el admin armó con "Reordenar". Los
+ * cancelados se ignoran. Devuelve los ids que realmente cambiaron.
+ */
+export async function setEventsFeatured(
+  ids: string[],
+  featured: boolean,
+): Promise<string[]> {
+  return prisma.$transaction(async (tx) => {
+    const targets = await tx.event.findMany({
+      where: { id: { in: ids }, deletedAt: null, isFeatured: !featured },
+      select: { id: true },
+    });
+    const changing = ids.filter((id) => targets.some((t) => t.id === id));
+    if (changing.length === 0) return [];
+    if (!featured) {
+      await tx.event.updateMany({
+        where: { id: { in: changing } },
+        data: { isFeatured: false },
+      });
+      return changing;
+    }
+    const last = await tx.event.aggregate({
+      where: { isFeatured: true, deletedAt: null },
+      _max: { featuredOrder: true },
+    });
+    const base = (last._max.featuredOrder ?? -1) + 1;
+    for (const [i, id] of changing.entries()) {
+      await tx.event.update({
+        where: { id },
+        data: { isFeatured: true, featuredOrder: base + i },
+      });
+    }
+    return changing;
   });
 }
 

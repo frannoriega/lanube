@@ -70,6 +70,11 @@ export interface ListAdminNewsOptions {
   hasPendingAction?: boolean;
   /** Solo las notas eliminadas (soft delete) — para la vista de restauración. */
   deleted?: boolean;
+  /**
+   * Solo las destacadas, en el orden del landing (milestone 16): la vista donde se las
+   * reordena en la misma tabla. Sin paginar.
+   */
+  featured?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -82,12 +87,13 @@ export interface ListNewsResult {
 export async function listAdminNewsPosts(
   options?: ListAdminNewsOptions,
 ): Promise<ListNewsResult> {
-  const page = Math.max(1, options?.page ?? 1);
-  const pageSize = Math.min(
-    MAX_PAGE_SIZE,
-    Math.max(1, options?.pageSize ?? 20),
-  );
+  const featured = options?.featured ?? false;
+  const page = featured ? 1 : Math.max(1, options?.page ?? 1);
+  const pageSize = featured
+    ? MAX_PAGE_SIZE
+    : Math.min(MAX_PAGE_SIZE, Math.max(1, options?.pageSize ?? 20));
   const where: Prisma.NewsPostWhereInput = {};
+  if (featured) where.isFeatured = true;
   if (options?.authorId) where.authorId = options.authorId;
   if (options?.status) where.status = options.status as never;
   if (options?.hasPendingAction) where.pendingAction = { not: null };
@@ -98,7 +104,9 @@ export async function listAdminNewsPosts(
   const [items, total] = await Promise.all([
     prisma.newsPost.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: featured
+        ? [{ featuredOrder: "asc" }, { createdAt: "desc" }]
+        : { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
@@ -583,6 +591,44 @@ export async function listFeaturedNewsPosts(): Promise<FeaturedNewsItem[]> {
     where: { isFeatured: true, deletedAt: null },
     orderBy: [{ featuredOrder: "asc" }, { createdAt: "desc" }],
     select: { id: true, title: true },
+  });
+}
+
+/**
+ * Destaca o quita de destacadas varias notas (acción en lote, milestone 16). Igual que en
+ * eventos: las nuevas van al final del orden actual, y las eliminadas se ignoran. Devuelve
+ * los ids que realmente cambiaron.
+ */
+export async function setNewsPostsFeatured(
+  ids: string[],
+  featured: boolean,
+): Promise<string[]> {
+  return prisma.$transaction(async (tx) => {
+    const targets = await tx.newsPost.findMany({
+      where: { id: { in: ids }, deletedAt: null, isFeatured: !featured },
+      select: { id: true },
+    });
+    const changing = ids.filter((id) => targets.some((t) => t.id === id));
+    if (changing.length === 0) return [];
+    if (!featured) {
+      await tx.newsPost.updateMany({
+        where: { id: { in: changing } },
+        data: { isFeatured: false },
+      });
+      return changing;
+    }
+    const last = await tx.newsPost.aggregate({
+      where: { isFeatured: true, deletedAt: null },
+      _max: { featuredOrder: true },
+    });
+    const base = (last._max.featuredOrder ?? -1) + 1;
+    for (const [i, id] of changing.entries()) {
+      await tx.newsPost.update({
+        where: { id },
+        data: { isFeatured: true, featuredOrder: base + i },
+      });
+    }
+    return changing;
   });
 }
 

@@ -29,10 +29,16 @@ export function EventCardActions({
   eventId,
   formSlug,
   formPublished,
+  inline = false,
 }: {
   eventId: string;
   formSlug: string | null;
   formPublished: boolean;
+  /**
+   * Dentro de una fila de la tabla de eventos (milestone 16) en vez de al pie de una tarjeta:
+   * sin borde ni relleno propios.
+   */
+  inline?: boolean;
 }) {
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
@@ -58,7 +64,13 @@ export function EventCardActions({
   };
 
   return (
-    <div className="mt-auto grid grid-cols-2 gap-1 border-t px-4 py-2 sm:flex sm:items-center sm:justify-end sm:gap-0.5">
+    <div
+      className={
+        inline
+          ? "grid w-full grid-cols-2 gap-1 sm:flex sm:w-auto sm:items-center sm:justify-end sm:gap-0.5"
+          : "mt-auto grid grid-cols-2 gap-1 border-t px-4 py-2 sm:flex sm:items-center sm:justify-end sm:gap-0.5"
+      }
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
