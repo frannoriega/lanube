@@ -108,10 +108,13 @@ Reglas para que no moleste (acordadas en la propuesta):
 - **El texto está en el DOM desde el principio** (SEO y lectores de pantalla); sólo se anima
   su opacidad. Sin JS, un `<noscript><style>` lo muestra.
 - `overflow-x: clip` en el hero: los nodos que vuelan desde afuera no generan scroll lateral.
-- Detalles de fidelidad: los anillos blancos de los nodos y los trazos blancos que "cortan" la
-  nube se pintan con `var(--background)`, así se leen como huecos también en modo oscuro (en
-  `#fff` aparecían como bandas blancas). Los círculos venían con `translate+rotate` de
-  Illustrator; rotar un círculo sobre su centro no lo mueve, así que se usan `cx/cy` directos.
+- Detalles de fidelidad: los trazos blancos que "cortan" la nube se pintan con
+  `var(--background)`, así se leen como cortes también en modo oscuro (en `#fff` aparecían
+  como bandas blancas). Los **anillos de los nodos quedan blancos**, como en el logo oficial:
+  son un borde, no un hueco. (La primera versión también los pintaba con el color del fondo y
+  en oscuro el borde desaparecía; lo marcó el usuario comparando con el logo original.) Los
+  círculos venían con `translate+rotate` de Illustrator; rotar un círculo sobre su centro no
+  lo mueve, así que se usan `cx/cy` directos.
 - **Bug encontrado al probar:** en `npm run dev` la intro no se veía nunca — el StrictMode
   corre el efecto dos veces; la primera marcaba la sesión como vista y la segunda saltaba al
   final. Se resolvió decidiendo una sola vez por montaje con una `ref`.
