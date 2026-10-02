@@ -5,7 +5,7 @@ import { serializeJson } from "@/lib/json-bigint";
 import { formTemplateSchema } from "@/lib/schemas/events";
 import { NextRequest, NextResponse } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 export async function GET() {
   try {
@@ -36,13 +36,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const audit = await beginAudit("Form", null);
     const template = await createFormTemplate(parsed.data);
     if (template) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.formCreate,
-        entityType: "Form",
+      await audit.commit(session, AUDIT_ACTIONS.formCreate, {
         entityId: template.id,
-        after: { name: template.name },
       });
     }
     return NextResponse.json(serializeJson(template), { status: 201 });

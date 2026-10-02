@@ -5,7 +5,7 @@ import { serializeJson } from "@/lib/json-bigint";
 import { reservationTypeInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 // The read side is public: GET /api/reservation-types.
 export async function POST(request: NextRequest) {
@@ -27,12 +27,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const audit = await beginAudit("ReservationType", null);
     const type = await createReservationType(parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.reservationTypeCreate,
-      entityType: "ReservationType",
+    await audit.commit(session, AUDIT_ACTIONS.reservationTypeCreate, {
       entityId: type.id,
-      after: { code: type.code, name: type.name },
     });
     return NextResponse.json(serializeJson(type), { status: 201 });
   } catch (err) {

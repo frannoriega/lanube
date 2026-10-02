@@ -12,7 +12,7 @@ import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { diffFields } from "@/lib/audit/diff";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { emitAudit } from "@/lib/audit/emit";
 import { notify } from "@/lib/notifications/dispatch";
 import type { ReservationDecidedData } from "@/lib/notifications/types";
 import { createId } from "@paralleldrive/cuid2";
@@ -99,9 +99,7 @@ export async function PATCH(
             "status",
           ]);
           if (diff) {
-            await recordAuditFromSession(session, {
-              action: AUDIT_ACTIONS.reservationApprove,
-              entityType: "Reservation",
+            await emitAudit(session, AUDIT_ACTIONS.reservationApprove, {
               entityId: resolvedParams.id,
               before: diff.before,
               after: diff.after,
@@ -116,9 +114,7 @@ export async function PATCH(
         for (const rejectedId of result.autoRejectedIds) {
           const rejectedContext =
             await getReservationNotificationContext(rejectedId);
-          await recordAuditFromSession(session, {
-            action: AUDIT_ACTIONS.reservationAutoReject,
-            entityType: "Reservation",
+          await emitAudit(session, AUDIT_ACTIONS.reservationAutoReject, {
             entityId: rejectedId,
             // approve_reservation() only ever touches rows that were PENDING, so the
             // before-state is known without a second query.
@@ -166,18 +162,19 @@ export async function PATCH(
           ["status", "deniedReason"],
         );
         if (diff) {
-          await recordAuditFromSession(session, {
-            action:
-              status === "REJECTED"
-                ? AUDIT_ACTIONS.reservationReject
-                : AUDIT_ACTIONS.reservationCancel,
-            entityType: "Reservation",
-            entityId: resolvedParams.id,
-            before: diff.before,
-            after: diff.after,
-            context: context ? buildReservationAuditContext(context) : null,
-            reason: deniedReason ?? null,
-          });
+          await emitAudit(
+            session,
+            status === "REJECTED"
+              ? AUDIT_ACTIONS.reservationReject
+              : AUDIT_ACTIONS.reservationCancel,
+            {
+              entityId: resolvedParams.id,
+              before: diff.before,
+              after: diff.after,
+              context: context ? buildReservationAuditContext(context) : null,
+              reason: deniedReason ?? null,
+            },
+          );
         }
       }
       if (status === "REJECTED" && context) {

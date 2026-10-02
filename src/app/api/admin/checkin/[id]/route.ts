@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiError, apiServerError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { emitAudit } from "@/lib/audit/emit";
 import { checkoutActiveCheckinByUserId } from "@/lib/db/adminStats";
 import { NextRequest } from "next/server";
 
@@ -34,9 +34,7 @@ export async function PATCH(
     // person's session, and when" is exactly the kind of operational question the audit
     // exists to answer. The view filters by action and entity type, so the volume does
     // not drown anything.
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.checkinUpdate,
-      entityType: "CheckIn",
+    await emitAudit(session, AUDIT_ACTIONS.checkinUpdate, {
       entityId: updated.id,
       context: {
         Usuario: `${updated.registeredUser.name} ${updated.registeredUser.lastName}`,

@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { spaceInputSchema } from "@/lib/schemas/config";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 // GET: list spaces. `?reservable=1` narrows to reservable ones (event-form picker);
 // any admin can read, mutations need spaces:manage.
@@ -41,12 +41,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const audit = await beginAudit("Space", null);
     const space = await createSpace(parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.spaceCreate,
-      entityType: "Space",
+    await audit.commit(session, AUDIT_ACTIONS.spaceCreate, {
       entityId: space.id,
-      after: { name: space.name, slug: space.slug },
     });
     return apiSuccess(space, { status: 201 });
   } catch (e) {

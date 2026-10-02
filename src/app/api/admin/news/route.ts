@@ -11,7 +11,7 @@ import {
 } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 // GET: paginated list. A Comunicador (news:manage only) sees just their own
 // posts; Admin/Superadmin (news:approve) see everyone's — scoped server-side.
@@ -68,16 +68,14 @@ export async function POST(request: NextRequest) {
     const label = actorUser
       ? actorLabelFor(actorUser)
       : `(usuario ${session.userId})`;
+    const audit = await beginAudit("NewsPost", null);
     const post = await createNewsPost(
       parsed.data,
       { id: session.userId, label },
       canApprove,
     );
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.newsCreate,
-      entityType: "NewsPost",
+    await audit.commit(session, AUDIT_ACTIONS.newsCreate, {
       entityId: post.id,
-      after: { title: post.title, status: post.status },
     });
     return apiSuccess(post, { status: 201 });
   } catch (err) {

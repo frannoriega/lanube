@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 import { restoreNewsPost } from "@/lib/db/news";
 import { NextRequest } from "next/server";
 
@@ -15,13 +15,9 @@ export async function POST(
 
   const { id } = await params;
   try {
+    const audit = await beginAudit("NewsPost", id);
     const post = await restoreNewsPost(id);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.newsRestore,
-      entityType: "NewsPost",
-      entityId: id,
-      after: { title: post.title },
-    });
+    await audit.commit(session, AUDIT_ACTIONS.newsRestore);
     return apiSuccess(post);
   } catch (err) {
     return apiCatch("admin/news/[id]/restore POST", err);

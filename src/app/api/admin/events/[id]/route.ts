@@ -15,7 +15,8 @@ import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { z } from "zod";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
+import { describeSessionActions } from "@/lib/events/session-audit";
 
 export async function GET(
   _request: NextRequest,
@@ -67,17 +68,20 @@ export async function PUT(
   }
 
   try {
+    const audit = await beginAudit("Event", id);
     const event = await updateEvent(id, parsed.data, {
       force,
       forceCapacity,
       sessionActions: sessionsParsed.data,
       sessionReason,
     });
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.eventUpdate,
-      entityType: "Event",
-      entityId: id,
-      after: { name: event.name, status: event.status },
+    await audit.commit(session, AUDIT_ACTIONS.eventUpdate, {
+      // Las sesiones canceladas/reprogramadas en este guardado no están en la foto del
+      // evento: se agregan aparte, así la entrada dice qué fechas se tocaron y por qué.
+      extra: sessionsParsed.data.length
+        ? { after: { sessions: describeSessionActions(sessionsParsed.data) } }
+        : undefined,
+      reason: sessionReason || null,
     });
     return apiSuccess(event);
   } catch (e) {
@@ -105,13 +109,10 @@ export async function DELETE(
 
   const { id } = await params;
   try {
+    const audit = await beginAudit("Event", id);
     await deleteEvent(id);
     // Soft delete: the event, its form and participant history survive.
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.eventDelete,
-      entityType: "Event",
-      entityId: id,
-    });
+    await audit.commit(session, AUDIT_ACTIONS.eventDelete);
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/events/[id] DELETE", e);

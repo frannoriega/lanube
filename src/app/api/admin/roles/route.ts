@@ -1,13 +1,8 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
-import {
-  createRole,
-  listRolesWithUsage,
-  resolveRoleNames,
-  RoleWriteError,
-} from "@/lib/db/roles";
+import { beginAudit } from "@/lib/audit/emit";
+import { createRole, listRolesWithUsage, RoleWriteError } from "@/lib/db/roles";
 import { PERMISSIONS } from "@/lib/rbac";
 import { NextRequest } from "next/server";
 import z from "zod";
@@ -46,17 +41,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const audit = await beginAudit("Role", null);
     const role = await createRole(parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.roleCreate,
-      entityType: "Role",
+    await audit.commit(session, AUDIT_ACTIONS.roleCreate, {
       entityId: role.id,
-      after: {
-        name: role.name,
-        description: role.description,
-        permissions: role.permissions,
-        grantableRoles: await resolveRoleNames(role.grantableRoleIds),
-      },
     });
     return apiSuccess(role, { status: 201 });
   } catch (err) {

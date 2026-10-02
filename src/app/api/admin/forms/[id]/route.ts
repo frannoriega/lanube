@@ -8,7 +8,7 @@ import {
 import { formTemplateSchema } from "@/lib/schemas/events";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 export async function GET(
   _request: NextRequest,
@@ -42,13 +42,9 @@ export async function PUT(
   }
 
   try {
+    const audit = await beginAudit("Form", id);
     const template = await updateFormTemplate(id, parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.formUpdate,
-      entityType: "Form",
-      entityId: id,
-      after: { name: template?.name ?? null },
-    });
+    await audit.commit(session, AUDIT_ACTIONS.formUpdate);
     return apiSuccess(template);
   } catch (e) {
     return apiCatch("admin/forms/[id] PUT", e);
@@ -64,12 +60,9 @@ export async function DELETE(
 
   const { id } = await params;
   try {
+    const audit = await beginAudit("Form", id);
     await deleteFormTemplate(id);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.formDelete,
-      entityType: "Form",
-      entityId: id,
-    });
+    await audit.commit(session, AUDIT_ACTIONS.formDelete);
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/forms/[id] DELETE", e);

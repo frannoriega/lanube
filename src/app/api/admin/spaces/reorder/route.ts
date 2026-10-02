@@ -3,7 +3,8 @@ import { reorderSpaces } from "@/lib/db/spaces";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { emitAudit } from "@/lib/audit/emit";
+import { snapshotOrder } from "@/lib/db/auditOrder";
 
 const reorderSchema = z.object({
   orderedIds: z.array(z.string().min(1)).min(1),
@@ -24,13 +25,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Fotos con nombre antes y después: la auditoría muestra qué se movió y adónde, no
+    // una lista de ids (ver `src/lib/db/auditOrder.ts`).
+    const before = await snapshotOrder("Space");
     await reorderSpaces(parsed.data.orderedIds);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.spaceReorder,
-      entityType: "Space",
+    const after = await snapshotOrder("Space");
+    await emitAudit(session, AUDIT_ACTIONS.spaceReorder, {
       // Not a single space: the entity is the ordering itself.
       entityId: "*",
-      after: { orderedIds: parsed.data.orderedIds },
+      before: { order: before },
+      after: { order: after },
     });
     return NextResponse.json({ ok: true });
   } catch {

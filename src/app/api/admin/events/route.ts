@@ -5,7 +5,7 @@ import { eventInputSchema } from "@/lib/schemas/events";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 export async function GET() {
   const { error } = await requirePermission("events:manage");
@@ -26,12 +26,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const audit = await beginAudit("Event", null);
     const event = await createEvent(parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.eventCreate,
-      entityType: "Event",
+    await audit.commit(session, AUDIT_ACTIONS.eventCreate, {
       entityId: event.id,
-      after: { name: event.name, status: event.status },
     });
     return apiSuccess(event, { status: 201 });
   } catch (e) {

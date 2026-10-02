@@ -1,25 +1,11 @@
 import { requirePermission } from "@/lib/api-auth";
-import {
-  deleteLandingTheme,
-  getLandingTheme,
-  updateLandingTheme,
-} from "@/lib/db/landingThemes";
-
-/** Fields worth a before/after entry; the rest are presentation detail. */
-const AUDITED_THEME_FIELDS = [
-  "name",
-  "isEnabled",
-  "priority",
-  "startDate",
-  "endDate",
-] as const;
+import { deleteLandingTheme, updateLandingTheme } from "@/lib/db/landingThemes";
 import { serializeJson } from "@/lib/json-bigint";
 import { landingThemeInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
 import { apiServerError } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
-import { diffFields } from "@/lib/audit/diff";
+import { beginAudit } from "@/lib/audit/emit";
 
 export async function PUT(
   request: NextRequest,
@@ -42,18 +28,9 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const before = await getLandingTheme(id);
+    const audit = await beginAudit("LandingTheme", id);
     const theme = await updateLandingTheme(id, parsed.data);
-    const diff = before
-      ? diffFields(before, theme, [...AUDITED_THEME_FIELDS])
-      : null;
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.themeUpdate,
-      entityType: "LandingTheme",
-      entityId: id,
-      context: { Tema: theme.name },
-      ...(diff ?? { after: { name: theme.name } }),
-    });
+    await audit.commit(session, AUDIT_ACTIONS.themeUpdate);
     return NextResponse.json(serializeJson(theme));
   } catch (err) {
     return apiServerError("admin/themes/[id] PUT", err);
@@ -69,16 +46,9 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const before = await getLandingTheme(id);
+    const audit = await beginAudit("LandingTheme", id);
     await deleteLandingTheme(id);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.themeDelete,
-      entityType: "LandingTheme",
-      entityId: id,
-      before: before
-        ? { name: before.name, isEnabled: before.isEnabled }
-        : null,
-    });
+    await audit.commit(session, AUDIT_ACTIONS.themeDelete);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return apiServerError("admin/themes/[id] DELETE", err);

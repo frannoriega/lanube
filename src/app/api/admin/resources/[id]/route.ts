@@ -1,14 +1,10 @@
 import { requirePermission } from "@/lib/api-auth";
-import { diffFields } from "@/lib/audit/diff";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 import { deleteResource, updateResource } from "@/lib/db/resources";
 import { serializeJson } from "@/lib/json-bigint";
-import { prisma } from "@/lib/prisma";
 import { resourceInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
-
-const AUDITED_RESOURCE_FIELDS = ["name", "serialNumber"] as const;
 
 export async function PUT(
   request: NextRequest,
@@ -31,23 +27,9 @@ export async function PUT(
 
   const { id } = await params;
   try {
-    const before = await prisma.resource.findUnique({
-      where: { id },
-      select: { name: true, serialNumber: true },
-    });
+    const audit = await beginAudit("Resource", id);
     const resource = await updateResource(id, parsed.data);
-    if (before) {
-      const diff = diffFields(before, resource, [...AUDITED_RESOURCE_FIELDS]);
-      if (diff) {
-        await recordAuditFromSession(session, {
-          action: AUDIT_ACTIONS.resourceUpdate,
-          entityType: "Resource",
-          entityId: id,
-          context: { Recurso: resource.name },
-          ...diff,
-        });
-      }
-    }
+    await audit.commit(session, AUDIT_ACTIONS.resourceUpdate);
     return NextResponse.json(serializeJson(resource));
   } catch {
     return NextResponse.json(
@@ -66,19 +48,9 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    const before = await prisma.resource.findUnique({
-      where: { id },
-      select: { name: true },
-    });
+    const audit = await beginAudit("Resource", id);
     await deleteResource(id);
-    if (before) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.resourceDelete,
-        entityType: "Resource",
-        entityId: id,
-        before: { name: before.name },
-      });
-    }
+    await audit.commit(session, AUDIT_ACTIONS.resourceDelete);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

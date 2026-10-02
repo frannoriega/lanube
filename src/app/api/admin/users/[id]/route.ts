@@ -3,7 +3,7 @@ import { updateUserRole } from "@/lib/db/users";
 import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { emitAudit } from "@/lib/audit/emit";
 import { getPermissionSetForUser, getRoleById } from "@/lib/db/roles";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -79,9 +79,7 @@ export async function PATCH(
     });
     const user = await updateUserRole(id, parsed.data.roleId);
     if (before && before.roleId !== user.roleId) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.userRoleUpdate,
-        entityType: "RegisteredUser",
+      await emitAudit(session, AUDIT_ACTIONS.userRoleUpdate, {
         entityId: id,
         context: { Usuario: `${user.name} ${user.lastName}` },
         // Log the readable name alongside the id — the id alone is unreadable in the

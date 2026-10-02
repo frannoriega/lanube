@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 import { participantDecisionSchema } from "@/lib/schemas/events";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { emitAudit } from "@/lib/audit/emit";
 
 export async function POST(
   request: NextRequest,
@@ -34,9 +34,7 @@ export async function POST(
 
     // One entry for the batch, keyed to the event: a decision covering 40 people should
     // not produce 40 rows. The participant ids live in the payload.
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.participantDecide,
-      entityType: "Event",
+    await emitAudit(session, AUDIT_ACTIONS.participantDecide, {
       entityId: id,
       context: {
         Evento: eventName,
