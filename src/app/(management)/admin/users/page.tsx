@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { DataTable, DataTablePagination } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
+import { StatGrid, StatTile } from "@/components/molecules/stat-grid";
 import {
   Select,
   SelectContent,
@@ -292,56 +293,33 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="space-y-1">
-            <CardTitle>Total de usuarios</CardTitle>
-            <CardDescription>
-              Usuarios registrados en la plataforma.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-full flex flex-row items-end">
-            <p className="text-3xl font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-              {summary.totalUsers}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="space-y-1">
-            <CardTitle>Usuarios activos</CardTitle>
-            <CardDescription>Usuarios sin sanciones vigentes.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-full flex flex-row items-end">
-            <p className="text-3xl font-semibold text-green-600 dark:text-green-400">
-              {summary.activeUsers}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="space-y-1">
-            <CardTitle>Usuarios bloqueados</CardTitle>
-            <CardDescription>Usuarios con una sanción activa.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-full flex flex-row items-end">
-            <p className="text-3xl font-semibold text-red-600 dark:text-red-400">
-              {summary.bannedUsers}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader className="space-y-1">
-            <CardTitle>Altas este mes</CardTitle>
-            <CardDescription>
-              Registros creados desde el inicio de mes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-full flex flex-row items-end">
-            <p className="text-3xl font-semibold text-indigo-600 dark:text-indigo-400">
-              {summary.monthUsers}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* KPIs — grilla compartida, 2×2 compacta en teléfonos */}
+      <StatGrid>
+        <StatTile
+          title="Total de usuarios"
+          description="Usuarios registrados en la plataforma."
+          tone="brand"
+          value={summary.totalUsers}
+        />
+        <StatTile
+          title="Usuarios activos"
+          description="Usuarios sin sanciones vigentes."
+          tone="success"
+          value={summary.activeUsers}
+        />
+        <StatTile
+          title="Usuarios bloqueados"
+          description="Usuarios con una sanción activa."
+          tone="danger"
+          value={summary.bannedUsers}
+        />
+        <StatTile
+          title="Altas este mes"
+          description="Registros creados desde el inicio de mes."
+          tone="info"
+          value={summary.monthUsers}
+        />
+      </StatGrid>
 
       <Card className="glass-card dark:glass-card-dark">
         <CardHeader>
