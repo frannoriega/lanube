@@ -177,6 +177,7 @@ export function ParticipantsTable({
     const selectCol: ColumnDef<ParticipantRow> = {
       id: "select",
       enableHiding: false,
+      meta: { mobile: "leading", label: "Seleccionar" },
       header: ({ table }) => (
         <input
           type="checkbox"
@@ -220,7 +221,7 @@ export function ParticipantsTable({
           {row.original.displayEmail ?? row.original.email}
         </span>
       ),
-      meta: { label: "Email" },
+      meta: { mobile: "title", label: "Email" },
     };
 
     const answerCols: ColumnDef<ParticipantRow>[] = columns.map((col) => ({
@@ -282,7 +283,7 @@ export function ParticipantsTable({
           {PARTICIPANT_STATUS_LABEL[row.original.status]}
         </ToneBadge>
       ),
-      meta: { label: "Estado" },
+      meta: { mobile: "badge", label: "Estado" },
     };
 
     return [
@@ -338,9 +339,7 @@ export function ParticipantsTable({
             <DropdownMenuLabel>Mostrar columnas</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {hideableColumns.map((column) => {
-              const label =
-                (column.columnDef.meta as { label?: string } | undefined)
-                  ?.label ?? column.id;
+              const label = column.columnDef.meta?.label ?? column.id;
               return (
                 <DropdownMenuCheckboxItem
                   key={column.id}
