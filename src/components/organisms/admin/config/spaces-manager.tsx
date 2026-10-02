@@ -21,9 +21,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ReorderList } from "@/components/molecules/reorder-list";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -47,25 +48,23 @@ export function SpacesManager() {
   const spaces = data ?? [];
   const [deleting, setDeleting] = useState<SpaceRow | null>(null);
   const [busy, setBusy] = useState(false);
-  const [reordering, setReordering] = useState(false);
-
-  const move = async (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= spaces.length) return;
-    const orderedIds = spaces.map((s) => s.id);
-    [orderedIds[index], orderedIds[target]] = [
-      orderedIds[target],
-      orderedIds[index],
-    ];
-    setReordering(true);
+  /*
+   * Modo "Reordenar" (milestone 14, decisión Part B.3): la lista se reordena arrastrando,
+   * solo después de activar el modo, y se guarda de una vez con "Guardar orden".
+   */
+  const [reorderMode, setReorderMode] = useState(false);
+  const saveOrder = async (orderedIds: string[]) => {
     try {
       await apiSend("/api/admin/spaces/reorder", "POST", { orderedIds });
+      toast.success("Orden guardado");
+      setReorderMode(false);
       invalidateApi("/api/admin/spaces");
       await refetch();
     } catch (err) {
-      toast.error(apiErrorMessage(err, "No se pudo reordenar los espacios"));
-    } finally {
-      setReordering(false);
+      toast.error(
+        apiErrorMessage(err, "No se pudo guardar el orden de los espacios"),
+      );
+      throw err;
     }
   };
 
@@ -90,41 +89,6 @@ export function SpacesManager() {
    * columna declara su rol en la tarjeta con `meta.mobile` (ver `MobileColumnRole`).
    */
   const columns: ColumnDef<(typeof spaces)[number]>[] = [
-    {
-      id: "order",
-      header: "Orden",
-      // Las flechas de orden no van en la tarjeta: el reordenamiento en teléfonos llega con
-      // el modo "Reordenar" (siguiente ítem del milestone).
-      meta: { mobile: "hidden" },
-      cell: ({ row }) => {
-        const index = row.index;
-        const space = row.original;
-        return (
-          <div className="flex flex-col">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              disabled={reordering || index === 0}
-              onClick={() => move(index, -1)}
-              aria-label={`Subir ${space.name}`}
-            >
-              <ChevronUp className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              disabled={reordering || index === spaces.length - 1}
-              onClick={() => move(index, 1)}
-              aria-label={`Bajar ${space.name}`}
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
     {
       id: "name",
       header: "Nombre",
@@ -218,11 +182,20 @@ export function SpacesManager() {
             capacidad.
           </CardDescription>
         </div>
-        <Button asChild>
-          <Link href="/admin/spaces/new">
-            <Plus className="mr-1 h-4 w-4" /> Nuevo espacio
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setReorderMode(true)}
+            disabled={reorderMode || spaces.length < 2}
+          >
+            <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
+          </Button>
+          <Button asChild>
+            <Link href="/admin/spaces/new">
+              <Plus className="mr-1 h-4 w-4" /> Nuevo espacio
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -236,6 +209,16 @@ export function SpacesManager() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
+        ) : reorderMode ? (
+          <ReorderList
+            items={spaces.map((item) => ({
+              id: item.id,
+              label: item.name,
+            }))}
+            hint="El orden se usa en el menú y en el sitio público."
+            onSave={saveOrder}
+            onCancel={() => setReorderMode(false)}
+          />
         ) : (
           <DataTable table={table} emptyMessage="No hay espacios definidos." />
         )}

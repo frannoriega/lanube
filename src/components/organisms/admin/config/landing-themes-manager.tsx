@@ -39,6 +39,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ReorderList } from "@/components/molecules/reorder-list";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import { endOfDateKeyMs, startOfDateKeyMs } from "@/lib/admin/admin-timezone";
@@ -48,7 +49,7 @@ import {
 } from "@/lib/schemas/config";
 import type { LandingTheme } from "@/types/prisma";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -156,6 +157,26 @@ export function LandingThemesManager() {
     }
   };
 
+  /*
+   * Modo "Reordenar" (milestone 14, decisión Part B.3): la lista se reordena arrastrando,
+   * solo después de activar el modo, y se guarda de una vez con "Guardar orden".
+   */
+  const [reorderMode, setReorderMode] = useState(false);
+  const saveOrder = async (orderedIds: string[]) => {
+    try {
+      await apiSend("/api/admin/themes/reorder", "POST", { orderedIds });
+      toast.success("Orden guardado");
+      setReorderMode(false);
+      invalidateApi("/api/admin/themes");
+      await refetch();
+    } catch (err) {
+      toast.error(
+        apiErrorMessage(err, "No se pudo guardar el orden de los temas"),
+      );
+      throw err;
+    }
+  };
+
   const onDelete = async () => {
     if (!deleting) return;
     setBusy(true);
@@ -208,12 +229,6 @@ export function LandingThemesManager() {
       ),
     },
     {
-      id: "priority",
-      header: "Prioridad",
-      meta: { label: "Prioridad" },
-      cell: ({ row }) => row.original.priority,
-    },
-    {
       id: "status",
       header: "Estado",
       meta: { mobile: "badge", label: "Estado" },
@@ -263,10 +278,24 @@ export function LandingThemesManager() {
             Cada tema define cuándo se activa y qué cambia en la portada
             mientras dura.
           </CardDescription>
+          {/* El orden de la lista es la prioridad (milestone 14): ya no hay un campo numérico. */}
+          <p className="mt-1 text-sm text-muted-foreground">
+            El orden es la prioridad: si dos temas coinciden en fecha, gana el
+            de más arriba.
+          </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-1 h-4 w-4" /> Nuevo tema
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setReorderMode(true)}
+            disabled={reorderMode || themes.length < 2}
+          >
+            <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-1 h-4 w-4" /> Nuevo tema
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {error ? (
@@ -280,6 +309,17 @@ export function LandingThemesManager() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
+        ) : reorderMode ? (
+          <ReorderList
+            items={themes.map((item) => ({
+              id: item.id,
+              label: item.name,
+              description: windowSummary(item),
+            }))}
+            hint="Si dos temas coinciden en fecha, gana el de más arriba."
+            onSave={saveOrder}
+            onCancel={() => setReorderMode(false)}
+          />
         ) : (
           <DataTable table={table} emptyMessage="No hay temas definidos." />
         )}
