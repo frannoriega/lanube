@@ -5,7 +5,7 @@ import { landingThemeInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
 import { apiServerError } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 export async function GET() {
   const { error } = await requirePermission("landing-themes:manage");
@@ -36,12 +36,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const audit = await beginAudit("LandingTheme", null);
     const theme = await createLandingTheme(parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.themeCreate,
-      entityType: "LandingTheme",
+    await audit.commit(session, AUDIT_ACTIONS.themeCreate, {
       entityId: theme.id,
-      after: { name: theme.name, isEnabled: theme.isEnabled },
     });
     return NextResponse.json(serializeJson(theme), { status: 201 });
   } catch (err) {

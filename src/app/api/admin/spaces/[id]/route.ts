@@ -5,27 +5,12 @@ import {
   apiServerError,
   apiSuccess,
 } from "@/lib/api/response";
-import { diffFields } from "@/lib/audit/diff";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
-import { deleteSpace, getSpaceById, updateSpace } from "@/lib/db/spaces";
+import { beginAudit } from "@/lib/audit/emit";
+import { deleteSpace, updateSpace } from "@/lib/db/spaces";
 import { Prisma } from "@/generated/prisma/client";
 import { spaceInputSchema } from "@/lib/schemas/config";
 import { NextRequest } from "next/server";
-
-// Fields diffed into the audit trail — excludes free-text (description,
-// longDescription, faqs) to keep entries small and readable.
-const AUDITED_SPACE_FIELDS = [
-  "name",
-  "slug",
-  "capacity",
-  "isExclusive",
-  "isReservable",
-  "isFeatured",
-  "displayOrder",
-  "iconName",
-  "imageUrl",
-] as const;
 
 export async function PUT(
   request: NextRequest,
@@ -44,22 +29,11 @@ export async function PUT(
 
   const { id } = await params;
   try {
-    const before = await getSpaceById(id);
+    // Qué campos se auditan (incluidos los textos largos y las preguntas frecuentes, con
+    // su propio diff) lo decide el registro: `AUDIT_ENTITIES.Space`.
+    const audit = await beginAudit("Space", id);
     const space = await updateSpace(id, parsed.data);
-    if (before) {
-      const diff = diffFields(before, space, [...AUDITED_SPACE_FIELDS]);
-      if (diff) {
-        await recordAuditFromSession(session, {
-          action: AUDIT_ACTIONS.spaceUpdate,
-          entityType: "Space",
-          entityId: id,
-          // The name itself may not be what changed — without this, editing e.g. just the
-          // capacity would leave no way to tell which space from the log alone.
-          context: { Espacio: space.name },
-          ...diff,
-        });
-      }
-    }
+    await audit.commit(session, AUDIT_ACTIONS.spaceUpdate);
     return apiSuccess(space);
   } catch (e) {
     if (
@@ -81,16 +55,9 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    const before = await getSpaceById(id);
+    const audit = await beginAudit("Space", id);
     await deleteSpace(id);
-    if (before) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.spaceDelete,
-        entityType: "Space",
-        entityId: id,
-        before: { name: before.name, slug: before.slug },
-      });
-    }
+    await audit.commit(session, AUDIT_ACTIONS.spaceDelete);
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/spaces/[id] DELETE", e);

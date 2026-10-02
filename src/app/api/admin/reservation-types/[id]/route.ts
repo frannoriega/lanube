@@ -1,17 +1,13 @@
 import { requirePermission } from "@/lib/api-auth";
-import { diffFields } from "@/lib/audit/diff";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 import {
   deleteReservationType,
   updateReservationType,
 } from "@/lib/db/reservationTypes";
 import { serializeJson } from "@/lib/json-bigint";
-import { prisma } from "@/lib/prisma";
 import { reservationTypeInputSchema } from "@/lib/schemas/config";
 import { NextRequest, NextResponse } from "next/server";
-
-const AUDITED_RESERVATION_TYPE_FIELDS = ["name", "displayOrder"] as const;
 
 export async function PUT(
   request: NextRequest,
@@ -35,23 +31,9 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const before = await prisma.reservationType.findUnique({
-    where: { id },
-    select: { name: true, displayOrder: true },
-  });
+  const audit = await beginAudit("ReservationType", id);
   const type = await updateReservationType(id, parsed.data);
-  if (before) {
-    const diff = diffFields(before, type, [...AUDITED_RESERVATION_TYPE_FIELDS]);
-    if (diff) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.reservationTypeUpdate,
-        entityType: "ReservationType",
-        entityId: id,
-        context: { "Tipo de reserva": type.name },
-        ...diff,
-      });
-    }
-  }
+  await audit.commit(session, AUDIT_ACTIONS.reservationTypeUpdate);
   return NextResponse.json(serializeJson(type));
 }
 
@@ -66,20 +48,10 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    const before = await prisma.reservationType.findUnique({
-      where: { id },
-      select: { name: true },
-    });
+    const audit = await beginAudit("ReservationType", id);
     // FK RESTRICT on events/reservations blocks deleting a type in use.
     await deleteReservationType(id);
-    if (before) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.reservationTypeDelete,
-        entityType: "ReservationType",
-        entityId: id,
-        before: { name: before.name },
-      });
-    }
+    await audit.commit(session, AUDIT_ACTIONS.reservationTypeDelete);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

@@ -4,7 +4,7 @@ import { getSiteConfig, updateSiteConfig } from "@/lib/db/siteConfig";
 import { siteConfigInputSchema } from "@/lib/schemas/config";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 
 // GET: read the site config. Any admin may read; only site-config:manage may mutate.
 export async function GET() {
@@ -28,15 +28,11 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
+    // Fila única (`id = "site"`) editada entera: antes se guardaba el formulario completo
+    // como "después", y la entrada no decía qué había cambiado. Ahora, solo lo que cambió.
+    const audit = await beginAudit("SiteConfig", "site");
     const config = await updateSiteConfig(parsed.data);
-    // Site config is a single row edited wholesale; record the submitted shape rather
-    // than a field diff, which would be mostly noise.
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.siteConfigUpdate,
-      entityType: "SiteConfig",
-      entityId: "site-config",
-      after: parsed.data as Record<string, unknown>,
-    });
+    await audit.commit(session, AUDIT_ACTIONS.siteConfigUpdate);
     return apiSuccess(config);
   } catch (e) {
     return apiServerError("admin/site-config PUT", e);
