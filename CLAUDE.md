@@ -380,9 +380,10 @@ for event exceptions (business rule; the `reason` column is optional). The pure 
 (weekly expansion + exception overlay, drop detection, and the saved-vs-staged merge
 `effectiveExceptions`) lives in `src/lib/events/occurrences.ts` (unit-tested).
 
-- **Sessions commit with the event, not on their own.** The `Sesiones` dialog
-  (`event-sessions.tsx`, launched from the event form / the `?sessions=1` card shortcut) is a
-  **client-side staging UI**: it previews occurrences from the _live form recipe_ (`planEventOccurrences`
+- **Sessions commit with the event, not on their own.** The `Sesiones` panel
+  (`event-sessions.tsx`, **inline in the event form's "Agenda" section** since milestone 14: a
+  live summary line + "Gestionar sesiones" → a 10-per-page list; the `?sessions=1` card shortcut
+  expands it and scrolls to it) is a **client-side staging UI**: it previews occurrences from the _live form recipe_ (`planEventOccurrences`
   - `expandEventOccurrences`) overlaid with the saved exceptions (`getEventSessionExceptions`,
     passed as `existingExceptions`) and the not-yet-saved `SessionAction[]` held in the form. Editing
     a session only mutates that local array (rows show a **"Sin guardar"** badge; the button shows a
@@ -477,6 +478,10 @@ are auto-approved (default `false`) or filtered by an admin.
   `featuredOrder asc`, then `startTime desc`) and render in a distinct emphasized row (ring +
   "Destacado" star badge) above the normal grid (`EventsSection` splits featured vs rest; the
   `EventCard` `featured` prop drives the emphasis). Set via the "Destacar en el inicio" switch.
+- **The featured order is not a form field** (milestone 14): it is set with "Reordenar
+  destacados" on the Events list (and "Reordenar destacadas" on News, `news:approve` only) —
+  `FeaturedReorderButton` → `GET/POST /api/admin/{events,news}/featured-order`. Event/news
+  updates pass `featuredOrder: undefined`, so saving a form never overwrites that order.
 
 ### Landing "Próximos eventos"
 
@@ -619,6 +624,50 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   `TODO(scale)` on `notifyEventParticipantsBatch`): `notify()` dispatches inline, inside the
   triggering request. Fine at current scale; Vercel Queues is the named next step if that
   changes. Full design: `docs/milestones/milestones-13-notifications.md`.
+
+### 13. Mobile layout & form conventions (milestone 14)
+
+Full design + decisions: `docs/milestones/milestones-14-mobile-redesign.md`.
+
+- **Admin lists use `DataTable` (`src/components/ui/data-table.tsx`), never a hand-rolled
+  `<Table>`.** Below `md` it renders **one card per row** from each column's
+  `meta.mobile` role (`title` | `meta` (default) | `badge` | `actions` | `leading` |
+  `hidden`) and `meta.label` (the "Etiqueta: valor" text). Small static lists use
+  `useStaticTable(data, columns)`; clickable rows use `onRowClick`. Don't add an
+  `overflow-x-auto` table "fix" — a wrapper alone still makes a phone scroll sideways.
+- **Dialogs: `ResponsiveDialog*` (`molecules/responsive-dialog.tsx`)**, same API as
+  `ui/dialog` — a centered Dialog from `md`, a bottom Drawer (vaul) below. **Dialog vs page
+  rule:** a form stays in a dialog only if it has ≤ ~4 simple fields, fits a phone without
+  scrolling and has no rich editors / nested pickers; otherwise it gets its own page (e.g.
+  `/admin/themes/new`, `/admin/roles/[id]/edit`).
+- **Page forms** use `molecules/form-layout.tsx`: `FormPageLayout` (main column + aside,
+  aside sticky on `lg` and stacked **last** on phones), `FormSection` (title + one-line
+  description; `tone="danger"` for a "Zona de peligro"), `FormJumpIndex` (lg only),
+  `StickySaveBar` (Guardar/Cancelar always reachable), plus
+  `useUnsavedChangesGuard` + `UnsavedChangesDialog` (`hooks/use-unsaved-changes-guard.tsx`:
+  `beforeunload` + internal-link interception; call `guard.release()` right before a
+  post-save `router.push`). The browser Back button is not intercepted (known limit).
+- **No numeric order/priority fields.** Ordering is the shared **"Reordenar" mode**
+  (`molecules/reorder-list.tsx`, `@dnd-kit`, grip handle at row end, keyboard sensor,
+  explicit Guardar/Cancelar) backed by an audited bulk endpoint per entity
+  (`spaces/reorder`, `reservation-types/reorder`, `themes/reorder` — list order **is** the
+  priority, top wins — `events|news/featured-order`). Edits never write the order columns.
+- **Slugs are derived, never typed** (news, spaces): slugified from the title/name on
+  create, **stable afterwards**, tucked behind "Editar" / "Avanzado" for the rare manual
+  fix; collisions get a numeric suffix server-side (`-2`).
+- **KPI tiles** use `StatGrid` / `StatTile` (`molecules/stat-grid.tsx`): 2×2 compact on
+  phones, tones with built-in `dark:` variants.
+- **Booking calendar** (`organisms/calendar/`): `WeekCalendar` shows 1 / 3 / 5 days by width
+  (`calendar-utils.ts`, unit-tested), `DayStrip` on narrow views, tap-a-slot → booking drawer
+  on touch (drag-select is mouse-only), opens on the first week/day still bookable under the
+  24h notice rule. Pure date logic lives in `calendar-utils.ts`; keep it there.
+- **Mobile screenshots:** `node scripts/mobile-shots.mjs <name> [filter]` (Playwright, signs
+  in as `u1` / `sa1`) captures every route at phone 390 (light + dark) / tablet 820 /
+  desktop 1440 into gitignored `.mobile-shots/<name>/` and prints **OVF** lines for
+  page-level horizontal overflow. Run it for any layout change; the agreed baseline is
+  `.mobile-shots/baseline/`.
+- The management nav drawer is a `Sheet` at `z-[120]` (the sticky header is `z-100`); the
+  WhatsApp floating button is hidden under `/admin` and `/user`.
 
 ## Testing & Seeding
 
