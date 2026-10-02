@@ -20,7 +20,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { registerSchema, resetSchema, signInSchema } from "@/lib/schemas/auth";
+import {
+  recoverySchema,
+  registerSchema,
+  resetSchema,
+  signInSchema,
+} from "@/lib/schemas/auth";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { signIn } from "next-auth/react";
 import {
@@ -40,9 +45,10 @@ export default function LandingPage() {
   const searchParams = useSearchParams();
   const registerCaptchaRef = useRef<TurnstileInstance>(undefined);
   const resetCaptchaRef = useRef<TurnstileInstance>(undefined);
-  const [screen, setScreen] = useState<"signin" | "register" | "reset">(
-    "signin",
-  );
+  const recoveryCaptchaRef = useRef<TurnstileInstance>(undefined);
+  const [screen, setScreen] = useState<
+    "signin" | "register" | "reset" | "recovery"
+  >("signin");
 
   useEffect(() => {
     const confirmed = searchParams.get("confirmed");
@@ -83,6 +89,17 @@ export default function LandingPage() {
     resolver: standardSchemaResolver(resetSchema),
     defaultValues: {
       email: "",
+      captcha: "",
+    },
+  });
+  // Recuperar la cuenta con un código de recuperación (milestone 17).
+  const recoveryForm = useForm<z.infer<typeof recoverySchema>>({
+    resolver: standardSchemaResolver(recoverySchema),
+    defaultValues: {
+      email: "",
+      code: "",
+      password: "",
+      passwordConfirmation: "",
       captcha: "",
     },
   });
@@ -193,6 +210,65 @@ export default function LandingPage() {
       body.message ??
         "Revisa tu correo para confirmar tu cuenta y continuar con el registro.",
     );
+    setScreen("signin");
+  };
+
+  /**
+   * Canjea el código (que deja puesta la contraseña nueva) y entra con esa contraseña. Si
+   * el canje salió bien pero el ingreso no, la contraseña ya cambió: se avisa y se vuelve
+   * al formulario normal.
+   */
+  const onRecoverySubmit = async (data: z.infer<typeof recoverySchema>) => {
+    let res: Response;
+    let body: { message?: string };
+    try {
+      res = await fetch("/api/auth/recovery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      body = await res.json().catch(() => ({}));
+    } catch (err) {
+      console.error("[signin] recovery request failed", err);
+      toast.error(
+        "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+      );
+      return;
+    } finally {
+      // Igual que en el registro: el token de Turnstile es de un solo uso.
+      recoveryForm.setValue("captcha", "");
+      recoveryCaptchaRef.current?.reset();
+    }
+    if (!res.ok) {
+      toast.error(body.message || "No pudimos recuperar la cuenta");
+      return;
+    }
+    try {
+      const signed = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+        redirectTo: "/user/dashboard",
+      });
+      if (signed?.url && !signed.error) {
+        toast.success(
+          "Listo: ya tenés tu contraseña nueva. Generá códigos nuevos si te quedan pocos.",
+        );
+        window.location.href = signed.url;
+        return;
+      }
+      if (signed?.code === "email_not_verified") {
+        toast.error(
+          "Tu contraseña cambió, pero tenés que confirmar tu correo antes de entrar.",
+        );
+      } else {
+        toast.success("Tu contraseña cambió. Iniciá sesión con ella.");
+      }
+    } catch (err) {
+      console.error("[signin] signIn() after recovery failed", err);
+      toast.success("Tu contraseña cambió. Iniciá sesión con ella.");
+    }
+    recoveryForm.reset();
     setScreen("signin");
   };
 
@@ -553,6 +629,165 @@ export default function LandingPage() {
                   {resetForm.formState.isSubmitting
                     ? "Enviando..."
                     : "Enviar enlace de acceso"}
+                </Button>
+              </form>
+            </Form>
+            <button
+              type="button"
+              onClick={() => setScreen("recovery")}
+              className="text-sm text-center text-blue-900 underline-offset-4 hover:underline"
+            >
+              ¿Ya no tenés acceso a tu email? Usá un código de recuperación
+            </button>
+            <Button
+              variant="outline"
+              className="w-full font-semibold py-2 text-lg"
+              size="lg"
+              onClick={() => setScreen("signin")}
+            >
+              Volver a iniciar sesión
+            </Button>
+          </motion.div>
+        );
+      case "recovery":
+        return (
+          <motion.div
+            key="D"
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.3 }}
+            className="w-full flex-col flex gap-4"
+          >
+            <p className="text-sm text-slate-800">
+              Ingresá uno de los códigos de recuperación que guardaste y elegí
+              una contraseña nueva. Cada código sirve una sola vez.
+            </p>
+            <Form {...recoveryForm}>
+              <form
+                onSubmit={recoveryForm.handleSubmit(onRecoverySubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={recoveryForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="data-[error=true]:text-red-600">
+                        Correo electrónico
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          autoComplete="username"
+                          className="bg-slate-200 aria-invalid:border-red-600"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={recoveryForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="data-[error=true]:text-red-600">
+                        Código de recuperación
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          autoComplete="one-time-code"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          placeholder="XXXX-XXXX-XXXX"
+                          className="bg-slate-200 font-mono uppercase aria-invalid:border-red-600"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={recoveryForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="data-[error=true]:text-red-600">
+                        Contraseña nueva
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          autoComplete="new-password"
+                          className="bg-slate-200 aria-invalid:border-red-600"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={recoveryForm.control}
+                  name="passwordConfirmation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="data-[error=true]:text-red-600">
+                        Confirmar contraseña nueva
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          autoComplete="new-password"
+                          className="bg-slate-200 aria-invalid:border-red-600"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={recoveryForm.control}
+                  name="captcha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Turnstile
+                          ref={recoveryCaptchaRef}
+                          className="w-full rounded-md overflow-hidden"
+                          siteKey={
+                            process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY ??
+                            "1x00000000000000000000AA"
+                          }
+                          options={{
+                            action: "submit-form",
+                            size: "flexible",
+                            language: "es",
+                          }}
+                          scriptOptions={{
+                            appendTo: "body",
+                          }}
+                          onSuccess={(token) => field.onChange(token)}
+                          onExpire={() => field.onChange("")}
+                          onError={() => field.onChange("")}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-600" />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                  size="lg"
+                  disabled={recoveryForm.formState.isSubmitting}
+                >
+                  {recoveryForm.formState.isSubmitting
+                    ? "Recuperando..."
+                    : "Recuperar mi cuenta"}
                 </Button>
               </form>
             </Form>

@@ -37,6 +37,7 @@ model User {
   passwordHash   String?
   accounts       Account[]
   passkeys       PasskeyCredential[]
+  recoveryCodes  RecoveryCode[]
   registeredUser RegisteredUser?
   sessions       Session[]
 

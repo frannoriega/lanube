@@ -744,6 +744,13 @@ Full design + decisions: `docs/milestones/milestones-17-account-settings-and-pas
   `WEBAUTHN_ORIGIN` override. A passkey only works on the domain it was created on.
 - Show passkey errors with `passkeyErrorMessage()` — `apiErrorMessage()` drops non-`ApiError`
   messages.
+- **Recovery codes** (`src/lib/recovery-codes/`): 10 × 60-bit Crockford codes, SHA-256 at
+  rest (high entropy, like reset tokens — not bcrypt), generating requires the current
+  password, redeeming (`POST /api/auth/recovery`, captcha + per-IP and per-email rate limits,
+  one generic error) consumes the code **and sets a new password** in one transaction.
+- Request decisions notify the requester via `notify()` (`profileChange.decided`: bell +
+  email). **OAuth, when built, must ask for the password before linking** and lives in
+  Seguridad ("Conectar tu cuenta de X").
 
 ## Testing & Seeding
 

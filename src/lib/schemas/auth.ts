@@ -80,3 +80,29 @@ export const newPasswordSchema = z
     message: "Las contraseñas no coinciden",
     path: ["passwordConfirmation"],
   });
+
+/**
+ * Recuperar la cuenta con un código de recuperación (milestone 17): email + código +
+ * contraseña nueva. Con captcha, igual que el reset por email: es un endpoint público que
+ * cambia contraseñas. El formato del código se valida en el servidor
+ * (`normalizeRecoveryCode`), así el mensaje de error no distingue "mal tipeado" de "no
+ * existe".
+ */
+export const recoverySchema = z
+  .object({
+    email: authEmailSchema,
+    code: z.string().trim().min(1, { message: "Ingresá un código" }),
+    password: z
+      .string()
+      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    passwordConfirmation: z
+      .string()
+      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    captcha: z
+      .string()
+      .min(1, { message: "Por favor completá la verificación de seguridad" }),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirmation"],
+  });

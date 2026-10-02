@@ -452,6 +452,7 @@ export async function markUserEmailVerified(email: string): Promise<boolean> {
 export {
   banUser,
   createUser,
+  hashPassword,
   getRegisteredUserByEmail,
   getUserByEmailAndPassword,
   unbanUser,

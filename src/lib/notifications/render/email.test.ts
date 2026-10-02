@@ -67,4 +67,22 @@ describe("renderEmail", () => {
     expect(rendered?.html).toContain("Falta una fuente");
     expect(rendered?.html).toContain("Se viene el festival");
   });
+
+  it("renders a profile-change rejection, escaping user-written text", () => {
+    const rendered = renderEmail({
+      type: "profileChange.decided",
+      recipient: { registeredUserId: "r1" },
+      data: {
+        requestId: "q1",
+        field: "DNI",
+        requestedValue: "20000999",
+        decision: "REJECTED",
+        reason: '<a href="https://x">el DNI no coincide</a>',
+      },
+    });
+    expect(rendered?.subject).toBe("Cambio de datos rechazado - La Nube");
+    expect(rendered?.html).toContain("20000999");
+    expect(rendered?.html).toContain("&lt;a href=");
+    expect(rendered?.html).not.toContain('<a href="https://x">');
+  });
 });
