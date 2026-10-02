@@ -3,6 +3,7 @@
 import {
   type Cell,
   type ColumnDef,
+  type Row,
   type RowData,
   type Table as ReactTable,
   flexRender,
@@ -10,9 +11,22 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import {
+  REORDER_SCREEN_READER_INSTRUCTIONS,
+  reorderAnnouncements,
+  useReorderSensors,
+} from "@/components/molecules/reorder-list";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -102,6 +116,143 @@ interface DataTableProps<TData> {
    * controles interactivos dentro de las celdas.
    */
   onRowClick?: (row: TData) => void;
+  /**
+   * Modo "Reordenar" en la misma tabla (milestone 16, ver `molecules/table-reorder.tsx`).
+   * Mientras está presente, cada fila se arrastra desde una manija al final, se numeran las
+   * posiciones y se ocultan las columnas `actions` y `leading` (no se edita ni se
+   * selecciona mientras se ordena). `onRowClick` queda desactivado.
+   */
+  reorder?: DataTableReorderProps<TData>;
+}
+
+export interface DataTableReorderProps<TData> {
+  /** Mueve la fila `activeId` al lugar de `overId`. */
+  onMove: (activeId: string, overId: string) => void;
+  /** Nombre de una fila, para la manija ("Mover Sala A") y los lectores de pantalla. */
+  nameOf: (row: TData) => string;
+}
+
+/** Columnas que no se muestran mientras se reordena. */
+function hiddenWhileReordering(
+  meta: { mobile?: MobileColumnRole } | undefined,
+) {
+  return meta?.mobile === "actions" || meta?.mobile === "leading";
+}
+
+/**
+ * Contexto de arrastre compartido por la tabla y las tarjetas: sensores (mouse, dedo,
+ * teclado), anuncios en castellano y el movimiento al soltar.
+ */
+function ReorderDnd<TData>({
+  table,
+  reorder,
+  children,
+}: {
+  table: ReactTable<TData>;
+  reorder: DataTableReorderProps<TData>;
+  children: React.ReactNode;
+}) {
+  const sensors = useReorderSensors();
+  const rows = table.getRowModel().rows;
+  const ids = rows.map((r) => r.id);
+  const nameOf = (id: string) => {
+    const row = rows.find((r) => r.id === id);
+    return row ? reorder.nameOf(row.original) : id;
+  };
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id)
+      reorder.onMove(String(active.id), String(over.id));
+  };
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+      accessibility={{
+        announcements: reorderAnnouncements(nameOf, ids),
+        screenReaderInstructions: REORDER_SCREEN_READER_INSTRUCTIONS,
+      }}
+    >
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        {children}
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+/** La manija: lo único que se arrastra, y lo único enfocable para mover con teclado. */
+function ReorderHandle({
+  label,
+  sortable,
+}: {
+  label: string;
+  sortable: ReturnType<typeof useSortable>;
+}) {
+  return (
+    <button
+      type="button"
+      ref={sortable.setActivatorNodeRef}
+      {...sortable.attributes}
+      {...sortable.listeners}
+      aria-label={`Mover ${label}`}
+      className="flex h-10 w-10 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
+    >
+      <GripVertical className="h-5 w-5" aria-hidden />
+    </button>
+  );
+}
+
+/** Número de posición (1-based) que acompaña a cada fila mientras se reordena. */
+function PositionBadge({ position }: { position: number }) {
+  return (
+    <span className="inline-block w-6 text-right text-sm tabular-nums text-muted-foreground">
+      {position}
+    </span>
+  );
+}
+
+/** Una fila de la tabla en modo reordenar. */
+function SortableTableRow<TData>({
+  row,
+  position,
+  reorder,
+}: {
+  row: Row<TData>;
+  position: number;
+  reorder: DataTableReorderProps<TData>;
+}) {
+  const sortable = useSortable({ id: row.id });
+  return (
+    <TableRow
+      ref={sortable.setNodeRef}
+      style={{
+        transform: CSS.Translate.toString(sortable.transform),
+        transition: sortable.transition,
+      }}
+      className={cn(
+        "bg-card",
+        sortable.isDragging && "relative z-10 shadow-lg ring-2 ring-ring",
+      )}
+    >
+      <TableCell className="w-10">
+        <PositionBadge position={position} />
+      </TableCell>
+      {row
+        .getVisibleCells()
+        .filter((cell) => !hiddenWhileReordering(cell.column.columnDef.meta))
+        .map((cell) => (
+          <TableCell key={cell.id}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      <TableCell className="w-12 text-right">
+        <ReorderHandle
+          label={reorder.nameOf(row.original)}
+          sortable={sortable}
+        />
+      </TableCell>
+    </TableRow>
+  );
 }
 
 /** Props de accesibilidad + handlers para una fila clickeable (tabla o tarjeta). */
@@ -129,9 +280,11 @@ export function DataTable<TData>({
   isLoading = false,
   emptyMessage = "No se encontraron resultados.",
   loadingMessage = "Cargando…",
-  onRowClick,
+  onRowClick: onRowClickProp,
+  reorder,
 }: DataTableProps<TData>) {
   const rows = table.getRowModel().rows;
+  const onRowClick = reorder ? undefined : onRowClickProp;
   // Tabla desde `md`; tarjetas por debajo. Se decide en JS (no con `hidden md:block`) para no
   // duplicar en el DOM los controles de cada fila (selects, checkboxes) en las dos vistas.
   const isDesktop = useMediaQuery("(min-width: 768px)", true);
@@ -144,7 +297,72 @@ export function DataTable<TData>({
         emptyMessage={emptyMessage}
         loadingMessage={loadingMessage}
         onRowClick={onRowClick}
+        reorder={reorder}
       />
+    );
+  }
+
+  if (reorder) {
+    const extraCols = 2; // posición + manija
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="overflow-x-auto">
+          <ReorderDnd table={table} reorder={reorder}>
+            <UiTable>
+              <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="hover:bg-transparent"
+                  >
+                    <TableHead>
+                      <span className="sr-only">Posición</span>
+                    </TableHead>
+                    {headerGroup.headers
+                      .filter(
+                        (h) => !hiddenWhileReordering(h.column.columnDef.meta),
+                      )
+                      .map((header) => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      ))}
+                    <TableHead>
+                      <span className="sr-only">Mover</span>
+                    </TableHead>
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={table.getAllLeafColumns().length + extraCols}
+                      className="h-32 text-center text-sm text-muted-foreground"
+                    >
+                      {emptyMessage}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((row, index) => (
+                    <SortableTableRow
+                      key={row.id}
+                      row={row}
+                      position={index + 1}
+                      reorder={reorder}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </UiTable>
+          </ReorderDnd>
+        </div>
+      </div>
     );
   }
 
@@ -226,8 +444,9 @@ function DataTableCards<TData>({
   emptyMessage,
   loadingMessage,
   onRowClick,
-}: Omit<Required<DataTableProps<TData>>, "onRowClick"> &
-  Pick<DataTableProps<TData>, "onRowClick">) {
+  reorder,
+}: Omit<Required<DataTableProps<TData>>, "onRowClick" | "reorder"> &
+  Pick<DataTableProps<TData>, "onRowClick" | "reorder">) {
   const rows = table.getRowModel().rows;
 
   if (isLoading && rows.length === 0) {
@@ -243,6 +462,23 @@ function DataTableCards<TData>({
       <div className="rounded-lg border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
         {emptyMessage}
       </div>
+    );
+  }
+
+  if (reorder) {
+    return (
+      <ReorderDnd table={table} reorder={reorder}>
+        <ol className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {rows.map((row, index) => (
+            <SortableCard
+              key={row.id}
+              row={row}
+              position={index + 1}
+              reorder={reorder}
+            />
+          ))}
+        </ol>
+      </ReorderDnd>
     );
   }
 
@@ -336,6 +572,50 @@ function DataTableCards<TData>({
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * Tarjeta compacta del modo reordenar en teléfonos: posición, título y manija. Los datos
+ * secundarios se omiten para que entren más filas en pantalla mientras se arrastra.
+ */
+function SortableCard<TData>({
+  row,
+  position,
+  reorder,
+}: {
+  row: Row<TData>;
+  position: number;
+  reorder: DataTableReorderProps<TData>;
+}) {
+  const sortable = useSortable({ id: row.id });
+  const titles = row
+    .getVisibleCells()
+    .filter((cell) => cell.column.columnDef.meta?.mobile === "title");
+  return (
+    <li
+      ref={sortable.setNodeRef}
+      style={{
+        transform: CSS.Translate.toString(sortable.transform),
+        transition: sortable.transition,
+      }}
+      className={cn(
+        "flex items-center gap-3 bg-card py-2 pr-2 pl-4",
+        sortable.isDragging && "relative z-10 shadow-lg ring-2 ring-ring",
+      )}
+    >
+      <PositionBadge position={position} />
+      <div className="flex min-w-0 flex-1 flex-wrap gap-x-1 font-medium [overflow-wrap:anywhere]">
+        {titles.length > 0
+          ? titles.map((cell) => (
+              <span key={cell.id}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </span>
+            ))
+          : reorder.nameOf(row.original)}
+      </div>
+      <ReorderHandle label={reorder.nameOf(row.original)} sortable={sortable} />
+    </li>
   );
 }
 

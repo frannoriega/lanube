@@ -28,7 +28,10 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ReorderList } from "@/components/molecules/reorder-list";
+import {
+  ReorderBar,
+  useTableReorder,
+} from "@/components/molecules/table-reorder";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import {
@@ -97,17 +100,16 @@ export function ReservationTypesManager() {
   };
 
   /*
-   * Modo "Reordenar" (milestone 14, decisión Part B.3): la lista se reordena arrastrando,
-   * solo después de activar el modo, y se guarda de una vez con "Guardar orden".
+   * Modo "Reordenar" (milestone 14, decisión Part B.3; en la misma tabla desde el
+   * milestone 16): la lista se reordena arrastrando, solo después de activar el modo, y se
+   * guarda de una vez con "Guardar orden".
    */
-  const [reorderMode, setReorderMode] = useState(false);
-  const saveOrder = async (orderedIds: string[]) => {
+  const reorder = useTableReorder(types, async (orderedIds) => {
     try {
       await apiSend("/api/admin/reservation-types/reorder", "POST", {
         orderedIds,
       });
       toast.success("Orden guardado");
-      setReorderMode(false);
       invalidateApi("/api/admin/reservation-types");
       await refetch();
     } catch (err) {
@@ -119,7 +121,7 @@ export function ReservationTypesManager() {
       );
       throw err;
     }
-  };
+  });
 
   const onDelete = async () => {
     if (!deleting) return;
@@ -182,7 +184,7 @@ export function ReservationTypesManager() {
       },
     },
   ];
-  const table = useStaticTable(types, columns);
+  const table = useStaticTable(reorder.rows, columns);
 
   return (
     <Card className="glass-card dark:glass-card-dark">
@@ -197,8 +199,8 @@ export function ReservationTypesManager() {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={() => setReorderMode(true)}
-            disabled={reorderMode || types.length < 2}
+            onClick={reorder.start}
+            disabled={reorder.active || types.length < 2}
           >
             <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
           </Button>
@@ -219,18 +221,22 @@ export function ReservationTypesManager() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
-        ) : reorderMode ? (
-          <ReorderList
-            items={types.map((item) => ({
-              id: item.id,
-              label: item.name,
-            }))}
-            hint="Es el orden en que aparecen al reservar."
-            onSave={saveOrder}
-            onCancel={() => setReorderMode(false)}
-          />
         ) : (
-          <DataTable table={table} emptyMessage="No hay tipos definidos." />
+          <div className="space-y-3">
+            <ReorderBar
+              reorder={reorder}
+              hint="Es el orden en que aparecen al reservar."
+            />
+            <DataTable
+              table={table}
+              emptyMessage="No hay tipos definidos."
+              reorder={
+                reorder.active
+                  ? { onMove: reorder.move, nameOf: (r) => r.name }
+                  : undefined
+              }
+            />
+          </div>
         )}
       </CardContent>
 
