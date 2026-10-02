@@ -104,3 +104,20 @@ export async function isReservationTypeInUse(code: string): Promise<boolean> {
   ]);
   return !!event || !!reservation;
 }
+
+/**
+ * Persiste un nuevo orden de los tipos de reserva (modo "Reordenar", milestone 14): el id en
+ * la posición `i` queda con `displayOrder = i`, así los valores quedan densos (0..n-1).
+ */
+export async function reorderReservationTypes(
+  orderedIds: string[],
+): Promise<void> {
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.reservationType.update({
+        where: { id },
+        data: { displayOrder: index },
+      }),
+    ),
+  );
+}

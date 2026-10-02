@@ -569,3 +569,36 @@ export async function getOtherPublishedNews(
     take: limit,
   });
 }
+
+/** Noticia destacada tal como la necesita el modo "Reordenar destacadas". */
+export interface FeaturedNewsItem {
+  id: string;
+  title: string;
+}
+
+/** Noticias destacadas (no eliminadas) en el orden del landing (`featuredOrder asc`). */
+export async function listFeaturedNewsPosts(): Promise<FeaturedNewsItem[]> {
+  return prisma.newsPost.findMany({
+    where: { isFeatured: true, deletedAt: null },
+    orderBy: [{ featuredOrder: "asc" }, { createdAt: "desc" }],
+    select: { id: true, title: true },
+  });
+}
+
+/**
+ * Persiste el orden de las destacadas (milestone 14, reemplaza "Orden entre destacadas" del
+ * formulario): el id en la posición `i` queda con `featuredOrder = i`. Solo toca notas que
+ * siguen destacadas.
+ */
+export async function reorderFeaturedNewsPosts(
+  orderedIds: string[],
+): Promise<void> {
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.newsPost.updateMany({
+        where: { id, isFeatured: true },
+        data: { featuredOrder: index },
+      }),
+    ),
+  );
+}

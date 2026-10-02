@@ -1285,3 +1285,40 @@ export async function getPublicEventDetail(
     reservations: rawReservations.map(toRawReservation),
   };
 }
+
+/** Evento destacado tal como lo necesita el modo "Reordenar destacados". */
+export interface FeaturedEventItem {
+  id: string;
+  name: string;
+}
+
+/**
+ * Eventos destacados (no cancelados) en el orden en que los muestra el landing: el mismo
+ * `featuredOrder asc` que usa `getUpcomingPublicEvents`, desempatando por inicio.
+ */
+export async function listFeaturedEvents(): Promise<FeaturedEventItem[]> {
+  return prisma.event.findMany({
+    where: { isFeatured: true, deletedAt: null },
+    orderBy: [{ featuredOrder: "asc" }, { startTime: "desc" }],
+    select: { id: true, name: true },
+  });
+}
+
+/**
+ * Persiste el orden de los destacados (milestone 14, reemplaza el campo numérico "Orden
+ * entre destacados" del formulario): el id en la posición `i` queda con `featuredOrder = i`.
+ * Solo toca eventos que siguen destacados, así un id viejo (des-destacado entre que se abrió
+ * el modo y se guardó) no vuelve a recibir un orden.
+ */
+export async function reorderFeaturedEvents(
+  orderedIds: string[],
+): Promise<void> {
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.event.updateMany({
+        where: { id, isFeatured: true },
+        data: { featuredOrder: index },
+      }),
+    ),
+  );
+}
