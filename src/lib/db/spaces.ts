@@ -68,12 +68,32 @@ function toSpaceData(input: SpaceInput) {
   };
 }
 
+/**
+ * Slug libre para un espacio nuevo (milestone 14): el formulario lo deriva del nombre y ya no
+ * se tipea, así que una colisión no debe ser un error sino un sufijo numérico
+ * (`sala-de-reuniones-2`), igual que en Noticias. Solo se usa al **crear**: al editar el slug
+ * queda estable (está en `/user/spaces/<slug>` y en links compartidos).
+ */
+async function uniqueSpaceSlug(base: string): Promise<string> {
+  const root = base || "espacio";
+  let slug = root;
+  for (let i = 2; ; i++) {
+    const taken = await prisma.space.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    if (!taken) return slug;
+    slug = `${root}-${i}`;
+  }
+}
+
 export async function createSpace(input: SpaceInput): Promise<Space> {
-  // New spaces go to the end; ordering is managed via the up/down controls.
+  // New spaces go to the end; ordering is managed via the "Reordenar" mode.
   const last = await prisma.space.aggregate({ _max: { displayOrder: true } });
   const displayOrder = (last._max.displayOrder ?? -1) + 1;
+  const slug = await uniqueSpaceSlug(input.slug);
   return prisma.space.create({
-    data: { ...toSpaceData(input), displayOrder },
+    data: { ...toSpaceData(input), slug, displayOrder },
   });
 }
 
