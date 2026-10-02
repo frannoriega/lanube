@@ -351,8 +351,11 @@ src/
   → `getStorage().upload()`. The reusable `ImageUpload` molecule drives it. **Required**
   at the schema layer (`eventInputSchema`) — same for a Noticia's `coverImageUrl`
   (`newsPostInputSchema`). The DB columns stay nullable for pre-existing rows, so the
-  cover-less fallbacks in `EventCover` / `NewsCard` must stay; `eventToFormDefaults`
+  cover-less fallbacks in `EventCover` / `NewsCover` must stay; `eventToFormDefaults`
   maps a null to `""` so editing a legacy row surfaces the validation error.
+  `NewsCover`'s fallback is a generated brand cover, **deterministic per slug**
+  (`coverPattern()` in `src/lib/news/cover-pattern.ts` — pure, no `Math.random`, so it
+  renders identically on server and client). Public news pages: milestone 15.
 - **Form picker**: events choose a template via `FormPicker` — a searchable dialog (shadcn
   Command) showing each template as a card with a field-type-chip preview. `listFormTemplates`
   includes a lightweight `fields` summary for the preview. Field-type labels/icons live in
