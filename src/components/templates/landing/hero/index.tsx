@@ -169,9 +169,24 @@ export default function HeroSection({
                   </h1>
                   <h2 className="text-balance text-la-nube-ink/85 dark:text-white/90">
                     un espacio de{" "}
-                    <span className="bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
-                      {displayedText}
-                      <span className="animate-blink">|</span>
+                    {/* La palabra que se escribe sola va en una celda tan ancha como la palabra
+                        más larga (todas apiladas, invisibles, en la misma celda de la grilla).
+                        Así el renglón corta siempre en el mismo lugar: antes, cuando una palabra
+                        larga no entraba, saltaba de renglón y empujaba todo el bloque. */}
+                    <span className="inline-grid justify-items-center align-bottom lg:justify-items-start">
+                      {keywords.map((k) => (
+                        <span
+                          key={k}
+                          aria-hidden
+                          className="invisible col-start-1 row-start-1"
+                        >
+                          {k}|
+                        </span>
+                      ))}
+                      <span className="col-start-1 row-start-1 bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-transparent">
+                        {displayedText}
+                        <span className="animate-blink">|</span>
+                      </span>
                     </span>
                   </h2>
                 </div>
