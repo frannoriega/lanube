@@ -866,7 +866,7 @@ export function EventForm({
             }
           />
 
-          <StickySaveBar dirty={isDirty} className="mt-6">
+          <StickySaveBar dirty={isDirty}>
             <Button
               type="button"
               variant="outline"

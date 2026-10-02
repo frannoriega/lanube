@@ -347,3 +347,26 @@ Reportado por el usuario con una captura del formulario de temas:
   estos). Todas las páginas que la usan la tienen como último elemento visible del form.
 
 Verificado en el navegador.
+
+## Seguimiento (2026-10-02): barra de guardar con zoom < 100%
+
+Reportado por el usuario con una captura de "Nueva nota" a menos de 100% de zoom. Reducir el
+zoom agranda el viewport en píxeles CSS, y aparecían dos problemas de `StickySaveBar`:
+
+- **La barra flotaba a mitad de pantalla.** Con el formulario más corto que la ventana,
+  `position: sticky` nunca llega a "pegarse": la barra quedaba en el flujo, justo debajo del
+  form, con todo el espacio vacío abajo.
+- **Franja gris cortada.** Vivía dentro del contenedor `max-w-7xl` del `ManagementLayout`, así
+  que en ventanas de más de ~1530px no llegaba a los bordes del área de contenido (los
+  márgenes negativos solo compensaban el padding, no el ancho máximo).
+
+**Arreglo:** `StickySaveBar` pasó a su propio módulo cliente
+(`molecules/sticky-save-bar.tsx`, re-exportado desde `form-layout.tsx`) y es
+`fixed inset-x-0 bottom-0 lg:left-64` (el `lg:w-64` del sidebar): siempre al pie de la
+ventana y a todo el ancho del área de contenido, sin importar el alto del formulario ni el
+ancho de la ventana. Como `fixed` sale del flujo, un espaciador invisible del mismo alto
+(medido con `ResizeObserver`, porque en el teléfono el aviso "Cambios sin guardar" y los
+botones pueden ocupar dos renglones) evita que tape el final del formulario. Desaparecen los
+márgenes negativos (`-mx-*`, `-mb-6`) del seguimiento anterior, y el `className="mt-6"` que
+pasaban los seis formularios (evento, noticia, espacio, tema, rol, plantilla de formulario)
+ya no hace falta: el `py-6` del `<main>` da el aire entre el form y la barra.
