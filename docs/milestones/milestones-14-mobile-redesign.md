@@ -703,7 +703,10 @@ lanube-app` (this repo's container only).
       (local, saved with the template); `FormSection`s instead of cards, `StickySaveBar` +
       unsaved guard. Group children keep their inline editor (only top-level fields are
       reorderable, as before) (`.mobile-shots/s5-builder/`).
-- [ ] Public registration form: shared 15-min time select instead of native `time`.
+- [x] Public registration form: shared 15-min time select instead of native `time`.
+      — `organisms/forms/public-form.tsx`: `FormFieldType.TIME` renders `TimeSelect`
+      (24h, 15-min grid, off-grid saved values preserved) in a `max-w-40` box. Not
+      screenshot-verified: no seeded public form has a TIME field (typecheck/lint only).
 - [ ] Sign-up: stack DNI/Institución below `sm`.
 
 **Slice 6 — dialogs → pages**
