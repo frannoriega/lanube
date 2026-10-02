@@ -10,13 +10,15 @@ import { useEffect, useState } from "react";
  * the effect fills in the localized value on the client. This avoids a UTC-vs-local mismatch
  * without freezing the displayed value to the server's locale.
  */
-type LocalDateFormat = "numeric" | "dayMonth";
+type LocalDateFormat = "numeric" | "dayMonth" | "long";
 
 const FORMATS: Record<LocalDateFormat, Intl.DateTimeFormatOptions> = {
   // dd/mm/YYYY for es-AR (locale decides the order).
   numeric: { day: "2-digit", month: "2-digit", year: "numeric" },
   // "1 jul" — compact day + abbreviated month.
   dayMonth: { day: "numeric", month: "short" },
+  // "25 de septiembre de 2026" en es-AR — para bylines, donde la fecha se lee como texto.
+  long: { day: "numeric", month: "long", year: "numeric" },
 };
 
 function format(ms: number, fmt: LocalDateFormat): string {

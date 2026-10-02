@@ -32,12 +32,41 @@ const components: Components = {
   h6: ({ children, ...props }) => <h6 {...props}>{children}</h6>,
 };
 
+/**
+ * Escala de lectura larga (`size="reading"`), pensada para el cuerpo de una noticia: texto
+ * más grande y aireado, títulos con más aire arriba y sin el borde estilo GitHub (en un
+ * artículo se lee como documentación), cita como bloque tintado — no como franja lateral,
+ * que el DESIGN.md prohíbe — e imágenes con más margen. Se aplica *después* de las clases
+ * base, así `cn`/tailwind-merge reemplaza las que chocan en lugar de sumarlas.
+ */
+const READING_CLASSES = [
+  "space-y-5 text-base leading-[1.75] sm:text-lg text-pretty",
+  "[&_h1]:mt-10 [&_h1]:border-0 [&_h1]:pb-0 [&_h1]:text-3xl [&_h1]:text-balance",
+  // Ojo: los títulos se emiten un nivel más abajo (ver `components`), así que el `##` que
+  // usa casi todo autor para secciones llega como <h3>. Por eso h3 es grande: con el cuerpo
+  // en `text-lg`, un `text-xl` apenas se distinguía del párrafo.
+  "[&_h2]:mt-12 [&_h2]:border-0 [&_h2]:pb-0 [&_h2]:text-3xl [&_h2]:text-balance",
+  "[&_h3]:mt-10 [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:leading-tight [&_h3]:text-balance",
+  "[&_h4]:mt-8 [&_h4]:text-xl [&_h4]:font-bold",
+  "[&_h5]:mt-6 [&_h5]:text-lg",
+  "[&_li]:mt-1.5 [&_li]:pl-1",
+  "[&_blockquote]:rounded-xl [&_blockquote]:border-0 [&_blockquote]:bg-la-nube-accent/40 [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:text-lg [&_blockquote]:text-foreground dark:[&_blockquote]:bg-la-nube-selected/20",
+  "[&_img]:my-8 [&_img]:rounded-xl",
+  "[&_hr]:my-10",
+].join(" ");
+
 export function Markdown({
   children,
   className,
+  size = "default",
 }: {
   children: string;
   className?: string;
+  /**
+   * `default`: la escala compacta de siempre (descripciones de eventos, previews del editor).
+   * `reading`: cuerpo de artículo — ver {@link READING_CLASSES}.
+   */
+  size?: "default" | "reading";
 }) {
   return (
     <div
@@ -68,6 +97,7 @@ export function Markdown({
         "[&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0",
         "[&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_img]:border [&_img]:border-border",
         "[&_hr]:my-4 [&_hr]:border-border",
+        size === "reading" && READING_CLASSES,
         className,
       )}
     >
