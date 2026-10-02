@@ -687,8 +687,15 @@ lanube-app` (this repo's container only).
       create (derived from the title, server already uniquifies with `-2` and keeps it
       stable on edit); on edit "URL: /news/…/<slug> · Editar" opens the field; it also opens
       by itself if the derived slug fails validation (`.mobile-shots/s5-news/`).
-- [ ] Space form per proposal 3 (slug auto-derived on create, stable, behind "Avanzado";
+- [x] Space form per proposal 3 (slug auto-derived on create, stable, behind "Avanzado";
       collapsible FAQ items with reorder mode).
+      — `space-form.tsx` on `FormPageLayout`: Identidad / Descripción / Preguntas frecuentes /
+      Avanzado (slug: "Dirección: /user/spaces/<slug> · Editar", auto-opens on a validation
+      error); aside "Comportamiento" (Reservable/Exclusivo/Destacado); `StickySaveBar` +
+      unsaved guard. Slug follows the name live on create, stays stable on edit;
+      `createSpace` now uniquifies (`-2`) instead of returning 409. FAQs collapsed to their
+      question (expand to edit; errors force-expand; a new one opens expanded) and reorder
+      via `ReorderList` (local, persisted with the space save) (`.mobile-shots/s5-space/`).
 - [ ] Form template builder per proposal 9 (collapsed fields, reorder mode).
 - [ ] Public registration form: shared 15-min time select instead of native `time`.
 - [ ] Sign-up: stack DNI/Institución below `sm`.
