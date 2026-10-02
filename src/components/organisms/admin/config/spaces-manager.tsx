@@ -19,14 +19,8 @@ import {
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
@@ -91,9 +85,132 @@ export function SpacesManager() {
     }
   };
 
+  /*
+   * Columnas del `DataTable` (milestone 14): tabla desde `md`, tarjetas por debajo. Cada
+   * columna declara su rol en la tarjeta con `meta.mobile` (ver `MobileColumnRole`).
+   */
+  const columns: ColumnDef<(typeof spaces)[number]>[] = [
+    {
+      id: "order",
+      header: "Orden",
+      // Las flechas de orden no van en la tarjeta: el reordenamiento en teléfonos llega con
+      // el modo "Reordenar" (siguiente ítem del milestone).
+      meta: { mobile: "hidden" },
+      cell: ({ row }) => {
+        const index = row.index;
+        const space = row.original;
+        return (
+          <div className="flex flex-col">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              disabled={reordering || index === 0}
+              onClick={() => move(index, -1)}
+              aria-label={`Subir ${space.name}`}
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              disabled={reordering || index === spaces.length - 1}
+              onClick={() => move(index, 1)}
+              aria-label={`Bajar ${space.name}`}
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+    },
+    {
+      id: "name",
+      header: "Nombre",
+      meta: { mobile: "title", label: "Nombre" },
+      cell: ({ row }) => {
+        const space = row.original;
+        const Icon = getSpaceIcon(space.iconName);
+        return (
+          <Link
+            href={`/admin/spaces/${space.id}/edit`}
+            className="flex items-center gap-2 font-medium hover:underline"
+          >
+            <Icon className="h-4 w-4 shrink-0 text-la-nube-selected dark:text-la-nube-secondary" />
+            {space.name}
+          </Link>
+        );
+      },
+    },
+    {
+      id: "slug",
+      header: "Slug",
+      // Dato técnico: en la tarjeta del teléfono no aporta (se edita desde el formulario).
+      meta: { mobile: "hidden", label: "Slug" },
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{row.original.slug}</span>
+      ),
+    },
+    {
+      id: "capacity",
+      header: "Capacidad",
+      meta: { label: "Capacidad" },
+      cell: ({ row }) => row.original.capacity,
+    },
+    {
+      id: "attributes",
+      header: "Atributos",
+      meta: { label: "Atributos" },
+      cell: ({ row }) => {
+        const space = row.original;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {space.isReservable && (
+              <Badge variant="secondary">Reservable</Badge>
+            )}
+            {space.isExclusive && <Badge variant="secondary">Exclusivo</Badge>}
+            {space.isFeatured && <Badge variant="secondary">Destacado</Badge>}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Acciones</div>,
+      meta: { mobile: "actions", label: "Acciones" },
+      cell: ({ row }) => {
+        const space = row.original;
+        return (
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              aria-label={`Editar ${space.name}`}
+            >
+              <Link href={`/admin/spaces/${space.id}/edit`}>
+                <Pencil className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleting(space)}
+              aria-label={`Eliminar ${space.name}`}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+  const table = useStaticTable(spaces, columns);
+
   return (
     <Card className="glass-card dark:glass-card-dark">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>Espacios</CardTitle>
           <CardDescription>
@@ -120,109 +237,7 @@ export function SpacesManager() {
             ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">Orden</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead className="w-24">Capacidad</TableHead>
-                <TableHead>Atributos</TableHead>
-                <TableHead className="w-28 text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {spaces.map((space, index) => (
-                <TableRow key={space.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={reordering || index === 0}
-                        onClick={() => move(index, -1)}
-                        aria-label={`Subir ${space.name}`}
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={reordering || index === spaces.length - 1}
-                        onClick={() => move(index, 1)}
-                        aria-label={`Bajar ${space.name}`}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/admin/spaces/${space.id}/edit`}
-                      className="flex items-center gap-2 hover:underline"
-                    >
-                      {(() => {
-                        const Icon = getSpaceIcon(space.iconName);
-                        return (
-                          <Icon className="h-4 w-4 shrink-0 text-la-nube-selected dark:text-la-nube-secondary" />
-                        );
-                      })()}
-                      {space.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {space.slug}
-                  </TableCell>
-                  <TableCell>{space.capacity}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {space.isReservable && (
-                        <Badge variant="secondary">Reservable</Badge>
-                      )}
-                      {space.isExclusive && (
-                        <Badge variant="secondary">Exclusivo</Badge>
-                      )}
-                      {space.isFeatured && (
-                        <Badge variant="secondary">Destacado</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
-                      aria-label={`Editar ${space.name}`}
-                    >
-                      <Link href={`/admin/spaces/${space.id}/edit`}>
-                        <Pencil className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleting(space)}
-                      aria-label={`Eliminar ${space.name}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {spaces.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground"
-                  >
-                    No hay espacios definidos.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable table={table} emptyMessage="No hay espacios definidos." />
         )}
       </CardContent>
 

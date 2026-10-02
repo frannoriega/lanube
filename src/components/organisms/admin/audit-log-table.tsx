@@ -9,14 +9,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { LocalTimestamp } from "@/components/molecules/local-date";
 import { auditActionLabel, CASCADED_ACTIONS } from "@/lib/audit/actions";
 import {
@@ -37,66 +31,65 @@ export function AuditLogTable({ items }: { items: AuditLogListItem[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const openItem = items.find((i) => i.id === openId) ?? null;
 
+  /*
+   * Columnas del `DataTable` (milestone 14, hallazgo L): en un teléfono la tabla solo dejaba
+   * ver Fecha y Tags, y lo útil (Autor, Resumen) quedaba fuera de pantalla. En la tarjeta,
+   * el resumen va como título, los tags como chips y fecha + autor como datos.
+   */
+  const columns: ColumnDef<AuditLogListItem>[] = [
+    {
+      id: "date",
+      header: "Fecha",
+      meta: { label: "Fecha" },
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap text-muted-foreground">
+          <LocalTimestamp ms={row.original.createdAt} />
+        </span>
+      ),
+    },
+    {
+      id: "tags",
+      header: "Tags",
+      meta: { mobile: "badge", label: "Tags" },
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <div className="flex flex-wrap items-center justify-end gap-1.5 md:justify-start">
+            <Badge variant="outline">{entityTypeLabel(item.entityType)}</Badge>
+            <Badge variant="secondary">{actionVerbTag(item.action)}</Badge>
+            {CASCADED_ACTIONS.has(item.action) ? (
+              <Badge variant="outline" className="font-normal">
+                En cascada
+              </Badge>
+            ) : null}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actor",
+      header: "Autor",
+      meta: { label: "Autor" },
+      cell: ({ row }) => (
+        <span className="md:whitespace-nowrap">{row.original.actorLabel}</span>
+      ),
+    },
+    {
+      id: "summary",
+      header: "Resumen",
+      meta: { mobile: "title", label: "Resumen" },
+      cell: ({ row }) => (
+        <span className="line-clamp-3 font-normal text-foreground md:line-clamp-1 md:max-w-md md:text-muted-foreground">
+          {buildChangeSummary(row.original)}
+        </span>
+      ),
+    },
+  ];
+  const table = useStaticTable(items, columns);
+
   return (
     <>
-      <div className="overflow-hidden rounded-lg border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Tags</TableHead>
-              <TableHead>Autor</TableHead>
-              <TableHead>Resumen</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((item) => {
-              const cascaded = CASCADED_ACTIONS.has(item.action);
-              return (
-                <TableRow
-                  key={item.id}
-                  className="cursor-pointer"
-                  onClick={() => setOpenId(item.id)}
-                  tabIndex={0}
-                  role="button"
-                  aria-haspopup="dialog"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setOpenId(item.id);
-                    }
-                  }}
-                >
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
-                    <LocalTimestamp ms={item.createdAt} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Badge variant="outline">
-                        {entityTypeLabel(item.entityType)}
-                      </Badge>
-                      <Badge variant="secondary">
-                        {actionVerbTag(item.action)}
-                      </Badge>
-                      {cascaded ? (
-                        <Badge variant="outline" className="font-normal">
-                          En cascada
-                        </Badge>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {item.actorLabel}
-                  </TableCell>
-                  <TableCell className="max-w-md truncate text-muted-foreground">
-                    {buildChangeSummary(item)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable table={table} onRowClick={(item) => setOpenId(item.id)} />
 
       <Sheet
         open={openItem !== null}

@@ -37,14 +37,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import { endOfDateKeyMs, startOfDateKeyMs } from "@/lib/admin/admin-timezone";
@@ -178,9 +172,91 @@ export function LandingThemesManager() {
     }
   };
 
+  /*
+   * Columnas del `DataTable` (milestone 14): tabla desde `md`, tarjetas por debajo. Cada
+   * columna declara su rol en la tarjeta con `meta.mobile` (ver `MobileColumnRole`).
+   */
+  const columns: ColumnDef<(typeof themes)[number]>[] = [
+    {
+      id: "name",
+      header: "Nombre",
+      meta: { mobile: "title", label: "Nombre" },
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    },
+    {
+      id: "window",
+      header: "Ventana",
+      meta: { label: "Ventana" },
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {windowSummary(row.original)}
+        </span>
+      ),
+    },
+    {
+      id: "effect",
+      header: "Efecto",
+      meta: { label: "Efecto" },
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.entranceEffect === "EMOJI_SHOWER"
+            ? "Lluvia de emojis"
+            : "Ninguno"}
+        </Badge>
+      ),
+    },
+    {
+      id: "priority",
+      header: "Prioridad",
+      meta: { label: "Prioridad" },
+      cell: ({ row }) => row.original.priority,
+    },
+    {
+      id: "status",
+      header: "Estado",
+      meta: { mobile: "badge", label: "Estado" },
+      cell: ({ row }) => (
+        <Badge variant={row.original.isEnabled ? "default" : "secondary"}>
+          {row.original.isEnabled ? "Activo" : "Deshabilitado"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Acciones</div>,
+      meta: { mobile: "actions", label: "Acciones" },
+      cell: ({ row }) => {
+        const theme = row.original;
+        return (
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEdit(theme)}
+              aria-label={`Editar ${theme.name}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleting(theme)}
+              aria-label={`Eliminar ${theme.name}`}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+  const table = useStaticTable(themes, columns);
+
   return (
     <Card className="glass-card dark:glass-card-dark">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>Temas configurados</CardTitle>
           <CardDescription>
@@ -205,69 +281,7 @@ export function LandingThemesManager() {
             ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Ventana</TableHead>
-                <TableHead>Efecto</TableHead>
-                <TableHead className="w-24">Prioridad</TableHead>
-                <TableHead className="w-24">Estado</TableHead>
-                <TableHead className="w-28 text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {themes.map((theme) => (
-                <TableRow key={theme.id}>
-                  <TableCell className="font-medium">{theme.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {windowSummary(theme)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {theme.entranceEffect === "EMOJI_SHOWER"
-                        ? "Lluvia de emojis"
-                        : "Ninguno"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{theme.priority}</TableCell>
-                  <TableCell>
-                    <Badge variant={theme.isEnabled ? "default" : "secondary"}>
-                      {theme.isEnabled ? "Activo" : "Deshabilitado"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEdit(theme)}
-                      aria-label={`Editar ${theme.name}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleting(theme)}
-                      aria-label={`Eliminar ${theme.name}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {themes.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground"
-                  >
-                    No hay temas definidos.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable table={table} emptyMessage="No hay temas definidos." />
         )}
       </CardContent>
 

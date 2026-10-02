@@ -29,14 +29,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Textarea } from "@/components/ui/textarea";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
@@ -136,9 +130,116 @@ export function RolesManager() {
     }
   };
 
+  /*
+   * Columnas del `DataTable` (milestone 14): tabla desde `md`, tarjetas por debajo. Cada
+   * columna declara su rol en la tarjeta con `meta.mobile` (ver `MobileColumnRole`).
+   */
+  const columns: ColumnDef<(typeof roles)[number]>[] = [
+    {
+      id: "role",
+      header: "Rol",
+      meta: { mobile: "title", label: "Rol" },
+      cell: ({ row }) => {
+        const role = row.original;
+        return (
+          <div>
+            <div className="flex flex-wrap items-center gap-2 font-medium">
+              {role.name}
+              {role.isSystem && (
+                <Badge
+                  variant="outline"
+                  className="gap-1 font-normal"
+                  title="Rol del sistema: no se puede editar ni eliminar"
+                >
+                  <Lock className="h-3 w-3" aria-hidden="true" />
+                  Sistema
+                </Badge>
+              )}
+            </div>
+            {role.description && (
+              <p className="mt-1 max-w-prose text-sm font-normal text-muted-foreground">
+                {role.description}
+              </p>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "permissions",
+      header: "Permisos",
+      meta: { label: "Permisos" },
+      cell: ({ row }) => {
+        const role = row.original;
+        return role.isSuperadmin ? (
+          <span className="inline-flex items-center gap-1.5 text-sm">
+            <ShieldCheck
+              className="h-4 w-4 text-la-nube-selected dark:text-la-nube-secondary"
+              aria-hidden="true"
+            />
+            Todos los permisos
+          </span>
+        ) : role.permissions.length === 0 ? (
+          <span className="text-sm text-muted-foreground">
+            Sin permisos de administración
+          </span>
+        ) : (
+          <span className="text-sm">
+            {role.permissions.length} permiso
+            {role.permissions.length === 1 ? "" : "s"}
+          </span>
+        );
+      },
+    },
+    {
+      id: "users",
+      header: "Usuarios",
+      meta: { label: "Usuarios" },
+      cell: ({ row }) => row.original.userCount,
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Acciones</div>,
+      meta: { mobile: "actions", label: "Acciones" },
+      cell: ({ row }) => {
+        const role = row.original;
+        return (
+          <div className="flex justify-end gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={role.isSystem}
+              onClick={() => openEdit(role)}
+              aria-label={`Editar ${role.name}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={role.isSystem || role.userCount > 0}
+              onClick={() => setDeleting(role)}
+              aria-label={`Eliminar ${role.name}`}
+              title={
+                role.userCount > 0
+                  ? "Reasigná a los usuarios antes de eliminar el rol"
+                  : undefined
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+  const table = useStaticTable(roles, columns);
+
   return (
     <Card className="glass-card dark:glass-card-dark">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle>Roles</CardTitle>
           <CardDescription>
@@ -165,104 +266,10 @@ export function RolesManager() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Permisos</TableHead>
-                  <TableHead>Usuarios</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {roles.length === 0 && !error && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center text-muted-foreground"
-                    >
-                      Todavía no hay roles definidos.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {roles.map((role) => (
-                  <TableRow key={role.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2 font-medium">
-                        {role.name}
-                        {role.isSystem && (
-                          <Badge
-                            variant="outline"
-                            className="gap-1 font-normal"
-                            title="Rol del sistema: no se puede editar ni eliminar"
-                          >
-                            <Lock className="h-3 w-3" aria-hidden="true" />
-                            Sistema
-                          </Badge>
-                        )}
-                      </div>
-                      {role.description && (
-                        <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-                          {role.description}
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {role.isSuperadmin ? (
-                        <span className="inline-flex items-center gap-1.5 text-sm">
-                          <ShieldCheck
-                            className="h-4 w-4 text-la-nube-selected dark:text-la-nube-secondary"
-                            aria-hidden="true"
-                          />
-                          Todos los permisos
-                        </span>
-                      ) : role.permissions.length === 0 ? (
-                        <span className="text-sm text-muted-foreground">
-                          Sin permisos de administración
-                        </span>
-                      ) : (
-                        <span className="text-sm">
-                          {role.permissions.length} permiso
-                          {role.permissions.length === 1 ? "" : "s"}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>{role.userCount}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={role.isSystem}
-                          onClick={() => openEdit(role)}
-                          aria-label={`Editar ${role.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={role.isSystem || role.userCount > 0}
-                          onClick={() => setDeleting(role)}
-                          aria-label={`Eliminar ${role.name}`}
-                          title={
-                            role.userCount > 0
-                              ? "Reasigná a los usuarios antes de eliminar el rol"
-                              : undefined
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable
+            table={table}
+            emptyMessage="Todavía no hay roles definidos."
+          />
         )}
       </CardContent>
 

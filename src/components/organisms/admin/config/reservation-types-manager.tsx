@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,14 +27,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import {
@@ -119,9 +112,62 @@ export function ReservationTypesManager() {
     }
   };
 
+  /*
+   * Columnas del `DataTable` (milestone 14): tabla desde `md`, tarjetas por debajo. Cada
+   * columna declara su rol en la tarjeta con `meta.mobile` (ver `MobileColumnRole`).
+   */
+  const columns: ColumnDef<(typeof types)[number]>[] = [
+    {
+      id: "name",
+      header: "Nombre",
+      meta: { mobile: "title", label: "Nombre" },
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    },
+    // El `code` interno (p. ej. "CONFERENCE") ya no se muestra (hallazgo P): es un
+    // identificador técnico que el admin no necesita leer. La columna "Orden" sigue hasta que
+    // llegue el modo "Reordenar".
+    {
+      id: "displayOrder",
+      header: "Orden",
+      meta: { label: "Orden" },
+      cell: ({ row }) => row.original.displayOrder,
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Acciones</div>,
+      meta: { mobile: "actions", label: "Acciones" },
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEdit(item)}
+              aria-label={`Editar ${item.name}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleting(item)}
+              aria-label={`Eliminar ${item.name}`}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+  const table = useStaticTable(types, columns);
+
   return (
     <Card className="glass-card dark:glass-card-dark">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>Tipos de reserva</CardTitle>
           <CardDescription>
@@ -146,57 +192,7 @@ export function ReservationTypesManager() {
             ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead className="w-24">Orden</TableHead>
-                <TableHead className="w-28 text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {types.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell className="font-medium">{type.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="font-mono text-xs">
-                      {type.code}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{type.displayOrder}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEdit(type)}
-                      aria-label={`Editar ${type.name}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleting(type)}
-                      aria-label={`Eliminar ${type.name}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {types.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="text-center text-muted-foreground"
-                  >
-                    No hay tipos definidos.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable table={table} emptyMessage="No hay tipos definidos." />
         )}
       </CardContent>
 
