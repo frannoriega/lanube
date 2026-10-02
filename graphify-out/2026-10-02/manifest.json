@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1790918393.9162905,
-    "ast_hash": "4beb60763988db0378d05dd2ea009d72",
+    "mtime": 1790918730.2934835,
+    "ast_hash": "00f05de26ed7dd3c959f820c0b0cd575",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -265,13 +265,13 @@
     "semantic_hash": "b72ea0c18bc48ae0721d9dddf7cd36ce"
   },
   "src/app/(management)/admin/checkin/page.tsx": {
-    "mtime": 1790872436.0336213,
-    "ast_hash": "ac3de8f8628ad4af727bd5401c10b1d0",
+    "mtime": 1790918904.655885,
+    "ast_hash": "0f4703fc28aa00ee2e4658a5a069c5e8",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/dashboard/page.tsx": {
-    "mtime": 1790918076.7681522,
-    "ast_hash": "1b330a9aaaaefdc6374b1932021d426b",
+    "mtime": 1790918770.2397878,
+    "ast_hash": "f7a22c675603230ac96b98ccf5b8b60d",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/events/[id]/page.tsx": {
@@ -335,8 +335,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/users/page.tsx": {
-    "mtime": 1790872436.0393653,
-    "ast_hash": "1f6432b3d7cb5bafb21352ef0d9ebd35",
+    "mtime": 1790918755.4824817,
+    "ast_hash": "7e1387e7c0a589af939fa015382016f8",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/users/types.ts": {
@@ -380,8 +380,8 @@
     "semantic_hash": "8fcf8c6bee2e541c6b3170b73f69de9f"
   },
   "src/app/(management)/user/dashboard/page.tsx": {
-    "mtime": 1790872436.0418375,
-    "ast_hash": "2619d75ffc41dfc1a1d4cbd5cb796b06",
+    "mtime": 1790918770.2425215,
+    "ast_hash": "5afe08d493388ff9a3c386e67b0053af",
     "semantic_hash": ""
   },
   "src/app/(management)/user/events/page.tsx": {
@@ -3200,8 +3200,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-14-mobile-redesign.md": {
-    "mtime": 1790918580.0295713,
-    "ast_hash": "696b2413354dd17bf355375c8a30c5b1",
+    "mtime": 1790918912.1204784,
+    "ast_hash": "826d084122b81dc2a8f17acc84f9924b",
     "semantic_hash": ""
   },
   "src/components/molecules/responsive-dialog.tsx": {
@@ -3212,6 +3212,11 @@
   "src/hooks/use-media-query.ts": {
     "mtime": 1790918041.7698545,
     "ast_hash": "f214653ab1d0c751a49d40ac9e42c9f8",
+    "semantic_hash": ""
+  },
+  "src/components/molecules/stat-grid.tsx": {
+    "mtime": 1790918730.122099,
+    "ast_hash": "e0054a39c05c2f3e29cf47d41ee9265c",
     "semantic_hash": ""
   }
 }

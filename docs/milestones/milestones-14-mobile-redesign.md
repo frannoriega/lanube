@@ -547,7 +547,11 @@ lanube-app` (this repo's container only).
       own `dark:` variants, `StatGridSkeleton`); applied to `user/dashboard`,
       `admin/dashboard`, `admin/checkin` (its "Actualizado" tile now `HH:mm`, 24h), `admin/users`
       (descriptions only from `md`).
-- [ ] Audit filter chips + entity names in Spanish (L).
+- [x] Audit filter chips + entity names in Spanish (L).
+      — `admin/audit/page.tsx`: chips use `entityTypeLabel()` (same Spanish label as each
+      row's tag), sorted by label; the URL filter keeps the internal model name. Row tags
+      were already Spanish; the raw names only remain in the row's "Información del sistema"
+      (intentionally technical). The phone card layout for the audit table is slice 4.
 - [ ] User dashboard "Reservas recientes" time format `dd/MM/yyyy · HH:mm a HH:mm` (N).
 - [ ] `Markdown` molecule breaks long words (O).
 
