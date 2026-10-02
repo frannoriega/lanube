@@ -10,8 +10,29 @@ import {
 import { useUserStats } from "@/hooks/api";
 import useUser from "@/hooks/use-user";
 import { Calendar, Clock, TrendingUp } from "lucide-react";
+import { StatusBadge } from "@/components/atoms/status-badge";
+import { formatTimeShort } from "@/lib/utils/date";
 import { useEffect } from "react";
 import { toast } from "sonner";
+
+/**
+ * "13/10/2026 · 10:00 a 13:00" (milestone 14, hallazgo N).
+ *
+ * Antes se armaba en JSX con `toLocaleDateString()` / `toLocaleTimeString()` sueltos: el
+ * espacio en blanco de JSX pegaba el "-" y la "a" a los valores ("-10:00:00 a01:00:00"),
+ * salían los segundos y el formato 12/24h dependía del navegador. Acá la fecha va siempre
+ * como dd/mm/aaaa y las horas como HH:mm en 24h, en la zona horaria del navegador (la regla
+ * del proyecto: se guarda UNIX ms en UTC y se formatea del lado del cliente).
+ */
+function formatReservationWhen(startMs: number, endMs: number): string {
+  const start = new Date(startMs);
+  const date = start.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  return `${date} · ${formatTimeShort(start)} a ${formatTimeShort(new Date(endMs))}`;
+}
 
 export default function DashboardPage() {
   const user = useUser();
@@ -89,32 +110,20 @@ export default function DashboardPage() {
                   .map((reservation, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="flex items-center justify-between gap-3 p-3 border rounded-lg"
                     >
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">{reservation.service}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          {new Date(reservation.startTime).toLocaleDateString()}{" "}
-                          -
-                          {new Date(reservation.startTime).toLocaleTimeString()}{" "}
-                          a{new Date(reservation.endTime).toLocaleTimeString()}
+                        <p className="text-sm text-muted-foreground">
+                          {formatReservationWhen(
+                            reservation.startTime,
+                            reservation.endTime,
+                          )}
                         </p>
                       </div>
-                      <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          reservation.status === "APPROVED"
-                            ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
-                            : reservation.status === "PENDING"
-                              ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-                              : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
-                        }`}
-                      >
-                        {reservation.status === "APPROVED"
-                          ? "Aprobada"
-                          : reservation.status === "PENDING"
-                            ? "Pendiente"
-                            : "Rechazada"}
-                      </div>
+                      {/* Badge compartido: cubre también CANCELLED, que el switch a mano
+                          anterior mostraba como "Rechazada". */}
+                      <StatusBadge status={reservation.status} />
                     </div>
                   ))}
               </div>

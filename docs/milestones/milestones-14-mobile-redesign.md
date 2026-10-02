@@ -552,7 +552,10 @@ lanube-app` (this repo's container only).
       row's tag), sorted by label; the URL filter keeps the internal model name. Row tags
       were already Spanish; the raw names only remain in the row's "Información del sistema"
       (intentionally technical). The phone card layout for the audit table is slice 4.
-- [ ] User dashboard "Reservas recientes" time format `dd/MM/yyyy · HH:mm a HH:mm` (N).
+- [x] User dashboard "Reservas recientes" time format `dd/MM/yyyy · HH:mm a HH:mm` (N).
+      — `user/dashboard/page.tsx`: `formatReservationWhen()` (24h via `formatTimeShort`);
+      the hand-rolled status switch replaced by the shared `StatusBadge` (also fixes
+      CANCELLED rendering as "Rechazada").
 - [ ] `Markdown` molecule breaks long words (O).
 
 **Slice 3 — booking calendar**
