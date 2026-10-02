@@ -116,9 +116,24 @@ Reglas para que no moleste (acordadas en la propuesta):
   corre el efecto dos veces; la primera marcaba la sesión como vista y la segunda saltaba al
   final. Se resolvió decidiendo una sola vez por montaje con una `ref`.
 
+- **Bug reportado por el usuario tras la primera versión:** el logo se veía "comido" — del
+  arco de arriba y del de abajo quedaba sólo un hilo. Los trazos "hueco" (color del fondo) se
+  pintaban **encima** de su propio trazo, y como el hueco es casi el mismo camino (corrido ~2
+  unidades), lo borraba. En el SVG original cada hueco se pinta **antes** que su trazo y
+  después de los anteriores, para cortar _al de abajo_ donde se cruzan. Se restauró el orden de
+  pintado del original (derecha → hueco+arriba → hueco+abajo) y el orden de _dibujo_ de la
+  animación quedó aparte (`step`).
+
 Layout del hero: dos columnas desde `lg` (texto a la izquierda, logo a la derecha, ~26rem);
 en teléfono el logo va arriba (w-40/52) y el texto centrado debajo. "La Nube" más grande y en
 azul noche; "Conocer más" pasó a "Conocer los espacios" (es adonde lleva).
+
+**Typewriter sin saltos (reportado por el usuario):** cuando la palabra que se escribe sola
+era larga y no entraba en el renglón, bajaba al siguiente y empujaba todo el bloque. Ahora va
+en una celda `inline-grid` donde todas las palabras están apiladas invisibles: la celda mide lo
+que la más larga, así el renglón corta siempre en el mismo lugar. Verificado midiendo el alto
+y la posición del título cada 250 ms durante ~17 s (varias palabras): constantes en escritorio
+y teléfono.
 
 ### 3. Ritmo de la landing
 

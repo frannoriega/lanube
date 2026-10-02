@@ -30,21 +30,34 @@ import { useId } from "react";
  */
 export type IsologoState = "hidden" | "play" | "static";
 
-/** Trazos de la nube, en orden de dibujo. `gap` es el trazo "hueco" que va con cada uno. */
-const STROKES: { d: string; gap?: string }[] = [
-  {
-    // Abajo a la izquierda.
-    d: "M59.79,47.83c-57.6-.02-52.52,43.89-52.44,44.34,0,0,0,0,0,0,0,0,1.77,19.05,15.26,25.19,10.87,8.95,49.7,10.28,75.64-8.56",
-    gap: "M59.97,45.82c-57.6-.02-52.52,43.89-52.44,44.34,0,0,0,0,0,0,0,0,1.77,19.05,15.26,25.19,10.87,8.95,49.7,10.28,75.64-8.56",
-  },
-  {
-    // Arriba (el arco grande).
-    d: "M132.06,84.65c12.54-25.43,8.53-53.17-7.89-67.4-14.31-12.41-33.01-10.15-34.14-9.99-16.44,2.24-30.6,13.98-37.02,30.59-.37,1.77-.74,3.55-1.11,5.32",
-    gap: "M134.09,84.65c12.54-25.43,8.53-53.17-7.89-67.4-14.31-12.41-33.01-10.15-34.14-9.99",
-  },
+/**
+ * Trazos de la nube, **en el orden de pintado del SVG original** (importa: ver `gap`).
+ *
+ * - `step`: en qué turno se dibuja (0 = primero). Es independiente del orden de pintado: se
+ *   dibujan abajo-izquierda → arriba → derecha, pero se pintan derecha → arriba → abajo.
+ * - `gap`: un trazo del color del fondo, apenas corrido, que se pinta **antes** que su trazo
+ *   y **después** de los anteriores: así "corta" el trazo que queda debajo donde se cruzan
+ *   (el arco de arriba corta la punta del de la derecha; el de abajo, la punta del de arriba).
+ *   Pintarlo encima de su propio trazo —como en la primera versión de este componente— borra
+ *   casi todo ese trazo, porque el hueco es prácticamente el mismo camino.
+ */
+const STROKES: { d: string; gap?: string; step: number }[] = [
   {
     // A la derecha.
     d: "M134.09,120.26c19.15,8.24,39.38-3.91,44.38-22.45,6.02-22.32-11.36-45.32-28.7-47.99-2.46-.38-4.82-.33-7.02,0",
+    step: 2,
+  },
+  {
+    // Arriba (el arco grande).
+    gap: "M134.09,84.65c12.54-25.43,8.53-53.17-7.89-67.4-14.31-12.41-33.01-10.15-34.14-9.99",
+    d: "M132.06,84.65c12.54-25.43,8.53-53.17-7.89-67.4-14.31-12.41-33.01-10.15-34.14-9.99-16.44,2.24-30.6,13.98-37.02,30.59-.37,1.77-.74,3.55-1.11,5.32",
+    step: 1,
+  },
+  {
+    // Abajo a la izquierda.
+    gap: "M59.97,45.82c-57.6-.02-52.52,43.89-52.44,44.34,0,0,0,0,0,0,0,0,1.77,19.05,15.26,25.19,10.87,8.95,49.7,10.28,75.64-8.56",
+    d: "M59.79,47.83c-57.6-.02-52.52,43.89-52.44,44.34,0,0,0,0,0,0,0,0,1.77,19.05,15.26,25.19,10.87,8.95,49.7,10.28,75.64-8.56",
+    step: 0,
   },
 ];
 
@@ -295,22 +308,13 @@ export function AnimatedIsologo({
         </radialGradient>
       </defs>
 
-      {/* Trazos de la nube: cada uno con su "hueco" del color del fondo encima. */}
-      {STROKES.map((s, i) => (
+      {/* Trazos de la nube: cada "hueco" se pinta antes que su trazo (ver STROKES). */}
+      {STROKES.map((s) => (
         <g key={s.d}>
-          <motion.path
-            d={s.d}
-            custom={i}
-            variants={strokes}
-            fill="none"
-            stroke="#a4b9cb"
-            strokeWidth={14}
-            strokeLinecap="round"
-          />
           {s.gap && (
             <motion.path
               d={s.gap}
-              custom={i}
+              custom={s.step}
               variants={strokes}
               fill="none"
               stroke="var(--background)"
@@ -318,6 +322,15 @@ export function AnimatedIsologo({
               strokeLinecap="round"
             />
           )}
+          <motion.path
+            d={s.d}
+            custom={s.step}
+            variants={strokes}
+            fill="none"
+            stroke="#a4b9cb"
+            strokeWidth={14}
+            strokeLinecap="round"
+          />
         </g>
       ))}
 
