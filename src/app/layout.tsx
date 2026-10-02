@@ -1,6 +1,8 @@
 import { ServerTimeProvider } from "@/components/providers/server-time";
+import { WhatsAppFloatButton } from "@/components/molecules/whatsapp-float-button";
 import { auth } from "@/lib/auth";
 import { nowMs } from "@/lib/clock";
+import { getSiteConfig } from "@/lib/db/siteConfig";
 import { SessionProvider } from "@/components/providers/session";
 import type { Metadata } from "next";
 import { connection } from "next/server";
@@ -32,6 +34,7 @@ export default async function RootLayout({
   await connection();
   const serverNowMs = nowMs();
   const session = await auth();
+  const siteConfig = await getSiteConfig();
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -50,6 +53,7 @@ export default async function RootLayout({
         <ServerTimeProvider serverNowMs={serverNowMs}>
           <SessionProvider session={session}>{children}</SessionProvider>
         </ServerTimeProvider>
+        <WhatsAppFloatButton phoneClickable={siteConfig.phoneClickable} />
       </body>
     </html>
   );

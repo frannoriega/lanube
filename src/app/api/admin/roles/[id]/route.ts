@@ -5,6 +5,7 @@ import { recordAuditFromSession } from "@/lib/audit/record";
 import {
   deleteRole,
   getRoleById,
+  resolveRoleNames,
   RoleWriteError,
   updateRole,
 } from "@/lib/db/roles";
@@ -16,6 +17,8 @@ const roleUpdateSchema = z.object({
   name: z.string().trim().min(2, "El nombre es obligatorio").max(60),
   description: z.string().trim().max(240).nullish(),
   permissions: z.array(z.enum(PERMISSIONS)).default([]),
+  // Re-validated against real, non-superadmin roles in `updateRole` — this is just shape.
+  grantableRoleIds: z.array(z.string()).default([]),
 });
 
 /** PUT: rename a role and/or re-scope its permissions. System roles are rejected. */
@@ -47,12 +50,14 @@ export async function PUT(
             name: before.name,
             description: before.description,
             permissions: before.permissions,
+            grantableRoles: await resolveRoleNames(before.grantableRoleIds),
           }
         : undefined,
       after: {
         name: role.name,
         description: role.description,
         permissions: role.permissions,
+        grantableRoles: await resolveRoleNames(role.grantableRoleIds),
       },
     });
     return apiSuccess(role);
@@ -83,6 +88,7 @@ export async function DELETE(
             name: before.name,
             description: before.description,
             permissions: before.permissions,
+            grantableRoles: await resolveRoleNames(before.grantableRoleIds),
           }
         : undefined,
     });

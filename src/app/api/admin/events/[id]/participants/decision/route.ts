@@ -38,6 +38,10 @@ export async function POST(
       action: AUDIT_ACTIONS.participantDecide,
       entityType: "Event",
       entityId: id,
+      context: {
+        Evento: eventName,
+        Inscriptos: `${participants.length} persona(s)`,
+      },
       after: {
         decision,
         participantIds,

@@ -13,6 +13,7 @@ export interface AuditLogListItem {
   entityId: string;
   before: unknown;
   after: unknown;
+  context: Record<string, string> | null;
   reason: string | null;
   requestId: string | null;
   createdAt: number;
@@ -68,6 +69,7 @@ export async function listAuditLogs(
       entityId: r.entityId,
       before: r.before,
       after: r.after,
+      context: (r.context as Record<string, string> | null) ?? null,
       reason: r.reason,
       requestId: r.requestId,
       createdAt: Number(r.createdAt),

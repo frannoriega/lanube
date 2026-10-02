@@ -60,10 +60,16 @@ type Role = {
   isSystem: boolean;
   isSuperadmin: boolean;
   permissions: Permission[];
+  grantableRoleIds: string[];
   userCount: number;
 };
 
-const EMPTY: RoleInput = { name: "", description: "", permissions: [] };
+const EMPTY: RoleInput = {
+  name: "",
+  description: "",
+  permissions: [],
+  grantableRoleIds: [],
+};
 
 export function RolesManager() {
   const { data, error, firstTime, refetch } =
@@ -91,6 +97,7 @@ export function RolesManager() {
       name: role.name,
       description: role.description ?? "",
       permissions: role.permissions,
+      grantableRoleIds: role.grantableRoleIds,
     });
     setDialogOpen(true);
   };
@@ -368,6 +375,68 @@ export function RolesManager() {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+
+              <FormField
+                control={form.control}
+                name="grantableRoleIds"
+                render={({ field }) => {
+                  const options = roles.filter(
+                    (r) => !r.isSuperadmin && r.id !== editing?.id,
+                  );
+                  return (
+                    <FormItem>
+                      <FormLabel>Puede otorgar estos roles</FormLabel>
+                      <FormDescription>
+                        Quien tenga este rol y el permiso «Gestionar roles de
+                        usuarios» solo podrá ascender/reasignar usuarios a los
+                        roles marcados acá. El rol superadmin nunca aparece en
+                        esta lista: se otorga a mano en la base de datos.
+                      </FormDescription>
+                      {options.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No hay otros roles todavía.
+                        </p>
+                      ) : (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {options.map((option) => {
+                            const checked = field.value.includes(option.id);
+                            const id = `grantable-${option.id}`;
+                            return (
+                              <div
+                                key={option.id}
+                                className="flex items-center gap-2 rounded-md border border-border p-2"
+                              >
+                                <Checkbox
+                                  id={id}
+                                  checked={checked}
+                                  onCheckedChange={(
+                                    next: boolean | "indeterminate",
+                                  ) => {
+                                    field.onChange(
+                                      next === true
+                                        ? [...field.value, option.id]
+                                        : field.value.filter(
+                                            (value) => value !== option.id,
+                                          ),
+                                    );
+                                  }}
+                                />
+                                <label
+                                  htmlFor={id}
+                                  className="cursor-pointer text-sm leading-tight"
+                                >
+                                  {option.name}
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <DialogFooter>

@@ -32,6 +32,8 @@ export type RoleSnapshot = {
   isSystem: boolean;
   isSuperadmin: boolean;
   permissions: Permission[];
+  /** Ids of the other roles a holder of this role may assign to a user. */
+  grantableRoleIds: string[];
 };
 
 /** Bounds how long another serverless instance can serve a pre-edit snapshot. */
@@ -55,6 +57,7 @@ function toSnapshot(row: {
   isSystem: boolean;
   isSuperadmin: boolean;
   permissions: string[];
+  grantableRoleIds: string[];
 }): RoleSnapshot {
   return {
     id: row.id,
@@ -66,6 +69,7 @@ function toSnapshot(row: {
     // Sanitize on read as well as on write: a role row can outlive a permission that a
     // later deploy removed from the catalog.
     permissions: sanitizePermissions(row.permissions),
+    grantableRoleIds: row.grantableRoleIds,
   };
 }
 
@@ -82,6 +86,7 @@ async function loadRoles(): Promise<Map<string, RoleSnapshot>> {
       isSystem: true,
       isSuperadmin: true,
       permissions: true,
+      grantableRoleIds: true,
     },
     orderBy: { name: "asc" },
   });
@@ -161,6 +166,7 @@ export async function listRolesWithUsage(): Promise<
       isSystem: true,
       isSuperadmin: true,
       permissions: true,
+      grantableRoleIds: true,
       _count: { select: { users: true } },
     },
     orderBy: [{ isSystem: "desc" }, { name: "asc" }],
@@ -169,6 +175,15 @@ export async function listRolesWithUsage(): Promise<
     ...toSnapshot(row),
     userCount: row._count.users,
   }));
+}
+
+/** Display names for a set of role ids, in the given order — for readable audit entries. */
+export async function resolveRoleNames(
+  ids: readonly string[],
+): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const roles = await loadRoles();
+  return ids.map((id) => roles.get(id)?.name ?? id);
 }
 
 /** Derive a stable machine key from a display name, uniquified against existing keys. */
@@ -189,10 +204,29 @@ function deriveKey(name: string, taken: ReadonlySet<string>): string {
   throw new RoleWriteError("No se pudo generar una clave única para el rol");
 }
 
+/**
+ * Keeps `grantableRoleIds` honest against rows that actually exist today: drops ids that
+ * don't correspond to a role, and — the one rule that can never be relaxed from the UI —
+ * drops any `isSuperadmin` role. That tier is only ever granted by hand in the database.
+ */
+async function sanitizeGrantableRoleIds(
+  ids: readonly string[] | undefined,
+): Promise<string[]> {
+  if (!ids || ids.length === 0) return [];
+  const candidates = new Set(ids);
+  const rows = await prisma.role.findMany({
+    where: { id: { in: Array.from(candidates) }, isSuperadmin: false },
+    select: { id: true },
+  });
+  const valid = new Set(rows.map((r) => r.id));
+  return Array.from(candidates).filter((id) => valid.has(id));
+}
+
 export async function createRole(input: {
   name: string;
   description?: string | null;
   permissions: readonly string[];
+  grantableRoleIds?: readonly string[];
 }): Promise<RoleSnapshot> {
   const name = input.name.trim();
   const existingKeys = new Set(
@@ -208,6 +242,9 @@ export async function createRole(input: {
         isSystem: false,
         isSuperadmin: false,
         permissions: sanitizePermissions(input.permissions),
+        grantableRoleIds: await sanitizeGrantableRoleIds(
+          input.grantableRoleIds,
+        ),
       },
       select: {
         id: true,
@@ -217,6 +254,7 @@ export async function createRole(input: {
         isSystem: true,
         isSuperadmin: true,
         permissions: true,
+        grantableRoleIds: true,
       },
     });
     invalidateRoleCache();
@@ -235,6 +273,7 @@ export async function updateRole(
     name: string;
     description?: string | null;
     permissions: readonly string[];
+    grantableRoleIds?: readonly string[];
   },
 ): Promise<RoleSnapshot> {
   const current = await prisma.role.findUnique({
@@ -252,6 +291,9 @@ export async function updateRole(
         name: input.name.trim(),
         description: input.description?.trim() || null,
         permissions: sanitizePermissions(input.permissions),
+        grantableRoleIds: await sanitizeGrantableRoleIds(
+          input.grantableRoleIds,
+        ),
         updatedAt: BigInt(Date.now()),
       },
       select: {
@@ -262,6 +304,7 @@ export async function updateRole(
         isSystem: true,
         isSuperadmin: true,
         permissions: true,
+        grantableRoleIds: true,
       },
     });
     invalidateRoleCache();

@@ -26,6 +26,14 @@ model Role {
   /// than via a join table — the catalog is small, code-defined and changes with deploys.
   permissions String[] @default([])
 
+  /// Ids of the OTHER roles a holder of this role may assign to a user (the role picker
+  /// at `/admin/users` is filtered to this set for anyone who isn't a superadmin — see
+  /// `users:roles:manage` in `src/lib/rbac.ts`). This governs who can GRANT a role, not
+  /// what the role itself can do. A superadmin bypasses this list entirely (can assign any
+  /// non-superadmin role); `isSuperadmin` rows can never appear here or in anyone's list —
+  /// that tier is only ever granted by hand in the database.
+  grantableRoleIds String[] @default([]) @map("grantable_role_ids")
+
   createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
 

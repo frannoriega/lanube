@@ -1,14 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { LocalTimestamp } from "@/components/molecules/local-date";
 import { Pagination } from "@/components/molecules/pagination";
-import { auditActionLabel, CASCADED_ACTIONS } from "@/lib/audit/actions";
+import { AuditLogTable } from "@/components/organisms/admin/audit-log-table";
 import { listAuditEntityTypes, listAuditLogs } from "@/lib/db/audit";
 import { requirePagePermission } from "@/lib/page-auth";
 import Link from "next/link";
@@ -91,94 +83,7 @@ export default async function AuditPage({
           No hay entradas de auditoría todavía.
         </p>
       ) : (
-        <div className="space-y-2">
-          {items.map((item) => {
-            // A cascaded entry is a consequence of another action in the same request
-            // (an auto-rejection caused by an approval), not something the actor chose
-            // to do to this record. De-emphasise it so the trail reads causally.
-            const cascaded = CASCADED_ACTIONS.has(item.action);
-            return (
-              <Card
-                key={item.id}
-                className={
-                  cascaded
-                    ? "glass-card dark:glass-card-dark border-l-4 border-l-muted-foreground/40 sm:ml-6"
-                    : "glass-card dark:glass-card-dark"
-                }
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-base font-medium">
-                      {auditActionLabel(item.action)}
-                      {cascaded ? (
-                        <Badge variant="outline" className="ml-2 font-normal">
-                          En cascada
-                        </Badge>
-                      ) : null}
-                    </CardTitle>
-                    <LocalTimestamp
-                      ms={item.createdAt}
-                      className="text-sm text-muted-foreground"
-                    />
-                  </div>
-                  <CardDescription className="flex flex-wrap items-center gap-1.5">
-                    <span>{item.actorLabel}</span>
-                    <span aria-hidden>·</span>
-                    <span>
-                      {item.entityType} {item.entityId}
-                    </span>
-                    {item.requestId ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        <Link
-                          href={`/admin/audit?requestId=${item.requestId}`}
-                          className="underline underline-offset-2 hover:text-foreground"
-                        >
-                          Ver la acción completa
-                        </Link>
-                      </>
-                    ) : null}
-                  </CardDescription>
-                </CardHeader>
-                {item.before || item.after || item.reason ? (
-                  <CardContent className="pt-0">
-                    {item.reason ? (
-                      <p className="mb-2 text-sm">
-                        <span className="font-medium">Motivo: </span>
-                        {item.reason}
-                      </p>
-                    ) : null}
-                    {item.before || item.after ? (
-                      <details className="text-sm">
-                        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                          Ver cambios
-                        </summary>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          <div>
-                            <p className="mb-1 text-xs font-medium text-muted-foreground">
-                              Antes
-                            </p>
-                            <pre className="overflow-auto rounded bg-muted p-2 text-xs">
-                              {JSON.stringify(item.before, null, 2)}
-                            </pre>
-                          </div>
-                          <div>
-                            <p className="mb-1 text-xs font-medium text-muted-foreground">
-                              Después
-                            </p>
-                            <pre className="overflow-auto rounded bg-muted p-2 text-xs">
-                              {JSON.stringify(item.after, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      </details>
-                    ) : null}
-                  </CardContent>
-                ) : null}
-              </Card>
-            );
-          })}
-        </div>
+        <AuditLogTable items={items} />
       )}
 
       <Pagination

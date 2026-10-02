@@ -4,6 +4,7 @@ import {
   enumerateDateKeysInclusive,
 } from "@/lib/admin/admin-timezone";
 import { DomainError } from "@/lib/errors";
+import { formatRange } from "@/lib/notifications/render/format";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { ReservationStatus } from "@/generated/prisma/client";
@@ -200,6 +201,78 @@ export async function setReservationStatus(
       ...(deniedReason ? { deniedReason } : {}),
     },
   });
+}
+
+/**
+ * Everything `notify()` and the audit trail need to describe a reservation decision — who
+ * it was for, what, and when. Shared because both answer the exact same underlying
+ * question ("which reservation is this?") for two different readers (the owner, an admin
+ * reading the log).
+ */
+export interface ReservationNotificationContext {
+  id: string;
+  reservableType: string;
+  reservableId: string;
+  spaceName: string | null;
+  reservationTypeName: string;
+  startTime: number;
+  endTime: number;
+  deniedReason: string | null;
+  /** Null for a TEAM/ORG/EVENT reservation — there's no one person to name. */
+  ownerName: string | null;
+}
+
+/**
+ * Reads back just enough of a reservation to build a `reservation.approved`/`.rejected`
+ * event, or an audit-log `context`. Only `reservableType === "USER"` gets `ownerName` (and
+ * a notification recipient) — a TEAM/ORG/EVENT reservation has no one owner (see the
+ * milestone doc).
+ */
+export async function getReservationNotificationContext(
+  id: string,
+): Promise<ReservationNotificationContext | null> {
+  const row = await prisma.reservation.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      reservableType: true,
+      reservableId: true,
+      startTime: true,
+      endTime: true,
+      deniedReason: true,
+      space: { select: { name: true } },
+      type: { select: { name: true } },
+      registeredUser: { select: { name: true, lastName: true } },
+    },
+  });
+  if (!row) return null;
+  return {
+    id: row.id,
+    reservableType: row.reservableType,
+    reservableId: row.reservableId,
+    spaceName: row.space?.name ?? null,
+    reservationTypeName: row.type.name,
+    startTime: Number(row.startTime),
+    endTime: Number(row.endTime),
+    deniedReason: row.deniedReason,
+    ownerName:
+      row.reservableType === "USER" && row.registeredUser
+        ? `${row.registeredUser.name} ${row.registeredUser.lastName}`.trim()
+        : null,
+  };
+}
+
+/** `{ "Espacio": "Sala A", "Horario": "…", "Reservado por": "…" }` for the audit log. */
+export function buildReservationAuditContext(
+  context: ReservationNotificationContext,
+): Record<string, string> {
+  const result: Record<string, string> = {
+    [context.spaceName ? "Espacio" : "Tipo de reserva"]:
+      context.spaceName ?? context.reservationTypeName,
+    Horario: formatRange(context.startTime, context.endTime),
+  };
+  if (context.ownerName) result["Reservado por"] = context.ownerName;
+  return result;
 }
 
 export interface ListAdminReservationsOptions {

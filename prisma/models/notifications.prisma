@@ -1,0 +1,32 @@
+/// The in-app side-effect of `notify()` (src/lib/notifications/dispatch.ts) — the pluggable
+/// notification system's "in-app" channel writes one row here per (event, recipient). Other
+/// channels (email, future SMS/WhatsApp) are fire-and-forget: they never touch this table, so
+/// it only ever holds what the bell UI needs to render, never a delivery log for every
+/// channel. See docs/milestones/milestones-13-notifications.md for the full design.
+model Notification {
+  id          String         @id @default(cuid())
+  recipientId String         @map("recipient_id")
+  recipient   RegisteredUser @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  /// Stable event type id, e.g. "reservation.approved" — one of the keys in
+  /// NOTIFICATION_EVENT_TYPES (src/lib/notifications/types.ts). Kept as a plain string
+  /// (not an enum) for the same reason AuditLog.action is a string: new event types ship
+  /// with ordinary deploys, no migration required.
+  type String
+
+  /// Already-rendered Spanish title/body (src/lib/notifications/render/in-app.ts) — the UI
+  /// never re-derives text from `data`, so renderer changes only affect future notifications.
+  title String
+  body  String
+
+  /// Structured payload for deep-linking (e.g. `{ "reservationId": "..." }`). Never shown as
+  /// raw JSON to the user — `title`/`body` are what render.
+  data Json?
+
+  readAt    BigInt? @map("read_at")
+  createdAt BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@index([recipientId, readAt])
+  @@index([recipientId, createdAt])
+  @@map("notifications")
+}

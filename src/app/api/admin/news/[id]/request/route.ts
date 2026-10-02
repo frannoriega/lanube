@@ -41,6 +41,7 @@ export async function POST(
       action: AUDIT_ACTIONS.newsRequest,
       entityType: "NewsPost",
       entityId: id,
+      context: { Noticia: post.title },
       after: { pendingAction: post.pendingAction },
     });
     return apiSuccess(post);

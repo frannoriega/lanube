@@ -1,6 +1,6 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiSuccess } from "@/lib/api/response";
-import { listRoles } from "@/lib/db/roles";
+import { getPermissionSetForUser, listRoles } from "@/lib/db/roles";
 
 /**
  * The role list the user table's role picker offers. Gated on `users:roles:manage`
@@ -13,12 +13,21 @@ export async function GET() {
   if (error) return error;
   try {
     const roles = await listRoles();
-    // Los roles superadmin solo se ofrecen a un superadmin: el PATCH los rechaza igual
-    // (milestone-12 D27), pero no tiene sentido mostrar en el selector una opción que va a
-    // dar 403.
-    const assignable = session.isSuperadmin
-      ? roles
-      : roles.filter((role) => !role.isSuperadmin);
+    // El rol superadmin nunca se ofrece desde el panel, ni siquiera a otro superadmin —
+    // ese tier se otorga a mano en la base de datos (ver Role.grantableRoleIds).
+    const nonSuperadmin = roles.filter((role) => !role.isSuperadmin);
+
+    // Un superadmin puede asignar cualquier rol no-superadmin. Cualquier otro actor queda
+    // limitado a los roles que SU PROPIO rol tiene habilitado otorgar (grantableRoleIds) —
+    // así "admins solo pueden otorgar usuario/comunicador" es configurable por rol, no
+    // una regla fija en el código.
+    let assignable = nonSuperadmin;
+    if (!session.isSuperadmin) {
+      const resolved = await getPermissionSetForUser(session.userId);
+      const grantable = new Set(resolved?.role?.grantableRoleIds ?? []);
+      assignable = nonSuperadmin.filter((role) => grantable.has(role.id));
+    }
+
     return apiSuccess(
       assignable.map(({ id, key, name, isSystem, isSuperadmin }) => ({
         id,

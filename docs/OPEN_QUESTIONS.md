@@ -135,3 +135,21 @@ crudo). Viven en el doc del milestone. Lo que queda abierto acá:
   whether to add a schedule (note Hobby-tier cron limits) or drop the endpoint.
   Found during the milestone-10 audit; not a milestone-10 finding since it's
   backend/config, not frontend.
+
+## Milestone 14 — Mobile redesign
+
+See [`milestones/milestones-14-mobile-redesign.md`](./milestones/milestones-14-mobile-redesign.md)
+for the full audit. Nothing is resolved yet — the whole redesign is open, handed to a
+design-focused session rather than decided here:
+
+- **Booking calendar**: shrink the existing 5-weekday grid to fit a phone, or replace the
+  mobile view with a different interaction model (day-at-a-time with swipe/tabs, an
+  agenda/list view)? Affects how much of `WeekCalendar.tsx` is touched.
+- **Admin config tables** (Espacios, Recursos, Tipos de reserva, Temas del landing,
+  Audit log, Noticias list — 6 screens): card-list layout, hide-less-important-columns,
+  or keep horizontally-scrollable tables and just fix the page-level overflow +
+  discoverability? Whatever's picked should be one reusable pattern, not six bespoke
+  fixes.
+- **Horizontal-scroll affordance convention**: for anything that stays scrollable (the
+  admin tables if kept, the admin reservations day-timeline), what's the visual language
+  for "there's more this way" — fade, shadow, arrows? Should be a shared pattern.

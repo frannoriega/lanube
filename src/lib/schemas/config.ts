@@ -202,6 +202,8 @@ export const roleInputSchema = z.object({
     .optional()
     .or(z.literal("")),
   permissions: z.array(z.enum(PERMISSIONS)),
+  /** Ids of the other roles this one may assign to a user. Sanitized again server-side. */
+  grantableRoleIds: z.array(z.string()),
 });
 
 export type RoleInput = z.infer<typeof roleInputSchema>;

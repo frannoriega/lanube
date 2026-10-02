@@ -17,6 +17,13 @@ export interface RecordAuditInput {
   before?: Record<string, unknown> | null;
   /** Only the changed fields, after the write. */
   after?: Record<string, unknown> | null;
+  /**
+   * Human-readable identifying info about the record, e.g. `{ "Espacio": "Sala A",
+   * "Horario": "jueves 9 de julio, 10:00–12:00" }` — shown verbatim, never diffed. Add this
+   * whenever `before`/`after` alone wouldn't tell a reader WHICH record was acted on (the
+   * common case: an action that only ever changes `status`).
+   */
+  context?: Record<string, string> | null;
   reason?: string | null;
   /** Correlates entries written by the same request (e.g. cascaded side effects). */
   requestId?: string | null;
@@ -41,6 +48,9 @@ export async function recordAudit(input: RecordAuditInput): Promise<void> {
           : undefined,
         after: input.after
           ? (serializeJson(input.after) as Prisma.InputJsonValue)
+          : undefined,
+        context: input.context
+          ? (serializeJson(input.context) as Prisma.InputJsonValue)
           : undefined,
         reason: input.reason ?? undefined,
         requestId: input.requestId ?? undefined,

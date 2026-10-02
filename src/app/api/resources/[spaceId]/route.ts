@@ -14,10 +14,11 @@ import { isOnLedgerGrid } from "@/lib/constants/reservations";
 import {
   BOOKING_WINDOW_MESSAGES,
   checkBookingWindow,
+  hasMinimumNotice,
+  MINIMUM_NOTICE_MESSAGE,
 } from "@/lib/reservations/booking-window";
 import { unixMsToDate } from "@/lib/unix-ms";
 import { prisma } from "@/lib/prisma";
-import { isAfter, startOfDay } from "date-fns";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -111,12 +112,10 @@ export async function POST(
     if (startMs < nowMs())
       return apiError("No se pueden hacer reservas en el pasado", 400);
 
-    const serverNow = unixMsToDate(nowMs());
-    if (!isAfter(startOfDay(startDateTime), startOfDay(serverNow)))
-      return apiError(
-        "Las reservas solo están disponibles a partir de mañana",
-        400,
-      );
+    // Anticipación mínima real (24hs de margen), no por día calendario — ver el comentario de
+    // MINIMUM_NOTICE_MS en booking-window.ts.
+    if (!hasMinimumNotice(startMs, nowMs()))
+      return apiError(MINIMUM_NOTICE_MESSAGE, 400);
 
     // Reglas de día de semana + horario de apertura, comparadas en la zona horaria del
     // propio predio. La versión anterior, escrita acá mismo, usaba getUTCDay()/getUTCHours()

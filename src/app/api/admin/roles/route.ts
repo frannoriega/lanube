@@ -2,7 +2,12 @@ import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { recordAuditFromSession } from "@/lib/audit/record";
-import { createRole, listRolesWithUsage, RoleWriteError } from "@/lib/db/roles";
+import {
+  createRole,
+  listRolesWithUsage,
+  resolveRoleNames,
+  RoleWriteError,
+} from "@/lib/db/roles";
 import { PERMISSIONS } from "@/lib/rbac";
 import { NextRequest } from "next/server";
 import z from "zod";
@@ -12,6 +17,8 @@ const roleInputSchema = z.object({
   description: z.string().trim().max(240).nullish(),
   // Only catalog permissions are accepted — an unknown string would gate nothing.
   permissions: z.array(z.enum(PERMISSIONS)).default([]),
+  // Re-validated against real, non-superadmin roles in `createRole` — this is just shape.
+  grantableRoleIds: z.array(z.string()).default([]),
 });
 
 /** GET: the role catalog with how many users hold each one. */
@@ -48,6 +55,7 @@ export async function POST(request: NextRequest) {
         name: role.name,
         description: role.description,
         permissions: role.permissions,
+        grantableRoles: await resolveRoleNames(role.grantableRoleIds),
       },
     });
     return apiSuccess(role, { status: 201 });

@@ -47,6 +47,7 @@ export async function PUT(
         action: AUDIT_ACTIONS.reservationTypeUpdate,
         entityType: "ReservationType",
         entityId: id,
+        context: { "Tipo de reserva": type.name },
         ...diff,
       });
     }
