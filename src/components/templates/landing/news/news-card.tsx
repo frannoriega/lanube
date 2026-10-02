@@ -255,6 +255,7 @@ export function NewsRailItem({
         imageUrl={post.coverImageUrl}
         className="h-16 w-16 shrink-0 rounded-lg"
         sizes="64px"
+        fit="cover"
       />
       <span className="flex min-w-0 flex-col gap-1">
         <span

@@ -152,6 +152,7 @@ export function EventsAdminTable({
               name={e.name}
               eventType={e.eventType}
               sizes="48px"
+              fit="cover"
               className="hidden h-12 w-12 shrink-0 rounded-md border md:block [&_svg]:h-5 [&_svg]:w-5"
             />
             <div className="min-w-0">
