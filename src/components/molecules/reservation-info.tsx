@@ -28,13 +28,13 @@ export function ReservationInfo({
           Detalles de la Reserva
         </p>
         <p className="text-sm">
-          {new Date(startTime).toLocaleDateString()} -
-          {new Date(startTime).toLocaleTimeString()} a
-          {new Date(endTime).toLocaleTimeString()}
+          {new Date(startTime).toLocaleDateString("es-AR")} -
+          {new Date(startTime).toLocaleTimeString("es-AR")} a
+          {new Date(endTime).toLocaleTimeString("es-AR")}
         </p>
         <p className="text-sm">
-          Creada: {new Date(createdAt).toLocaleDateString()} a las{" "}
-          {new Date(createdAt).toLocaleTimeString()}
+          Creada: {new Date(createdAt).toLocaleDateString("es-AR")} a las{" "}
+          {new Date(createdAt).toLocaleTimeString("es-AR")}
         </p>
       </div>
       <div className="md:col-span-2">
