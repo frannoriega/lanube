@@ -130,6 +130,9 @@ export default function SignUpPage() {
               onSubmit={form.handleSubmit(handleSubmit)}
               className="space-y-4"
             >
+              {/* Nombre + Apellido van siempre de a par (par semántico). DNI e Institución
+                  ocupan el ancho completo por debajo de `sm`: en un teléfono de 390px el par
+                  quedaba apretado (milestone 14, "fine as-is" con este ajuste). */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -167,7 +170,7 @@ export default function SignUpPage() {
                   control={form.control}
                   name="dni"
                   render={({ field }) => (
-                    <FormItem className="items-start h-fit">
+                    <FormItem className="col-span-2 items-start h-fit sm:col-span-1">
                       <FormLabel>DNI</FormLabel>
                       <FormControl>
                         <Input
@@ -198,7 +201,7 @@ export default function SignUpPage() {
                   control={form.control}
                   name="institution"
                   render={({ field }) => (
-                    <FormItem className="items-start h-fit">
+                    <FormItem className="col-span-2 items-start h-fit sm:col-span-1">
                       <FormLabel className="h-fit">Institución</FormLabel>
                       <FormControl>
                         <Input {...field} className="bg-slate-200" />
