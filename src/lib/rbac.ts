@@ -14,6 +14,11 @@ export const PERMISSIONS = [
   "users:manage",
   /** Assign a role to a user. Distinct from roles:manage (defining what a role can do). */
   "users:roles:manage",
+  /**
+   * Aprobar o rechazar las solicitudes de cambio de DNI / motivo para unirse (milestone 17).
+   * Nadie edita esos datos directamente: el usuario pide, un admin con este permiso decide.
+   */
+  "users:profile-requests:review",
   "events:manage",
   "forms:manage",
   "reports:view",
@@ -86,7 +91,11 @@ export const PERMISSION_GROUPS: ReadonlyArray<{
   {
     label: "Usuarios",
     description: "Alta, baja y asignación de roles.",
-    permissions: ["users:manage", "users:roles:manage"],
+    permissions: [
+      "users:manage",
+      "users:roles:manage",
+      "users:profile-requests:review",
+    ],
   },
   {
     label: "Configuración",
@@ -111,6 +120,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "reservations:manage": "Gestionar reservas",
   "users:manage": "Gestionar usuarios",
   "users:roles:manage": "Asignar roles a usuarios",
+  "users:profile-requests:review": "Revisar cambios de DNI y motivo",
   "events:manage": "Gestionar eventos",
   "forms:manage": "Gestionar formularios",
   "reports:view": "Ver reportes",

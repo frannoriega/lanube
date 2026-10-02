@@ -66,4 +66,13 @@ describe("managementCrumbs", () => {
       { name: "Laboratorio" },
     ]);
   });
+
+  it("labels each settings section; /user/settings itself is not a link", () => {
+    expect(managementCrumbs("/user/settings/security", "user")).toEqual([
+      { name: "Panel de control", href: "/user/dashboard" },
+      // /user/settings only redirects to its first section (milestone 17).
+      { name: "Configuración" },
+      { name: "Seguridad" },
+    ]);
+  });
 });

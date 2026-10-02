@@ -91,7 +91,56 @@ export interface UserProfile {
   dni: string;
   institution: string | null;
   reasonToJoin: string;
-  role: string;
+  /** Nombre del rol, o `null` en el nivel base. */
+  role: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Estado de una solicitud de cambio de DNI / motivo (milestone 17). */
+export type ProfileChangeStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
+
+/** Una solicitud de cambio de DNI / motivo, tal como la ve su autor. */
+export interface ProfileChangeRequestItem {
+  id: string;
+  field: "DNI" | "REASON_TO_JOIN";
+  currentValue: string;
+  requestedValue: string;
+  justification: string;
+  status: ProfileChangeStatus;
+  decisionReason: string | null;
+  /** UNIX ms (BigInt serializado). */
+  decidedAt: number | null;
+  createdAt: number;
+}
+
+/** Fila de la cola del admin (`GET /api/admin/profile-requests`). */
+export interface AdminProfileChangeRequestItem extends ProfileChangeRequestItem {
+  requester: { id: string; name: string; lastName: string; email: string };
+  decidedBy: { name: string; lastName: string } | null;
+  dniConflict: boolean;
+}
+
+export interface AdminProfileChangeRequestPage {
+  items: AdminProfileChangeRequestItem[];
+  total: number;
+  pendingCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Una passkey del usuario (sin material criptográfico). */
+export interface PasskeyItem {
+  id: string;
+  label: string;
+  /** "singleDevice" | "multiDevice" (sincronizada). */
+  deviceType: string;
+  backedUp: boolean;
+  createdAt: number;
+  lastUsedAt: number | null;
 }

@@ -30,6 +30,7 @@ export const AUDIT_ACTIONS = {
 
   // Usuarios y roles
   userRoleUpdate: "user.role.update",
+  userProfileChangeDecide: "user.profileChange.decide",
   roleCreate: "role.create",
   roleUpdate: "role.update",
   roleDelete: "role.delete",
