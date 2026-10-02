@@ -5,13 +5,13 @@ import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import {
   Form,
   FormControl,
@@ -597,21 +597,21 @@ export function NewsForm({
         </div>
       </form>
 
-      <Dialog open={rejecting} onOpenChange={setRejecting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rechazar nota</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog open={rejecting} onOpenChange={setRejecting}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Rechazar nota</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               El motivo es obligatorio y se muestra al autor para que sepa qué
               corregir antes de reenviarla a revisión.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <Textarea
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Motivo (obligatorio)"
           />
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -628,33 +628,33 @@ export function NewsForm({
             >
               Rechazar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
-      <Dialog
+      <ResponsiveDialog
         open={!!requesting}
         onOpenChange={(open) => !open && setRequesting(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
               {requesting?.request === "DELETE"
                 ? "Solicitar eliminación"
                 : "Solicitar pausa"}
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               La nota sigue publicada tal cual está hasta que un administrador
               apruebe el pedido. Podés dejarle una nota explicando por qué
               (opcional).
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <Textarea
             value={requestReason}
             onChange={(e) => setRequestReason(e.target.value)}
             placeholder="Nota para el administrador (opcional)"
           />
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -673,9 +673,9 @@ export function NewsForm({
             >
               Enviar solicitud
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </Form>
   );
 }

@@ -526,9 +526,18 @@ lanube-app` (this repo's container only).
       — `templates/management/index.tsx` (Sheet at `z-[120]`, solid `bg-background`),
       `ui/sheet.tsx` (new `overlayClassName` prop), `scripts/mobile-shots.mjs` (new
       `admin-drawer` shot with Configuración expanded).
-- [ ] Shared responsive dialog: Dialog ≥ `md`, bottom Drawer below; migrate every
+- [x] Shared responsive dialog: Dialog ≥ `md`, bottom Drawer below; migrate every
       remaining form dialog (resource, reservation type, reject reason, decision confirm,
       deletes, booking).
+      — new `molecules/responsive-dialog.tsx` (same API as `ui/dialog`, `ResponsiveDialog*`;
+      drawer body scrolls, footer sticky) + `hooks/use-media-query.ts`. Migrated every dialog
+      in: admin dashboard + reservations approve confirm, participants decision, news
+      row-actions + news form (reject/delete), event form (drop-warning confirms), resources,
+      reservation types, spaces, themes, roles managers, `WeekCalendar` (booking + detail).
+      Left as `Dialog` on purpose: `event-sessions.tsx` (replaced in slice 5),
+      `form-picker.tsx` (searchable picker), `ui/command.tsx`, the non-functional incidents
+      page. The booking drawer is only verifiable on a phone after slice 3 (the calendar's
+      `min-w-[800px]` still widens the page).
 - [ ] WhatsApp floating button hidden inside the management area (I).
 - [ ] Shared KPI stat grid, 2×2 compact below `md` (user/admin dashboard, check-in, users) (J).
 - [ ] Audit filter chips + entity names in Spanish (L).
