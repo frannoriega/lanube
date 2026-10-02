@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/molecules/pagination";
 import { AuditLogTable } from "@/components/organisms/admin/audit-log-table";
+import { entityTypeLabel } from "@/lib/audit/humanize";
 import { listAuditEntityTypes, listAuditLogs } from "@/lib/db/audit";
 import { requirePagePermission } from "@/lib/page-auth";
 import Link from "next/link";
@@ -68,13 +69,21 @@ export default async function AuditPage({
               Todos
             </Badge>
           </Link>
-          {entityTypes.map((et) => (
-            <Link key={et} href={`/admin/audit?entityType=${et}`}>
-              <Badge variant={sp.entityType === et ? "default" : "outline"}>
-                {et}
-              </Badge>
-            </Link>
-          ))}
+          {/* Milestone 14 (hallazgo L): los chips mostraban el nombre interno del modelo
+              en inglés ("NewsPost", "RegisteredUser"). Se muestran con la misma etiqueta
+              en castellano que usa cada fila (`entityTypeLabel`) y ordenados por esa
+              etiqueta; el valor del filtro en la URL sigue siendo el nombre interno. */}
+          {[...entityTypes]
+            .sort((a, b) =>
+              entityTypeLabel(a).localeCompare(entityTypeLabel(b), "es"),
+            )
+            .map((et) => (
+              <Link key={et} href={`/admin/audit?entityType=${et}`}>
+                <Badge variant={sp.entityType === et ? "default" : "outline"}>
+                  {entityTypeLabel(et)}
+                </Badge>
+              </Link>
+            ))}
         </div>
       ) : null}
 
