@@ -428,8 +428,11 @@ one (clears `deletedAt`). Delete is triggered from the event edit page (`DeleteE
 **Admin events list:** filterable by status / resource type / date-range overlap
 (`listEvents(filters)` → `buildEventListWhere`; derived ENDED/CANCELLED map to date/`deletedAt`
 conditions) via the `EventFilters` bar (wrapped in `Suspense` for `useSearchParams`); pagination
-preserves filters. Cards show the event date + time + weekdays and a de-emphasized registration
-window ("Inscripción: …"). The shared `DateRangePicker` molecule (shadcn Popover + Calendar
+preserves filters. Since milestone 16 it is a **table** (`EventsAdminTable`, one card per row on
+phones) — event (thumbnail, ★ if featured, type · space) / dates + weekdays + time / status /
+registrations + window / actions — with checkboxes + bulk **Destacar / Quitar destacado /
+Cancelar eventos** (`POST /api/admin/events/bulk`), and a "Destacados" tab (`?featured=1`,
+unpaginated, in featured order) where the same table is reordered. The shared `DateRangePicker` molecule (shadcn Popover + Calendar
 range mode) drives both the event form's date range and the filter bar. Landing cards show the
 registration phase (`getUpcomingPublicEvents` returns `registration` + window): open →
 "Inscribirme" + closes-on date; upcoming → disabled "Disponible el …"; closed → quiet note.
@@ -483,7 +486,9 @@ are auto-approved (default `false`) or filtered by an admin.
   `EventCard` `featured` prop drives the emphasis). Set via the "Destacar en el inicio" switch.
 - **The featured order is not a form field** (milestone 14): it is set with "Reordenar
   destacados" on the Events list (and "Reordenar destacadas" on News, `news:approve` only) —
-  `FeaturedReorderButton` → `GET/POST /api/admin/{events,news}/featured-order`. Event/news
+  since milestone 16 a link to the list's "Destacados/as" view (`?featured=1&reorder=1`), which
+  reorders **in the same table** (no modal) → `POST /api/admin/{events,news}/featured-order`.
+  Bulk "Destacar" appends to the end of that order (`setEventsFeatured`/`setNewsPostsFeatured`). Event/news
   updates pass `featuredOrder: undefined`, so saving a form never overwrites that order.
 
 ### Landing "Próximos eventos"
@@ -581,18 +586,38 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
 
 - **Every admin route that mutates state must write an audit entry.** This is enforced:
   `src/lib/audit/actions.test.ts` walks `src/app/api/admin/**/route.ts` and fails if a
-  file exports a `POST`/`PUT`/`PATCH`/`DELETE` without calling `recordAudit`. If a route
+  file exports a `POST`/`PUT`/`PATCH`/`DELETE` without calling `beginAudit`, `emitAudit` or
+  `recordAudit`. If a route
   genuinely shouldn't be audited, add it to that test's `AUDIT_EXEMPT` map **with a
   reason** — don't weaken the check.
-- **Use the action registry**, `AUDIT_ACTIONS` in `src/lib/audit/actions.ts` — never a
-  free-text action string. Adding an action means adding its Spanish label in the same
-  file (a test asserts every action has one). Action ids are persisted in
-  `audit_logs.action`, so **renaming one orphans existing history**.
-- **Call `recordAuditFromSession(session, {...})`** from routes; it resolves the actor's
-  display label. It never throws — a broken audit pipe must not break the mutation it
-  documents — so a failure surfaces as a `logger.error`, not a 500.
-- **Log the changed slice, not the row.** `diffFields(before, after, keys)` returns
-  `null` when nothing in `keys` changed, so callers skip writing a no-op entry.
+- **The registry is the single source of truth** (milestone 16, `src/lib/audit/registry.ts`):
+  `AUDIT_ENTITIES` (chip label, sentence phrase, `subject` field, and **which fields are audited
+  and their type** — `fields.ts`: `text`/`longText`/`bool`/`number`/`enum`/`date`/`dateTime`/
+  `monthDay`/`image`/`set`/`items`/`order`, each with its own diff in the panel) and
+  `AUDIT_EVENTS` (entity, `kind` create/update/delete/custom, label, verb, `cascaded`).
+  `AUDIT_ACTIONS` (`actions.ts`) only names the ids for call sites and is type-checked against
+  the registry. Never a free-text action string. Action ids are persisted in
+  `audit_logs.action`, so **renaming one orphans existing history**. `registry.test.ts` fails if
+  a piece is missing.
+- **In routes: `const audit = await beginAudit("Entity", id)` before writing, then
+  `await audit.commit(session, AUDIT_ACTIONS.x, { entityId?, reason?, requestId?, extra? })`**
+  (`src/lib/audit/emit.ts`). It snapshots the record before/after (`snapshots.ts`, names
+  resolved at write time) and stores only the registered fields per `kind` (`pick.ts`): a
+  create stores the non-empty "after", a delete the "before", an update **only what changed —
+  and nothing at all if nothing audited changed**. `context` comes from the entity's `subject`.
+  For `custom` events (decisions, check-in, reorders) use `emitAudit(session, action, {...})`.
+  Both never throw — a broken audit pipe must not break the mutation — and fan out through
+  `AUDIT_SUBSCRIBERS` (today: the `audit_logs` writer via `recordAuditFromSession`).
+- **Adding something auditable** = declare the entity (fields + `subject`) and its loader in
+  `SNAPSHOTS`, the event in `AUDIT_EVENTS` + its name in `AUDIT_ACTIONS`, then
+  `beginAudit`/`commit` in the route. Don't hand-pick fields in the route.
+- **Everything outside "Información del sistema" must be human-readable** (`humanize.ts`).
+  Never put only an id in `before`/`after` — record the name alongside (`role` next to
+  `roleId`); `*Id`/`*Ids` keys are hidden from the readable diff. Reorder routes record
+  `before/after: { order: [{ id, name }] }` via `snapshotOrder()` (`src/lib/db/auditOrder.ts`);
+  a new reorderable list needs a loader there.
+- **Bulk actions write one entry per record** (milestone 16 `events|news/bulk`), sharing a
+  `requestId` — no "bulk" action id.
 - **Cascades share a `requestId`.** One admin action can change records the admin never
   touched — approving a reservation auto-rejects conflicting ones inside
   `approve_reservation()`. Those get their own entries, attributed to the _approving
@@ -651,10 +676,22 @@ Full design + decisions: `docs/milestones/milestones-14-mobile-redesign.md`.
   `beforeunload` + internal-link interception; call `guard.release()` right before a
   post-save `router.push`). The browser Back button is not intercepted (known limit).
 - **No numeric order/priority fields.** Ordering is the shared **"Reordenar" mode**
-  (`molecules/reorder-list.tsx`, `@dnd-kit`, grip handle at row end, keyboard sensor,
-  explicit Guardar/Cancelar) backed by an audited bulk endpoint per entity
+  (`@dnd-kit`, grip handle at row end, keyboard sensor, explicit Guardar/Cancelar). Since
+  milestone 16 admin lists reorder **inside the same `DataTable`**: `useTableReorder(items,
+onSave)` + `ReorderBar` (`molecules/table-reorder.tsx`) and `DataTable`'s `reorder` prop
+  (hides `actions`/`leading` columns while active). `ReorderList` (`molecules/reorder-list.tsx`)
+  remains only for lists inside a form (form builder, space FAQs). Backed by an audited bulk
+  endpoint per entity
   (`spaces/reorder`, `reservation-types/reorder`, `themes/reorder` — list order **is** the
   priority, top wins — `events|news/featured-order`). Edits never write the order columns.
+- **Bulk actions** (milestone 16, `molecules/bulk-actions.tsx`): `selectionColumn()` +
+  `BulkActionBar` + `BulkConfirmDialog` (lists what will be touched) + `useBulkAction(endpoint)`
+  against a `POST …/bulk` route (`{ ids, action }` → `{ done, skipped: [{ id, reason }] }`,
+  `src/lib/schemas/bulk.ts`). The route re-applies the same per-record permission rules and
+  skips with a reason instead of failing the batch. Used by events and news.
+- **Yearly windows ("MM-DD", landing themes)** use `AnnualRangePicker`
+  (`molecules/annual-range-picker.tsx`): the shadcn range calendar with month-only captions,
+  able to cross the year end; helpers in `src/lib/landing-themes/month-day.ts`.
 - **Slugs are derived, never typed** (news, spaces): slugified from the title/name on
   create, **stable afterwards**, tucked behind "Editar" / "Avanzado" for the rare manual
   fix; collisions get a numeric suffix server-side (`-2`).
