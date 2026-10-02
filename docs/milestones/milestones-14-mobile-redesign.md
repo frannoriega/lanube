@@ -655,9 +655,16 @@ lanube-app` (this repo's container only).
 
 **Slice 5 — form conventions on existing page forms**
 
-- [ ] Shared form building blocks: `FormSection` (title + description), main+aside page
+- [x] Shared form building blocks: `FormSection` (title + description), main+aside page
       layout (aside sticky on `lg`, stacks last on phones), sticky save bar, unsaved-changes
       guard (`beforeunload` + in-app navigation).
+      — `molecules/form-layout.tsx` (`FormPageLayout`, `FormSection` with `tone="danger"`,
+      `FormJumpIndex` (lg only), `StickySaveBar` with "Cambios sin guardar");
+      `hooks/use-unsaved-changes-guard.tsx` (`useUnsavedChangesGuard` + `UnsavedChangesDialog`
+      on the responsive dialog) + pure `lib/unsaved-changes.ts` (`shouldInterceptLink`,
+      tested). In-app navigation = capture-phase click interception of internal links.
+      Known limit: the browser Back button isn't intercepted (App Router has no cancelable
+      event for it). Exercised visually by the form items below.
 - [ ] Event form per proposal 1 (sessions summary + paginated sessions list replacing the
       dialog — keep the staging model: actions commit with the event save).
 - [ ] News form per proposal 2 (slug auto-derived on create, stable, behind "Editar").
