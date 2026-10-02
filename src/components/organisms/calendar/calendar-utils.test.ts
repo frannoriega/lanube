@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   firstBookableDayIndex,
+  firstBookableWeekStart,
+  getCurrentWorkWeekStart,
   isDayFullyBlocked,
   visibleDayCountFor,
   visibleDayIndices,
@@ -57,5 +59,25 @@ describe("firstBookableDayIndex / isDayFullyBlocked", () => {
   it("devuelve -1 si toda la semana está bloqueada", () => {
     const clock = new Date(2026, 9, 9, 12, 0);
     expect(firstBookableDayIndex(week, clock)).toBe(-1);
+  });
+});
+
+describe("getCurrentWorkWeekStart / firstBookableWeekStart", () => {
+  const mon5 = new Date(2026, 9, 5);
+  const mon12 = new Date(2026, 9, 12);
+
+  it("de lunes a jueves es el lunes de esta semana; viernes a domingo, el siguiente", () => {
+    expect(getCurrentWorkWeekStart(new Date(2026, 9, 6, 10))).toEqual(mon5); // martes
+    expect(getCurrentWorkWeekStart(new Date(2026, 9, 8, 10))).toEqual(mon5); // jueves
+    expect(getCurrentWorkWeekStart(new Date(2026, 9, 9, 10))).toEqual(mon12); // viernes
+    expect(getCurrentWorkWeekStart(new Date(2026, 9, 11, 10))).toEqual(mon12); // domingo
+  });
+
+  it("el jueves a la tarde ya queda el viernes: abre en esta semana", () => {
+    expect(firstBookableWeekStart(new Date(2026, 9, 8, 12))).toEqual(mon5);
+  });
+
+  it("el jueves a la noche toda la semana está bloqueada: abre en la siguiente (hallazgo F)", () => {
+    expect(firstBookableWeekStart(new Date(2026, 9, 8, 20))).toEqual(mon12);
   });
 });
