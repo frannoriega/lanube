@@ -1,13 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/molecules/pagination";
-import { FeaturedReorderButton } from "@/components/organisms/admin/featured-reorder-button";
 import { NewsAdminTable } from "@/components/organisms/admin/news-admin-table";
 import { auth } from "@/lib/auth";
 import { listAdminNewsPosts } from "@/lib/db/news";
 import { requirePagePermission } from "@/lib/page-auth";
 import { hasPermission } from "@/lib/rbac";
-import { Plus } from "lucide-react";
+import { ArrowUpDown, Plus } from "lucide-react";
 import Link from "next/link";
 
 interface NewsSearchParams {
@@ -16,6 +15,10 @@ interface NewsSearchParams {
   mine?: string;
   review?: string;
   deleted?: string;
+  /** "1": solo las destacadas, en orden (y reordenables). Solo `news:approve`. */
+  featured?: string;
+  /** "1": entrar directo al modo reordenar (con `featured=1`). */
+  reorder?: string;
 }
 
 /** Arma un href de `/admin/news`, manteniendo los otros filtros activos y soltando `page`. */
@@ -51,6 +54,7 @@ export default async function AdminNewsPage({
   // PUBLISHED: nunca dejó el sitio mientras se decide.
   const hasPendingAction = sp.review === "1";
   const deleted = sp.deleted === "1" && canApprove;
+  const featured = sp.featured === "1" && canApprove;
   const { items, total } = await listAdminNewsPosts({
     authorId: canApprove
       ? mine
@@ -60,6 +64,7 @@ export default async function AdminNewsPage({
     status: sp.status,
     hasPendingAction: hasPendingAction ? true : undefined,
     deleted,
+    featured,
     page,
   });
   const pageSize = 20;
@@ -79,15 +84,15 @@ export default async function AdminNewsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {/* Orden de las destacadas del landing: decisión de portada, solo para quien aprueba. */}
-          {canApprove && (
-            <FeaturedReorderButton
-              endpoint="/api/admin/news/featured-order"
-              labelKey="title"
-              triggerLabel="Reordenar destacadas"
-              title="Reordenar noticias destacadas"
-              emptyMessage="Hace falta al menos dos noticias destacadas para reordenar."
-            />
+          {/* Orden de las destacadas del landing: decisión de portada, solo para quien
+              aprueba. Lleva a la vista "Destacadas" ya en modo reordenar, en la misma tabla
+              (milestone 16; antes abría un modal). */}
+          {canApprove && !featured && (
+            <Button variant="outline" asChild>
+              <Link href="/admin/news?featured=1&reorder=1">
+                <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar destacadas
+              </Link>
+            </Button>
           )}
           <Button asChild>
             <Link href="/admin/news/new">
@@ -124,7 +129,15 @@ export default async function AdminNewsPage({
 
           <div className="flex flex-wrap items-center gap-2">
             <Link href={newsFilterHref({ mine })}>
-              <Badge variant={!sp.status ? "default" : "outline"}>Todas</Badge>
+              <Badge
+                variant={
+                  !sp.status && !hasPendingAction && !deleted && !featured
+                    ? "default"
+                    : "outline"
+                }
+              >
+                Todas
+              </Badge>
             </Link>
             <Link href={newsFilterHref({ status: "PENDING_REVIEW", mine })}>
               <Badge
@@ -148,6 +161,13 @@ export default async function AdminNewsPage({
               </Link>
             )}
             {canApprove && (
+              <Link href="/admin/news?featured=1">
+                <Badge variant={featured ? "default" : "outline"}>
+                  Destacadas
+                </Badge>
+              </Link>
+            )}
+            {canApprove && (
               <Link href={newsFilterHref({ mine, deleted: true })}>
                 <Badge variant={deleted ? "default" : "outline"}>
                   Eliminadas
@@ -163,6 +183,9 @@ export default async function AdminNewsPage({
       ) : (
         <NewsAdminTable
           canApprove={canApprove}
+          featuredView={featured}
+          startReordering={sp.reorder === "1"}
+          selectable={!deleted}
           rows={items.map((post) => ({
             id: post.id,
             title: post.title,
@@ -170,23 +193,27 @@ export default async function AdminNewsPage({
             pendingAction: post.pendingAction ?? null,
             deleted: !!post.deletedAt,
             authorLabel: post.authorLabel,
+            isMine: post.authorId === session?.userId,
             isFeatured: post.isFeatured,
             dateMs: Number(post.publishedAt ?? post.createdAt),
           }))}
         />
       )}
 
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        basePath="/admin/news"
-        query={{
-          status: sp.status,
-          mine: mine ? "1" : undefined,
-          review: hasPendingAction ? "1" : undefined,
-          deleted: deleted ? "1" : undefined,
-        }}
-      />
+      {/* La vista "Destacadas" no se pagina (ver `listAdminNewsPosts`). */}
+      {!featured ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          basePath="/admin/news"
+          query={{
+            status: sp.status,
+            mine: mine ? "1" : undefined,
+            review: hasPendingAction ? "1" : undefined,
+            deleted: deleted ? "1" : undefined,
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,30 +1,16 @@
-import { EventCardActions } from "@/components/organisms/admin/event-card-actions";
 import { EventFilters } from "@/components/organisms/admin/event-filters";
-import { EventCover } from "@/components/molecules/event-cover";
-import { LocalDateRange } from "@/components/molecules/local-date";
+import { EventsAdminTable } from "@/components/organisms/admin/events-admin-table";
 import { Pagination } from "@/components/molecules/pagination";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { nowMs } from "@/lib/clock";
 import {
-  EVENT_STATUS_LABELS,
-  EventDisplayStatus,
   eventDisplayStatus,
   eventTypeLabel,
   formatEventTimeRange,
-  WEEKDAY_SHORT_LABELS,
 } from "@/lib/constants/events";
 import { listEvents, weekdaysFromRrule } from "@/lib/db/events";
 import { getPublicSpaces } from "@/lib/db/spaces";
-import { CalendarDays, Clock, Ticket, Users } from "lucide-react";
-import { FeaturedReorderButton } from "@/components/organisms/admin/featured-reorder-button";
+import { ArrowUpDown, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -34,6 +20,17 @@ interface EventsSearchParams {
   spaceId?: string;
   from?: string;
   to?: string;
+  /** "1": solo los destacados, en orden (y reordenables). */
+  featured?: string;
+  /** "1": entrar directo al modo reordenar (con `featured=1`). */
+  reorder?: string;
+}
+
+/** Pestañas "Todos / Destacados", mismo estilo que las de noticias. */
+function viewTabClass(active: boolean): string {
+  return active
+    ? "rounded-md bg-background px-3 py-1 text-sm font-medium shadow-sm"
+    : "rounded-md px-3 py-1 text-sm text-muted-foreground hover:text-foreground";
 }
 
 export default async function EventsPage({
@@ -43,14 +40,19 @@ export default async function EventsPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
+  const featured = sp.featured === "1";
   const [{ events, total, pageSize }, spaces] = await Promise.all([
-    listEvents({
-      page,
-      status: sp.status,
-      spaceId: sp.spaceId,
-      from: sp.from,
-      to: sp.to,
-    }),
+    listEvents(
+      featured
+        ? { featured: true }
+        : {
+            page,
+            status: sp.status,
+            spaceId: sp.spaceId,
+            from: sp.from,
+            to: sp.to,
+          },
+    ),
     getPublicSpaces(),
   ]);
   const spaceOptions = spaces
@@ -58,7 +60,8 @@ export default async function EventsPage({
     .map((s) => ({ id: s.id, name: s.name }));
   const totalPages = Math.ceil(total / pageSize);
   const now = nowMs();
-  const hasFilters = Boolean(sp.status || sp.spaceId || sp.from || sp.to);
+  const hasFilters =
+    !featured && Boolean(sp.status || sp.spaceId || sp.from || sp.to);
   // Preserve active filters across pagination.
   const filterQuery = {
     status: sp.status,
@@ -72,36 +75,56 @@ export default async function EventsPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Eventos</h1>
         <div className="flex flex-wrap gap-2">
-          {/* Orden de los destacados del landing (reemplaza el campo numérico del formulario). */}
-          <FeaturedReorderButton
-            endpoint="/api/admin/events/featured-order"
-            labelKey="name"
-            triggerLabel="Reordenar destacados"
-            title="Reordenar eventos destacados"
-            emptyMessage="Hace falta al menos dos eventos destacados para reordenar."
-          />
+          {/* Orden de los destacados del landing: lleva a la vista "Destacados" ya en modo
+              reordenar, en la misma tabla (milestone 16; antes abría un modal). */}
+          {!featured ? (
+            <Button variant="outline" asChild>
+              <Link href="/admin/events?featured=1&reorder=1">
+                <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar destacados
+              </Link>
+            </Button>
+          ) : null}
           <Button asChild>
             <Link href="/admin/events/new">Nuevo evento</Link>
           </Button>
         </div>
       </div>
 
-      <Suspense>
-        <EventFilters
-          status={sp.status}
-          spaceId={sp.spaceId}
-          spaceOptions={spaceOptions}
-          from={sp.from}
-          to={sp.to}
-        />
-      </Suspense>
+      <div className="inline-flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
+        <Link href="/admin/events" className={viewTabClass(!featured)}>
+          Todos
+        </Link>
+        <Link
+          href="/admin/events?featured=1"
+          className={viewTabClass(featured)}
+        >
+          Destacados
+        </Link>
+      </div>
+
+      {!featured ? (
+        <Suspense>
+          <EventFilters
+            status={sp.status}
+            spaceId={sp.spaceId}
+            spaceOptions={spaceOptions}
+            from={sp.from}
+            to={sp.to}
+          />
+        </Suspense>
+      ) : null}
 
       {total === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <CalendarDays className="h-6 w-6" />
           </span>
-          {hasFilters ? (
+          {featured ? (
+            <p className="text-muted-foreground">
+              No hay eventos destacados. Marcalos en la lista con
+              &quot;Destacar&quot; para que encabecen el inicio.
+            </p>
+          ) : hasFilters ? (
             <>
               <p className="text-muted-foreground">
                 Ningún evento coincide con los filtros.
@@ -124,119 +147,45 @@ export default async function EventsPage({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {events.map((event) => {
-              const status = eventDisplayStatus(
-                event.status,
-                Number(event.recurrenceEnd ?? event.endTime),
-                now,
-                event.deletedAt ? Number(event.deletedAt) : null,
-              );
-              const weekdays = weekdaysFromRrule(event.rrule);
-              const cancelled = status === "CANCELLED";
-              return (
-                <Card
-                  key={event.id}
-                  className={`flex h-full flex-col overflow-hidden pb-0 transition-colors ${cancelled ? "opacity-70" : ""}`}
-                >
-                  {/*
-                   * Portada grande solo desde `sm` (milestone 14, hallazgo K): en un teléfono la
-                   * imagen 16:9 (casi siempre el degradé de relleno) hacía que cada evento ocupara
-                   * una pantalla entera. Ahí va una miniatura al lado del título.
-                   */}
-                  <EventCover
-                    imageUrl={event.imageUrl}
-                    name={event.name}
-                    eventType={event.eventType}
-                    className="-mt-6 mb-4 hidden aspect-video w-full border-b sm:block"
-                  />
-                  <CardHeader>
-                    <div className="flex gap-3">
-                      <EventCover
-                        imageUrl={event.imageUrl}
-                        name={event.name}
-                        eventType={event.eventType}
-                        sizes="64px"
-                        className="h-16 w-16 shrink-0 rounded-md border sm:hidden [&_svg]:h-7 [&_svg]:w-7"
-                      />
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="font-normal text-la-nube-selected dark:text-la-nube-secondary"
-                          >
-                            {event.type?.name ??
-                              eventTypeLabel(event.eventType)}
-                          </Badge>
-                          <StatusBadge status={status} />
-                        </div>
-                        <CardTitle className="[overflow-wrap:anywhere]">
-                          {event.name}
-                        </CardTitle>
-                        <CardDescription>{event.space.name}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-1.5 text-sm text-muted-foreground">
-                    {weekdays.length > 0 && (
-                      <span className="flex flex-wrap gap-1 pt-0.5">
-                        {weekdays.map((d) => (
-                          <span
-                            key={d}
-                            className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium uppercase"
-                          >
-                            {WEEKDAY_SHORT_LABELS[d]}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5">
-                      <CalendarDays className="h-4 w-4 shrink-0" />
-                      <span>
-                        <LocalDateRange
-                          startMs={Number(event.startTime)}
-                          endMs={
-                            event.recurrenceEnd
-                              ? Number(event.recurrenceEnd)
-                              : null
-                          }
-                        />
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 shrink-0" />
-                      {formatEventTimeRange(
-                        Number(event.startTime),
-                        Number(event.endTime),
-                      )}
-                    </span>
-                    {event.form && (
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                        <Ticket className="h-3.5 w-3.5 shrink-0" />
-                        <span>
-                          Inscripción:{" "}
-                          <LocalDateRange
-                            startMs={Number(event.form.opensAt)}
-                            endMs={Number(event.form.closesAt)}
-                          />
-                        </span>
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 shrink-0" />
-                      {event._count.participants} inscripto
-                      {event._count.participants === 1 ? "" : "s"}
-                    </span>
-                  </CardContent>
-                  <EventCardActions
-                    eventId={event.id}
-                    formSlug={event.form?.slug ?? null}
-                    formPublished={status === "PUBLISHED"}
-                  />
-                </Card>
-              );
+          <EventsAdminTable
+            featuredView={featured}
+            startReordering={sp.reorder === "1"}
+            rows={events.map((event) => {
+              const lastMs = Number(event.recurrenceEnd ?? event.endTime);
+              return {
+                id: event.id,
+                name: event.name,
+                imageUrl: event.imageUrl,
+                eventType: event.eventType,
+                typeName: event.type?.name ?? eventTypeLabel(event.eventType),
+                spaceName: event.space.name,
+                status: eventDisplayStatus(
+                  event.status,
+                  lastMs,
+                  now,
+                  event.deletedAt ? Number(event.deletedAt) : null,
+                ),
+                isFeatured: event.isFeatured,
+                startMs: Number(event.startTime),
+                lastMs: event.recurrenceEnd
+                  ? Number(event.recurrenceEnd)
+                  : null,
+                weekdays: weekdaysFromRrule(event.rrule),
+                timeRange: formatEventTimeRange(
+                  Number(event.startTime),
+                  Number(event.endTime),
+                ),
+                form: event.form
+                  ? {
+                      slug: event.form.slug,
+                      opensAt: Number(event.form.opensAt),
+                      closesAt: Number(event.form.closesAt),
+                    }
+                  : null,
+                participants: event._count.participants,
+              };
             })}
-          </div>
+          />
 
           <Pagination
             page={page}
@@ -247,28 +196,5 @@ export default async function EventsPage({
         </>
       )}
     </div>
-  );
-}
-
-const STATUS_BADGE_CLASS: Record<EventDisplayStatus, string> = {
-  DRAFT: "",
-  PUBLISHED:
-    "border-transparent bg-emerald-600/15 text-emerald-700 dark:text-emerald-400",
-  PAUSED:
-    "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  ENDED: "",
-  CANCELLED: "border-transparent bg-destructive/10 text-destructive",
-};
-
-function StatusBadge({ status }: { status: EventDisplayStatus }) {
-  const tinted =
-    status === "PUBLISHED" || status === "PAUSED" || status === "CANCELLED";
-  return (
-    <Badge
-      variant={tinted ? "default" : "outline"}
-      className={`font-normal ${tinted ? STATUS_BADGE_CLASS[status] : "text-muted-foreground"}`}
-    >
-      {EVENT_STATUS_LABELS[status]}
-    </Badge>
   );
 }
