@@ -46,14 +46,19 @@ export interface SpaceInput {
   isExclusive: boolean;
   isReservable: boolean;
   isFeatured: boolean;
-  displayOrder: number;
+  /** Ignorado: el orden se cambia solo con `reorderSpaces` (modo "Reordenar"). */
+  displayOrder?: number;
   iconName?: string | null;
   imageUrl?: string | null;
 }
 
 /** Normalizes the JSON/nullable columns shared by create + update. */
 function toSpaceData(input: SpaceInput) {
-  const { faqs, longDescription, iconName, imageUrl, ...rest } = input;
+  // `displayOrder` se descarta a propósito: al crear se agrega al final (ver `createSpace`) y al
+  // editar no se toca, así guardar el formulario nunca pisa un orden hecho con "Reordenar".
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { faqs, longDescription, iconName, imageUrl, displayOrder, ...rest } =
+    input;
   return {
     ...rest,
     longDescription: longDescription?.trim() ? longDescription : null,

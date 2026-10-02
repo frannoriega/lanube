@@ -103,7 +103,6 @@ export interface EventFormDefaults {
   description: string;
   summary: string;
   isFeatured: boolean;
-  featuredOrder: number;
   eventType: string;
   status: string;
   spaceId: string;
@@ -123,7 +122,6 @@ const EMPTY_DEFAULTS: EventInput = {
   description: "",
   summary: "",
   isFeatured: false,
-  featuredOrder: 0,
   eventType: "",
   status: EventStatus.DRAFT,
   spaceId: "",
@@ -468,34 +466,8 @@ export function EventForm({
               )}
             />
 
-            {watch("isFeatured") && (
-              <FormField
-                control={control}
-                name="featuredOrder"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Orden entre destacados</FormLabel>
-                    <FormDescription>
-                      Menor número aparece primero (0, 1, 2…).
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={field.value ?? 0}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? 0 : Number(e.target.value),
-                          )
-                        }
-                        className="max-w-32"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            {/* Sin campo "Orden entre destacados" (milestone 14): el orden se cambia con
+                "Reordenar destacados" en la lista de eventos. */}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

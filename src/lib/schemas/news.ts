@@ -41,7 +41,8 @@ export const newsPostInputSchema = z.object({
       message: "URL de imagen inválida",
     }),
   isFeatured: z.boolean(),
-  featuredOrder: z.number().int().min(0),
+  // Milestone 14: se ordena con "Reordenar destacadas" en la lista; opcional e ignorado al editar.
+  featuredOrder: z.number().int().min(0).optional(),
   /** Only the transitions an author drives directly. */
   status: z.enum(["DRAFT", "PENDING_REVIEW"]),
 });

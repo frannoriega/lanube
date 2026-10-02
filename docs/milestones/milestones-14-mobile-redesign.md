@@ -639,7 +639,14 @@ lanube-app` (this repo's container only).
       and News lists. Verified: keyboard reorder of spaces persisted + audited, then
       restored; featured dialogs load (seed has <2 featured items, so they show the empty
       message) — `.mobile-shots/s4-reorder/`.
-- [ ] Remove numeric Orden / Prioridad / Orden entre destacados(as) fields from all forms.
+- [x] Remove numeric Orden / Prioridad / Orden entre destacados(as) fields from all forms.
+      — fields removed from the reservation-type, theme, event and news forms (and the
+      space form's hidden `displayOrder`). Schemas keep them `.optional()` (old clients);
+      writes ignore them on edit so a form save can never clobber a "Reordenar" order:
+      `toSpaceData` drops `displayOrder`, `updateReservationType` writes only `name` and new
+      types append at the end, theme `toWriteData` only writes `priority` if sent, event/news
+      updates pass `featuredOrder: undefined` (Prisma no-op), `eventToFormDefaults` no longer
+      returns it. Also: `DataTable` cards with only title + actions render the actions inline.
 - [ ] Admin events list compact cards on phones with labeled actions (K).
 
 **Slice 5 — form conventions on existing page forms**

@@ -19,7 +19,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -44,7 +43,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { LoadError } from "@/components/molecules/load-error";
 
-const EMPTY: ReservationTypeInput = { name: "", displayOrder: 0 };
+const EMPTY: ReservationTypeInput = { name: "" };
 
 export function ReservationTypesManager() {
   const { data, error, firstTime, refetch } = useApi<ReservationType[]>(
@@ -69,7 +68,7 @@ export function ReservationTypesManager() {
 
   const openEdit = (type: ReservationType) => {
     setEditing(type);
-    form.reset({ name: type.name, displayOrder: type.displayOrder });
+    form.reset({ name: type.name });
     setDialogOpen(true);
   };
 
@@ -264,33 +263,7 @@ export function ReservationTypesManager() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="displayOrder"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Orden</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(
-                            Number.isNaN(e.target.valueAsNumber)
-                              ? 0
-                              : e.target.valueAsNumber,
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Posición en los selectores (menor = primero).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Sin campo "Orden" (milestone 14): se ordena con "Reordenar". */}
               <ResponsiveDialogFooter>
                 <Button
                   type="button"
