@@ -556,7 +556,10 @@ lanube-app` (this repo's container only).
       — `user/dashboard/page.tsx`: `formatReservationWhen()` (24h via `formatTimeShort`);
       the hand-rolled status switch replaced by the shared `StatusBadge` (also fixes
       CANCELLED rendering as "Rechazada").
-- [ ] `Markdown` molecule breaks long words (O).
+- [x] `Markdown` molecule breaks long words (O).
+      — `molecules/markdown.tsx`: `[overflow-wrap:anywhere]` (only breaks inside a word when
+      it doesn't fit) + GFM tables scroll inside their own block. Verified on the public form
+      (the long test word now wraps inside the card).
 
 **Slice 3 — booking calendar**
 
