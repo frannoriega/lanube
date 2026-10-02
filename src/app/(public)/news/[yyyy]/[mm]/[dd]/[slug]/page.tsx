@@ -6,6 +6,7 @@ import {
   NewsRailItem,
   toNewsCardData,
 } from "@/components/templates/landing/news/news-card";
+import { ReadingProgress } from "@/components/templates/landing/news/reading-progress";
 import {
   getOtherPublishedNews,
   getPublishedNewsByRetiredSlug,
@@ -44,6 +45,9 @@ export async function generateMetadata({
     description: post.summary,
   };
 }
+
+/** Id del contenedor del cuerpo: `ReadingProgress` mide el avance sobre este elemento. */
+const BODY_ID = "news-body";
 
 /** Initials for the author chip, e.g. "Ana Pérez" → "AP". */
 function authorInitials(name: string): string {
@@ -147,6 +151,9 @@ export default async function NoticiaDetailPage({
               </div>
             </header>
 
+            {/* Sin portada, el encabezado y el cuerpo los separa un hairline común. (Antes era
+                una línea con el degradé de marca: se leía como una barra de progreso que no
+                avanzaba — el progreso real ahora es `ReadingProgress`.) */}
             {post.coverImageUrl ? (
               <div className="relative aspect-16/9 w-full bg-muted">
                 <Image
@@ -159,14 +166,13 @@ export default async function NoticiaDetailPage({
                 />
               </div>
             ) : (
-              // Sin portada, una línea de marca separa el encabezado del cuerpo.
-              <div
-                aria-hidden="true"
-                className="h-1 w-full bg-linear-to-r from-la-nube-selected via-la-nube-primary to-la-nube-secondary"
-              />
+              <hr className="border-border" />
             )}
 
-            <div className="mx-auto w-full max-w-2xl px-6 py-10 sm:px-10 sm:py-12">
+            <div
+              id={BODY_ID}
+              className="mx-auto w-full max-w-2xl px-6 py-10 sm:px-10 sm:py-12"
+            >
               <Markdown size="reading">{post.body}</Markdown>
             </div>
 
@@ -224,6 +230,7 @@ export default async function NoticiaDetailPage({
           )}
         </div>
       </Container>
+      <ReadingProgress targetId={BODY_ID} minutes={minutes} />
     </Breakout>
   );
 }
