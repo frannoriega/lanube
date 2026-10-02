@@ -23,6 +23,8 @@ import { GripVertical } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import {
+  REORDER_AUTO_SCROLL,
+  REORDER_MODIFIERS,
   REORDER_SCREEN_READER_INSTRUCTIONS,
   reorderAnnouncements,
   useReorderSensors,
@@ -168,6 +170,8 @@ function ReorderDnd<TData>({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={onDragEnd}
+      modifiers={REORDER_MODIFIERS}
+      autoScroll={REORDER_AUTO_SCROLL}
       accessibility={{
         announcements: reorderAnnouncements(nameOf, ids),
         screenReaderInstructions: REORDER_SCREEN_READER_INSTRUCTIONS,
