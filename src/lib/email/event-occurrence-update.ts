@@ -3,6 +3,8 @@ import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { listEventParticipants } from "@/lib/db/participants";
 import { logger } from "@/lib/logger";
+import { notify } from "@/lib/notifications/dispatch";
+import type { EventSessionChangedData } from "@/lib/notifications/types";
 import { ParticipantStatus } from "@/types/prisma";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
@@ -167,5 +169,35 @@ export async function notifyEventParticipantsBatch(
       failed++;
     }
   }
+
+  // In-app bell, additive to the email above: only participants who registered with an
+  // account (`userId` set) get one, since a guest has nothing to show a bell on. One
+  // notification per change (not per batch) — `event.sessionChanged` models a single
+  // change, and several bell entries read fine where one combined email would not.
+  for (const p of participants) {
+    if (!p.userId) continue;
+    for (const change of changes) {
+      const data: EventSessionChangedData = {
+        eventId,
+        eventName: payload.eventName,
+        kind: change.kind,
+        originalStartTime: change.originalStartMs,
+        originalEndTime: change.originalEndMs,
+        newStartTime: change.newStartMs,
+        newEndTime: change.newEndMs,
+        reason: payload.reason ?? null,
+      };
+      try {
+        await notify({
+          type: "event.sessionChanged",
+          recipient: { registeredUserId: p.userId },
+          data,
+        });
+      } catch {
+        // Best-effort: the email above is the notification of record for this feature.
+      }
+    }
+  }
+
   return { sent, failed };
 }
