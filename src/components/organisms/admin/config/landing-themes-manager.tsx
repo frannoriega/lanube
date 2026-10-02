@@ -27,12 +27,16 @@ import type { LandingTheme } from "@/types/prisma";
 import { Pencil, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { formatAnnualRange } from "@/lib/landing-themes/month-day";
 import { toast } from "sonner";
 import { LoadError } from "@/components/molecules/load-error";
 
 function windowSummary(t: LandingTheme): string {
   if (t.recurring) {
-    return `${t.startMonthDay ?? "?"} — ${t.endMonthDay ?? "?"} (cada año)`;
+    return (
+      formatAnnualRange(t.startMonthDay ?? "", t.endMonthDay ?? "") ??
+      "Sin definir"
+    );
   }
   if (t.startDate == null || t.endDate == null) return "Sin definir";
   const fmt = (ms: number) => new Date(ms).toLocaleDateString("es-AR");
