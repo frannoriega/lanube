@@ -27,8 +27,34 @@ function toRecord(t: LandingTheme): LandingThemeRecord {
 }
 
 /** All themes, newest first — for the superadmin manager. */
+/**
+ * Temas en orden de **prioridad** (milestone 14): el de arriba gana cuando hay más de uno
+ * activo a la vez. Así la lista del admin muestra el mismo orden que usa el landing, y el
+ * modo "Reordenar" la cambia directamente (ver `reorderLandingThemes`).
+ */
 export async function listLandingThemes(): Promise<LandingTheme[]> {
-  return prisma.landingTheme.findMany({ orderBy: { createdAt: "desc" } });
+  return prisma.landingTheme.findMany({
+    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+  });
+}
+
+/**
+ * Persiste el orden de la lista como prioridad: el primero recibe la prioridad más alta
+ * (`n - 1`) y el último `0`. `resolveActiveTheme` elige el de mayor prioridad entre los
+ * activos, así que "arriba gana" queda garantizado sin tocar esa lógica.
+ */
+export async function reorderLandingThemes(
+  orderedIds: string[],
+): Promise<void> {
+  const n = orderedIds.length;
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.landingTheme.update({
+        where: { id },
+        data: { priority: n - 1 - index },
+      }),
+    ),
+  );
 }
 
 export async function getLandingTheme(

@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/molecules/pagination";
+import { FeaturedReorderButton } from "@/components/organisms/admin/featured-reorder-button";
 import { NewsAdminTable } from "@/components/organisms/admin/news-admin-table";
 import { auth } from "@/lib/auth";
 import { listAdminNewsPosts } from "@/lib/db/news";
@@ -66,7 +67,7 @@ export default async function AdminNewsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Noticias
@@ -77,11 +78,23 @@ export default async function AdminNewsPage({
               : "Tus notas. Enviá a revisión cuando estén listas para publicarse."}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/news/new">
-            <Plus className="mr-1 h-4 w-4" /> Nueva nota
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {/* Orden de las destacadas del landing: decisión de portada, solo para quien aprueba. */}
+          {canApprove && (
+            <FeaturedReorderButton
+              endpoint="/api/admin/news/featured-order"
+              labelKey="title"
+              triggerLabel="Reordenar destacadas"
+              title="Reordenar noticias destacadas"
+              emptyMessage="Hace falta al menos dos noticias destacadas para reordenar."
+            />
+          )}
+          <Button asChild>
+            <Link href="/admin/news/new">
+              <Plus className="mr-1 h-4 w-4" /> Nueva nota
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {canApprove ? (

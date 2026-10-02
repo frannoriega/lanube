@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1790920945.558194,
-    "ast_hash": "42e19a7d9476ebb049c680ec622eeff1",
+    "mtime": 1790921206.9106932,
+    "ast_hash": "eced8aba988f1347bfa140d19d8bc635",
     "semantic_hash": ""
   },
   ".impeccable/live/config.json": {
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "src/components/templates/admin/report/index.tsx": {
-    "mtime": 1790872436.076225,
-    "ast_hash": "805e1049a9a878c885739c57170f8a86",
+    "mtime": 1790921573.7258925,
+    "ast_hash": "f0921a93630073725406d2e3fa6db010",
     "semantic_hash": ""
   },
   "src/components/templates/landing/events/event-card.tsx": {
@@ -990,8 +990,8 @@
     "semantic_hash": ""
   },
   "src/components/ui/data-table.tsx": {
-    "mtime": 1790921086.7873907,
-    "ast_hash": "614842f884ce26d9ec31bf526cea9c26",
+    "mtime": 1790921601.2699263,
+    "ast_hash": "0f0fdfd491f4ddfa4665d0853dceaa96",
     "semantic_hash": ""
   },
   "src/components/ui/dialog.tsx": {
@@ -2115,18 +2115,18 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/reservation-types-manager.tsx": {
-    "mtime": 1790918077.4137397,
-    "ast_hash": "72f725a3a874e6565be3b304190a600c",
+    "mtime": 1790921347.3394697,
+    "ast_hash": "5bb8c1f72dae3091bca2b217d620eb32",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/resources-manager.tsx": {
-    "mtime": 1790918077.4262104,
-    "ast_hash": "9d8a570d477e5a8f2a0954c74d17347c",
+    "mtime": 1790921334.7706187,
+    "ast_hash": "55dd8e26e09f2f8172fced55deda93d0",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/spaces-manager.tsx": {
-    "mtime": 1790918077.4643562,
-    "ast_hash": "b70d43f9133bb2bacd8b0a50c238bdbf",
+    "mtime": 1790921334.81919,
+    "ast_hash": "1178f807c1ebf9a78ee304ee36f56d3a",
     "semantic_hash": ""
   },
   "src/lib/api-auth.ts": {
@@ -2540,8 +2540,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/news/page.tsx": {
-    "mtime": 1790872436.037151,
-    "ast_hash": "f194a4f7dd8113d13235a19730aacc53",
+    "mtime": 1790921514.5097423,
+    "ast_hash": "e56f169bca0dfb839b62e4efc7201ee6",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/roles/page.tsx": {
@@ -2630,13 +2630,13 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/landing-themes-manager.tsx": {
-    "mtime": 1790918077.4029202,
-    "ast_hash": "7a23c8253638cd5be7d09d118ce1fe6e",
+    "mtime": 1790921464.8574069,
+    "ast_hash": "7e24e087c21b48873bb818ded3bb6052",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/roles-manager.tsx": {
-    "mtime": 1790918077.43848,
-    "ast_hash": "57eccf9ac563970965b7e8b62652677a",
+    "mtime": 1790921464.9077425,
+    "ast_hash": "27342ff684088935b91ae03842d04a7e",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/news-form.tsx": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/audit-log-table.tsx": {
-    "mtime": 1790888883.4067385,
-    "ast_hash": "bfd016a25b21a6ea4d4262d3458cfaec",
+    "mtime": 1790921918.9136212,
+    "ast_hash": "62cf9fc95fc62446a898728e581526d5",
     "semantic_hash": ""
   },
   "src/lib/audit/humanize.test.ts": {
@@ -3200,8 +3200,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-14-mobile-redesign.md": {
-    "mtime": 1790921173.0939193,
-    "ast_hash": "98ad25fe3006f3f8a18775ce6db47407",
+    "mtime": 1790921962.182354,
+    "ast_hash": "8e288a043aab5cce2ec3a4c879b22c0b",
     "semantic_hash": ""
   },
   "src/components/molecules/responsive-dialog.tsx": {
@@ -3242,6 +3242,11 @@
   "src/components/organisms/calendar/BookingForm.tsx": {
     "mtime": 1790920065.2495902,
     "ast_hash": "1a25f2fe58b0bd62d9fc1c43d830024e",
+    "semantic_hash": ""
+  },
+  "src/components/organisms/admin/news-admin-table.tsx": {
+    "mtime": 1790921500.7033737,
+    "ast_hash": "576a1bd05ad0325b291d8ce47ac2556a",
     "semantic_hash": ""
   }
 }
