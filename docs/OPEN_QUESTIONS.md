@@ -153,3 +153,21 @@ design-focused session rather than decided here:
 - **Horizontal-scroll affordance convention**: for anything that stays scrollable (the
   admin tables if kept, the admin reservations day-timeline), what's the visual language
   for "there's more this way" — fade, shadow, arrows? Should be a shared pattern.
+
+## Milestone 17 — Configuración de la cuenta y passkeys
+
+Contexto en
+[`milestones/milestones-17-account-settings-and-passkeys.md`](./milestones/milestones-17-account-settings-and-passkeys.md).
+
+- **OAuth (Google/GitHub)**: falta decidir la política de vinculación (¿un login con un email
+  que ya existe se vincula solo, o pide la contraseña primero?), dónde viven las
+  credenciales de cada proveedor (el doc de diseño pide configuración en runtime por el
+  superadmin, con secretos cifrados) y crear las apps en cada proveedor.
+- **Códigos de recuperación**: confirmados en `docs/design/06-rust-migration.md`, no
+  construidos todavía. ¿Van con OAuth o antes?
+- **Cambiar la contraseña desde Configuración → Seguridad** (actual + nueva): no se sumó sin
+  preguntar. Hoy remite a "Olvidé mi contraseña".
+- **Avisar al usuario cuando se resuelve su solicitud de cambio de DNI/motivo** (in-app
+  y/o email vía `notify()`): no se sumó sin preguntar. Hoy lo ve en su historial.
+- **`docs/design/06-rust-migration.md`** describe una migración de este repo a Rust que quedó
+  descartada; falta marcarlo como superado.

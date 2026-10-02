@@ -14,6 +14,9 @@ import { logger } from "@/lib/logger";
 import { prisma } from "./prisma";
 import { CredentialsSignin } from "next-auth";
 import { signInSchema } from "./schemas/auth";
+import { passkeyAuthenticationSchema } from "./schemas/passkeys";
+import { verifyPasskeyAuthentication } from "./passkeys/server";
+import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60; // 7 days
 
@@ -83,6 +86,58 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw err;
           }
           // Only JWT-serializable fields (no BigInt, no passwordHash).
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? undefined,
+            image: user.image ?? undefined,
+          };
+        } catch (error) {
+          if (error instanceof CredentialsSignin) throw error;
+          return null;
+        }
+      },
+    }),
+    /**
+     * Inicio de sesión con passkey (milestone 17). El cliente pide un desafío a
+     * `POST /api/auth/passkey/options`, el navegador lo firma, y acá se verifica la firma
+     * (`verifyPasskeyAuthentication`). Devuelve el mismo usuario "JWT-safe" que el proveedor
+     * de contraseña, así el callback `jwt()` — baneos, permisos, perfil completo — trata
+     * igual a los dos.
+     */
+    Credentials({
+      id: "passkey",
+      name: "Passkey",
+      credentials: {
+        challengeId: { type: "text" },
+        response: { type: "text" },
+      },
+      authorize: async (credentials, request) => {
+        try {
+          const parsed = passkeyAuthenticationSchema.safeParse({
+            challengeId: credentials?.challengeId,
+            response:
+              typeof credentials?.response === "string"
+                ? JSON.parse(credentials.response)
+                : undefined,
+          });
+          if (!parsed.success) return null;
+          const user = await verifyPasskeyAuthentication(
+            {
+              challengeId: parsed.data.challengeId,
+              response: parsed.data
+                .response as unknown as AuthenticationResponseJSON,
+            },
+            request,
+          );
+          if (!user) return null;
+          if (!user.emailVerified) {
+            const err = new CredentialsSignin(
+              "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
+            );
+            err.code = "email_not_verified";
+            throw err;
+          }
           return {
             id: user.id,
             email: user.email,

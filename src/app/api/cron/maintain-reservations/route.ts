@@ -45,10 +45,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Limpieza de tablas transitorias: tokens de verificación vencidos y ventanas de
-    // rate limit ya cerradas. Ninguna de las dos se limpiaba nunca (milestone-12 D28).
+    // Limpieza de tablas transitorias: tokens de verificación vencidos, ventanas de
+    // rate limit ya cerradas (milestone-12 D28) y desafíos WebAuthn sin consumir
+    // (milestone 17).
     const [transient] = await prisma.$queryRaw<
-      { deleted_tokens: bigint; deleted_rate_limits: bigint }[]
+      {
+        deleted_tokens: bigint;
+        deleted_rate_limits: bigint;
+        deleted_webauthn_challenges: bigint;
+      }[]
     >`SELECT * FROM prune_transient_rows(${nowMs()}::bigint)`;
 
     const result = {
@@ -57,6 +62,9 @@ export async function GET(request: NextRequest) {
       prunedExpiredLedger: Number(row.pruned_expired_ledger),
       deletedExpiredTokens: Number(transient?.deleted_tokens ?? 0),
       deletedStaleRateLimits: Number(transient?.deleted_rate_limits ?? 0),
+      deletedWebAuthnChallenges: Number(
+        transient?.deleted_webauthn_challenges ?? 0,
+      ),
     };
     logger.info("cron/maintain-reservations done", result);
     return NextResponse.json(result);
