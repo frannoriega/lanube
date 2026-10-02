@@ -10,12 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
@@ -267,19 +267,19 @@ export default function AdminDashboard() {
         refetchKey={refetchKey}
       />
 
-      <Dialog
+      <ResponsiveDialog
         open={!!confirmData}
         onOpenChange={(open) => !open && setConfirmData(null)}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar aprobación</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Confirmar aprobación</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               {confirmData?.conflicts?.length
                 ? `Aprobar esta reserva rechazará automáticamente ${confirmData.conflicts.length} reservas pendientes.`
                 : "No hay conflictos detectados."}
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           {confirmData?.conflicts?.length ? (
             <div className="max-h-48 overflow-auto text-sm border rounded p-2">
               {confirmData.conflicts.map((id) => (
@@ -300,8 +300,8 @@ export default function AdminDashboard() {
               {confirming ? "Aprobando..." : "Confirmar"}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }

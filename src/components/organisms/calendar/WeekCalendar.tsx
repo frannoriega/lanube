@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/molecules/responsive-dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -196,7 +196,7 @@ export function WeekCalendar({
     minutes: number;
   } | null>(null);
 
-  // Dialog and form state
+  // ResponsiveDialog and form state
   const [selection, setSelection] = useState<DragSelection | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -983,16 +983,18 @@ export function WeekCalendar({
         </div>
       </div>
 
-      {/* Reservation Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{title || "Nueva Reserva"}</DialogTitle>
-            <DialogDescription>
+      {/* Reservation ResponsiveDialog */}
+      <ResponsiveDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <ResponsiveDialogContent className="sm:max-w-[500px]">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              {title || "Nueva Reserva"}
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               {selection &&
                 `${toCapitalCase(format(selection.day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}`}
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1078,11 +1080,11 @@ export function WeekCalendar({
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
-      {/* View Reservation Details Dialog */}
-      <Dialog
+      {/* View Reservation Details ResponsiveDialog */}
+      <ResponsiveDialog
         open={!!selectedOccurrence}
         onOpenChange={(open) => {
           if (!open) {
@@ -1091,11 +1093,11 @@ export function WeekCalendar({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Detalle de la reserva</DialogTitle>
+        <ResponsiveDialogContent className="sm:max-w-[480px]">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Detalle de la reserva</ResponsiveDialogTitle>
             {selectedOccurrence && (
-              <DialogDescription>
+              <ResponsiveDialogDescription>
                 {toCapitalCase(
                   format(
                     fromUtcMs(selectedOccurrence.occurrenceStartTime),
@@ -1103,9 +1105,9 @@ export function WeekCalendar({
                     { locale: es },
                   ),
                 )}
-              </DialogDescription>
+              </ResponsiveDialogDescription>
             )}
-          </DialogHeader>
+          </ResponsiveDialogHeader>
           {selectedOccurrence && (
             <div className="space-y-3">
               <div className="text-sm">
@@ -1287,8 +1289,8 @@ export function WeekCalendar({
                 ))}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }
