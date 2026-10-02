@@ -1,7 +1,10 @@
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
-import { NewsCard } from "@/components/templates/landing/news/news-card";
+import {
+  NewsCard,
+  toNewsCardData,
+} from "@/components/templates/landing/news/news-card";
 import { getLandingNews } from "@/lib/db/news";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -44,17 +47,7 @@ export default async function NewsSection() {
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...featured, ...rest].map((post) => (
-              <NewsCard
-                key={post.id}
-                post={{
-                  slug: post.slug,
-                  title: post.title,
-                  summary: post.summary,
-                  coverImageUrl: post.coverImageUrl,
-                  isFeatured: post.isFeatured,
-                  publishedAt: Number(post.publishedAt ?? post.createdAt),
-                }}
-              />
+              <NewsCard key={post.id} post={toNewsCardData(post)} />
             ))}
           </div>
         </Container>

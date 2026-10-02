@@ -43,38 +43,45 @@ export function NewsFilters({
 
   const hasFilters = Boolean(q || from || to);
 
+  // Barra liviana, sin recuadro ni etiquetas visibles: vive en la misma fila que el título
+  // del listado (a la derecha en `lg`) para no competir con las notas. Las etiquetas pasan a
+  // `aria-label` / `sr-only`, así los lectores de pantalla siguen anunciando cada control.
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
-      <div className="min-w-[220px] flex-1 space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Buscar</Label>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Título o contenido…"
-            className="pl-9"
-          />
-        </div>
-      </div>
-
-      <div className="min-w-[220px] space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Fechas</Label>
-        <DateRangePicker
-          clearable
-          value={{ from, to }}
-          onChange={(range) => update({ from: range.from, to: range.to })}
-          placeholder="Cualquier fecha"
-          numberOfMonths={2}
-          ariaLabel="Filtrar por fechas"
+    <div
+      role="search"
+      className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap"
+    >
+      <div className="relative min-w-0 flex-1 basis-56 lg:w-72 lg:flex-none">
+        <Label htmlFor="news-search" className="sr-only">
+          Buscar noticias
+        </Label>
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id="news-search"
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Buscar noticias…"
+          className="h-10 rounded-full bg-card pl-10"
         />
       </div>
+
+      <DateRangePicker
+        clearable
+        value={{ from, to }}
+        onChange={(range) => update({ from: range.from, to: range.to })}
+        placeholder="Cualquier fecha"
+        numberOfMonths={2}
+        ariaLabel="Filtrar por fechas"
+        className="h-10 w-auto rounded-full bg-card px-4"
+      />
 
       {hasFilters && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
+          className="h-10 rounded-full"
           onClick={() => {
             setSearchInput("");
             router.push("/news");
