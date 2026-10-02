@@ -1,31 +1,40 @@
 /**
- * The audit trail's action vocabulary.
+ * Nombres de las acciones de auditoría para usar desde el código (`AUDIT_ACTIONS.eventUpdate`).
  *
- * Actions used to be free-text strings written at each call site, which meant a typo
- * produced a silently-unfilterable entry and the admin view had nothing to render but the
- * raw id. Keeping them here gives one place to add an action, one place to label it, and
- * a type that call sites are checked against.
+ * Desde el milestone 16 la fuente de verdad es el registro (`registry.ts`): ahí vive cada
+ * evento con su entidad, sus textos y sus campos. Este archivo solo le pone un nombre en
+ * camelCase a cada id y deriva de ahí las etiquetas y las acciones en cascada, para no
+ * romper las llamadas existentes. El `satisfies` hace que un id que no esté registrado no
+ * compile.
  *
- * Naming: `<entity>.<verb>`, lower camel entity, dot separator. Keep existing strings
- * stable — they are persisted in `audit_logs.action` and renaming one orphans history.
+ * Forma de los ids: `<entidad>.<verbo>`. Se persisten en `audit_logs.action`: renombrar uno
+ * deja huérfano el historial.
  *
- * Client-safe (pure data): the admin view imports the labels.
+ * Seguro para el cliente (datos puros).
  */
+import {
+  AUDIT_EVENTS,
+  auditEventDef,
+  type AuditAction,
+  type AuditEventDef,
+} from "./registry";
+
+export type { AuditAction };
+
 export const AUDIT_ACTIONS = {
-  // Reservations
+  // Reservas
   reservationApprove: "reservation.approve",
   reservationReject: "reservation.reject",
   reservationCancel: "reservation.cancel",
-  /** Written for each pending reservation `approve_reservation()` rejected as a conflict. */
   reservationAutoReject: "reservation.auto-reject",
 
-  // Users & roles
+  // Usuarios y roles
   userRoleUpdate: "user.role.update",
   roleCreate: "role.create",
   roleUpdate: "role.update",
   roleDelete: "role.delete",
 
-  // Superadmin catalogs
+  // Catálogos de superadmin
   spaceCreate: "space.create",
   spaceUpdate: "space.update",
   spaceDelete: "space.delete",
@@ -36,100 +45,52 @@ export const AUDIT_ACTIONS = {
   reservationTypeCreate: "reservationType.create",
   reservationTypeUpdate: "reservationType.update",
   reservationTypeDelete: "reservationType.delete",
-  /** Modo "Reordenar" (milestone 14): nuevo orden de los tipos de reserva. */
   reservationTypeReorder: "reservationType.reorder",
 
-  // Events & forms
+  // Eventos y formularios
   eventCreate: "event.create",
   eventUpdate: "event.update",
   eventDelete: "event.delete",
-  /** Modo "Reordenar destacados" (milestone 14): orden de los eventos destacados del landing. */
   eventFeaturedReorder: "event.featuredReorder",
   formCreate: "form.create",
   formUpdate: "form.update",
   formDelete: "form.delete",
   participantDecide: "participant.decide",
 
-  // Content
+  // Contenido
   newsCreate: "news.create",
   newsUpdate: "news.update",
   newsDelete: "news.delete",
   newsDecide: "news.decide",
   newsRequest: "news.request",
   newsRestore: "news.restore",
+  newsFeaturedReorder: "news.featuredReorder",
   themeCreate: "landingTheme.create",
   themeUpdate: "landingTheme.update",
   themeDelete: "landingTheme.delete",
-  /** Modo "Reordenar" (milestone 14): el orden de la lista es la prioridad (arriba gana). */
   themeReorder: "landingTheme.reorder",
-  /** Modo "Reordenar destacadas" (milestone 14): orden de las noticias destacadas. */
-  newsFeaturedReorder: "news.featuredReorder",
 
-  // Configuration & operations
+  // Configuración y operación
   siteConfigUpdate: "siteConfig.update",
   checkinUpdate: "checkin.update",
-} as const;
+} as const satisfies Record<string, AuditAction>;
 
-export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
+/** Etiquetas en castellano de cada acción, derivadas del registro. */
+export const AUDIT_ACTION_LABELS = Object.fromEntries(
+  Object.entries(AUDIT_EVENTS).map(([id, def]) => [id, def.label]),
+) as Record<AuditAction, string>;
 
-/** Spanish labels for the admin view. Every action must have one (asserted in tests). */
-export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
-  "reservation.approve": "Aprobó una reserva",
-  "reservation.reject": "Rechazó una reserva",
-  "reservation.cancel": "Canceló una reserva",
-  "reservation.auto-reject": "Reserva rechazada automáticamente por conflicto",
-
-  "user.role.update": "Cambió el rol de un usuario",
-  "role.create": "Creó un rol",
-  "role.update": "Editó un rol",
-  "role.delete": "Eliminó un rol",
-
-  "space.create": "Creó un espacio",
-  "space.update": "Editó un espacio",
-  "space.delete": "Eliminó un espacio",
-  "space.reorder": "Reordenó los espacios",
-  "resource.create": "Creó un recurso",
-  "resource.update": "Editó un recurso",
-  "resource.delete": "Eliminó un recurso",
-  "reservationType.create": "Creó un tipo de reserva",
-  "reservationType.update": "Editó un tipo de reserva",
-  "reservationType.delete": "Eliminó un tipo de reserva",
-  "reservationType.reorder": "Reordenó los tipos de reserva",
-
-  "event.create": "Creó un evento",
-  "event.update": "Editó un evento",
-  "event.delete": "Canceló un evento",
-  "event.featuredReorder": "Reordenó los eventos destacados",
-  "form.create": "Creó un formulario",
-  "form.update": "Editó un formulario",
-  "form.delete": "Eliminó un formulario",
-  "participant.decide": "Resolvió inscripciones",
-
-  "news.create": "Creó una noticia",
-  "news.update": "Editó una noticia",
-  "news.delete": "Eliminó una noticia",
-  "news.decide": "Aprobó o rechazó una noticia",
-  "news.request": "Solicitó un cambio en una noticia publicada",
-  "news.restore": "Restauró una noticia eliminada",
-  "landingTheme.create": "Creó un tema de portada",
-  "landingTheme.update": "Editó un tema de portada",
-  "landingTheme.delete": "Eliminó un tema de portada",
-  "landingTheme.reorder": "Reordenó los temas de portada (prioridad)",
-  "news.featuredReorder": "Reordenó las noticias destacadas",
-
-  "siteConfig.update": "Actualizó la configuración del sitio",
-  "checkin.update": "Registró un ingreso o egreso",
-};
-
-/** Falls back to the raw action id so an entry written by older code still renders. */
+/** Cae al id crudo, así una entrada escrita por código viejo sigue mostrándose. */
 export function auditActionLabel(action: string): string {
-  return AUDIT_ACTION_LABELS[action as AuditAction] ?? action;
+  return auditEventDef(action)?.label ?? action;
 }
 
 /**
- * Actions a person did not directly trigger — they are consequences of another entry in
- * the same request. The view de-emphasises these and groups them under their cause.
+ * Acciones que nadie disparó directamente — son consecuencia de otra entrada del mismo
+ * pedido. La vista las atenúa y las agrupa bajo su causa.
  */
-export const CASCADED_ACTIONS: ReadonlySet<string> = new Set([
-  AUDIT_ACTIONS.reservationAutoReject,
-]);
+export const CASCADED_ACTIONS: ReadonlySet<string> = new Set(
+  Object.entries(AUDIT_EVENTS as Record<string, AuditEventDef>)
+    .filter(([, def]) => def.cascaded)
+    .map(([id]) => id),
+);

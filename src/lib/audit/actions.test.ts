@@ -123,8 +123,11 @@ describe("admin mutation routes are audited", () => {
         (line) => !/^\s*import\b/.test(line) && !/^\s*}\s*from\s/.test(line),
       )
       .join("\n");
+    // Cualquiera de las puertas de entrada al bus de auditoría (milestone 16) cuenta.
     expect(
-      /\brecordAudit(FromSession)?\s*\(/.test(withoutImports),
+      /\b(recordAudit(FromSession)?|beginAudit|emitAudit)\s*\(/.test(
+        withoutImports,
+      ),
       `${route} mutates state but writes no audit entry. Instrument it, or add it to AUDIT_EXEMPT with a reason.`,
     ).toBe(true);
   });

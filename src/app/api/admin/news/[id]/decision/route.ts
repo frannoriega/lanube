@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 import { decideNewsPost, getNewsPostById } from "@/lib/db/news";
 import { notify } from "@/lib/notifications/dispatch";
 import { newsPostDecisionSchema } from "@/lib/schemas/news";
@@ -41,19 +41,15 @@ export async function POST(
       );
     }
 
+    const audit = await beginAudit("NewsPost", id);
     const post = await decideNewsPost(
       id,
       parsed.data.decision,
       parsed.data.reason ?? null,
     );
 
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.newsDecide,
-      entityType: "NewsPost",
-      entityId: id,
-      before: { status: before.status, pendingAction: before.pendingAction },
-      after: { status: post.status, pendingAction: post.pendingAction },
-      context: { Noticia: post.title },
+    // Si se aprobó una edición pedida, el diff muestra el contenido que se aplicó.
+    await audit.commit(session, AUDIT_ACTIONS.newsDecide, {
       reason: parsed.data.reason ?? null,
     });
 

@@ -1,8 +1,7 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { diffFields } from "@/lib/audit/diff";
-import { recordAuditFromSession } from "@/lib/audit/record";
+import { beginAudit } from "@/lib/audit/emit";
 import { deleteNewsPost, getNewsPostById, updateNewsPost } from "@/lib/db/news";
 import { getPermissionSetForUser } from "@/lib/db/roles";
 import { hasPermission } from "@/lib/rbac";
@@ -11,13 +10,6 @@ import {
   newsPostInputSchema,
 } from "@/lib/schemas/news";
 import { NextRequest } from "next/server";
-
-const AUDITED_NEWS_FIELDS = [
-  "title",
-  "status",
-  "isFeatured",
-  "featuredOrder",
-] as const;
 
 async function assertOwnedOrPrivileged(
   id: string,
@@ -91,19 +83,9 @@ export async function PUT(
   }
 
   try {
+    const audit = await beginAudit("NewsPost", id);
     const post = await updateNewsPost(id, parsed.data, canApprove);
-    if (before) {
-      const diff = diffFields(before, post, [...AUDITED_NEWS_FIELDS]);
-      if (diff) {
-        await recordAuditFromSession(session, {
-          action: AUDIT_ACTIONS.newsUpdate,
-          entityType: "NewsPost",
-          entityId: id,
-          context: { Noticia: post.title },
-          ...diff,
-        });
-      }
-    }
+    await audit.commit(session, AUDIT_ACTIONS.newsUpdate);
     return apiSuccess(post);
   } catch (err) {
     return apiCatch("admin/news/[id] PUT", err);
@@ -139,15 +121,9 @@ export async function DELETE(
   }
 
   try {
+    const audit = await beginAudit("NewsPost", id);
     await deleteNewsPost(id);
-    if (before) {
-      await recordAuditFromSession(session, {
-        action: AUDIT_ACTIONS.newsDelete,
-        entityType: "NewsPost",
-        entityId: id,
-        before: { title: before.title },
-      });
-    }
+    await audit.commit(session, AUDIT_ACTIONS.newsDelete);
     return apiSuccess({ ok: true });
   } catch (err) {
     return apiCatch("admin/news/[id] DELETE", err);

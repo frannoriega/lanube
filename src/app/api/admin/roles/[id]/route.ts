@@ -1,14 +1,8 @@
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { recordAuditFromSession } from "@/lib/audit/record";
-import {
-  deleteRole,
-  getRoleById,
-  resolveRoleNames,
-  RoleWriteError,
-  updateRole,
-} from "@/lib/db/roles";
+import { beginAudit } from "@/lib/audit/emit";
+import { deleteRole, RoleWriteError, updateRole } from "@/lib/db/roles";
 import { PERMISSIONS } from "@/lib/rbac";
 import { NextRequest } from "next/server";
 import z from "zod";
@@ -39,27 +33,9 @@ export async function PUT(
 
   const { id } = await params;
   try {
-    const before = await getRoleById(id);
+    const audit = await beginAudit("Role", id);
     const role = await updateRole(id, parsed.data);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.roleUpdate,
-      entityType: "Role",
-      entityId: role.id,
-      before: before
-        ? {
-            name: before.name,
-            description: before.description,
-            permissions: before.permissions,
-            grantableRoles: await resolveRoleNames(before.grantableRoleIds),
-          }
-        : undefined,
-      after: {
-        name: role.name,
-        description: role.description,
-        permissions: role.permissions,
-        grantableRoles: await resolveRoleNames(role.grantableRoleIds),
-      },
-    });
+    await audit.commit(session, AUDIT_ACTIONS.roleUpdate);
     return apiSuccess(role);
   } catch (err) {
     if (err instanceof RoleWriteError) return apiError(err.message, err.status);
@@ -77,21 +53,9 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    const before = await getRoleById(id);
+    const audit = await beginAudit("Role", id);
     await deleteRole(id);
-    await recordAuditFromSession(session, {
-      action: AUDIT_ACTIONS.roleDelete,
-      entityType: "Role",
-      entityId: id,
-      before: before
-        ? {
-            name: before.name,
-            description: before.description,
-            permissions: before.permissions,
-            grantableRoles: await resolveRoleNames(before.grantableRoleIds),
-          }
-        : undefined,
-    });
+    await audit.commit(session, AUDIT_ACTIONS.roleDelete);
     return apiSuccess({ ok: true });
   } catch (err) {
     if (err instanceof RoleWriteError) return apiError(err.message, err.status);
