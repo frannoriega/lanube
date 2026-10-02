@@ -21,6 +21,7 @@ import { useServerTime } from "@/components/providers/server-time";
 import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   hasMinimumNotice,
   MINIMUM_NOTICE_MESSAGE,
@@ -35,7 +36,26 @@ import {
   startOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BUSINESS_HOURS,
+  firstBookableDayIndex,
+  fromUtcMs,
+  generateTimeOptions,
+  isDayFullyBlocked,
+  minutesToTime,
+  TIME_INTERVAL_MINUTES,
+  timeToMinutes,
+  visibleDayCountFor,
+  visibleDayIndices,
+  WORK_WEEK_DAYS,
+} from "./calendar-utils";
+import {
+  DayColumn,
+  DayHeaderCell,
+  DayStrip,
+  isOwnOccurrence,
+} from "./DayColumn";
 import Link from "next/link";
 import {
   useCallback,
@@ -46,34 +66,6 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-
-// Configuration constants
-const BUSINESS_HOURS = {
-  START: 9, // 9 AM
-  END: 18, // 6 PM
-} as const;
-
-const TIME_INTERVAL_MINUTES = 15;
-
-/** Last minute-of-day a slot can start at and still fit a minimum-length booking before close. */
-const LAST_BOOKABLE_START_MINUTES =
-  BUSINESS_HOURS.END * 60 - TIME_INTERVAL_MINUTES;
-
-function fromUtcMs(ms: number): Date {
-  return new Date(ms);
-}
-
-/**
- * A day is fully blocked once even its latest possible slot can't meet the real 24h minimum
- * notice (`hasMinimumNotice`) — e.g. after ~18:00 today, tomorrow's last slot (17:45) is less
- * than 24h away, so tomorrow greys out too. Earlier slots within an otherwise-open day are
- * still rejected individually (drag-start, submit) by the same real-time check.
- */
-function isDayFullyBlocked(day: Date, clock: Date): boolean {
-  const lastSlot = new Date(day);
-  lastSlot.setHours(0, LAST_BOOKABLE_START_MINUTES, 0, 0);
-  return !hasMinimumNotice(lastSlot.getTime(), clock.getTime());
-}
 
 export type UnavailableSlotKind = "resource_full" | "cross_resource";
 
@@ -124,37 +116,6 @@ function getCurrentWorkWeekStart(now: Date): Date {
 
   // Otherwise, get this week's Monday
   return startOfWeek(now, { weekStartsOn: 1 });
-}
-
-// Helper function to generate time options
-function generateTimeOptions(): Array<{ value: string; label: string }> {
-  const options: Array<{ value: string; label: string }> = [];
-  const startMinutes = BUSINESS_HOURS.START * 60;
-  const endMinutes = BUSINESS_HOURS.END * 60;
-
-  for (
-    let minutes = startMinutes;
-    minutes <= endMinutes;
-    minutes += TIME_INTERVAL_MINUTES
-  ) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    const value = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-    options.push({ value, label: value });
-  }
-
-  return options;
-}
-
-function minutesToTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-}
-
-function timeToMinutes(time: string): number {
-  const [hours, mins] = time.split(":").map(Number);
-  return hours * 60 + mins;
 }
 
 export function WeekCalendar({
@@ -219,9 +180,40 @@ export function WeekCalendar({
   const weekDays = useMemo(
     () =>
       currentWeekStart
-        ? Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i))
+        ? Array.from({ length: WORK_WEEK_DAYS }, (_, i) =>
+            addDays(currentWeekStart, i),
+          )
         : [],
     [currentWeekStart],
+  );
+
+  /*
+   * Días visibles a la vez (milestone 14, decisión Part A.1): 1 en teléfonos (< 640px),
+   * 3 entre 640 y 767px, la semana entera desde 768px. En el servidor se asume escritorio;
+   * no hay salto visible porque hasta que `currentWeekStart` se inicializa en el cliente se
+   * muestra solo el spinner.
+   */
+  const isSm = useMediaQuery("(min-width: 640px)", true);
+  const isMd = useMediaQuery("(min-width: 768px)", true);
+  const visibleCount = visibleDayCountFor({ isSm, isMd });
+  const isNarrow = visibleCount < WORK_WEEK_DAYS;
+
+  /*
+   * Día "enfocado" (0 = lunes) de las vistas angostas: el que se muestra en la vista de 1 día
+   * y el centro de la ventana en la de 3. Cada vez que cambia la semana arranca en el primer
+   * día que todavía admite reservas (o en el lunes si ninguno), en vez de en un día rayado.
+   */
+  const [focusedDayIdx, setFocusedDayIdx] = useState(0);
+  useEffect(() => {
+    if (!weekDays.length) return;
+    const first = firstBookableDayIndex(weekDays, now());
+    setFocusedDayIdx(first === -1 ? 0 : first);
+    // `now` es estable por revisión de alineación; solo interesa re-enfocar al cambiar de semana.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekDays]);
+  const visibleIdx = useMemo(
+    () => visibleDayIndices(visibleCount, focusedDayIdx),
+    [visibleCount, focusedDayIdx],
   );
 
   const todayWeekStart = useMemo(() => getCurrentWorkWeekStart(now()), [now]);
@@ -531,27 +523,6 @@ export function WeekCalendar({
     });
   };
 
-  // Calculate reservation position
-  const getReservationStyle = (occ: { startTime: number; endTime: number }) => {
-    const occStart = fromUtcMs(occ.startTime);
-    const occEnd = fromUtcMs(occ.endTime);
-
-    const startMinutes = occStart.getHours() * 60 + occStart.getMinutes();
-    const endMinutes = occEnd.getHours() * 60 + occEnd.getMinutes();
-
-    const businessStart = BUSINESS_HOURS.START * 60;
-    const businessEnd = BUSINESS_HOURS.END * 60;
-    const totalMinutes = businessEnd - businessStart;
-
-    const top = ((startMinutes - businessStart) / totalMinutes) * 100;
-    const height = ((endMinutes - startMinutes) / totalMinutes) * 100;
-
-    return {
-      top: `${Math.max(0, top)}%`,
-      height: `${Math.max(0, Math.min(100 - Math.max(0, top), height))}%`,
-    };
-  };
-
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -665,320 +636,185 @@ export function WeekCalendar({
 
   return (
     <>
-      <div className="overflow-hidden">
-        <div className="min-w-[800px]">
-          {/* Week Navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-              {format(addDays(currentWeekStart, 4), "d 'de' MMMM 'de' yyyy", {
-                locale: es,
-              })}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentWeekStart(addWeeks(currentWeekStart, -1))
-                }
-                disabled={!canGoPrev}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentWeekStart(todayWeekStart)}
-                disabled={isSameDay(currentWeekStart, todayWeekStart)}
-              >
-                Hoy
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentWeekStart(addWeeks(currentWeekStart, 1))
-                }
-                disabled={!canGoNext}
-              >
-                Siguiente
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+      {/*
+       * Sin `min-w-[800px]` ni `overflow-hidden` (milestone 14, hallazgos 1 / B / E): antes la
+       * grilla medía siempre 800px y el contenedor recortaba el resto, así que en un teléfono
+       * solo se veían lunes y martes (y ni siquiera la navegación de semanas), y en una tablet
+       * se cortaba el viernes. Ahora la grilla tiene tantas columnas como días visibles y
+       * ocupa exactamente el ancho disponible.
+       */}
+      <div className="min-w-0">
+        {/* Week Navigation */}
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="min-w-0 text-sm text-gray-600 dark:text-gray-400">
+            {isNarrow ? (
+              // En las vistas angostas el rango va corto ("5 – 9 oct") para dejar lugar a los botones.
+              <>
+                {format(currentWeekStart, "d", { locale: es })} –{" "}
+                {format(addDays(currentWeekStart, 4), "d MMM yyyy", {
+                  locale: es,
+                })}
+              </>
+            ) : (
+              <>
+                {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
+                {format(addDays(currentWeekStart, 4), "d 'de' MMMM 'de' yyyy", {
+                  locale: es,
+                })}
+              </>
+            )}
           </div>
-
-          {/* Header with days */}
-          <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-14 flex-shrink-0"></div>
-            <div className="flex-1 grid grid-cols-5 gap-0">
-              {weekDays.map((day, idx) => {
-                const bookable = !isDayFullyBlocked(day, now());
-                return (
-                  <div
-                    key={idx}
-                    className={`text-center p-3 border-l border-gray-200 dark:border-gray-700 ${
-                      isSameDay(day, now())
-                        ? "bg-la-nube-primary/10 text-la-nube-selected dark:text-la-nube-secondary font-bold"
-                        : "text-gray-700 dark:text-gray-300"
-                    }`}
-                  >
-                    <div className="text-xs font-medium">
-                      {format(day, "EEE", { locale: es }).toUpperCase()}
-                    </div>
-                    <div className="text-xl font-bold">{format(day, "d")}</div>
-                    {bookable && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 h-7 w-full px-1 text-xs"
-                        onClick={() => openBookingForDay(day)}
-                      >
-                        <Plus className="h-3 w-3" aria-hidden="true" />
-                        <span className="sr-only sm:not-sr-only">Reservar</span>
-                        <span className="sr-only">
-                          {" "}
-                          el {format(day, "EEEE d 'de' MMMM", { locale: es })}
-                        </span>
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Calendar body */}
-          <div className="flex gap-0 relative mb-8">
-            {/* Time labels */}
-            <div
-              className="relative w-14 flex-shrink-0"
-              style={{ paddingBottom: "12px" }}
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Navegación compacta (solo íconos) en las vistas angostas; el texto va en
+                aria-label para que el lector de pantalla siga diciendo qué hace. */}
+            <Button
+              variant="outline"
+              size={isNarrow ? "icon" : "sm"}
+              onClick={() =>
+                setCurrentWeekStart(addWeeks(currentWeekStart, -1))
+              }
+              disabled={!canGoPrev}
+              aria-label={isNarrow ? "Semana anterior" : undefined}
             >
-              {Array.from(
-                { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 },
-                (_, i) => i + BUSINESS_HOURS.START,
-              ).map((hour) => (
-                <div
-                  key={hour}
-                  className="absolute text-xs text-gray-500 dark:text-gray-400 text-right pr-2 w-full"
-                  style={{
-                    top: `${((hour - BUSINESS_HOURS.START) / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
-                    transform: "translateY(-50%)",
-                  }}
-                >
-                  {format(
-                    (() => {
-                      const t = now();
-                      t.setHours(hour, 0, 0, 0);
-                      return t;
-                    })(),
-                    "HH:mm",
-                  )}
-                </div>
-              ))}
-            </div>
+              <ChevronLeft className="h-4 w-4" />
+              {!isNarrow && "Anterior"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentWeekStart(todayWeekStart)}
+              disabled={isSameDay(currentWeekStart, todayWeekStart)}
+            >
+              Hoy
+            </Button>
+            <Button
+              variant="outline"
+              size={isNarrow ? "icon" : "sm"}
+              onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
+              disabled={!canGoNext}
+              aria-label={isNarrow ? "Semana siguiente" : undefined}
+            >
+              {!isNarrow && "Siguiente"}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-            {/* {loading && (
-              <div className="absolute inset-0 left-14 flex items-center justify-center z-50 bg-black/20 dark:bg-white/20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-la-nube-primary"></div>
+        {/* Tira de días (solo vistas angostas): elegir el día que se muestra. */}
+        {isNarrow && (
+          <DayStrip
+            days={weekDays}
+            focusedIndex={focusedDayIdx}
+            visibleIndices={visibleIdx}
+            todayRef={now()}
+            isBlocked={(day) => isDayFullyBlocked(day, now())}
+            hasOwnReservation={(day) =>
+              occurrences.some(
+                (occ) =>
+                  isOwnOccurrence(occ, userId) &&
+                  (occ.status === "PENDING" || occ.status === "APPROVED") &&
+                  isSameDay(fromUtcMs(occ.occurrenceStartTime), day),
+              )
+            }
+            onFocusDay={setFocusedDayIdx}
+          />
+        )}
+
+        {/* Header with days */}
+        <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700">
+          <div className="w-14 flex-shrink-0"></div>
+          <div
+            className="grid flex-1 gap-0"
+            style={{
+              gridTemplateColumns: `repeat(${visibleIdx.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {visibleIdx.map((dayIdx) => {
+              const day = weekDays[dayIdx];
+              const clock = now();
+              return (
+                <DayHeaderCell
+                  key={dayIdx}
+                  day={day}
+                  isToday={isSameDay(day, clock)}
+                  bookable={!isDayFullyBlocked(day, clock)}
+                  onBook={() => openBookingForDay(day)}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Calendar body */}
+        <div className="relative mb-8 flex gap-0">
+          {/* Time labels */}
+          <div
+            className="relative w-14 flex-shrink-0"
+            style={{ paddingBottom: "12px" }}
+          >
+            {Array.from(
+              { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 },
+              (_, i) => i + BUSINESS_HOURS.START,
+            ).map((hour) => (
+              <div
+                key={hour}
+                className="absolute w-full pr-2 text-right text-xs text-gray-500 dark:text-gray-400"
+                style={{
+                  top: `${((hour - BUSINESS_HOURS.START) / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
+                  transform: "translateY(-50%)",
+                }}
+              >
+                {minutesToTime(hour * 60)}
               </div>
-            )} */}
+            ))}
+          </div>
 
-            {/* Day columns */}
-            <div
-              ref={calendarRef}
-              className="flex-1 grid grid-cols-5 gap-0 relative"
-              style={{ minHeight: "600px" }}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={() => {
-                if (isDragging) {
-                  setIsDragging(false);
-                  setDragStart(null);
-                  setDragCurrent(null);
-                }
-              }}
-            >
-              {weekDays.map((day, dayIdx) => {
-                const clock = now();
-                const isPastOrUnavailableDay = isDayFullyBlocked(day, clock);
-                const dayReservations = getReservationsForDay(day);
-                const unavailableSlots = getUnavailableSlotsForDay(day);
-
-                return (
-                  <div
-                    key={dayIdx}
-                    className={`relative z-40 border-l border-gray-200 dark:border-gray-700 ${
-                      isPastOrUnavailableDay
-                        ? "bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#4a5565_0,_#4a5565_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
-                        : "bg-white dark:bg-gray-950"
-                    }`}
-                    onMouseDown={(e) =>
-                      !isPastOrUnavailableDay && handleMouseDown(e, dayIdx)
-                    }
-                    onMouseMove={(e) =>
-                      !isPastOrUnavailableDay && handleMouseMove(e, dayIdx)
-                    }
-                  >
-                    {/* Hour lines */}
-                    {Array.from(
-                      { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START },
-                      (_, i) => i + 1,
-                    ).map((hour) => (
-                      <div
-                        key={hour}
-                        className="absolute w-full border-t border-gray-200 dark:border-gray-700"
-                        style={{
-                          top: `${(hour / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
-                        }}
-                      />
-                    ))}
-
-                    {/* Unavailable slots */}
-                    {!isPastOrUnavailableDay &&
-                      unavailableSlots.map((slot, idx) => {
-                        const style = getReservationStyle({
-                          startTime: slot.startTime,
-                          endTime: slot.endTime,
-                        });
-                        const stripeClass =
-                          slot.kind === "cross_resource"
-                            ? "h-full rounded bg-[repeating-linear-gradient(135deg,_#7c3aed_0,_#7c3aed_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#a78bfa_0,_#a78bfa_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed"
-                            : "h-full rounded bg-[repeating-linear-gradient(135deg,_#99a1af_0,_#99a1af_3px,_transparent_0,_transparent_50%)] dark:bg-[repeating-linear-gradient(135deg,_#4a5565_0,_#4a5565_3px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed";
-                        return (
-                          <div
-                            key={idx}
-                            className="absolute w-full z-50"
-                            style={{ top: style.top, height: style.height }}
-                          >
-                            <div className={stripeClass} />
-                          </div>
-                        );
-                      })}
-
-                    {/* Existing reservations */}
-                    {dayReservations.map((occ, idx) => {
-                      const style = getReservationStyle({
-                        startTime: occ.occurrenceStartTime,
-                        endTime: occ.occurrenceEndTime,
-                      });
-                      const isOwnReservation =
-                        userId &&
-                        occ.reservableType === "USER" &&
-                        occ.reservableId === userId;
-                      const isPending = occ.status === "PENDING";
-                      const isRejected = occ.status === "REJECTED";
-                      const isCancelled = occ.status === "CANCELLED";
-
-                      // F2.5(c): every one of these carries `text-white`, and the old
-                      // palette failed AA under it — bg-yellow-500 measured 1.92:1, the
-                      // worst pair in the codebase. These are the same hues one step
-                      // darker, all ≥ 4.8:1 on white.
-                      const bgColor =
-                        isOwnReservation && isPending
-                          ? "bg-amber-700" // was bg-yellow-500 (1.92:1) → 5.02:1
-                          : isOwnReservation && isRejected
-                            ? "bg-red-600" // 4.83:1, already passing
-                            : isOwnReservation && isCancelled
-                              ? "bg-gray-500" // 4.83:1, already passing
-                              : isOwnReservation
-                                ? "bg-green-700" // was bg-green-600 (3.30:1) → 5.02:1
-                                : "bg-la-nube-selected"; // was primary (3.77:1) → 6.38:1
-
-                      const statusLabel = isPending
-                        ? "Pendiente"
-                        : isRejected
-                          ? "Rechazada"
-                          : isCancelled
-                            ? "Cancelada"
-                            : isOwnReservation
-                              ? "Aprobada"
-                              : null;
-                      const startLabel = format(
-                        fromUtcMs(occ.occurrenceStartTime),
-                        "HH:mm",
-                      );
-                      const endLabel = format(
-                        fromUtcMs(occ.occurrenceEndTime),
-                        "HH:mm",
-                      );
-                      // The title tooltip was the only place this information existed, and
-                      // it reaches neither keyboard nor touch nor screen readers.
-                      const accessibleLabel = [
-                        occ.reason,
-                        `${startLabel} a ${endLabel}`,
-                        isOwnReservation ? "Tu reserva" : "Reservado",
-                        statusLabel,
-                      ]
-                        .filter(Boolean)
-                        .join(", ");
-
-                      return (
-                        <div
-                          key={idx}
-                          className="absolute w-full px-1"
-                          style={{ top: style.top, height: style.height }}
-                        >
-                          {/* A real <button>: focusable, Enter/Space activated and
-                              announced as a control, instead of a div+onClick that
-                              keyboard users could not reach at all (F2.5b). The detail
-                              dialog it opens is where cancelling lives. */}
-                          <button
-                            type="button"
-                            className={`h-full w-full rounded ${bgColor} cursor-pointer overflow-hidden p-1 text-left text-xs text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
-                            title={accessibleLabel}
-                            aria-label={accessibleLabel}
-                            onClick={() => setSelectedOccurrence(occ)}
-                          >
-                            <div className="truncate font-semibold">
-                              {occ.reason}
-                              {/* Glyphs stay as a redundant non-color cue, but they are
-                                  decorative now: the status is in the aria-label, so a
-                                  screen reader no longer reads "check mark button". */}
-                              {isOwnReservation &&
-                                !isRejected &&
-                                !isCancelled && (
-                                  <span className="ml-1" aria-hidden="true">
-                                    ✓
-                                  </span>
-                                )}
-                              {isOwnReservation && isRejected && (
-                                <span className="ml-1" aria-hidden="true">
-                                  ✗
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px]">
-                              {startLabel} - {endLabel}
-                              {isPending && isOwnReservation && (
-                                <span className="ml-1" aria-hidden="true">
-                                  ⏳
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        </div>
-                      );
-                    })}
-
-                    {/* Drag selection overlay */}
-                    {dragSelection && dragSelection.dayIndex === dayIdx && (
-                      <div
-                        className="absolute w-full px-1 pointer-events-none"
-                        style={{
-                          top: dragSelection.top,
-                          height: dragSelection.height,
-                        }}
-                      >
-                        <div className="h-full rounded bg-blue-400/50 border-2 border-blue-500" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+          {/* Day columns */}
+          <div
+            ref={calendarRef}
+            className="relative grid flex-1 gap-0"
+            style={{
+              minHeight: "600px",
+              gridTemplateColumns: `repeat(${visibleIdx.length}, minmax(0, 1fr))`,
+            }}
+            onPointerUp={(e) => {
+              if (e.pointerType === "mouse") handleMouseUp();
+            }}
+            onPointerLeave={() => {
+              if (isDragging) {
+                setIsDragging(false);
+                setDragStart(null);
+                setDragCurrent(null);
+              }
+            }}
+          >
+            {visibleIdx.map((dayIdx) => {
+              const day = weekDays[dayIdx];
+              return (
+                <DayColumn
+                  key={dayIdx}
+                  day={day}
+                  blocked={isDayFullyBlocked(day, now())}
+                  reservations={getReservationsForDay(day)}
+                  unavailableSlots={getUnavailableSlotsForDay(day)}
+                  userId={userId}
+                  selectionOverlay={
+                    dragSelection && dragSelection.dayIndex === dayIdx
+                      ? { top: dragSelection.top, height: dragSelection.height }
+                      : null
+                  }
+                  // Arrastrar para seleccionar es solo para punteros finos (mouse): en
+                  // pantallas táctiles el dedo hace scroll, no selección (hallazgo A).
+                  onPointerDownSlot={(e) => {
+                    if (e.pointerType === "mouse") handleMouseDown(e, dayIdx);
+                  }}
+                  onPointerMoveSlot={(e) => {
+                    if (e.pointerType === "mouse") handleMouseMove(e, dayIdx);
+                  }}
+                  onSelectOccurrence={setSelectedOccurrence}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
