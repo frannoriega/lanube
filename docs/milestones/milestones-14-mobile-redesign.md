@@ -680,7 +680,13 @@ lanube-app` (this repo's container only).
       Verified (Playwright, phone): staging a cancel shows "1 cambio sin guardar" + reason
       box + save-bar notice, and a breadcrumb click opens "¿Salir sin guardar?" and stays on
       "Seguir editando" (`.mobile-shots/s5-event/`).
-- [ ] News form per proposal 2 (slug auto-derived on create, stable, behind "Editar").
+- [x] News form per proposal 2 (slug auto-derived on create, stable, behind "Editar").
+      — `news-form.tsx` on `FormPageLayout`: "Contenido" section + "Publicación" aside;
+      Cancelar / next-step actions (Guardar, Enviar a revisión, Publicar, Despublicar…) in
+      `StickySaveBar`; unsaved guard (released before post-save redirects). Slug: hidden on
+      create (derived from the title, server already uniquifies with `-2` and keeps it
+      stable on edit); on edit "URL: /news/…/<slug> · Editar" opens the field; it also opens
+      by itself if the derived slug fails validation (`.mobile-shots/s5-news/`).
 - [ ] Space form per proposal 3 (slug auto-derived on create, stable, behind "Avanzado";
       collapsible FAQ items with reorder mode).
 - [ ] Form template builder per proposal 9 (collapsed fields, reorder mode).
