@@ -3,7 +3,15 @@
 import { ImageUpload } from "@/components/molecules/image-upload";
 import { MarkdownEditor } from "@/components/molecules/markdown-editor";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  FormPageLayout,
+  FormSection,
+  StickySaveBar,
+} from "@/components/molecules/form-layout";
+import {
+  UnsavedChangesDialog,
+  useUnsavedChangesGuard,
+} from "@/hooks/use-unsaved-changes-guard";
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -234,6 +242,8 @@ export function NewsForm({
   const [requesting, setRequesting] = useState<NextStepAction | null>(null);
   const [requestReason, setRequestReason] = useState("");
   const slugTouched = useRef(!!post); // an existing post's slug is never auto-derived
+  // El campo slug solo se muestra si alguien pidió editarlo (ver comentario en el JSX).
+  const [slugEditing, setSlugEditing] = useState(false);
 
   // Always validate against the full (admin) shape client-side; the button bar below only
   // ever offers a non-privileged user the transitions they're allowed to make, and the
@@ -242,6 +252,10 @@ export function NewsForm({
     resolver: zodResolver(newsPostAdminInputSchema),
     defaultValues: toFormValues(post),
   });
+
+  // Guardia de cambios sin guardar (milestone 14): se suelta justo antes de cada redirect
+  // posterior a un guardado exitoso.
+  const guard = useUnsavedChangesGuard(form.formState.isDirty && !busy);
 
   const pendingAction = (post?.pendingAction as PendingAction | null) ?? null;
   const nextStepActions = getNextStepActions(
@@ -281,6 +295,7 @@ export function NewsForm({
       });
       toast.success("Solicitud enviada — un administrador la va a revisar");
       setRequesting(null);
+      guard.release();
       router.push("/admin/news");
       router.refresh();
     } catch (err) {
@@ -322,6 +337,7 @@ export function NewsForm({
         );
       }
       setRejecting(false);
+      guard.release();
       router.push("/admin/news");
       router.refresh();
     } catch (err) {
@@ -360,192 +376,233 @@ export function NewsForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
-        <Card className="glass-card dark:glass-card-dark">
-          <CardContent className="space-y-4 pt-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        if (!slugTouched.current) {
-                          form.setValue("slug", slugify(e.target.value), {
-                            shouldValidate: true,
-                          });
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug (URL)</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      onChange={(e) => {
-                        slugTouched.current = true;
-                        field.onChange(e);
-                      }}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    /news/{form.watch("slug") || "…"}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="summary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Resumen</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Un párrafo breve para la tarjeta"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>Hasta 200 caracteres.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="coverImageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Imagen de portada</FormLabel>
-                  <FormControl>
-                    <ImageUpload
-                      value={field.value || null}
-                      onChange={(url) => field.onChange(url ?? "")}
-                      uploadUrl={`/api/admin/news/upload${post ? `?postId=${encodeURIComponent(post.id)}` : ""}`}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="body"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contenido</FormLabel>
-                  <FormControl>
-                    <MarkdownEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      rows={14}
-                      uploadUrl={`/api/admin/news/upload${post ? `?postId=${encodeURIComponent(post.id)}` : ""}`}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card dark:glass-card-dark">
-          <CardHeader>
-            <CardTitle>Publicación</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Estado actual:{" "}
-                <span className="font-medium text-foreground">
-                  {STATUS_LABELS[post?.status ?? "DRAFT"]}
-                </span>
-              </p>
-              {post?.status === "REJECTED" && post.decisionReason ? (
-                <p className="mt-1 text-sm text-destructive">
-                  Motivo del rechazo: {post.decisionReason}
-                </p>
-              ) : null}
-              {post?.status === "PUBLISHED" && !canApprove ? (
-                pendingAction ? (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Tenés {PENDING_ACTION_LABELS[pendingAction]} pendiente de
-                    revisión. La nota sigue publicada tal cual está hasta que un
-                    administrador decida.
-                    {post.pendingReason ? (
-                      <>
-                        {" "}
-                        Tu nota para el administrador:{" "}
-                        <span className="italic">
-                          &ldquo;{post.pendingReason}&rdquo;
-                        </span>
-                      </>
-                    ) : null}
-                  </p>
-                ) : (
-                  <>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Esta nota está publicada — no se puede editar ni bajar
-                      directamente. Los cambios se envían a revisión y la nota
-                      publicada no cambia hasta que un administrador los
-                      apruebe.
-                    </p>
-                    {post.decisionReason ? (
-                      <p className="mt-1 text-sm text-destructive">
-                        Última decisión: {post.decisionReason}
-                      </p>
-                    ) : null}
-                  </>
-                )
-              ) : !canApprove ? (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Un administrador revisa y publica las notas enviadas.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-4 rounded-md border p-4">
+      <form onSubmit={(e) => e.preventDefault()}>
+        {/*
+         * Milestone 14, propuesta 2: contenido en la columna principal y "Publicación" como
+         * aside (sticky desde `lg`, al final en el teléfono); los botones de acción viven en
+         * la barra de guardado pegada abajo en vez de solo al final de la página.
+         */}
+        <FormPageLayout
+          main={
+            <FormSection
+              id="contenido"
+              title="Contenido"
+              description="Lo que ve el público en la tarjeta y en la nota."
+            >
               <FormField
                 control={form.control}
-                name="isFeatured"
+                name="title"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between gap-4 space-y-0">
-                    <FormLabel className="mb-0">Destacar</FormLabel>
+                  <FormItem>
+                    <FormLabel>Título</FormLabel>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                      <Input
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          if (!slugTouched.current) {
+                            form.setValue("slug", slugify(e.target.value), {
+                              shouldValidate: true,
+                            });
+                          }
+                        }}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Sin "Orden entre destacadas" (milestone 14): se ordena con "Reordenar
-                  destacadas" en la lista de noticias. */}
-            </div>
-          </CardContent>
-        </Card>
+              {/*
+               * Slug (milestone 14, decisión sobre las propuestas): se deriva del título al
+               * crear y queda **estable** después (renombrar no rompe links compartidos). No se
+               * tipea: al crear no se muestra; al editar se ve la URL y "Editar" abre el campo
+               * para el arreglo manual poco frecuente. Si el slug derivado no es válido (p. ej.
+               * un título solo con emojis) el campo se abre solo para mostrar el error. Las
+               * colisiones las resuelve el servidor con sufijo numérico (`-2`).
+               */}
+              {post || slugEditing || form.formState.errors.slug ? (
+                slugEditing || form.formState.errors.slug ? (
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dirección (URL)</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            onChange={(e) => {
+                              slugTouched.current = true;
+                              field.onChange(e);
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Cambiarla rompe los links que ya se hayan compartido.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      URL: /news/…/
+                      <span className="font-mono text-foreground">
+                        {form.watch("slug")}
+                      </span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={() => setSlugEditing(true)}
+                    >
+                      Editar
+                    </Button>
+                  </p>
+                )
+              ) : null}
 
-        <div className="flex flex-wrap justify-end gap-2">
+              <FormField
+                control={form.control}
+                name="summary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Resumen</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Un párrafo breve para la tarjeta"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>Hasta 200 caracteres.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="coverImageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Imagen de portada</FormLabel>
+                    <FormControl>
+                      <ImageUpload
+                        value={field.value || null}
+                        onChange={(url) => field.onChange(url ?? "")}
+                        uploadUrl={`/api/admin/news/upload${post ? `?postId=${encodeURIComponent(post.id)}` : ""}`}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="body"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contenido</FormLabel>
+                    <FormControl>
+                      <MarkdownEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        rows={14}
+                        uploadUrl={`/api/admin/news/upload${post ? `?postId=${encodeURIComponent(post.id)}` : ""}`}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </FormSection>
+          }
+          aside={
+            <FormSection
+              id="publicacion"
+              title="Publicación"
+              description="Estado de la nota y cómo aparece en el inicio."
+            >
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Estado actual:{" "}
+                  <span className="font-medium text-foreground">
+                    {STATUS_LABELS[post?.status ?? "DRAFT"]}
+                  </span>
+                </p>
+                {post?.status === "REJECTED" && post.decisionReason ? (
+                  <p className="mt-1 text-sm text-destructive">
+                    Motivo del rechazo: {post.decisionReason}
+                  </p>
+                ) : null}
+                {post?.status === "PUBLISHED" && !canApprove ? (
+                  pendingAction ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Tenés {PENDING_ACTION_LABELS[pendingAction]} pendiente de
+                      revisión. La nota sigue publicada tal cual está hasta que
+                      un administrador decida.
+                      {post.pendingReason ? (
+                        <>
+                          {" "}
+                          Tu nota para el administrador:{" "}
+                          <span className="italic">
+                            &ldquo;{post.pendingReason}&rdquo;
+                          </span>
+                        </>
+                      ) : null}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Esta nota está publicada — no se puede editar ni bajar
+                        directamente. Los cambios se envían a revisión y la nota
+                        publicada no cambia hasta que un administrador los
+                        apruebe.
+                      </p>
+                      {post.decisionReason ? (
+                        <p className="mt-1 text-sm text-destructive">
+                          Última decisión: {post.decisionReason}
+                        </p>
+                      ) : null}
+                    </>
+                  )
+                ) : !canApprove ? (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Un administrador revisa y publica las notas enviadas.
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-4 rounded-md border p-4">
+                <FormField
+                  control={form.control}
+                  name="isFeatured"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between gap-4 space-y-0">
+                      <FormLabel className="mb-0">Destacar</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Sin "Orden entre destacadas" (milestone 14): se ordena con "Reordenar
+                  destacadas" en la lista de noticias. */}
+              </div>
+            </FormSection>
+          }
+        />
+
+        <StickySaveBar dirty={form.formState.isDirty} className="mt-6">
           <Button
             type="button"
             variant="outline"
@@ -565,8 +622,10 @@ export function NewsForm({
               {action.label}
             </Button>
           ))}
-        </div>
+        </StickySaveBar>
       </form>
+
+      <UnsavedChangesDialog guard={guard} />
 
       <ResponsiveDialog open={rejecting} onOpenChange={setRejecting}>
         <ResponsiveDialogContent>
