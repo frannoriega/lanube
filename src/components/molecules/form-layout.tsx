@@ -10,7 +10,7 @@
  *     Agenda / Inscripción). Lleva `id` para que el índice pueda saltar a él.
  *   - `FormJumpIndex`: índice de secciones para escritorio (en vez de un wizard de pasos: los
  *     admins editan yendo y viniendo, así que todo queda en una página).
- *   - `StickySaveBar`: barra pegada abajo con Guardar / Cancelar, visible siempre en
+ *   - `StickySaveBar`: barra fija abajo con Guardar / Cancelar, visible siempre en
  *     formularios largos, con un aviso de "Cambios sin guardar".
  *
  * El guardia de cambios sin guardar vive aparte: `hooks/use-unsaved-changes-guard.ts` +
@@ -122,44 +122,6 @@ export function FormJumpIndex({
   );
 }
 
-/**
- * Barra de guardado pegada al borde inferior de la ventana mientras se scrollea el
- * formulario. Ocupa el ancho del área de contenido (compensa el padding horizontal del
- * `ManagementLayout`: `px-4 sm:px-6 lg:px-8`). Los botones van como `children` para que cada
- * formulario ponga los suyos (Guardar / Cancelar / Despublicar…).
- */
-export function StickySaveBar({
-  dirty,
-  children,
-  className,
-}: {
-  /** Muestra el aviso "Cambios sin guardar". */
-  dirty?: boolean;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        // Márgenes negativos = el padding del `<main>` de `ManagementLayout` (`px-4 sm:px-6
-        // lg:px-8` a los lados, `py-6` abajo): la barra llega a los bordes del área y, al final
-        // del scroll, al borde inferior de la ventana — sin `-mb-6` quedaba una franja vacía
-        // debajo. Si cambia ese padding, cambiar estos valores.
-        "sticky bottom-0 z-30 -mx-4 -mb-6 flex flex-wrap items-center justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
-        // Respeta el área segura inferior del iPhone (barra de gestos).
-        "pb-[max(0.75rem,env(safe-area-inset-bottom))]",
-        className,
-      )}
-    >
-      {dirty ? (
-        <span
-          className="mr-auto w-full text-sm text-muted-foreground sm:w-auto"
-          aria-live="polite"
-        >
-          Cambios sin guardar
-        </span>
-      ) : null}
-      {children}
-    </div>
-  );
-}
+// `StickySaveBar` necesita JS (mide su alto), así que vive en su propio módulo cliente; se
+// re-exporta acá para que los formularios lo sigan importando junto con el resto.
+export { StickySaveBar } from "@/components/molecules/sticky-save-bar";

@@ -410,7 +410,7 @@ export function LandingThemeForm({
           }
         />
 
-        <StickySaveBar dirty={form.formState.isDirty} className="mt-6">
+        <StickySaveBar dirty={form.formState.isDirty}>
           <Button
             type="button"
             variant="outline"
