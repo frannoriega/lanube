@@ -2,14 +2,15 @@ import { Check, LockKeyhole } from "lucide-react";
 
 import { FormSection } from "@/components/molecules/form-layout";
 import { PasskeysSection } from "@/components/organisms/settings/passkeys-section";
+import { RecoveryCodesSection } from "@/components/organisms/settings/recovery-codes-section";
 
 /**
  * Configuración → Seguridad (milestone 17): cómo entra el usuario a su cuenta.
  *
- * Hoy son dos métodos: contraseña (todas las cuentas la tienen) y passkeys (opcionales,
- * varias por cuenta). La contraseña se muestra como estado, sin acciones: cambiarla desde
- * acá no estaba pedido en este milestone (queda anotado en el doc) y el flujo existente es
- * "Olvidé mi contraseña" en la pantalla de ingreso.
+ * Dos métodos para entrar — contraseña (todas las cuentas la tienen) y passkeys
+ * (opcionales, varias por cuenta) — más los códigos de recuperación. La contraseña se
+ * muestra como estado, sin acciones: cambiarla desde acá quedó para más adelante (decisión
+ * del usuario, ver el doc del milestone); hoy se cambia con "Olvidé mi contraseña".
  */
 export default function SecuritySettingsPage() {
   return (
@@ -32,12 +33,14 @@ export default function SecuritySettingsPage() {
               />
             </p>
             <p className="text-sm text-muted-foreground">
-              Si la olvidaste, cerrá sesión y elegí «Olvidé mi contraseña» en la
-              pantalla de ingreso: te mandamos un enlace a tu email.
+              Para cambiarla, cerrá sesión y elegí «Olvidé mi contraseña» en la
+              pantalla de ingreso: te mandamos un enlace a tu email. Si también
+              perdiste el email, usá un código de recuperación.
             </p>
           </div>
         </div>
       </FormSection>
+      <RecoveryCodesSection />
     </>
   );
 }

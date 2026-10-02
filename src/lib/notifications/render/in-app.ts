@@ -75,5 +75,21 @@ export function renderInApp(event: NotificationEvent): InAppRendered {
         data: { newsPostId: d.newsPostId, slug: d.slug },
       };
     }
+    case "profileChange.decided": {
+      const d = event.data;
+      const approved = d.decision === "APPROVED";
+      const what =
+        d.field === "DNI"
+          ? `Tu pedido de cambio de DNI a ${d.requestedValue}`
+          : "Tu pedido de cambio del motivo para unirte";
+      const base = `${what} fue ${approved ? "aprobado" : "rechazado"}`;
+      return {
+        title: approved
+          ? "Cambio de datos aprobado"
+          : "Cambio de datos rechazado",
+        body: d.reason ? `${base}: ${d.reason}` : `${base}.`,
+        data: { requestId: d.requestId },
+      };
+    }
   }
 }

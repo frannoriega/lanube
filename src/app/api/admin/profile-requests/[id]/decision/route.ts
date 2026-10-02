@@ -3,6 +3,7 @@ import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { emitAudit } from "@/lib/audit/emit";
 import { decideProfileChangeRequest } from "@/lib/db/profileChangeRequests";
+import { notify } from "@/lib/notifications/dispatch";
 import {
   PROFILE_CHANGE_FIELD_LABELS,
   profileChangeDecisionSchema,
@@ -71,6 +72,24 @@ export async function POST(
               requestedValue: result.requestedValue,
             },
     });
+
+    // Avisarle a la persona (campana + email, vía el sistema de notificaciones). `notify()`
+    // nunca lanza, y aun así se protege: la decisión ya quedó guardada.
+    try {
+      await notify({
+        type: "profileChange.decided",
+        recipient: { registeredUserId: result.requesterId },
+        data: {
+          requestId: result.requestId,
+          field: result.field,
+          requestedValue: result.requestedValue,
+          decision: result.decision === "approve" ? "APPROVED" : "REJECTED",
+          reason,
+        },
+      });
+    } catch {
+      // Nunca se falla la decisión por un problema de notificación.
+    }
 
     return apiSuccess({ ok: true });
   } catch (err) {

@@ -123,7 +123,7 @@ export function ChangeRequestDialog({
         requestedValue: values.requestedValue.trim(),
         justification: values.justification.trim(),
       });
-      toast.success("Solicitud enviada. Te avisamos acá cuando la revisen.");
+      toast.success("Solicitud enviada. Te vamos a avisar cuando la revisen.");
       onOpenChange(false);
       onCreated();
     } catch (err) {
