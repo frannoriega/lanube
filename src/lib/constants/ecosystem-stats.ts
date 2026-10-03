@@ -2,9 +2,9 @@
  * Cifras del ecosistema educativo y tecnológico de Concepción del Uruguay (2026), tomadas del
  * Plan Estratégico (la fuente autoritativa del copy institucional, `assets/`).
  *
- * Antes vivían sólo en "Quiénes somos" (`StatTile` sueltos en la página). Desde el milestone 17
- * también se muestran en la landing, en una franja propia (`StatsBand`); por eso están acá, en
- * un único lugar: si cambia un número, cambia en las dos páginas.
+ * Se muestran en "Quiénes somos" con `StatsBand`. Durante el milestone 18 también estuvieron
+ * en la landing; se quitaron tras revisarlo con el usuario (son cifras de la ciudad, no de La Nube). Siguen en un archivo
+ * propio para que el número viva en un solo lugar si vuelven a usarse en otra página.
  *
  * `value` es el número que se anima al entrar en pantalla; `prefix` va antes ("+130").
  */

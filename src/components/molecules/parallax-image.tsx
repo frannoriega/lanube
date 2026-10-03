@@ -11,7 +11,7 @@ import Image from "next/image";
 import { useRef } from "react";
 
 /**
- * Foto con parallax sutil (milestone 17): mientras el marco cruza la pantalla, la imagen se
+ * Foto con parallax sutil (milestone 18): mientras el marco cruza la pantalla, la imagen se
  * desplaza ±6% dentro de él, así que parece "más lejos" que el texto. La imagen se escala 1.15
  * para que el desplazamiento nunca deje ver un borde vacío.
  *

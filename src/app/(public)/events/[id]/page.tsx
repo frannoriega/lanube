@@ -12,7 +12,7 @@ import { EventScheduleFacts, EventSessionList } from "./event-schedule";
 import { ScrollToTop } from "./scroll-to-top";
 
 /**
- * Página pública de un evento (rediseño del milestone 17).
+ * Página pública de un evento (rediseño del milestone 18).
  *
  * Desde `lg` son dos columnas: a la izquierda el contenido (portada, título, descripción y
  * sesiones) y a la derecha una ficha fija con lo que el visitante viene a buscar —qué es,

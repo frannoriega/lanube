@@ -5,12 +5,13 @@ import { ThemeToggle } from "@/components/molecules/theme";
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
 import MobileMenu from "./mobile";
+import { ScrollAwareHeader } from "./scroll-aware-header";
 import SignIn from "./signin";
 
 export default function Header() {
   return (
-    <div className="sticky z-50 top-0 w-full flex flex-row items-center justify-center lg:px-16">
-      <div className="px-16 w-fit h-16 bg-background/60 backdrop-blur-xs flex-row rounded-full my-4 hidden lg:flex">
+    <ScrollAwareHeader className="sticky z-50 top-0 w-full flex flex-row items-center justify-center lg:px-16">
+      <div className="glass-nav px-16 w-fit h-16 flex-row rounded-full my-4 hidden lg:flex">
         <Container className="flex flex-row items-center justify-between gap-12">
           <Link href="/" aria-label="Ir al inicio de La Nube">
             <LogoLaNube />
@@ -53,6 +54,6 @@ export default function Header() {
         </Container>
       </div>
       <MobileMenu />
-    </div>
+    </ScrollAwareHeader>
   );
 }

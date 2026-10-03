@@ -10,19 +10,19 @@ import SignIn from "../signin";
 
 export default function MobileMenu() {
   return (
-    // Milestone 17: en teléfono la barra muestra el logo (enlace al inicio) a la izquierda del
+    // Milestone 18: en teléfono la barra muestra el logo (enlace al inicio) a la izquierda del
     // botón de menú. Antes sólo estaba el botón y la marca no aparecía en la pantalla.
     <div className="h-16 w-full flex flex-row items-center justify-between lg:hidden px-4 my-4">
       <Link
         href="/"
         aria-label="Ir al inicio de La Nube"
-        className="flex h-14 items-center rounded-full bg-background/60 px-4 backdrop-blur-xs"
+        className="glass-nav flex h-14 items-center rounded-full px-4"
       >
         <LogoLaNube size={96} />
       </Link>
       <Drawer direction="right">
         <DrawerTrigger aria-label="Abrir menú">
-          <div className="flex flex-row items-center justify-center size-14 p-2 bg-background/60 backdrop-blur-xs rounded-full">
+          <div className="glass-nav flex flex-row items-center justify-center size-14 p-2 rounded-full">
             <Menu className="h-5 w-5" />
           </div>
         </DrawerTrigger>

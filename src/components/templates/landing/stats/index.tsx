@@ -6,48 +6,53 @@ import { ECOSYSTEM_STATS } from "@/lib/constants/ecosystem-stats";
 import { CountUp } from "./count-up";
 
 /**
- * Franja oscura "La Nube en números" (milestone 17). Es la ruptura de ritmo de la landing:
- * todas las demás secciones son fondo claro + tarjetas, ésta es un bloque azul noche a todo el
- * ancho con cifras grandes en cian, para que la página no sea una sucesión de bloques iguales.
- * También se usa en "Quiénes somos" (mismo componente, mismas cifras).
+ * Franja "El ecosistema en números" de "Quiénes somos" (milestone 18).
  *
- * El fondo es sólido (tapa las partículas a propósito) con dos resplandores radiales de marca
- * para que no se vea como un rectángulo plano. Como pinta su propio fondo, no usa
- * `LANDING_SECTION_BG`; igual cuenta como un hijo más del contenedor de secciones, y la
- * alternancia de las demás sigue bien porque ninguna queda pegada a otra del mismo tono.
+ * Primera versión: un bloque azul noche sólido con resplandores, también en la landing entre
+ * Eventos y Noticias. Se sacó de la landing tras revisarla con el usuario porque las cifras son de la
+ * ciudad (universidades, carreras, profesionales y empresas SSI), no de La Nube — titularlas
+ * "La Nube en números" en la portada prometía algo que no eran — y porque cortaba el recorrido
+ * eventos → noticias sin aportar una acción. En "Quiénes somos" sí tienen contexto: siguen al
+ * "desafío", que habla justamente de ese ecosistema.
+ *
+ * El estilo también cambió: el fondo sólido tapaba las partículas y no se parecía a ninguna
+ * otra sección (y en modo claro era el único bloque oscuro de la página). Ahora el fondo es
+ * transparente — entre las dos secciones tintadas que lo rodean, respeta la alternancia — y
+ * los números usan el mismo degradé de marca que la palabra destacada de los títulos, con
+ * `font-bold` como los títulos (antes `font-black` a 7xl, más pesado que todo lo demás).
+ * Breakout → Container → section, igual que las demás secciones de "Quiénes somos", para que
+ * el texto quede alineado con el de sus vecinas (antes llevaba el `px-8` de la landing).
  */
 export function StatsBand({
   eyebrow = "cifras",
-  lead = "El ecosistema educativo y tecnológico de Concepción del Uruguay, en datos (2026).",
+  lead = "Concepción del Uruguay, el ecosistema educativo y tecnológico en el que La Nube se apoya (2026).",
 }: {
   eyebrow?: string;
   lead?: string;
 }) {
   return (
-    <Breakout className="relative overflow-hidden bg-la-nube-night text-white">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_10%_0%,rgba(78,135,194,0.35),transparent_60%),radial-gradient(50%_70%_at_95%_100%,rgba(117,227,241,0.18),transparent_60%)]"
-      />
-      <section className="relative w-full" aria-labelledby="la-nube-en-numeros">
-        <Container className="flex flex-col gap-10 px-8 py-16 md:py-20">
+    <Breakout>
+      <Container>
+        <section
+          className="flex flex-col gap-10 py-16 md:py-20"
+          aria-labelledby="ecosistema-en-numeros"
+        >
           <SectionHeading
-            tone="inverse"
             eyebrow={eyebrow}
-            title="La Nube en"
+            title="El ecosistema en"
             accent="números"
             lead={lead}
-            id="la-nube-en-numeros"
+            id="ecosistema-en-numeros"
           />
           <ul className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
             {ECOSYSTEM_STATS.map((stat, i) => (
               <li key={stat.label}>
                 <Reveal delay={i * 0.08}>
-                  <div className="flex flex-col gap-3 border-l-2 border-la-nube-secondary/60 pl-5">
-                    <span className="text-5xl font-black tracking-tight text-la-nube-secondary tabular-nums md:text-7xl">
+                  <div className="flex flex-col gap-2 border-l-2 border-la-nube-primary/30 pl-5">
+                    <span className="w-fit bg-linear-to-r from-la-nube-primary to-la-nube-secondary bg-clip-text text-5xl font-bold tracking-tight text-transparent tabular-nums md:text-6xl">
                       <CountUp value={stat.value} prefix={stat.prefix} />
                     </span>
-                    <span className="text-sm font-medium text-white/80 md:text-base">
+                    <span className="text-sm font-medium text-muted-foreground md:text-base">
                       {stat.label}
                     </span>
                   </div>
@@ -55,8 +60,8 @@ export function StatsBand({
               </li>
             ))}
           </ul>
-        </Container>
-      </section>
+        </section>
+      </Container>
     </Breakout>
   );
 }

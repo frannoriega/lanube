@@ -47,7 +47,7 @@
   --color-la-nube-selected: #2a6297;
   --color-la-nube-secondary: #75e3f1;
   --color-la-nube-accent: #c8f1fc;
-  /* Experimento de marca (milestone 17): un azul noche derivado del #1c62a3 del logo.
+  /* Experimento de marca (milestone 18): un azul noche derivado del #1c62a3 del logo.
      `ink` tiñe los títulos públicos en modo claro (en lugar del gris #424242), y `night`
      es el fondo de las franjas oscuras (cifras, footer). Blanco sobre `night` ≈ 17:1;
      `ink` sobre --background ≈ 12:1. */
@@ -369,6 +369,71 @@
     border: 1px solid rgba(117, 227, 241, 0.5);
     box-shadow: 0 6px 20px 0 rgba(78, 135, 194, 0.3);
     transform: translateY(-1px);
+  }
+
+  /* Barra pública de vidrio (milestone 18, experimento de marca). Arriba de todo es casi
+     invisible; al hacer scroll (`data-scrolled="true"` en un ancestro, ver `ScrollAwareHeader`)
+     aparece un "canto" de vidrio: un filo de 1 px en degradé, brillante arriba como la luz que
+     pega en el borde de un vidrio y que termina en un hilo de color de marca abajo, más una
+     sombra suave que la despega del contenido. Sin esto, en modo oscuro la barra se confundía
+     con el fondo y sólo se adivinaba su forma sobre algo claro (las tarjetas de logos). El filo
+     se dibuja con una máscara sobre `::before` para respetar el `border-radius` (un `border`
+     plano cortaba la sensación de vidrio). Los colores salen de variables por tema, así el
+     mismo efecto vale en claro y en oscuro. */
+  .glass-nav {
+    --nav-bg: color-mix(in oklab, var(--background) 55%, transparent);
+    --nav-bg-scrolled: color-mix(in oklab, var(--background) 72%, transparent);
+    --nav-edge-top: rgb(255 255 255 / 0.95);
+    --nav-edge-mid: rgb(255 255 255 / 0.35);
+    --nav-edge-bottom: rgb(14 42 71 / 0.22);
+    --nav-shadow: 0 10px 30px -14px rgb(14 42 71 / 0.35);
+    position: relative;
+    isolation: isolate;
+    background: var(--nav-bg);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    transition:
+      background-color 300ms ease,
+      box-shadow 300ms ease;
+  }
+
+  .dark .glass-nav {
+    --nav-edge-top: rgb(255 255 255 / 0.32);
+    --nav-edge-mid: rgb(255 255 255 / 0.06);
+    --nav-edge-bottom: rgb(117 227 241 / 0.4);
+    --nav-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.7);
+  }
+
+  .glass-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      to bottom,
+      var(--nav-edge-top),
+      var(--nav-edge-mid) 45%,
+      var(--nav-edge-bottom)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 300ms ease;
+    pointer-events: none;
+  }
+
+  [data-scrolled="true"] .glass-nav {
+    background: var(--nav-bg-scrolled);
+    box-shadow: var(--nav-shadow);
+  }
+
+  [data-scrolled="true"] .glass-nav::before {
+    opacity: 1;
   }
 
   .glass-header {

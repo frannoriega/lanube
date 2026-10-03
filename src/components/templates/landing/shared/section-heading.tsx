@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
  * última palabra en el degradé de marca, y una bajada opcional.
  *
  * Antes cada sección de la landing (y el "Quiénes somos") repetía este mismo bloque a mano, con
- * pequeñas diferencias de tamaño y color. Centralizarlo (milestone 17) permite que el
+ * pequeñas diferencias de tamaño y color. Centralizarlo (milestone 18) permite que el
  * experimento de marca cambie el tono de los títulos —azul noche `la-nube-ink` en vez del gris
  * neutro— en un único lugar, y deja el ritmo visual en manos del *contenido* de cada sección
  * (que es lo que varía), no de encabezados ligeramente distintos.
