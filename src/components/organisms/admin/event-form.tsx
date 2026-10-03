@@ -132,6 +132,15 @@ export interface EventFormDefaults {
   form: EventFormBindingDefaults | null;
 }
 
+/**
+ * Ancho de "una columna" de las grillas de 2 columnas del formulario (`sm:grid-cols-2
+ * gap-4`): 50% menos medio gap. Los campos sueltos que no ocupan todo el ancho (fechas del
+ * evento, cupo) usan esto en vez de un `max-w-*` arbitrario, para que su borde derecho caiga
+ * en la misma línea que el de "Tipo de evento" / "Apertura de inscripción". Los controles
+ * compuestos (días de la semana, horario) mantienen su ancho intrínseco.
+ */
+const HALF_COLUMN = "sm:w-[calc(50%-0.5rem)]";
+
 const EMPTY_DEFAULTS: EventInput = {
   name: "",
   description: "",
@@ -523,7 +532,7 @@ export function EventForm({
 
                   <FormItem>
                     <FormLabel>Fechas del evento</FormLabel>
-                    <div className="max-w-sm">
+                    <div className={HALF_COLUMN}>
                       <DateRangePicker
                         value={{
                           from: watch("startDate"),
@@ -724,7 +733,7 @@ export function EventForm({
                             type="number"
                             inputMode="numeric"
                             min={1}
-                            className="max-w-56"
+                            className={HALF_COLUMN}
                             value={field.value ?? ""}
                             onChange={(e) =>
                               field.onChange(

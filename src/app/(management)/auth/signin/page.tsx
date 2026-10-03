@@ -314,6 +314,9 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.3 }}
+            // Mismo ritmo vertical (gap-4) que los campos del formulario: sin esto,
+            // "Iniciar Sesión" y "Entrar con passkey" quedaban pegados.
+            className="flex flex-col gap-4"
           >
             <Form {...form}>
               <form
@@ -400,7 +403,7 @@ export default function LandingPage() {
                 {passkeyBusy ? "Esperando tu passkey…" : "Entrar con passkey"}
               </Button>
             ) : null}
-            <div className="flex flex-row w-full h-fit items-center gap-2 py-2">
+            <div className="flex flex-row w-full h-fit items-center gap-2">
               <Separator
                 orientation="horizontal"
                 className="flex-1 bg-slate-800"
