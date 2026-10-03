@@ -6,6 +6,12 @@ import {
 import { DomainError } from "@/lib/errors";
 import { formatRange } from "@/lib/notifications/render/format";
 import { prisma } from "@/lib/prisma";
+import {
+  classifyConflict,
+  mergeWindows,
+  type ApprovalConflict,
+  type ApprovalPreview,
+} from "@/lib/reservations/approval-conflicts";
 import { Prisma } from "@/generated/prisma/client";
 import { ReservationStatus } from "@/generated/prisma/client";
 
@@ -177,6 +183,120 @@ export async function previewConflictingPending(id: string): Promise<string[]> {
   return [...new Set(rows.map((r) => r.reservation_id))].filter(
     (value) => value !== id,
   );
+}
+
+/**
+ * Vista previa de aprobación con el detalle de cada reserva que se rechazaría, para que el
+ * admin decida sabiendo a quién afecta (ver `src/lib/reservations/approval-conflicts.ts`).
+ *
+ * Los ids salen de {@link previewConflictingPending} (la misma lógica que la aprobación real);
+ * esta función solo los enriquece:
+ * - datos de la reserva y de quien la pidió (nombre, correo, institución, motivo, cuándo);
+ * - las franjas exactas en que choca con la reserva a aprobar, leídas del ledger y unidas con
+ *   `mergeWindows` (el ledger está en buckets de 15 min; en una recurrente hay una franja por
+ *   fecha que choca);
+ * - el motivo del rechazo (`classifyConflict`) y las personas que representa.
+ */
+export async function getApprovalPreview(id: string): Promise<ApprovalPreview> {
+  const autoRejectedIds = await previewConflictingPending(id);
+
+  const target = await prisma.reservation.findUnique({
+    where: { id },
+    select: {
+      spaceId: true,
+      space: { select: { name: true, capacity: true, isExclusive: true } },
+    },
+  });
+  const space = target?.space ?? null;
+
+  if (autoRejectedIds.length === 0) {
+    return { autoRejectedIds, conflicts: [], space };
+  }
+
+  const [rows, overlapBuckets] = await Promise.all([
+    prisma.reservation.findMany({
+      where: { id: { in: autoRejectedIds } },
+      select: {
+        id: true,
+        reservableType: true,
+        spaceId: true,
+        reason: true,
+        isRecurring: true,
+        createdAt: true,
+        space: { select: { name: true } },
+        type: { select: { name: true } },
+        registeredUser: {
+          select: {
+            name: true,
+            lastName: true,
+            institution: true,
+            user: { select: { email: true, displayEmail: true } },
+          },
+        },
+      },
+    }),
+    // Buckets de cada reserva afectada que se pisan con algún bucket de la que se aprueba
+    // (mismo criterio de superposición que `preview_approval_conflicts()`).
+    prisma.$queryRaw<
+      {
+        reservation_id: string;
+        start: bigint;
+        end: bigint;
+        actor_size: number;
+      }[]
+    >`
+      SELECT rl.reservation_id,
+             rl.occurrence_start_time AS start,
+             rl.occurrence_end_time   AS "end",
+             rl.actor_size
+      FROM reservation_ledger rl
+      WHERE rl.reservation_id = ANY(${autoRejectedIds}::text[])
+        AND rl.status = 'PENDING'
+        AND EXISTS (
+          SELECT 1 FROM reservation_ledger a
+          WHERE a.reservation_id = ${id}::text
+            AND rl.occurrence_start_time < a.occurrence_end_time
+            AND rl.occurrence_end_time   > a.occurrence_start_time
+        )
+    `,
+  ]);
+
+  const conflicts: ApprovalConflict[] = rows.map((row) => {
+    const buckets = overlapBuckets.filter((b) => b.reservation_id === row.id);
+    const isUser = row.reservableType === "USER" && row.registeredUser;
+    return {
+      id: row.id,
+      kind: classifyConflict(row.spaceId, {
+        spaceId: target?.spaceId ?? null,
+        isExclusive: space?.isExclusive ?? false,
+      }),
+      ownerName: isUser
+        ? `${row.registeredUser.name} ${row.registeredUser.lastName}`.trim()
+        : null,
+      email: isUser
+        ? (row.registeredUser.user.displayEmail ??
+          row.registeredUser.user.email)
+        : null,
+      institution: isUser ? row.registeredUser.institution : null,
+      spaceName: row.space?.name ?? null,
+      reservationTypeName: row.type.name,
+      reason: row.reason,
+      // Una reserva afectada siempre tiene buckets superpuestos (por eso se rechaza).
+      actorSize: Math.max(1, ...buckets.map((b) => Number(b.actor_size))),
+      isRecurring: row.isRecurring,
+      createdAt: Number(row.createdAt),
+      overlaps: mergeWindows(
+        buckets.map((b) => ({ start: Number(b.start), end: Number(b.end) })),
+      ),
+    };
+  });
+
+  // Primero lo que choca antes: es el orden en que el admin lee el calendario.
+  conflicts.sort(
+    (a, b) => (a.overlaps[0]?.start ?? 0) - (b.overlaps[0]?.start ?? 0),
+  );
+
+  return { autoRejectedIds, conflicts, space };
 }
 
 /**
