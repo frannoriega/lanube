@@ -568,7 +568,7 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   `--border` or `--input` drop below AA. If you change a token and that test fails,
   the token is wrong — don't relax the test. (This exists because
   `--muted-foreground` had silently drifted to 3.06:1 across ~220 usages.)
-- **Public-site brand pieces (milestone 17, experiment on branch `experimental`).**
+- **Public-site brand pieces (milestone 18, experiment on branch `experimental`).**
   `la-nube-ink` (#0e2a47, public headings in light mode) and `la-nube-night` (#0a1a2e, dark
   bands + footer) live in `@theme`; the `brand` Button variant is the public primary action
   (admin keeps shadcn's neutral `--primary`). Public section headers use `SectionHeading`
@@ -576,7 +576,10 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   again. Scroll effects are limited to `Reveal` (fade-up once, never in the hero) and
   `ParallaxImage` (content photos only); both no-op under `prefers-reduced-motion`. The hero's
   `AnimatedIsologo` intro plays once per session (`sessionStorage`). Ecosystem numbers live in
-  `src/lib/constants/ecosystem-stats.ts` (landing + about share `StatsBand`).
+  `src/lib/constants/ecosystem-stats.ts` and are shown only on About (`StatsBand`, transparent
+  background) — they're the city's figures, not La Nube's, so they stay off the landing. The
+  public header pills use `.glass-nav` (`globals.css`): a specular gradient rim + shadow that
+  fades in once `ScrollAwareHeader` marks `data-scrolled` — don't swap it for a flat `border`.
 - **Brand-colored text uses `text-la-nube-selected dark:text-la-nube-secondary`.**
   `text-la-nube-primary` measures 3.06:1 on the light background and fails AA at
   body size. It is fine for borders, icons, spinners, gradient stops, and large

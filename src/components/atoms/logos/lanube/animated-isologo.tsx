@@ -6,7 +6,7 @@ import { useId } from "react";
 
 /**
  * Isologo de La Nube (la nube sin el texto) dibujado pieza por pieza para poder animarlo
- * (milestone 17). La geometría es la del SVG oficial (`LogoLaNube`, grupo `ISOLOGO`): tres
+ * (milestone 18). La geometría es la del SVG oficial (`LogoLaNube`, grupo `ISOLOGO`): tres
  * trazos gruesos que forman la nube, diez conectores finos y ocho nodos de color.
  *
  * Cambios respecto del SVG original, ninguno visible en el resultado final:

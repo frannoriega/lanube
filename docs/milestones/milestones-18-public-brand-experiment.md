@@ -1,8 +1,12 @@
-# Milestone 17 — Experimento de marca y estilo del sitio público
+# Milestone 18 — Experimento de marca y estilo del sitio público
 
 **Estado:** implementado como **experimento** (2026-10-02) en la rama `experimental` (sale de
 `preview` en `9bfe403`). No está mergeado: la idea es mirarlo, decidir qué queda y qué no, y
-recién ahí llevarlo a `preview`.
+recién ahí llevarlo a `preview`. **Rebasado sobre `preview` (`f588776`) el 2026-10-03** y
+revisado con el usuario (ver "Revisión 1" al final).
+**Numeración:** nació como "milestone 17", pero `preview` usó ese número para la configuración
+de cuenta y passkeys (`milestones-17-account-settings-and-passkeys.md`) mientras esto vivía en
+su rama. Al rebasar se renumeró a **18** (doc, README, CLAUDE.md y comentarios del código).
 **Tipo:** diseño / marca. Sin cambios de modelo, migraciones ni API.
 
 ## Pedido
@@ -140,7 +144,8 @@ y teléfono.
 
 ### 3. Ritmo de la landing
 
-Orden nuevo: Hero → Próximos eventos → **La Nube en números** → Noticias → Espacios →
+Orden nuevo: Hero → Próximos eventos → ~~**La Nube en números**~~ (quitada en la Revisión 1)
+→ Noticias → Espacios →
 Miembros → Socios → Aliados → **Cierre ("¿Querés ser parte de La Nube?")**.
 
 - **Eventos:** si no hay ningún destacado, el próximo evento se muestra con la tarjeta grande
@@ -212,7 +217,8 @@ debajo como renglones livianos sobre una tarjeta translúcida, en vez del bloque
 ### 6. "Quiénes somos" (`/about`)
 
 - Títulos en azul noche (encabezado compartido).
-- "La Nube en números" usa la misma `StatsBand` de la landing (antes, tiles propios).
+- "La Nube en números" usa la misma `StatsBand` de la landing (antes, tiles propios). En la
+  Revisión 1 pasó a ser "El ecosistema en números", con fondo transparente, y quedó sólo acá.
 - **"La leyenda del logo"** ahora tiene el isologo al lado del relato, que **se dibuja solo al
   entrar en pantalla en el orden del texto** (coreografía `"draw"` vía `IsologoInView`: los
   tres trazos uno por vez, después los conectores y por último "llegaron los nodos").
@@ -272,12 +278,89 @@ debajo como renglones livianos sobre una tarjeta translúcida, en vez del bloque
 3. Confirmar la fecha de "Última actualización" de la política (16/11/2025, tomada de git).
 4. El cambio de copy en la bajada de Miembros ("instituciones" en vez de "profesionales").
 
+## Revisión 1 (2026-10-03)
+
+Al traer los cambios de `preview` (rebase sobre `f588776`) el usuario pidió revisar dos cosas.
+
+### Rebase
+
+Conflictos y cómo se resolvieron:
+
+- `organisms/forms/event-hero.tsx`: `preview` pasó la portada a `FramedImage` (nunca recortar
+  flyers subidos); el experimento había agregado la variante `size="page"` sobre un `<Image
+object-cover>`. Se quedó `FramedImage` (la regla de CLAUDE.md gana) con los `sizes` y el
+  redondeado/sombra de la variante `page`. El marco es 4:3 en ambas variantes.
+- `user/settings/page.tsx`: `preview` lo convirtió en una redirección a `/user/settings/profile`
+  (configuración por secciones); el experimento sólo había tocado el formato de la fecha. Se
+  quedó la versión de `preview`; las secciones nuevas ya formatean con `es-AR`.
+- `docs/milestones/README.md`: se conservaron las dos entradas (y se renumeró ésta, ver arriba).
+- `graphify-out/**`: se tomó la versión de `preview` y se regeneró con `graphify update .`.
+
+Verificado después del rebase: `tsc --noEmit`, `npm run lint` y los 391 tests, todo en verde.
+
+### "Cifras" fuera de la landing
+
+El usuario prefería sacarla salvo que se justificara. **Se sacó de la landing**; se mantiene en
+"Quiénes somos", con otro estilo. Motivos:
+
+- Las cuatro cifras son **de la ciudad** (universidades, carreras, profesionales y empresas
+  SSI), no de La Nube. En la portada, bajo "La Nube en números", prometían algo que no son.
+- Entre Eventos y Noticias cortaba el recorrido sin ofrecer ninguna acción.
+- En "Quiénes somos" sí tienen contexto: van después de "El desafío", que habla de ese
+  ecosistema. Por eso se renombró a **"El ecosistema en números"** con una bajada que lo dice.
+
+El estilo que "no terminaba de cerrar": el bloque era `bg-la-nube-night` **sólido** con
+resplandores propios, así que tapaba el fondo de partículas que se ve detrás de todas las demás
+secciones (y en modo claro era el único bloque oscuro de la página); además los números iban en
+`font-black` a `7xl`, bastante más pesados que los títulos (`font-bold`). Ahora:
+
+- fondo transparente — en "Quiénes somos" queda entre dos secciones tintadas, así que respeta la
+  alternancia;
+- números con el mismo degradé de marca (`la-nube-primary → la-nube-secondary`) que la palabra
+  destacada de los títulos, en `font-bold` a `5xl/6xl`;
+- etiquetas en `text-muted-foreground` y filete izquierdo `la-nube-primary/30`;
+- misma estructura Breakout → Container → section que sus vecinas (antes el `px-8` de la
+  landing la corría 16 px a la derecha);
+- se quitó `tone="inverse"` (el `SectionHeading` sigue soportándolo para otras franjas oscuras).
+
+`CountUp` y `Reveal` siguen igual.
+
+### Barra de navegación en modo oscuro
+
+Problema: la píldora (`bg-background/60` + `backdrop-blur-xs`) tiene casi el mismo color que el
+fondo oscuro, así que al hacer scroll sólo se adivinaba su forma cuando pasaba sobre algo claro
+(las tarjetas blancas de logos de Miembros/Socios/Aliados).
+
+El usuario quería conservar el vidrio y dudaba de un borde. Solución: un **canto de vidrio**,
+no un borde plano (`.glass-nav` en `globals.css`):
+
+- un filo de 1 px dibujado con una máscara sobre `::before` (respeta el `border-radius` de la
+  píldora), en degradé vertical: brillante arriba, como la luz que pega en el canto de un
+  vidrio, casi invisible a los lados, y un hilo de **cian de marca** abajo en oscuro (azul
+  tinta suave en claro);
+- una sombra suave que despega la barra del contenido;
+- fondo algo más opaco (55 % → 72 % de `--background`) y desenfoque de 12 px con `saturate`, en
+  vez de los 4 px de `backdrop-blur-xs`, que dejaba pasar el texto de atrás bastante legible.
+
+Canto, sombra y opacidad extra **aparecen sólo al hacer scroll** (transición de 300 ms): arriba
+de todo, sobre el hero, la barra se ve como antes. El estado lo pone `ScrollAwareHeader`
+(`header/scroll-aware-header.tsx`, componente cliente mínimo con un listener pasivo y umbral de
+8 px) como `data-scrolled` en el contenedor sticky; el `Header` sigue siendo Server Component.
+Los colores van en variables por tema (`--nav-edge-*`, `--nav-shadow`), así que el mismo efecto
+vale en claro y en oscuro, como pidió el usuario. Se aplica a la píldora de escritorio y a las
+dos de teléfono (logo y botón de menú).
+
+Descartado: un borde sólido de 1 px (aplana el vidrio, que era lo que el usuario temía) y un
+anillo con el degradé completo de marca alrededor (demasiado protagonista para una barra que
+está siempre en pantalla).
+
 ## Archivos
 
 Nuevos: `atoms/logos/lanube/animated-isologo.tsx`, `atoms/logos/lanube/isologo-in-view.tsx`,
 `molecules/reveal.tsx`, `molecules/parallax-image.tsx`,
 `templates/landing/shared/section-heading.tsx`, `templates/landing/stats/{index,count-up}.tsx`,
 `templates/landing/cta/index.tsx`, `lib/constants/ecosystem-stats.ts`,
+`organisms/layouts/public-layout/header/scroll-aware-header.tsx` (Revisión 1),
 `lib/events/schedule-summary{,.test}.ts`,
 `app/(public)/events/[id]/{event-schedule,event-fact}.tsx`,
 `app/(public)/policies/privacy/{table-of-contents,policy-content}.tsx`.

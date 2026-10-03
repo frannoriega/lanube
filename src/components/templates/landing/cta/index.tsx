@@ -6,7 +6,7 @@ import { ArrowRight, Mail } from "lucide-react";
 import Link from "next/link";
 
 /**
- * Cierre de la landing (milestone 17): un panel con el degradé de marca y las dos acciones que
+ * Cierre de la landing (milestone 18): un panel con el degradé de marca y las dos acciones que
  * importan — reservar un espacio o escribirnos. Antes la página terminaba en la última fila de
  * logos y pasaba directo al footer, sin una invitación final.
  *

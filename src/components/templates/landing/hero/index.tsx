@@ -125,7 +125,7 @@ export default function HeroSection({
 
   const intro = useIntroState();
 
-  // Hero (milestone 17): dos columnas desde `lg` — texto alineado a la izquierda y el
+  // Hero (milestone 18): dos columnas desde `lg` — texto alineado a la izquierda y el
   // isologo animado a la derecha—; en teléfono, el logo arriba y el texto centrado debajo.
   // `overflow-x-clip` evita que los nodos que llegan "desde fuera de la pantalla" generen
   // scroll horizontal mientras vuelan (clip, no hidden: no crea un contenedor de scroll).
