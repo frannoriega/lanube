@@ -2,7 +2,7 @@ import type { EventOccurrence } from "@/lib/events/occurrences";
 
 /**
  * Resumen legible del cronograma de un evento recurrente, para la página pública del evento
- * (milestone 17). En vez de obligar a leer una lista de trece fechas casi iguales, la página
+ * (milestone 18). En vez de obligar a leer una lista de trece fechas casi iguales, la página
  * abre con "Lunes y jueves · 10:00 – 13:00" + "Del 13 abr al 25 may 2026 · 13 sesiones".
  *
  * Es una función pura (sin `Date.now()` ni zona implícita) para poder testearla: la zona

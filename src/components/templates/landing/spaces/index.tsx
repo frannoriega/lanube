@@ -10,7 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 /**
- * "Nuestros espacios" en la landing (milestone 17): una grilla de fotos. Las fotos de los
+ * "Nuestros espacios" en la landing (milestone 18): una grilla de fotos. Las fotos de los
  * espacios son lo que mejor "vende" el lugar, así que ocupan toda la tarjeta, con el nombre,
  * la capacidad y una línea de descripción sobre un degradé oscuro.
  *

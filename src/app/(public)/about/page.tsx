@@ -141,7 +141,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 /**
  * Encabezado de sección de esta página: el `SectionHeading` compartido con la landing (desde el
- * milestone 17, títulos en azul noche). `heading` ya trae su palabra en degradé.
+ * milestone 18, títulos en azul noche). `heading` ya trae su palabra en degradé.
  */
 function SectionHeader({
   eyebrow,
@@ -258,7 +258,7 @@ export default function AboutPage() {
         </Container>
       </Breakout>
 
-      {/* La Nube en números — la misma franja oscura de la landing (mismas cifras). */}
+      {/* El ecosistema en números — transparente entre dos secciones tintadas (ver `StatsBand`). */}
       <StatsBand />
 
       {/* El origen — the official logo legend (tinted feature). */}
