@@ -4,9 +4,16 @@
  */
 
 import { apiSend } from "@/lib/api/client";
+import type {
+  ApprovalConflict,
+  ApprovalPreview,
+} from "@/lib/reservations/approval-conflicts";
 
 export type ReservationReviewResult = {
   autoRejectedIds?: string[];
+  /** Solo en la vista previa (`preview: true`): el detalle de cada reserva afectada. */
+  conflicts?: ApprovalConflict[];
+  space?: ApprovalPreview["space"];
 };
 
 export function reviewAdminReservation(
