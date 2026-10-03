@@ -7,7 +7,6 @@ import MembersSection from "@/components/templates/landing/members";
 import NewsSection from "@/components/templates/landing/news";
 import PartnersSection from "@/components/templates/landing/partners";
 import SpacesSection from "@/components/templates/landing/spaces";
-import { StatsBand } from "@/components/templates/landing/stats";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
 import { BASE_KEYWORDS } from "@/lib/constants/hero";
@@ -39,10 +38,10 @@ export default async function Home() {
   // as it's present. EmojiShower is a `position: fixed` full-viewport overlay with no
   // layout footprint of its own, so it renders as a sibling of (outside) that container.
   //
-  // Milestone 17 (experimento de marca): `StatsBand` (franja azul noche) y `ClosingCta`
-  // son siempre visibles y pintan su propio fondo, así que no usan LANDING_SECTION_BG pero sí
-  // ocupan un lugar en el conteo de nth-child. La franja oscura corta el ritmo claro/tintado a
-  // propósito; las secciones a sus lados siguen alternando bien entre sí.
+  // Milestone 18 (experimento de marca): `ClosingCta` es siempre visible y pinta su propio
+  // fondo, así que no usa LANDING_SECTION_BG pero sí ocupa un lugar en el conteo de nth-child
+  // (es el último, así que no corre la paridad de nadie). La franja de cifras que iba entre
+  // Eventos y Noticias se quitó tras revisarla (ver `StatsBand`).
   return (
     <>
       {theme?.entranceEffect === "EMOJI_SHOWER" && emojis.length > 0 ? (
@@ -59,7 +58,6 @@ export default async function Home() {
         />
         {/* Right after the hero; hidden automatically when there are no upcoming events. */}
         <EventsSection />
-        <StatsBand />
         <NewsSection />
         <SpacesSection />
         <MembersSection />

@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Fact } from "./event-fact";
 
 /**
- * Piezas de cronograma de la página pública de un evento (milestone 17).
+ * Piezas de cronograma de la página pública de un evento (milestone 18).
  *
  * El resumen se calcula **en el cliente** porque depende de la zona horaria del visitante
  * (las sesiones viajan en UTC ms). En el HTML del servidor, y hasta hidratar, se ve un
