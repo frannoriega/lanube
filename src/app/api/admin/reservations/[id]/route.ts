@@ -3,7 +3,7 @@ import {
   approveReservationAndRejectConflicts,
   buildReservationAuditContext,
   getReservationNotificationContext,
-  previewConflictingPending,
+  getApprovalPreview,
   setReservationStatus,
   type ReservationNotificationContext,
 } from "@/lib/db/adminReservations";
@@ -70,11 +70,10 @@ export async function PATCH(
 
     if (status === "APPROVED") {
       if (preview) {
-        const conflicts = await previewConflictingPending(resolvedParams.id);
-        return NextResponse.json({
-          approvedId: null,
-          autoRejectedIds: conflicts,
-        });
+        // Con el detalle de cada reserva afectada, no solo sus ids: el admin tiene que poder
+        // decidir sabiendo a quién rechaza y por qué (ver `getApprovalPreview`).
+        const previewResult = await getApprovalPreview(resolvedParams.id);
+        return NextResponse.json({ approvedId: null, ...previewResult });
       } else {
         const before = await prisma.reservation.findUnique({
           where: { id: resolvedParams.id },

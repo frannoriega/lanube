@@ -723,7 +723,15 @@ onSave)` + `ReorderBar` (`molecules/table-reorder.tsx`) and `DataTable`'s `reord
   page-level horizontal overflow. Run it for any layout change; the agreed baseline is
   `.mobile-shots/baseline/`.
 - The management nav drawer is a `Sheet` at `z-[120]` (the sticky header is `z-100`); the
-  WhatsApp floating button is hidden under `/admin` and `/user`.
+  WhatsApp floating button is hidden under `/admin` and `/user`. A dialog opened **from
+  inside** a Sheet must use `<ResponsiveDialogContent aboveSheet>` (`z-[130]`), or it renders
+  behind the panel (the reservation-approval confirm did, on phones).
+- **Approving a reservation only asks for confirmation when it would auto-reject others**
+  (the `preview: true` call returns `autoRejectedIds`); with none, it approves straight away.
+  When there are some, `ApprovalConflictsDialog` shows each affected reservation in full —
+  requester + contact, every overlapping window, headcount, motive, requested-at, and _why_ it
+  would be rejected — from `getApprovalPreview()` (`src/lib/reservations/approval-conflicts.ts`
+  for the shared types). Never go back to listing bare ids.
 
 ### 14. Account settings, protected profile fields & passkeys (milestone 17)
 

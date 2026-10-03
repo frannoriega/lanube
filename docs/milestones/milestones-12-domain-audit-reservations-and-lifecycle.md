@@ -1306,6 +1306,21 @@ informan que **no se rechaza nada** (correcto — aprobar una todavía deja luga
 exclusivo las dos informan **`t_x2, t_x3`**, idénticamente. Las dos funciones quedaron en la misma
 migración, contiguas, porque la falla que hay que evitar es que se separen.
 
+> **Seguimiento (2026-10-03).** La vista previa devolvía solo los ids (cuid2) y el diálogo de
+> confirmación los listaba tal cual, así que el admin seguía aprobando a ciegas. Ahora la ruta
+> responde con `getApprovalPreview(id)` (`src/lib/db/adminReservations.ts`): mismos
+> `autoRejectedIds` (de `previewConflictingPending`, sin cambiar la lógica) más, por cada reserva
+> afectada, quién la pidió (nombre, correo, institución), su motivo, cuándo la pidió, personas,
+> si es recurrente, **todas las franjas en que choca** (buckets del ledger unidos con
+> `mergeWindows`) y **por qué se rechazaría** (`EXCLUSIVE` / `CAPACITY` / `SAME_PERSON`, con
+> `classifyConflict`); tipos y helpers puros en `src/lib/reservations/approval-conflicts.ts`
+> (testeados). El diálogo es `organisms/admin/approval-conflicts-dialog.tsx`, compartido por el
+> dashboard y `/admin/reservations`. Además: **sin conflictos ya no se pide confirmación** (se
+> aprueba directo) y el diálogo usa `aboveSheet`, porque en el teléfono quedaba detrás del
+> detalle de la reserva (un `Sheet` en `z-[120]`) y no se podía confirmar. Verificado contra la
+> base local con tres reservas sembradas (una de cada motivo, una recurrente con 4 fechas
+> superpuestas) y capturas a 390 px y 1440 px.
+
 **D18 — `actor_size`.** `GREATEST(COALESCE(size, 1), 1)` en `get_actor_size`, así que un equipo
 vacío ocupa un lugar en lugar de cero. Verificado: `get_actor_size('TEAM', <equipo vacío>)` ahora
 devuelve `1`. Si un equipo vacío debería poder reservar es una pregunta de producto y se dejó

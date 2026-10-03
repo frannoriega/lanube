@@ -34,6 +34,8 @@ function SheetPortal({
  * header le pintaba encima a cualquier panel lateral (el detalle de auditoría quedaba con el
  * título tapado). ⚠️ Un Popover/Select/Dialog abierto *desde dentro* de un Sheet (todos en
  * `z-50`) quedaría detrás: si alguna vez hace falta, subile el `z-index` a ese contenido.
+ * Para diálogos ya existe `<ResponsiveDialogContent aboveSheet>` (lo usa la confirmación de
+ * aprobar una reserva desde su detalle).
  */
 function SheetOverlay({
   className,

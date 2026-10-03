@@ -107,7 +107,17 @@ type ContentProps = React.ComponentProps<typeof DialogContent> & {
    * de diálogo centrado y no tiene sentido en una hoja de ancho completo.
    */
   drawerClassName?: string;
+  /**
+   * Abre el diálogo por encima de un `Sheet` (que vive en `z-[120]`, ver `ui/sheet.tsx`).
+   * Hace falta cuando el diálogo se dispara desde un panel lateral abierto —p. ej. aprobar
+   * una reserva desde su detalle—: con el `z-50` por defecto quedaba detrás del panel y el
+   * botón de confirmar era inalcanzable. Sube overlay y contenido juntos, en ambos modos.
+   */
+  aboveSheet?: boolean;
 };
+
+/** Capa de un diálogo abierto desde un `Sheet`: justo por encima de su `z-[120]`. */
+const ABOVE_SHEET_LAYER = "z-[130]";
 
 /**
  * Contenido. En modo Drawer envuelve a los hijos en un área que scrollea (alto máximo 90dvh)
@@ -119,13 +129,16 @@ function ResponsiveDialogContent({
   drawerClassName,
   children,
   showCloseButton,
+  aboveSheet,
   ...props
 }: ContentProps) {
   const { isDesktop } = useResponsiveDialog();
+  const layer = aboveSheet ? ABOVE_SHEET_LAYER : undefined;
   if (isDesktop) {
     return (
       <DialogContent
-        className={className}
+        className={cn(layer, className)}
+        overlayClassName={layer}
         showCloseButton={showCloseButton}
         {...props}
       >
@@ -135,7 +148,8 @@ function ResponsiveDialogContent({
   }
   return (
     <DrawerContent
-      className={cn("max-h-[90dvh]", drawerClassName)}
+      className={cn("max-h-[90dvh]", layer, drawerClassName)}
+      overlayClassName={layer}
       // `onOpenAutoFocus` & co. son props de Radix Dialog; vaul las acepta igual (usa Radix
       // por debajo), así que se pasan tal cual.
       {...(props as React.ComponentProps<typeof DrawerContent>)}
@@ -180,7 +194,10 @@ function ResponsiveDialogFooter({
     <div
       data-slot="drawer-footer"
       className={cn(
-        "sticky bottom-0 -mx-4 flex flex-col-reverse gap-2 border-t bg-background px-4 pt-3 pb-1",
+        // El `-mb` anula el padding inferior del área que scrollea (ver `…Content`) y el `pb`
+        // lo repone dentro del pie: sin esto quedaba una franja bajo el pie por donde se veía
+        // pasar el contenido al scrollear.
+        "sticky bottom-0 -mx-4 -mb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col-reverse gap-2 border-t bg-background px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
       {...props}

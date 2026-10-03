@@ -9,19 +9,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from "@/components/molecules/responsive-dialog";
+import { ApprovalConflictsDialog } from "@/components/organisms/admin/approval-conflicts-dialog";
 import { StatGrid, StatTile } from "@/components/molecules/stat-grid";
 import { useServerTime } from "@/components/providers/server-time";
 import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
 import { useAdminStats } from "@/hooks/api";
 import { apiErrorMessage } from "@/lib/api/client";
 import { reviewAdminReservation } from "@/lib/api/mutations";
+import type {
+  ApprovalConflict,
+  ApprovalPreview,
+} from "@/lib/reservations/approval-conflicts";
 import {
   Building2,
   Calendar,
@@ -47,14 +45,42 @@ export default function AdminDashboard() {
     refetch: refetchStats,
   } = useAdminStats();
   const [processing, setProcessing] = useState<string | null>(null);
+  /** Aprobación pendiente de confirmar: solo existe cuando rechazaría otras reservas. */
   const [confirmData, setConfirmData] = useState<{
     reservationId: string;
-    conflicts: string[];
+    conflicts: ApprovalConflict[];
+    space: ApprovalPreview["space"];
   } | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [refetchKey, setRefetchKey] = useState(0);
 
   const triggerRefetch = useCallback(() => setRefetchKey((k) => k + 1), []);
+
+  /** Aprueba de verdad (sin `preview`) y avisa cuántas reservas se rechazaron en cascada. */
+  const commitApprove = useCallback(
+    async (reservationId: string) => {
+      setConfirming(true);
+      try {
+        const data = await reviewAdminReservation(reservationId, {
+          status: "APPROVED",
+        });
+        const count = (data.autoRejectedIds || []).length;
+        toast.success(
+          count > 0
+            ? `Reserva aprobada. ${count} reservas rechazadas automáticamente`
+            : "Reserva aprobada",
+        );
+        setConfirmData(null);
+        refetchStats();
+        triggerRefetch();
+      } catch (err) {
+        toast.error(apiErrorMessage(err, "Error al aprobar la reserva"));
+      } finally {
+        setConfirming(false);
+      }
+    },
+    [refetchStats, triggerRefetch],
+  );
 
   const handleReservationAction = useCallback(
     async (
@@ -69,9 +95,17 @@ export default function AdminDashboard() {
             status: action,
             preview: true,
           });
+          const conflicts = preview.conflicts ?? [];
+          // Sin conflictos no hay nada que confirmar: se aprueba directo. El diálogo solo
+          // aparece cuando aprobar va a rechazar automáticamente otras reservas.
+          if (conflicts.length === 0) {
+            await commitApprove(reservationId);
+            return;
+          }
           setConfirmData({
             reservationId,
-            conflicts: preview.autoRejectedIds || [],
+            conflicts,
+            space: preview.space ?? null,
           });
         } else {
           await reviewAdminReservation(reservationId, {
@@ -85,37 +119,11 @@ export default function AdminDashboard() {
       } catch (err) {
         toast.error(apiErrorMessage(err, "Error al procesar la reserva"));
       } finally {
-        if (action !== "APPROVED") setProcessing(null);
+        setProcessing(null);
       }
     },
-    [refetchStats, triggerRefetch],
+    [commitApprove, refetchStats, triggerRefetch],
   );
-
-  const confirmApprove = useCallback(async () => {
-    if (!confirmData) return;
-    setConfirming(true);
-    try {
-      const data = await reviewAdminReservation(confirmData.reservationId, {
-        status: "APPROVED",
-      });
-      const count = (data.autoRejectedIds || []).length;
-      toast.success(
-        `Reserva aprobada. ${
-          count > 0
-            ? `${count} reservas rechazadas automáticamente`
-            : "Sin conflictos"
-        }`,
-      );
-      setConfirmData(null);
-      refetchStats();
-      triggerRefetch();
-    } catch (err) {
-      toast.error(apiErrorMessage(err, "Error al aprobar la reserva"));
-    } finally {
-      setConfirming(false);
-      setProcessing(null);
-    }
-  }, [confirmData, refetchStats, triggerRefetch]);
 
   const createServiceIcon = (service: string) => {
     const icons: Record<string, React.ElementType> = {
@@ -261,41 +269,14 @@ export default function AdminDashboard() {
         refetchKey={refetchKey}
       />
 
-      <ResponsiveDialog
-        open={!!confirmData}
-        onOpenChange={(open) => !open && setConfirmData(null)}
-      >
-        <ResponsiveDialogContent>
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Confirmar aprobación</ResponsiveDialogTitle>
-            <ResponsiveDialogDescription>
-              {confirmData?.conflicts?.length
-                ? `Aprobar esta reserva rechazará automáticamente ${confirmData.conflicts.length} reservas pendientes.`
-                : "No hay conflictos detectados."}
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          {confirmData?.conflicts?.length ? (
-            <div className="max-h-48 overflow-auto text-sm border rounded p-2">
-              {confirmData.conflicts.map((id) => (
-                <div
-                  key={id}
-                  className="py-1 border-b last:border-b-0 border-gray-200 dark:border-gray-800"
-                >
-                  {id}
-                </div>
-              ))}
-            </div>
-          ) : null}
-          <div className="flex justify-end gap-2 pt-3">
-            <Button variant="outline" onClick={() => setConfirmData(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={confirmApprove} disabled={confirming}>
-              {confirming ? "Aprobando..." : "Confirmar"}
-            </Button>
-          </div>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
+      <ApprovalConflictsDialog
+        preview={confirmData}
+        onCancel={() => setConfirmData(null)}
+        onConfirm={() =>
+          confirmData && commitApprove(confirmData.reservationId)
+        }
+        confirming={confirming}
+      />
     </div>
   );
 }
