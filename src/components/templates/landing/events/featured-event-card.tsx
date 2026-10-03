@@ -15,7 +15,7 @@ import type { UpcomingEventCardData } from "./event-card";
  * and a bold headline + blurb + registration CTA on the other. Rendered one-at-a-time by
  * {@link FeaturedCarousel}. Much louder than the compact {@link EventCard} grid tile.
  *
- * `badge={false}` (milestone 17): la misma tarjeta grande sin la etiqueta "Destacado". La
+ * `badge={false}` (milestone 18): la misma tarjeta grande sin la etiqueta "Destacado". La
  * landing la usa para el *próximo* evento cuando ninguno está destacado, así la sección nunca
  * arranca con una tarjeta chica sola en una esquina; no dice "Destacado" porque no lo es.
  */

@@ -61,7 +61,7 @@ export default async function SpacesPage() {
 }
 
 /**
- * Un espacio (rediseño del milestone 17): foto grande con parallax sutil de un lado y, del
+ * Un espacio (rediseño del milestone 18): foto grande con parallax sutil de un lado y, del
  * otro, el nombre, la capacidad y el equipamiento como chips, la descripción y el botón de
  * reservar. Los lados se alternan en escritorio para darle ritmo a la página.
  *

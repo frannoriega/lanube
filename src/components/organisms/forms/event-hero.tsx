@@ -9,7 +9,7 @@ import { FramedImage } from "@/components/molecules/framed-image";
  * layout and hurts readability. Body copy uses near-full foreground contrast (not muted gray)
  * so it stays legible in dark mode.
  *
- * Milestone 17: `size="page"` es la variante de la página pública del evento (título grande en
+ * Milestone 18: `size="page"` es la variante de la página pública del evento (título grande en
  * azul noche, portada más redondeada) y `afterTitle` permite intercalar algo entre el título y
  * la descripción (allí, la ficha del evento en teléfono). Los formularios públicos siguen con
  * la variante `"form"` por defecto, sin cambios.

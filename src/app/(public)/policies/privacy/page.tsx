@@ -14,12 +14,12 @@ export const metadata = {
  * Fecha de la última modificación del **texto** de la política (último commit que tocó
  * `src/assets/policies/privacy.mdx`: 16/11/2025). La propia política promete publicar los
  * cambios "con indicación de su fecha de actualización" (sección 12), así que **hay que
- * actualizar esta constante cada vez que cambie el texto**. Milestone 17.
+ * actualizar esta constante cada vez que cambie el texto**. Milestone 18.
  */
 const LAST_UPDATED = "16 de noviembre de 2025";
 
 /**
- * Política de privacidad (rediseño del milestone 17): una columna de lectura angosta (~70
+ * Política de privacidad (rediseño del milestone 18): una columna de lectura angosta (~70
  * caracteres por renglón, antes ocupaba todo el ancho), la fecha de actualización arriba y
  * un índice fijo a la izquierda en escritorio que marca la sección que se está leyendo.
  *

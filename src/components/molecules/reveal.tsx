@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 /**
  * Aparición suave al entrar en pantalla: el contenido sube 24px y se funde, **una sola vez**
  * (no se repite al volver a scrollear). Es el único efecto de scroll "general" del sitio
- * público (milestone 17): deliberadamente discreto, porque el fondo de partículas ya está en
+ * público (milestone 18): deliberadamente discreto, porque el fondo de partículas ya está en
  * movimiento y sumar efectos pesados de scroll lo volvería ruidoso.
  *
  * - Con `prefers-reduced-motion` no anima nada: renderiza el contenido tal cual.

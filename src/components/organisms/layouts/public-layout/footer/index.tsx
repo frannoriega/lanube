@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export default async function Footer({ className }: { className?: string }) {
   const contact = await getSiteConfig();
-  // Azul noche de marca (milestone 17) en vez de `slate-950`: el casi-negro neutro no
+  // Azul noche de marca (milestone 18) en vez de `slate-950`: el casi-negro neutro no
   // pertenecía a ninguna paleta del sitio; éste es el mismo fondo de la franja de cifras.
   const cns = cn(
     `w-full h-fit bg-la-nube-night border-t border-la-nube-primary/20`,
