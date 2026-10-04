@@ -54,10 +54,13 @@
   --color-la-nube-ink: #0e2a47;
   --color-la-nube-night: #0a1a2e;
 
-  /* Container configuration */
-  --container-center: true;
-  --container-padding: 2rem;
-  --container-2xl: 1400px;
+  /* Sin `--container-*` propios. En Tailwind v4 ese namespace define los tamaños de
+     `max-w-*`: el `--container-2xl: 1400px` que venía del bootstrap (una config de
+     `container` de Tailwind v3 portada tal cual) convertía `max-w-2xl` en 1400px en todo el
+     sitio — `/forms` ocupaba todo el ancho y la columna de lectura de las noticias era más
+     ancha que lo diseñado. `--container-center`/`--container-padding` no hacían nada (o peor:
+     creaban `max-w-center` y `max-w-padding`). Nadie usa la clase `container`; el ancho de
+     página lo da el átomo `Container` (`max-w-7xl`). */
 
   /* Blinking cursor animation */
   --animate-blink: blink 1s step-end infinite;

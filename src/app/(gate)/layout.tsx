@@ -8,9 +8,6 @@ import Link from "next/link";
  * "Actualizamos nuestras políticas" (milestone 19). Mismo estilo que el de `/forms`: logo y
  * nada más, porque la persona tiene una sola cosa que hacer acá. No usa el layout de gestión
  * (que asume un usuario ya habilitado) ni el público (su navegación invita a irse).
- *
- * Ancho con `max-w-[42rem]` y no `max-w-2xl`: `globals.css` redefine `--container-2xl` a
- * 1400px, y eso convierte `max-w-2xl` en 1400px (le pasa también al shell de `/forms`).
  */
 export default function GateLayout({
   children,
@@ -25,14 +22,14 @@ export default function GateLayout({
       storageKey="la-nube-theme"
     >
       <div className="flex min-h-[100svh] flex-col bg-background bg-gradient-to-b from-la-nube-accent/40 to-transparent dark:from-la-nube-selected/10">
-        <header className="mx-auto flex w-full max-w-[42rem] items-center px-4 py-6">
+        <header className="mx-auto flex w-full max-w-2xl items-center px-4 py-6">
           <Link href="/" aria-label="Ir al inicio de La Nube">
             <Logo size={110} />
           </Link>
         </header>
         <main
           id="main-content"
-          className="mx-auto w-full max-w-[42rem] flex-1 px-4 pb-16"
+          className="mx-auto w-full max-w-2xl flex-1 px-4 pb-16"
         >
           <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
             {children}

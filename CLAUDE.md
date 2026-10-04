@@ -582,6 +582,16 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   background) — they're the city's figures, not La Nube's, so they stay off the landing. The
   public header pills use `.glass-nav` (`globals.css`): a specular gradient rim + shadow that
   fades in once `ScrollAwareHeader` marks `data-scrolled` — don't swap it for a flat `border`.
+- **Never define `--container-*` tokens in `globals.css`.** In Tailwind v4 that namespace
+  _is_ the `max-w-*` scale: a leftover `--container-2xl: 1400px` from the v3 bootstrap made
+  `max-w-2xl` 1400px site-wide until 2026-10-04. Page width comes from the `Container` atom
+  (`max-w-7xl`).
+- **`ParticlesLayout` must never wrap `children` in `ParticlesProvider`** (only the canvas):
+  in `@tsparticles/react` 4.x it renders `null` until the engine loads in the browser, which
+  left every public page server-rendered **empty** (and `notFound()` answering 200) from
+  2026-05-23 to 2026-10-04. Client components under it now SSR, so no `window`/`matchMedia`/
+  `innerWidth` reads during render — measure in an effect (`useViewportWidth`) or use
+  `useMediaQuery` (its server snapshot keeps hydration consistent).
 - **Brand-colored text uses `text-la-nube-selected dark:text-la-nube-secondary`.**
   `text-la-nube-primary` measures 3.06:1 on the light background and fails AA at
   body size. It is fine for borders, icons, spinners, gradient stops, and large
