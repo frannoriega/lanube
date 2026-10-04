@@ -9,7 +9,7 @@ interface Entry {
 }
 
 /**
- * Índice de la política de privacidad (milestone 18). Se arma leyendo los `h2[id]` ya
+ * Índice de una política (milestone 18; genérico desde el 19). Se arma leyendo los `h2[id]` ya
  * renderizados dentro de `#politica`, así que nunca se desincroniza del MDX: si se agrega o
  * renombra una sección, el índice la refleja sin tocar este archivo.
  *
