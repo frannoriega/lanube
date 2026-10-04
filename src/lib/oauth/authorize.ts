@@ -5,6 +5,8 @@ import { resolveClient } from "./clients";
 import { isValidS256Challenge } from "./crypto";
 import { isOurResource, mcpResourceUrl } from "./origin";
 import { matchesRegisteredRedirectUri } from "./redirect-uri";
+import { getPermissionSetForUser } from "@/lib/db/roles";
+import { scopeAppliesTo } from "@/lib/mcp/access";
 
 /**
  * Validación de un pedido de autorización (`/oauth/authorize?…`), compartida por la página
@@ -128,4 +130,19 @@ export async function validateAuthorizationRequest(
     resource: mcpResourceUrl(origin),
     state,
   };
+}
+
+/**
+ * Recorta los scopes pedidos a los que tienen sentido para esta cuenta (milestone 21): a quien
+ * no tiene permisos de gestión no se le muestran ni se le guardan `management:read` /
+ * `news:write`. Lo usan la pantalla de consentimiento (qué se muestra) y el "Permitir" (qué se
+ * guarda en el grant), así lo consentido es exactamente lo que se ve.
+ */
+export async function scopesForAccount(
+  scopes: OAuthScope[],
+  registeredUserId: string,
+): Promise<OAuthScope[]> {
+  const resolved = await getPermissionSetForUser(registeredUserId);
+  const permissions = resolved?.permissions ?? null;
+  return scopes.filter((s) => scopeAppliesTo(s, permissions));
 }

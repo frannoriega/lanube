@@ -26,12 +26,15 @@ export function OAuthConsentForm({
   clientHost,
   accountEmail,
   capabilities,
+  hasManagement,
   request,
 }: {
   clientName: string;
   clientHost: string;
   accountEmail: string;
   capabilities: string[];
+  /** Si la cuenta le da al asistente algún scope de gestión (milestone 21). */
+  hasManagement: boolean;
   request: AuthorizationRequestParams;
 }) {
   const [busy, setBusy] = useState<"allow" | "deny" | null>(null);
@@ -88,10 +91,12 @@ export function OAuthConsentForm({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Solo actúa sobre tus propias reservas, nunca sobre funciones de
-        administración. Las reservas que pida quedan pendientes hasta que el
-        equipo de La Nube las apruebe. Podés desconectarlo cuando quieras desde
-        Configuración → Seguridad.
+        {hasManagement
+          ? "Lo de gestión es de solo lectura y respeta los permisos de tu rol: el asistente nunca publica, aprueba ni rechaza nada (eso lo hacés vos en el panel). "
+          : "Solo actúa sobre tus propias reservas, nunca sobre funciones de administración. "}
+        Las reservas que pida quedan pendientes hasta que el equipo de La Nube
+        las apruebe. Podés desconectarlo cuando quieras desde Configuración →
+        Seguridad.
       </p>
       <p className="text-sm text-muted-foreground">
         Permití el acceso solo si fuiste vos quien inició esta conexión desde{" "}
