@@ -17,6 +17,11 @@ export interface AdminReservationListResult {
   deniedReason?: string | null;
   /** Headcount for capacity (from reservation ledger; defaults to 1 if missing). */
   actorSize: number;
+  /**
+   * Nombre declarado del asistente si la reserva se pidió por el conector MCP (milestone 20);
+   * `null`/ausente si se pidió desde la web. El admin lo ve como un chip al aprobar.
+   */
+  assistantName?: string | null;
   resource: {
     id: string;
     name: string;

@@ -4,8 +4,9 @@ import { ThemeProvider } from "next-themes";
 import Link from "next/link";
 
 /**
- * Shell de las pantallas que se interponen antes de usar la zona autenticada — hoy, solo
- * "Actualizamos nuestras políticas" (milestone 19). Mismo estilo que el de `/forms`: logo y
+ * Shell de las pantallas que se interponen antes de usar la zona autenticada:
+ * "Actualizamos nuestras políticas" (milestone 19) y el consentimiento OAuth del conector MCP
+ * (`/oauth/authorize`, milestone 20). Mismo estilo que el de `/forms`: logo y
  * nada más, porque la persona tiene una sola cosa que hacer acá. No usa el layout de gestión
  * (que asume un usuario ya habilitado) ni el público (su navegación invita a irse).
  */

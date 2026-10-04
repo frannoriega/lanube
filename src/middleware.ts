@@ -6,6 +6,11 @@ import {
   type PermissionSet,
 } from "@/lib/rbac";
 import { PATHNAME_HEADER, policyGateUrl } from "@/lib/policies/gate";
+import {
+  OAUTH_AUTHORIZE_PATH,
+  safeCallbackUrl,
+  signInUrl,
+} from "@/lib/signin/callback-url";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -47,14 +52,24 @@ export async function middleware(request: NextRequest) {
     : NO_PERMISSIONS;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
 
+  // `/oauth/authorize` (milestone 20, consentimiento del conector MCP) hereda ingreso, baneo
+  // y gate de políticas como el resto de la zona autenticada.
   const requiresSession =
     request.nextUrl.pathname.startsWith("/admin") ||
-    request.nextUrl.pathname.startsWith("/user");
+    request.nextUrl.pathname.startsWith("/user") ||
+    request.nextUrl.pathname.startsWith(OAUTH_AUTHORIZE_PATH);
 
   const requiresAdmin = request.nextUrl.pathname.startsWith("/admin");
 
   if (!isAuth && requiresSession) {
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
+    // Se vuelve a la ruta pedida después de ingresar (milestone 20): imprescindible para el
+    // flujo OAuth, que llega acá con todos sus parámetros en la query.
+    return NextResponse.redirect(
+      new URL(
+        signInUrl(request.nextUrl.pathname + request.nextUrl.search),
+        request.url,
+      ),
+    );
   }
 
   if (requiresSession && isBanned) {
@@ -82,8 +97,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthPage && isSignedUp) {
-    // If user is already authenticated and trying to access auth pages, redirect to dashboard
-    return NextResponse.redirect(new URL("/user/dashboard", request.url));
+    // If user is already authenticated and trying to access auth pages, redirect to the
+    // validated callbackUrl (the dashboard by default).
+    return NextResponse.redirect(
+      new URL(
+        safeCallbackUrl(request.nextUrl.searchParams.get("callbackUrl")),
+        request.url,
+      ),
+    );
   }
 
   if (requiresSession && !isSignedUp) {
@@ -110,5 +131,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/user/:path*", "/admin/:path*", "/auth/:path*"],
+  matcher: [
+    "/",
+    "/user/:path*",
+    "/admin/:path*",
+    "/auth/:path*",
+    "/oauth/:path*",
+  ],
 };
