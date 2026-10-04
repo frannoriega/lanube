@@ -1,6 +1,7 @@
 import { Check, LockKeyhole } from "lucide-react";
 
 import { FormSection } from "@/components/molecules/form-layout";
+import { AssistantsSection } from "@/components/organisms/settings/assistants-section";
 import { PasskeysSection } from "@/components/organisms/settings/passkeys-section";
 import { RecoveryCodesSection } from "@/components/organisms/settings/recovery-codes-section";
 
@@ -11,6 +12,9 @@ import { RecoveryCodesSection } from "@/components/organisms/settings/recovery-c
  * (opcionales, varias por cuenta) — más los códigos de recuperación. La contraseña se
  * muestra como estado, sin acciones: cambiarla desde acá quedó para más adelante (decisión
  * del usuario, ver el doc del milestone); hoy se cambia con "Olvidé mi contraseña".
+ *
+ * Al final, «Asistentes de IA» (milestone 20): conectar un asistente por MCP y desconectar
+ * los conectados. Vive en Seguridad porque cada asistente es un acceso a la cuenta.
  */
 export default function SecuritySettingsPage() {
   return (
@@ -41,6 +45,7 @@ export default function SecuritySettingsPage() {
         </div>
       </FormSection>
       <RecoveryCodesSection />
+      <AssistantsSection />
     </>
   );
 }

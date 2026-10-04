@@ -82,6 +82,8 @@ function toAdminReservationListResult(
     createdAt: Number(row.createdAt),
     deniedReason: row.deniedReason,
     actorSize,
+    assistantName:
+      row.origin === "ASSISTANT" ? (row.originClientName ?? "Asistente") : null,
     resource: {
       id: row.space?.id ?? "",
       name: row.space?.name ?? "",

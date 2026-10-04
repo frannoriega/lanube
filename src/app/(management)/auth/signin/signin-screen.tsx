@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { safeCallbackUrl, signInUrl } from "@/lib/signin/callback-url";
 import { useEffect, useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
@@ -56,6 +57,9 @@ export function SignInScreen({
   const [fadeIn, setFadeIn] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  // A dónde volver después de ingresar (milestone 20: la pantalla de autorización OAuth
+  // manda acá con `?callbackUrl=`). Validado: solo rutas internas permitidas.
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
   const registerCaptchaRef = useRef<TurnstileInstance>(undefined);
   const resetCaptchaRef = useRef<TurnstileInstance>(undefined);
   const recoveryCaptchaRef = useRef<TurnstileInstance>(undefined);
@@ -68,18 +72,18 @@ export function SignInScreen({
     const error = searchParams.get("error");
     if (confirmed === "1") {
       toast.success("Correo confirmado. Inicia sesión para continuar.");
-      router.replace("/auth/signin", { scroll: false });
+      router.replace(signInUrl(callbackUrl), { scroll: false });
     } else if (error === "invalid_or_expired_token") {
       toast.error("El enlace de confirmación ha expirado o no es válido.");
-      router.replace("/auth/signin", { scroll: false });
+      router.replace(signInUrl(callbackUrl), { scroll: false });
     } else if (error === "missing_token") {
       toast.error("Enlace de confirmación inválido.");
-      router.replace("/auth/signin", { scroll: false });
+      router.replace(signInUrl(callbackUrl), { scroll: false });
     } else if (error === "verification_failed") {
       toast.error("No pudimos verificar tu correo. Intenta de nuevo.");
-      router.replace("/auth/signin", { scroll: false });
+      router.replace(signInUrl(callbackUrl), { scroll: false });
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, callbackUrl]);
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: standardSchemaResolver(signInSchema),
@@ -141,7 +145,7 @@ export function SignInScreen({
     setError(false);
     setPasskeyBusy(true);
     try {
-      const url = await signInWithPasskey("/user/dashboard");
+      const url = await signInWithPasskey(callbackUrl);
       // Navegación completa por la misma razón que en `onSubmit` (Router Cache).
       window.location.href = url;
     } catch (err) {
@@ -170,7 +174,7 @@ export function SignInScreen({
         email: data.email,
         password: data.password,
         redirect: false,
-        redirectTo: "/user/dashboard",
+        redirectTo: callbackUrl,
       });
       if (res?.error) {
         if (res?.code === "email_not_verified") {
@@ -280,7 +284,7 @@ export function SignInScreen({
         email: data.email,
         password: data.password,
         redirect: false,
-        redirectTo: "/user/dashboard",
+        redirectTo: callbackUrl,
       });
       if (signed?.url && !signed.error) {
         toast.success(

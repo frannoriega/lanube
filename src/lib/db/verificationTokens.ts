@@ -1,5 +1,6 @@
 import { now, nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
+import { revokeAllGrantsForUser } from "@/lib/oauth/server";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import crypto from "node:crypto";
 import { bcryptHash, hash } from "../utils";
@@ -83,15 +84,21 @@ export async function consumeResetToken(
     return null;
   }
   const hashedPassword = await bcryptHash(password);
-  await prisma.registeredUser.update({
-    where: { id: record.userId },
-    data: {
-      user: {
-        update: {
-          passwordHash: hashedPassword,
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.registeredUser.update({
+      where: { id: record.userId },
+      data: {
+        user: {
+          update: {
+            passwordHash: hashedPassword,
+          },
         },
       },
-    },
+      select: { userId: true },
+    });
+    // Cambiar la contraseña desconecta todos los asistentes (milestone 20): después de un
+    // "me robaron la cuenta", nada de lo que estaba conectado debe seguir funcionando.
+    await revokeAllGrantsForUser(updated.userId, tx);
   });
   return record.userId;
 }

@@ -1,3 +1,9 @@
+/// Canal por el que se pidió una reserva (milestone 20).
+enum ReservationOrigin {
+  WEB
+  ASSISTANT
+}
+
 model Reservation {
   id             String                 @id @default(cuid())
   reservableType ReservableType         @map("reservable_type")
@@ -13,6 +19,11 @@ model Reservation {
   isRecurring    Boolean                @default(false) @map("is_recurring")
   rrule          String?
   recurrenceEnd  BigInt?                @map("recurrence_end")
+  /// Por dónde se pidió (milestone 20): la web o un asistente conectado por MCP. Solo
+  /// informativo — el admin lo ve como un chip al aprobar; ninguna regla lo mira.
+  origin           ReservationOrigin    @default(WEB)
+  /// Nombre declarado del asistente cuando `origin = ASSISTANT` ("Claude").
+  originClientName String?              @map("origin_client_name")
   createdAt      BigInt                 @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt      BigInt                 @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   checkIns       CheckIn[]

@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/db/users";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
+import { revokeAllGrantsForUser } from "@/lib/oauth/server";
 import {
   normalizeRecoveryCode,
   formatRecoveryCode,
@@ -125,6 +126,9 @@ export async function redeemRecoveryCode(input: {
       where: { id: user.id },
       data: { passwordHash },
     });
+    // Recuperar la cuenta es el caso "me la robaron": todo asistente conectado (milestone 20)
+    // deja de funcionar, en la misma transacción que la contraseña nueva.
+    await revokeAllGrantsForUser(user.id, tx);
     return true;
   });
 }

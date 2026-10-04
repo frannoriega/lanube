@@ -1,6 +1,7 @@
 "use client";
 
-import { StatusBadge } from "@/components/atoms/status-badge";
+import { StatusBadge, ToneBadge } from "@/components/atoms/status-badge";
+import { Bot } from "lucide-react";
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import { Button } from "@/components/ui/button";
 import {
@@ -129,8 +130,16 @@ export function AdminReservationDetailSheet({
           </div>
           <div>
             <p className="text-xs dark:text-muted-foreground">Estado</p>
-            <div className="mt-1">
+            <div className="mt-1 flex flex-wrap gap-1.5">
               <StatusBadge status={reservation.status} />
+              {reservation.assistantName ? (
+                // Pedida por un asistente conectado por MCP (milestone 20): el admin sabe que
+                // la cargó un asistente en nombre de la persona, no ella desde la web.
+                <ToneBadge tone="info">
+                  <Bot className="h-3 w-3" aria-hidden />
+                  Vía asistente: {reservation.assistantName}
+                </ToneBadge>
+              ) : null}
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { pruneExpiredOAuthRows } from "@/lib/oauth/server";
 
 type MaintainRow = {
   deleted_past_ledger: bigint;
@@ -56,6 +57,10 @@ export async function GET(request: NextRequest) {
       }[]
     >`SELECT * FROM prune_transient_rows(${nowMs()}::bigint)`;
 
+    // Códigos y tokens OAuth del conector MCP (milestone 20) vencidos o revocados hace más
+    // de una semana. Los grants revocados se conservan (historia chica).
+    const oauth = await pruneExpiredOAuthRows();
+
     const result = {
       deletedPastLedger: Number(row.deleted_past_ledger),
       rebuiltRecurring: Number(row.rebuilt_recurring),
@@ -65,6 +70,8 @@ export async function GET(request: NextRequest) {
       deletedWebAuthnChallenges: Number(
         transient?.deleted_webauthn_challenges ?? 0,
       ),
+      deletedOAuthCodes: oauth.codes,
+      deletedOAuthTokens: oauth.tokens,
     };
     logger.info("cron/maintain-reservations done", result);
     return NextResponse.json(result);
