@@ -193,12 +193,17 @@ Las decisiones de diseño marcadas "(propuesta)" en el doc también esperan conf
 Contexto en
 [`milestones/milestones-20-mcp-connector.md`](./milestones/milestones-20-mcp-connector.md).
 
-- **OAuth a mano o con librería** — recomendación: a mano (4 endpoints chicos) + SDK de MCP
-  solo para el transporte.
-- **¿Saltear el consentimiento si ya hay un grant con los mismos scopes?** Recomendado no, en
-  la primera versión.
-- **Marcar las reservas creadas por un asistente** (`Reservation.createdVia`) para que el
-  admin lo vea al aprobar — recomendado.
-- **¿Cambiar la contraseña / canjear un código de recuperación revoca los asistentes
-  conectados?** Recomendado sí.
-- **Reservas recurrentes desde el asistente** — fuera de la primera versión.
+- ~~**OAuth a mano o con librería**~~ **Resuelto (2026-10-04, implementación):** a mano
+  (`src/lib/oauth/`) + SDK oficial v2 (`@modelcontextprotocol/server`) solo para el transporte.
+- ~~**¿Saltear el consentimiento si ya hay un grant con los mismos scopes?**~~ **Resuelto:** no,
+  se muestra siempre.
+- ~~**Marcar las reservas creadas por un asistente**~~ **Resuelto:** `Reservation.origin`
+  (`WEB`/`ASSISTANT`) + `originClientName`, chip «Vía asistente» en el detalle del admin.
+- ~~**¿Cambiar la contraseña / canjear un código de recuperación revoca los asistentes
+  conectados?**~~ **Resuelto:** sí, en la misma transacción.
+- **Reservas recurrentes desde el asistente** — sigue fuera; reabrir si se pide.
+- **Probar con Claude web y ChatGPT contra un deploy público** (slice 6) — pendiente. Ojo con
+  la Deployment Protection de las previews de Vercel: el asistente recibiría la página de login
+  de Vercel en lugar del `401` de OAuth.
+- **Scope insuficiente como `403` + step-up** en lugar de un error de tool — solo si algún día
+  existe un asistente de "solo consultar".

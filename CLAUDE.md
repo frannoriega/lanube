@@ -65,6 +65,8 @@ src/
 │   │   └── news/[yyyy]/[mm]/[dd]/[slug]/  # Noticia detail. Public URLs are English:
 │   │                             #   "/noticias" 308-redirects here (next.config.ts)
 │   ├── (gate)/policies/accept/   # "Actualizamos nuestras políticas" gate (milestone 19)
+│   ├── (gate)/oauth/authorize/   # OAuth consent screen for the MCP connector (milestone 20)
+│   ├── .well-known/              # OAuth metadata (RFC 8414 + RFC 9728) for the MCP connector
 │   ├── forms/                    # Public, UNAUTHENTICATED event registration
 │   │   ├── [slug]/               # Submit a registration (+ /submitted confirmation)
 │   │   └── response/[token]/     # Edit/cancel via the participant's editToken
@@ -111,6 +113,7 @@ src/
 │       │   ├── profile/          # GET/PUT user profile (PUT: name/lastName/institution only)
 │       │   │   └── change-requests/ # Own DNI/reason change requests (create/list/cancel)
 │       │   ├── passkeys/         # List/register/rename/delete own passkeys
+│       │   ├── assistants/       # List/disconnect own MCP assistants (OAuth grants)
 │       │   ├── events/           # GET events for the current user
 │       │   └── stats/            # GET user dashboard stats
 │       ├── admin/                # reservations, users, stats, incidents, events,
@@ -120,6 +123,8 @@ src/
 │       ├── spaces/ events/ reservation-types/   # Public read endpoints
 │       ├── resources/[spaceId]/  # Available resources & calendar for a Space
 │       ├── session/              # GET current session (session validation)
+│       ├── mcp/                  # MCP endpoint (milestone 20): Bearer-token, 5 reservation tools
+│       ├── oauth/                # OAuth 2.1 AS: register (DCR), token, revoke, authorize (consent decision)
 │       ├── cron/
 │       │   ├── maintain-reservations/  # Daily 5am UTC (scheduled in vercel.json)
 │       │   └── report-snapshot/  # ⚠️ Endpoint exists but is NOT in vercel.json's
@@ -206,6 +211,9 @@ src/
 - `Ban`: User suspension record (time-bounded)
 - `ProfileChangeRequest`: a user's request to change their **DNI** or **reasonToJoin** (milestone 17) — those fields are never edited directly by anyone; see §14 below.
 - `PasskeyCredential` (→ `User`) + `WebAuthnChallenge`: WebAuthn passkeys and their single-use challenges (milestone 17).
+- `OAuthClient`, `OAuthGrant` (→ `User`), `OAuthAuthorizationCode`, `OAuthToken`: the MCP
+  connector's OAuth server (milestone 20, see §16). `Reservation.origin` (`WEB`/`ASSISTANT`)
+  marks reservations requested by an assistant.
 - `PolicyAcceptance` (→ `User`): append-only evidence that an account accepted one version of one policy (milestone 19, see §15). A trigger rejects every `UPDATE`.
 
 **Features** (expanding):
@@ -815,6 +823,39 @@ Full design + what was built: `docs/milestones/milestones-19-policies-and-accept
   `safeGateNext()` (no open redirect).
 - `prisma/seed.ts` accepts the current policies for the example users; an older local DB will
   send `u1`/`sa1` to the gate once.
+
+### 16. MCP connector & OAuth server (milestone 20)
+
+Full design + what was built: `docs/milestones/milestones-20-mcp-connector.md`.
+
+- **`/api/mcp` is a regular route, not a separate server.** MCP 2026-07-28 is stateless and the
+  SDK v2 (`@modelcontextprotocol/server`) builds a fresh `McpServer` per request
+  (`createMcpHandler(factory).fetch(request)`), so it runs the same on Vercel (free tier
+  included: short JSON requests) and under `next start` on a VPS. 2025-era clients are served
+  by the SDK's stateless legacy fallback (one-message SSE).
+- **La Nube is its own minimal OAuth 2.1 AS** (`src/lib/oauth/`): authorization code + PKCE
+  S256 + rotating refresh, public clients only, registered by DCR or CIMD. Tokens are opaque,
+  stored as SHA-256, bound to the `resource` (`<origin>/api/mcp`). Reusing a code or a rotated
+  refresh token revokes the whole grant. `redirect_uri` is exact-match (loopback port excepted);
+  until `client_id` + `redirect_uri` validate, `/oauth/authorize` shows the error and **never
+  redirects**. The CIMD fetch is SSRF-guarded at connect time (`cimd.ts`) — don't replace it
+  with a plain `fetch`.
+- **Public URLs come from `X-Forwarded-Host`/`Host`** (`src/lib/oauth/origin.ts`, like
+  passkeys), `OAUTH_ISSUER` overrides. Behind a VPS proxy, forward those headers.
+- **The tools reuse the web's rules because they call the same code**:
+  `requestUserReservation` / `cancelUserReservation` (`src/lib/reservations/user-actions.ts`,
+  pure checks in `user-rules.ts`). Never call `createReservation()` directly from a new client.
+  A `DomainError` becomes a tool result with `isError: true` and the same Spanish message.
+- **Account state is a tool error, not a 401** (`src/lib/mcp/auth.ts`): no profile / banned /
+  policies pending → every tool returns a readable message with the web link; a 401 would make
+  the client loop on OAuth. Only a bad/missing token is a 401 with `WWW-Authenticate`.
+- The connector acts as a **regular user on their own reservations** even for admin accounts;
+  no event/profile/admin tools. Per-user rate limits: 60 reads/min, 20 writes/h.
+- `/oauth/*` is in the middleware matcher + `requiresSession`; sign-in honors a validated
+  `callbackUrl` (`src/lib/signin/callback-url.ts`). Password reset and recovery-code redemption
+  revoke every grant (`revokeAllGrantsForUser`). The daily cron prunes expired codes/tokens.
+- Users connect/disconnect in Configuración → Seguridad → «Asistentes de IA»; admins see a
+  «Vía asistente» chip on the reservation detail.
 
 ## Testing & Seeding
 
