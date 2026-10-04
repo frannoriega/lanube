@@ -337,14 +337,20 @@ interface RegisteredUserWithBans extends RegisteredUser {
   bans: Ban[];
 }
 
+/**
+ * Crea la cuenta (`User`). `db` permite hacerlo dentro de una transacción: el registro crea la
+ * cuenta y sus aceptaciones de políticas juntas (milestone 19), así nunca queda una cuenta sin
+ * su consentimiento.
+ */
 async function createUser(
   email: string,
   password: string,
   displayEmail: string,
+  db: Pick<typeof prisma, "user"> = prisma,
 ): Promise<User> {
   const canonical = await normalizeEmailForIdentityServer(email);
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
+  const user = await db.user.create({
     data: {
       email: canonical,
       displayEmail,

@@ -42,6 +42,17 @@ export const registerEmailSchema = z
     }
   });
 
+/** Una política aceptada en un formulario: su clave y la versión que se mostró (milestone 19). */
+export const policyAcceptanceSchema = z.object({
+  key: z.string().min(1).max(64),
+  version: z.string().min(1).max(32),
+});
+
+/** Lo que manda la pantalla `/policies/accept` (milestone 19). */
+export const acceptPoliciesSchema = z.object({
+  accepted: z.array(policyAcceptanceSchema).min(1).max(20),
+});
+
 export const registerSchema = z
   .object({
     email: registerEmailSchema,
@@ -54,6 +65,16 @@ export const registerSchema = z
     captcha: z
       .string()
       .min(1, { message: "Por favor completá la verificación de seguridad" }),
+    /**
+     * Las políticas que la persona tildó en el formulario (milestone 19), con la versión que
+     * vio. El servidor no confía en esta lista: la compara con lo que de verdad hay que
+     * aceptar (`checkSubmittedAcceptances`) y registra versión + hash del registro.
+     */
+    acceptedPolicies: z
+      .array(policyAcceptanceSchema, {
+        error: "Tenés que aceptar las políticas para crear la cuenta",
+      })
+      .max(20),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: "Las contraseñas no coinciden",

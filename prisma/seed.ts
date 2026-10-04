@@ -5,6 +5,8 @@ import {
 } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import { pendingPolicies } from "@/lib/policies/pending";
+import { POLICIES } from "@/lib/policies/registry";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -167,6 +169,20 @@ async function seedExampleUsers() {
         reasonToJoin: u.reasonToJoin,
         roleId,
       },
+    });
+
+    // Políticas (milestone 19): los usuarios de ejemplo aceptan la versión vigente de cada
+    // política obligatoria, así el entorno local no arranca con todos frenados en el gate
+    // "Actualizamos nuestras políticas". Para probar el gate, borrá las filas de un usuario.
+    await prisma.policyAcceptance.createMany({
+      data: pendingPolicies(POLICIES, [], Date.now()).map((p) => ({
+        userId: user.id,
+        policyKey: p.key,
+        version: p.version,
+        contentHash: p.sha256,
+        context: "SIGNUP" as const,
+      })),
+      skipDuplicates: true,
     });
 
     console.log(
