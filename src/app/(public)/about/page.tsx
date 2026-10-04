@@ -20,107 +20,63 @@ import { IsologoInView } from "@/components/atoms/logos/lanube/isologo-in-view";
 import { ParallaxImage } from "@/components/molecules/parallax-image";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
 import { StatsBand } from "@/components/templates/landing/stats";
+import {
+  ABOUT_BADGES,
+  ABOUT_CHALLENGE,
+  ABOUT_HELICES,
+  ABOUT_HELICES_LEAD,
+  ABOUT_HERO_LEAD,
+  ABOUT_HORIZONS,
+  ABOUT_LEGEND,
+  ABOUT_MISSION,
+  ABOUT_OBJECTIVES,
+  ABOUT_PLAN_LEAD,
+  ABOUT_VALUES,
+  ABOUT_VISION,
+  ABOUT_WHAT_IS,
+} from "@/lib/about/content";
 
 const TINT = "bg-la-nube-accent/40 dark:bg-la-nube-selected/15";
 
-const VALORES = [
-  "Innovación",
-  "Cooperación",
-  "Desarrollo sostenible",
-  "Inclusión digital",
-  "Competitividad global",
-  "Impacto social",
+/**
+ * Íconos de las tarjetas, en el mismo orden que sus textos en `@/lib/about/content` (el texto
+ * vive allá porque también lo lee el conector MCP; los íconos son solo de esta página).
+ */
+const HELIX_ICONS: LucideIcon[] = [Landmark, GraduationCap, Rocket, Users];
+const OBJECTIVE_ICONS: LucideIcon[] = [
+  Globe2,
+  Share2,
+  GraduationCap,
+  Zap,
+  Building2,
+  LineChart,
 ];
 
-const HELICES: { icon: LucideIcon; title: string; description: string }[] = [
-  {
-    icon: Landmark,
-    title: "Estado",
-    description:
-      "Crea las condiciones institucionales e infraestructurales que hacen posible el ecosistema.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Academia",
-    description:
-      "Genera, divulga y transfiere el conocimiento, y forma el talento de la región.",
-  },
-  {
-    icon: Rocket,
-    title: "Industria",
-    description:
-      "Desarrolla, comercializa y aplica la innovación, e impulsa la producción y el escalamiento.",
-  },
-  {
-    icon: Users,
-    title: "Sociedad civil",
-    description:
-      "Impulsa la inclusión digital, demanda conocimiento y sostiene el talento humano de alto nivel.",
-  },
-];
-
-const HORIZONTES = [
-  {
-    step: "01",
-    phase: "2026",
-    title: "Consolidación institucional",
-    description:
-      "Construcción de la gobernanza, el marco normativo y la infraestructura inicial.",
-  },
-  {
-    step: "02",
-    phase: "2027–2028",
-    title: "Escalamiento y profesionalización",
-    description:
-      "Desarrollo de programas de innovación, incubación y exportación tecnológica.",
-  },
-  {
-    step: "03",
-    phase: "2029–2030",
-    title: "Posicionamiento regional e internacional",
-    description:
-      "Integración del Polo a redes de innovación nacionales e internacionales.",
-  },
-];
-
-const OBJETIVOS: { icon: LucideIcon; title: string; description: string }[] = [
-  {
-    icon: Globe2,
-    title: "Competitividad e internacionalización",
-    description:
-      "Fortalecer el entramado productivo y proyectarlo hacia mercados globales.",
-  },
-  {
-    icon: Share2,
-    title: "Gobernanza del ecosistema",
-    description:
-      "Articular a los actores del territorio en torno a agendas comunes.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Talento humano local",
-    description:
-      "Desarrollar, retener y atraer las capacidades digitales de la región.",
-  },
-  {
-    icon: Zap,
-    title: "Aceleración de proyectos",
-    description:
-      "Impulsar la creación y el escalamiento de emprendimientos tecnológicos.",
-  },
-  {
-    icon: Building2,
-    title: "Modernización urbana",
-    description:
-      "Poner la tecnología al servicio de una gestión pública más eficiente.",
-  },
-  {
-    icon: LineChart,
-    title: "Inteligencia territorial",
-    description:
-      "Anticipar tendencias y monitorear la evolución del Polo con datos.",
-  },
-];
+/**
+ * Renderiza un texto de `@/lib/about/content` convirtiendo `**así**` en `<b>`. `boldClassName`
+ * le da estilo propio a las negritas (la leyenda colorea los tres actores).
+ */
+function Emphasis({
+  text,
+  boldClassName,
+}: {
+  text: string;
+  boldClassName?: string;
+}) {
+  return (
+    <>
+      {text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <b key={i} className={boldClassName}>
+            {part.slice(2, -2)}
+          </b>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
 
 /** Brand gradient accent word — the landing's signature heading treatment. */
 function GradientWord({ children }: { children: React.ReactNode }) {
@@ -165,8 +121,9 @@ export default function AboutPage() {
       {/* Hero — transparent so the particle field shows through, like the landing. */}
       <section className="flex flex-col items-center gap-6 py-20 text-center md:py-28">
         <div className="animate-fade-up flex flex-wrap items-center justify-center gap-2">
-          <Pill>Inaugurado · 25 sept 2025</Pill>
-          <Pill>Plan 2026–2030</Pill>
+          {ABOUT_BADGES.map((b) => (
+            <Pill key={b}>{b}</Pill>
+          ))}
         </div>
         <h1
           className="animate-fade-up text-4xl font-bold tracking-tight text-balance text-la-nube-ink md:text-6xl dark:text-white"
@@ -178,11 +135,7 @@ export default function AboutPage() {
           className="animate-fade-up max-w-prose text-base text-pretty lg:text-xl"
           style={{ animationDelay: "160ms" }}
         >
-          El Polo Tecnológico La Nube es el espacio de innovación de Concepción
-          del Uruguay: el punto de encuentro entre el talento, el sector
-          productivo, las universidades, el Estado y la sociedad civil, donde
-          nacen soluciones tecnológicas que impulsan el desarrollo económico y
-          social de la región.
+          {ABOUT_HERO_LEAD}
         </p>
       </section>
 
@@ -198,25 +151,11 @@ export default function AboutPage() {
         />
         <div className="flex flex-col gap-8 md:flex-row md:items-start">
           <div className="flex w-full max-w-prose flex-col gap-4">
-            <p>
-              El <b>Polo Tecnológico La Nube</b>, inaugurado el{" "}
-              <b>25 de septiembre de 2025</b>, es una iniciativa estratégica del
-              Gobierno Municipal de Concepción del Uruguay para liderar el
-              desarrollo de la <b>Economía del Conocimiento</b> en la región.
-            </p>
-            <p>
-              Se financia con recursos municipales y articula a las empresas de{" "}
-              <b>Software y Servicios Informáticos (SSI)</b> nucleadas en la
-              Cámara de la Industria del Software de Concepción del Uruguay
-              (CISCU), junto a las universidades e instituciones de I+D+i de la
-              ciudad.
-            </p>
-            <p>
-              Esta convergencia de actores posiciona al Polo como un instrumento
-              clave para fortalecer las capacidades competitivas del sector a
-              escala global, impulsar la generación de empleo calificado y
-              promover el desarrollo económico local basado en la tecnología.
-            </p>
+            {ABOUT_WHAT_IS.map((p) => (
+              <p key={p}>
+                <Emphasis text={p} />
+              </p>
+            ))}
           </div>
           <ParallaxImage
             src="/images/stock/coworking.webp"
@@ -240,18 +179,13 @@ export default function AboutPage() {
               }
             />
             <div className="flex max-w-prose flex-col gap-4">
-              <p>
-                Concepción del Uruguay produce talento tecnológico de primer
-                nivel. Hoy, una masa crítica de profesionales altamente
-                calificados trabaja de forma remota para{" "}
-                <b>más de 30 empresas del exterior</b>: el valor se genera acá,
-                pero se aprovecha afuera.
-              </p>
+              {ABOUT_CHALLENGE.paragraphs.map((p) => (
+                <p key={p}>
+                  <Emphasis text={p} />
+                </p>
+              ))}
               <p className="text-xl font-medium text-balance">
-                <b>La Nube existe para cambiar eso.</b> Para convertir ese
-                capital intelectual en un motor de desarrollo endógeno que
-                arraigue la innovación, cree empresas y empleo local, y
-                transforme el tejido productivo de la ciudad y la región.
+                <Emphasis text={ABOUT_CHALLENGE.closing} />
               </p>
             </div>
           </section>
@@ -272,40 +206,26 @@ export default function AboutPage() {
                   La leyenda del <GradientWord>logo</GradientWord>
                 </>
               }
-              lead="Cómo nació La Nube, contada en los trazos de su marca."
+              lead={ABOUT_LEGEND.lead}
             />
             <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
               {/* El logo se dibuja en el orden del relato: trazos, conectores, nodos. */}
               <IsologoInView className="mx-auto w-48 sm:w-60 lg:order-2 lg:w-full" />
               <div className="flex max-w-3xl flex-col gap-6">
                 <p className="text-2xl font-bold tracking-tight text-balance md:text-3xl">
-                  En Concepción del Uruguay, una nube decidió quedarse. No
-                  estaba hecha de vapor, sino de encuentros.
+                  {ABOUT_LEGEND.opening}
                 </p>
                 <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
-                  El primer trazo nació cuando el{" "}
-                  <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-                    Estado
-                  </b>{" "}
-                  dijo «hagámoslo posible». El segundo, cuando la{" "}
-                  <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-                    Academia
-                  </b>{" "}
-                  dijo «hagámoslo saber». El tercero, cuando la{" "}
-                  <b className="font-semibold text-la-nube-selected dark:text-la-nube-secondary">
-                    Industria y el emprendimiento
-                  </b>{" "}
-                  dijeron «hagámoslo realidad».
+                  <Emphasis
+                    text={ABOUT_LEGEND.strokes}
+                    boldClassName="font-semibold text-la-nube-selected dark:text-la-nube-secondary"
+                  />
                 </p>
                 <p className="text-xl font-medium text-balance md:text-2xl">
-                  Al unirse, los trazos dibujaron una nube: un espacio común
-                  donde las ideas se condensan hasta llover oportunidades.
+                  {ABOUT_LEGEND.cloud}
                 </p>
                 <p className="text-base leading-relaxed text-pretty md:text-lg md:leading-relaxed">
-                  Luego llegaron los nodos —
-                  <b>personas, pymes, universidades, organismos y escuelas</b>—:
-                  los actores que le dan fuerza al Polo y representan el camino
-                  que queremos construir juntos.
+                  <Emphasis text={ABOUT_LEGEND.nodes} />
                 </p>
               </div>
             </div>
@@ -322,11 +242,11 @@ export default function AboutPage() {
               Un ecosistema de cuatro <GradientWord>hélices</GradientWord>
             </>
           }
-          lead="La Nube se construye sobre el encuentro de cuatro actores. Cada uno aporta una parte, y ninguno alcanza por sí solo."
+          lead={ABOUT_HELICES_LEAD}
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {HELICES.map((helice) => (
-            <HelixCard key={helice.title} {...helice} />
+          {ABOUT_HELICES.map((helice, i) => (
+            <HelixCard key={helice.title} icon={HELIX_ICONS[i]} {...helice} />
           ))}
         </div>
       </section>
@@ -340,18 +260,18 @@ export default function AboutPage() {
               Plan <GradientWord>2026–2030</GradientWord>
             </>
           }
-          lead="Una hoja de ruta en tres horizontes para consolidar al Polo como ecosistema de innovación regional."
+          lead={ABOUT_PLAN_LEAD}
         />
         <div className="grid gap-4 md:grid-cols-3">
-          {HORIZONTES.map((h) => (
+          {ABOUT_HORIZONS.map((h) => (
             <HorizonCard key={h.step} {...h} />
           ))}
         </div>
         <div className="flex flex-col gap-4">
           <h3 className="text-xl font-bold">Seis objetivos estratégicos</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {OBJETIVOS.map((o) => (
-              <ObjetivoCard key={o.title} {...o} />
+            {ABOUT_OBJECTIVES.map((o, i) => (
+              <ObjetivoCard key={o.title} icon={OBJECTIVE_ICONS[i]} {...o} />
             ))}
           </div>
         </div>
@@ -372,25 +292,17 @@ export default function AboutPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <InfoTile icon={Target} title="Misión">
                 <p>
-                  Acelerar el desarrollo productivo regional mediante un marco
-                  de gobernanza y gestión del conocimiento territorial,
-                  interactivo y estratégico, transformando el{" "}
-                  <b>talento local en soluciones tecnológicas</b> de alto valor
-                  competitivo para el mercado nacional e internacional. Fomentar
-                  la innovación, la creación y dinamización de empresas de base
-                  tecnológica con perfil exportador y la inclusión digital.
+                  <Emphasis text={ABOUT_MISSION} />
                 </p>
               </InfoTile>
               <InfoTile icon={Eye} title="Visión">
                 <p>
-                  Ser el <b>nodo referente en la región</b> en Economía del
-                  Conocimiento, reconocido por su ecosistema de innovación
-                  sostenible y su desarrollo de talento competitivo.
+                  <Emphasis text={ABOUT_VISION} />
                 </p>
               </InfoTile>
               <InfoTile icon={Heart} title="Valores">
                 <ul className="flex flex-col gap-2">
-                  {VALORES.map((valor) => (
+                  {ABOUT_VALUES.map((valor) => (
                     <li key={valor} className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-la-nube-primary" />
                       {valor}

@@ -2,6 +2,7 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import { logger } from "@/lib/logger";
 import { authenticateMcpRequest } from "@/lib/mcp/auth";
 import { buildMcpServer } from "@/lib/mcp/tools";
+import { getPermissionSetForUser } from "@/lib/db/roles";
 import {
   corsPreflight,
   protectedResourceMetadataUrl,
@@ -69,11 +70,22 @@ async function handle(request: Request): Promise<Response> {
     if (auth.kind === "unauthorized")
       return unauthorized(origin, auth.reason === "invalid");
 
+    // Permisos frescos del rol (como `requirePermission()`): deciden qué tools de gestión se
+    // registran. Una cuenta bloqueada no tiene ninguno — solo ve lo público y sus reservas
+    // (que le devuelven el motivo del bloqueo).
+    const permissions =
+      auth.kind === "ok"
+        ? ((await getPermissionSetForUser(auth.user.registeredUserId))
+            ?.permissions ?? null)
+        : null;
+
     const handler = createMcpHandler(
       () =>
         buildMcpServer({
           origin,
-          user: auth.kind === "ok" ? auth.user : null,
+          token: auth.token,
+          user: auth.user,
+          permissions,
           blockedMessage: auth.kind === "blocked" ? auth.message : null,
         }),
       {
