@@ -456,13 +456,32 @@ pero es feo).
   — legítimo porque esta versión del registro nunca se había desplegado — y se agregó un test:
   **un texto de política es autocontenido\*\* (sin `import`/`export` ni `{…}`). Si importa un
   valor, lo que se muestra cambia sin que cambie el archivo, y el hash deja de probar nada.
-- **`max-w-2xl` vale 1400px en este repo**: `globals.css` redefine `--container-2xl`. El shell
-  de `/forms` usa `max-w-2xl` creyendo que son 42rem y en escritorio ocupa todo el ancho. El
-  gate usa `max-w-[42rem]`; `/forms` quedó como estaba (anotado en `OPEN_QUESTIONS.md`).
-- **`notFound()` responde 200 en las rutas dinámicas públicas** (también `/news/...` y
-  `/events/...`, no solo las de políticas): la página muestra "no existe" pero el status es
-  200, probablemente porque el layout público asíncrono ya empezó el streaming. Anotado; no se
-  tocó.
+- **`max-w-2xl` valía 1400px en este repo** — _resuelto el mismo día, a pedido del usuario_.
+  `globals.css` traía desde el bootstrap `--container-center`, `--container-padding` y
+  `--container-2xl: 1400px`, una config de `container` de Tailwind v3 portada tal cual. En v4
+  ese namespace define los tamaños de `max-w-*`, así que `max-w-2xl` era 1400px en todo el
+  sitio (y existían `max-w-center`/`max-w-padding`). Nadie usaba la clase `container`. Se
+  quitaron los tres tokens: `/forms` pasó de 1400px a 672px, la columna de lectura de las
+  noticias de 874px a 672px (lo que el milestone 15 había diseñado), y el texto del cierre de
+  la landing de 738px a 672px. El gate volvió a `max-w-2xl`.
+- **`notFound()` respondía 200 en las rutas dinámicas públicas — y el sitio público se servía
+  vacío** — _resuelto el mismo día_. Bisectando con páginas de prueba en un worktree aparte
+  (también pasaba en un build de producción), la causa resultó ser `ParticlesLayout`: envolvía
+  la página entera en el `ParticlesProvider` de `@tsparticles/react` 4.x, que renderiza
+  `loaded ? children : null` y solo pasa a `loaded` en un efecto del navegador. O sea que
+  **desde el 2026-05-23 (`ff762cf`, la subida a tsparticles 4) el servidor nunca renderizó el
+  contenido** del sitio público, del ingreso ni de `/banned`: el HTML traía ~55 caracteres
+  visibles (sin header, sin `<main>`, sin `<h1>`) y todo aparecía recién con JS. Por eso un
+  `notFound()` no llegaba a correr en el servidor. Ahora solo el canvas va dentro del provider:
+  las páginas inexistentes dan 404 y, p. ej., `/policies/privacy` sale con 7193 caracteres de
+  texto en el HTML. Al volver a renderizarse en el servidor aparecieron errores de hidratación
+  en las marquesinas de la landing en celulares: `useViewportWidth` leía `window.innerWidth`
+  en el inicializador de `useState` (contra su propio comentario, que promete `undefined` en
+  el primer render); ahora arranca en `undefined`. Barrido con Playwright de 12 rutas públicas
+  × claro/oscuro × escritorio/celular, más ingreso y páginas logueadas: sin errores, salvo uno
+  de atributos en `/about` (celular, claro) que apareció **una sola vez** y no se reprodujo en 9
+  intentos — probablemente el `y` de `ParallaxImage` (framer-motion) si la página se mueve antes
+  de hidratar; inofensivo, porque framer reescribe ese estilo apenas monta.
 - **El script `scripts/mobile-shots.mjs` entra como `u1`/`sa1` y espera llegar a `/user/`.**
   En una base sembrada después de este milestone funciona (el seed acepta las políticas); en
   una base vieja, la primera vez cae en el gate. Se resuelve aceptando una vez a mano, o
