@@ -400,8 +400,8 @@
     "semantic_hash": ""
   },
   "src/app/(public)/about/page.tsx": {
-    "mtime": 1791139963.5910037,
-    "ast_hash": "09d310d71e1d9bf4d8fb8444dde7d440",
+    "mtime": 1791144972.05027,
+    "ast_hash": "4a6463ad8e9b408f8c2cb9a7d0c0d05b",
     "semantic_hash": ""
   },
   "src/app/(public)/events/[id]/page.tsx": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791143868.6294749,
-    "ast_hash": "2d124eb3e88433512ed2a368a470e359",
+    "mtime": 1791145586.2856963,
+    "ast_hash": "9b7c99057d392c05f9198c0e5ce0c305",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -2745,8 +2745,8 @@
     "semantic_hash": ""
   },
   "docs/OPEN_QUESTIONS.md": {
-    "mtime": 1791143852.102843,
-    "ast_hash": "0945cd6089b68d1eba9f832d5178c203",
+    "mtime": 1791145586.284838,
+    "ast_hash": "e794bff2d039ffb17619907c77b47c83",
     "semantic_hash": ""
   },
   "docs/design/00-overview.md": {
@@ -2800,8 +2800,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1791143852.1030855,
-    "ast_hash": "ccd38fb5e38a5698465f1a9be1837fa7",
+    "mtime": 1791145586.2844965,
+    "ast_hash": "14ef84fbe7fb321a250b38bd04cd0f7e",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -3855,8 +3855,8 @@
     "semantic_hash": ""
   },
   "src/lib/policies/source.ts": {
-    "mtime": 1791139963.6147118,
-    "ast_hash": "ec8e825fbc0a9d09f52131effb6faad8",
+    "mtime": 1791145131.2384353,
+    "ast_hash": "95f4f080e83d60f7ecb094034c1f9433",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-19-policies-and-acceptance.md": {
@@ -3865,8 +3865,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-20-mcp-connector.md": {
-    "mtime": 1791143876.7113721,
-    "ast_hash": "2af1b7c8be1748927187db4c307e59cf",
+    "mtime": 1791145586.2852182,
+    "ast_hash": "881e88fdd0fcd3eca762298547b1a982",
     "semantic_hash": ""
   },
   "src/assets/policies/privacy/2025-11-16.mdx": {
@@ -3880,8 +3880,8 @@
     "semantic_hash": ""
   },
   "src/app/(gate)/oauth/authorize/page.tsx": {
-    "mtime": 1791143522.411289,
-    "ast_hash": "8af14f318e5ca52d9aa4a4443983a6d5",
+    "mtime": 1791145446.035487,
+    "ast_hash": "de896745f0fb634208db0cb1cff3caff",
     "semantic_hash": ""
   },
   "src/app/.well-known/oauth-authorization-server/[[...path]]/route.ts": {
@@ -3895,13 +3895,13 @@
     "semantic_hash": ""
   },
   "src/app/api/mcp/route.ts": {
-    "mtime": 1791143703.5040405,
-    "ast_hash": "56569fe8bb5d969ee34ddbb30164ddd5",
+    "mtime": 1791145281.2280211,
+    "ast_hash": "4089dacf19612c9ebb068b5a30c4dc9c",
     "semantic_hash": ""
   },
   "src/app/api/oauth/authorize/route.ts": {
-    "mtime": 1791143059.9157884,
-    "ast_hash": "b535c8107bc3347d6cf9bb7c1aa5a7e5",
+    "mtime": 1791145025.982017,
+    "ast_hash": "e735eb3cf8c88c1f8362c665c5ca87ac",
     "semantic_hash": ""
   },
   "src/app/api/oauth/register/route.ts": {
@@ -3930,18 +3930,18 @@
     "semantic_hash": ""
   },
   "src/components/organisms/oauth/consent-form.tsx": {
-    "mtime": 1791143522.519944,
-    "ast_hash": "8f4b67253cfad9ef93af8003b00018d5",
+    "mtime": 1791145446.0353167,
+    "ast_hash": "6adb0a28080d16051009fc60ce41b6af",
     "semantic_hash": ""
   },
   "src/components/organisms/settings/assistants-section.tsx": {
-    "mtime": 1791143522.3342192,
-    "ast_hash": "2d3846819432e8350ce5c432717f796c",
+    "mtime": 1791145461.274298,
+    "ast_hash": "e3a2cdb3f92eb93116dbd2229bbde5bd",
     "semantic_hash": ""
   },
   "src/lib/mcp/auth.ts": {
-    "mtime": 1791143522.5912268,
-    "ast_hash": "296213cfab89024b281a70e2c1d559c8",
+    "mtime": 1791145046.2859793,
+    "ast_hash": "3e270b85a742257f557ccff5abdb1c14",
     "semantic_hash": ""
   },
   "src/lib/mcp/availability.ts": {
@@ -3959,14 +3959,9 @@
     "ast_hash": "3d15d0baf7873d7f7c17cfd02e851d0c",
     "semantic_hash": ""
   },
-  "src/lib/mcp/tools.ts": {
-    "mtime": 1791143603.5255105,
-    "ast_hash": "e2a516f06e9d40cdc331b4b729bbc798",
-    "semantic_hash": ""
-  },
   "src/lib/oauth/authorize.ts": {
-    "mtime": 1791143522.986633,
-    "ast_hash": "b909f77837356d97a7456bc16804f384",
+    "mtime": 1791145025.9817123,
+    "ast_hash": "31464cd9c5deedbd4a33da46daaeb3b3",
     "semantic_hash": ""
   },
   "src/lib/oauth/cimd.ts": {
@@ -3980,8 +3975,8 @@
     "semantic_hash": ""
   },
   "src/lib/oauth/config.ts": {
-    "mtime": 1791143523.10945,
-    "ast_hash": "d4e56bf6cd91ff24ee267d0ffd380c56",
+    "mtime": 1791145012.7034986,
+    "ast_hash": "e13100488a6468df20e966953cfa1726",
     "semantic_hash": ""
   },
   "src/lib/oauth/crypto.ts": {
@@ -4047,6 +4042,66 @@
   "src/lib/signin/callback-url.ts": {
     "mtime": 1791142758.0375466,
     "ast_hash": "6f4c2ac9b14977624225a373016d1eaf",
+    "semantic_hash": ""
+  },
+  "src/lib/about/content.test.ts": {
+    "mtime": 1791145329.0281875,
+    "ast_hash": "8b2fb8b0612c5e949d67b1f9b83e9574",
+    "semantic_hash": ""
+  },
+  "src/lib/about/content.ts": {
+    "mtime": 1791144949.0045576,
+    "ast_hash": "9bd1ccf38fd1284b88a4ac2a8355897f",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/access.test.ts": {
+    "mtime": 1791145329.609391,
+    "ast_hash": "580e02219392fa7a34a03255a992822f",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/access.ts": {
+    "mtime": 1791144997.5183687,
+    "ast_hash": "3917b3d35bc7330cb4e497216a222052",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/tools/index.ts": {
+    "mtime": 1791145272.9778266,
+    "ast_hash": "dbe185da24bba189b2d74c09eab73ae8",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/tools/management.ts": {
+    "mtime": 1791145281.9424062,
+    "ast_hash": "d01ac48509ff738854b1f424945edcc2",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/tools/news.ts": {
+    "mtime": 1791145281.9555748,
+    "ast_hash": "ae5b08cd4bc401744107273bfa15ec5d",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/tools/public.ts": {
+    "mtime": 1791145281.9630632,
+    "ast_hash": "3753d952d3cde708666fdbd343849351",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/tools/reservations.ts": {
+    "mtime": 1791145085.667789,
+    "ast_hash": "120b36c68c9b67e8ff036cab96fd07a9",
+    "semantic_hash": ""
+  },
+  "src/lib/mcp/tools/shared.ts": {
+    "mtime": 1791145300.4133432,
+    "ast_hash": "bd9964252fdcb856fb2a55952bbbf539",
+    "semantic_hash": ""
+  },
+  "src/lib/news/assistant-drafts.ts": {
+    "mtime": 1791145281.9943738,
+    "ast_hash": "696812eaab9fe7565a702dbc1ff948b6",
+    "semantic_hash": ""
+  },
+  "docs/milestones/milestones-21-mcp-management.md": {
+    "mtime": 1791145587.9385228,
+    "ast_hash": "037ee5524944a78087c0166e74e94c7c",
     "semantic_hash": ""
   }
 }

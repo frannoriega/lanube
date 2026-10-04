@@ -41,7 +41,7 @@ export function AssistantsSection() {
   return (
     <FormSection
       title="Asistentes de IA"
-      description="Conectá tu asistente (Claude, ChatGPT…) para pedir y cancelar reservas conversando."
+      description="Conectá tu asistente (Claude, ChatGPT…) para gestionar tus reservas y consultar La Nube conversando."
     >
       <div className="space-y-3 rounded-lg border p-4">
         <p className="font-medium">Conectar un asistente</p>
@@ -69,8 +69,11 @@ export function AssistantsSection() {
         </ul>
         <p className="text-sm text-muted-foreground">
           Te va a pedir que entres a La Nube y autorices el acceso. El asistente
-          solo puede ver tus reservas, pedir reservas (que quedan pendientes de
-          aprobación) y cancelarlas.
+          puede consultar la información pública de La Nube, ver tus reservas,
+          pedir reservas (que quedan pendientes de aprobación) y cancelarlas. Si
+          tenés permisos de gestión, también puede consultar (solo lectura) lo
+          que tu rol te deja ver y redactar borradores de noticias — nunca
+          publicar ni aprobar nada.
         </p>
       </div>
 

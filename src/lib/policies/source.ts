@@ -5,9 +5,9 @@ import { diffText, type TextDiffLine } from "@/lib/audit/text-diff";
 import type { PolicyDefinition } from "./registry";
 
 /**
- * Texto fuente (markdown) de una versión de una política, leído del disco. Solo lo usa el diff
- * "Ver qué cambió" de `/policies/accept`; para mostrar una política se usa el MDX compilado
- * (`PolicyContent`). En Vercel, los archivos llegan al bundle por `outputFileTracingIncludes`
+ * Texto fuente (markdown) de una versión de una política, leído del disco. Lo usan el diff
+ * "Ver qué cambió" de `/policies/accept` y la tool MCP `get_policy`; para mostrar una política
+ * en la web se usa el MDX compilado (`PolicyContent`). En Vercel, los archivos llegan al bundle por `outputFileTracingIncludes`
  * (`next.config.ts`).
  */
 async function readPolicySource(file: string): Promise<string> {
@@ -15,6 +15,23 @@ async function readPolicySource(file: string): Promise<string> {
     path.join(process.cwd(), "src/assets/policies", file),
     "utf8",
   );
+}
+
+/**
+ * El markdown de una versión de una política, tal como está publicado. Lo devuelve la tool MCP
+ * `get_policy` (milestone 21). `null` si la versión no existe o no se pudo leer.
+ */
+export async function readPolicyMarkdown(
+  policy: PolicyDefinition,
+  version: string,
+): Promise<string | null> {
+  const v = policy.versions.find((x) => x.version === version);
+  if (!v) return null;
+  try {
+    return await readPolicySource(v.file);
+  } catch {
+    return null;
+  }
 }
 
 /**

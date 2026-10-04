@@ -1,6 +1,9 @@
 import { OAuthConsentForm } from "@/components/organisms/oauth/consent-form";
 import { auth } from "@/lib/auth";
-import { validateAuthorizationRequest } from "@/lib/oauth/authorize";
+import {
+  scopesForAccount,
+  validateAuthorizationRequest,
+} from "@/lib/oauth/authorize";
 import { SCOPE_DESCRIPTIONS } from "@/lib/oauth/config";
 import { publicOrigin } from "@/lib/oauth/origin";
 import { redirectUriDisplayHost } from "@/lib/oauth/redirect-uri";
@@ -81,13 +84,22 @@ export default async function OAuthAuthorizePage({
     );
   }
 
-  const capabilities = result.scopes.flatMap((s) => SCOPE_DESCRIPTIONS[s]);
+  // Lo que se muestra es exactamente lo que se va a guardar (`scopesForAccount`, igual que en
+  // el "Permitir"), más la información pública, que cualquier asistente conectado puede leer.
+  const scopes = await scopesForAccount(result.scopes, session.userId);
+  const capabilities = [
+    ...scopes.flatMap((s) => SCOPE_DESCRIPTIONS[s]),
+    "Leer la información pública de La Nube (contacto, políticas, quiénes somos)",
+  ];
   return (
     <OAuthConsentForm
       clientName={result.client.name}
       clientHost={redirectUriDisplayHost(result.redirectUri)}
       accountEmail={session.user.displayEmail ?? session.user.email ?? ""}
       capabilities={capabilities}
+      hasManagement={scopes.some(
+        (s) => s === "management:read" || s === "news:write",
+      )}
       request={params}
     />
   );

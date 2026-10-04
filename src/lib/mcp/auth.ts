@@ -31,10 +31,26 @@ export interface McpUser {
   grantId: string;
 }
 
+/**
+ * Lo que se sabe del token aunque la cuenta esté bloqueada: alcanza para atender las tools de
+ * información pública (milestone 21), que no dependen del estado de la cuenta — en particular,
+ * quien tiene políticas pendientes tiene que poder leerlas.
+ */
+export interface McpTokenInfo {
+  grantId: string;
+  scopes: string[];
+  clientName: string;
+}
+
 export type McpAuthResult =
   | { kind: "unauthorized"; reason: "missing" | "invalid" }
-  | { kind: "blocked"; message: string; user: McpUser | null }
-  | { kind: "ok"; user: McpUser };
+  | {
+      kind: "blocked";
+      message: string;
+      user: McpUser | null;
+      token: McpTokenInfo;
+    }
+  | { kind: "ok"; user: McpUser; token: McpTokenInfo };
 
 /** Extrae el bearer token del header. Nunca de la query string (los tokens no van en URLs). */
 export function bearerTokenOf(request: Request): string | null {
@@ -79,6 +95,11 @@ export async function authenticateMcpRequest(
       },
     },
   });
+  const tokenInfo: McpTokenInfo = {
+    grantId: verified.grantId,
+    scopes: verified.scopes,
+    clientName: verified.clientName,
+  };
   const user: McpUser | null = registered
     ? {
         registeredUserId: registered.id,
@@ -93,6 +114,7 @@ export async function authenticateMcpRequest(
     return {
       kind: "blocked",
       user: null,
+      token: tokenInfo,
       message: `Antes de usar La Nube desde un asistente tenés que completar tu perfil en ${origin}/auth/signup`,
     };
   const ban = registered.bans[0];
@@ -100,6 +122,7 @@ export async function authenticateMcpRequest(
     return {
       kind: "blocked",
       user,
+      token: tokenInfo,
       message: ban.reason
         ? `Tu cuenta de La Nube está suspendida: ${ban.reason}`
         : "Tu cuenta de La Nube está suspendida",
@@ -108,8 +131,9 @@ export async function authenticateMcpRequest(
     return {
       kind: "blocked",
       user,
+      token: tokenInfo,
       message: `Antes de seguir, aceptá las políticas actualizadas de La Nube en ${origin}/policies/accept`,
     };
 
-  return { kind: "ok", user };
+  return { kind: "ok", user, token: tokenInfo };
 }
