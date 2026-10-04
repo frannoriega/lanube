@@ -10,4 +10,8 @@ export type AdminUser = {
   roleId: string | null;
   createdAt: number;
   status?: "ACTIVE" | "INACTIVE" | string | null;
+  /** Milestone 19: si aceptó las políticas vigentes (misma regla que el gate). */
+  policies: "UP_TO_DATE" | "PENDING";
+  /** Última aceptación de una política (ms), o null si nunca aceptó. */
+  lastPolicyAcceptedAt: number | null;
 };

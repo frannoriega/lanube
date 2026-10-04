@@ -25,6 +25,17 @@ export interface PolicyAcceptanceRow {
   acceptedAt: number;
 }
 
+/** Una aceptación tal como la muestra Configuración → Cuenta. */
+export interface AcceptedPolicyItem {
+  policyKey: string;
+  title: string;
+  /** Enlace a la versión exacta aceptada, o null si el registro ya no conoce la política. */
+  href: string | null;
+  version: string;
+  acceptedAt: number;
+  context: "SIGNUP" | "REACCEPT";
+}
+
 /** Datos de la request que aceptó, guardados como evidencia (ver `policies.prisma`). */
 export interface AcceptanceEvidence {
   ipAddress: string | null;

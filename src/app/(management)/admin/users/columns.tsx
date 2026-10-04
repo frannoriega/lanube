@@ -14,7 +14,7 @@ import { type Column, type ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import { type AdminUser } from "./types";
-import { UserStatusBadge } from "@/components/atoms/status-badge";
+import { ToneBadge, UserStatusBadge } from "@/components/atoms/status-badge";
 
 const formatDate = (value: string | Date | number) => {
   const date = value instanceof Date ? value : new Date(value);
@@ -232,6 +232,33 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
     ),
     enableSorting: false,
     cell: ({ row }) => resolveStatusBadge(row.original.status),
+  },
+  {
+    // Milestone 19: si la cuenta aceptó las políticas vigentes. "Pendiente" incluye a las
+    // cuentas creadas antes del milestone que todavía no volvieron a entrar.
+    accessorKey: "policies",
+    meta: { label: "Políticas" },
+    header: () => (
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+        Políticas
+      </span>
+    ),
+    enableSorting: false,
+    cell: ({ row }) => {
+      const { policies, lastPolicyAcceptedAt } = row.original;
+      return (
+        <div className="flex flex-col items-start gap-0.5">
+          <ToneBadge tone={policies === "UP_TO_DATE" ? "success" : "warning"}>
+            {policies === "UP_TO_DATE" ? "Al día" : "Pendiente"}
+          </ToneBadge>
+          <span className="text-xs text-muted-foreground">
+            {lastPolicyAcceptedAt
+              ? `Aceptó el ${formatDate(lastPolicyAcceptedAt)}`
+              : "Nunca aceptó"}
+          </span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "createdAt",
