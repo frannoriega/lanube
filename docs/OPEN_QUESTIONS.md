@@ -171,3 +171,34 @@ Los códigos de recuperación y el aviso de decisiones ya están hechos (segunda
   `profileChange.decided` sí; convendría alinear el de noticias.
 - **`docs/design/06-rust-migration.md`** describe una migración de este repo a Rust que quedó
   descartada; falta marcarlo como superado.
+
+## Milestone 19 — Políticas versionadas y aceptación obligatoria
+
+Contexto en
+[`milestones/milestones-19-policies-and-acceptance.md`](./milestones/milestones-19-policies-and-acceptance.md).
+Las decisiones de diseño marcadas "(propuesta)" en el doc también esperan confirmación.
+
+- **IP y user-agent como evidencia del consentimiento**: ¿alcanza con lo que dice hoy la
+  sección 2 de la política, o la versión nueva tiene que mencionarlo explícitamente? Para
+  asesoría legal.
+- **¿Conservar la evidencia al borrar una cuenta?** La tabla cascadea con `User`. Hoy no
+  existe el borrado de cuentas, así que no urge.
+- **Aviso previo de un cambio** (banner o email entre el deploy y `effectiveAt`). El diseño lo
+  permite; no se pidió.
+- **Inscripciones a eventos sin cuenta** (`/forms/[slug]`): ¿deben aceptar la política de
+  privacidad? Recolectan nombre y email.
+
+## Milestone 20 — Conector MCP
+
+Contexto en
+[`milestones/milestones-20-mcp-connector.md`](./milestones/milestones-20-mcp-connector.md).
+
+- **OAuth a mano o con librería** — recomendación: a mano (4 endpoints chicos) + SDK de MCP
+  solo para el transporte.
+- **¿Saltear el consentimiento si ya hay un grant con los mismos scopes?** Recomendado no, en
+  la primera versión.
+- **Marcar las reservas creadas por un asistente** (`Reservation.createdVia`) para que el
+  admin lo vea al aprobar — recomendado.
+- **¿Cambiar la contraseña / canjear un código de recuperación revoca los asistentes
+  conectados?** Recomendado sí.
+- **Reservas recurrentes desde el asistente** — fuera de la primera versión.
