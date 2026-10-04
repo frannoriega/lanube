@@ -1,0 +1,103 @@
+// ============================================================================
+// Milestone 20 — Conector MCP: La Nube como servidor de autorización OAuth 2.1 mínimo
+// (authorization code + PKCE S256 + refresh token rotativo). Ver
+// docs/milestones/milestones-20-mcp-connector.md y src/lib/oauth/.
+// ============================================================================
+
+/// Cómo conocimos a un cliente OAuth.
+enum OAuthClientKind {
+  /// Dynamic Client Registration (RFC 7591): el cliente hizo `POST /api/oauth/register` y le
+  /// generamos un `client_id`. Deprecado en la revisión 2026-07-28 de MCP, pero Claude y
+  /// ChatGPT todavía lo usan.
+  DCR
+  /// Client ID Metadata Document: el `client_id` **es** una URL https que devuelve la
+  /// metadata del cliente. La forma preferida desde la revisión 2026-07-28.
+  CIMD
+}
+
+/// Un asistente (Claude, ChatGPT…) que se registró o que conocimos por su CIMD. Es un
+/// cliente **público** (sin secreto): toda la seguridad del intercambio la da PKCE más la
+/// coincidencia exacta de `redirect_uri`.
+model OAuthClient {
+  id                String          @id @default(cuid())
+  /// DCR: generado por nosotros. CIMD: la URL del documento de metadata.
+  clientId          String          @unique @map("client_id")
+  kind              OAuthClientKind
+  /// Nombre que **declara el propio cliente**. No es verificable: la pantalla de
+  /// consentimiento lo muestra siempre junto al dominio de su `redirect_uri`.
+  name              String
+  redirectUris      String[]        @map("redirect_uris")
+  logoUri           String?         @map("logo_uri")
+  createdAt         BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  /// CIMD: cuándo se trajo el documento por última vez (cache con TTL).
+  metadataFetchedAt BigInt?         @map("metadata_fetched_at")
+  grants            OAuthGrant[]
+
+  @@map("oauth_clients")
+}
+
+/// "La cuenta X autorizó al cliente Y con estos scopes". Lo que el usuario ve como un
+/// "asistente conectado" en Configuración → Seguridad, y lo que revoca al desconectarlo.
+/// Cuelga de `User` (la cuenta), como las passkeys.
+model OAuthGrant {
+  id         String                   @id @default(cuid())
+  userId     String                   @map("user_id")
+  user       User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId   String                   @map("client_id")
+  client     OAuthClient              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scopes     String[]
+  createdAt  BigInt                   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  /// Último uso del endpoint MCP; se actualiza como mucho una vez por minuto.
+  lastUsedAt BigInt?                  @map("last_used_at")
+  /// Revocado por el usuario ("Desconectar"), por un cambio de contraseña, o por reuso de
+  /// un refresh token. Un grant revocado no vuelve: reconectar crea uno nuevo.
+  revokedAt  BigInt?                  @map("revoked_at")
+  codes      OAuthAuthorizationCode[]
+  tokens     OAuthToken[]
+
+  @@index([userId])
+  @@map("oauth_grants")
+}
+
+/// Código de autorización: un solo uso, 60 s de vida. Se guarda solo su SHA-256 (256 bits de
+/// azar, como los tokens de reset — un hash rápido alcanza y permite buscarlo por índice).
+model OAuthAuthorizationCode {
+  codeHash      String     @id @map("code_hash")
+  grantId       String     @map("grant_id")
+  grant         OAuthGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  redirectUri   String     @map("redirect_uri")
+  /// PKCE S256: base64url(sha256(code_verifier)).
+  codeChallenge String     @map("code_challenge")
+  scopes        String[]
+  /// El `resource` (RFC 8707) para el que se emitirán los tokens: la URL de `/api/mcp`.
+  resource      String
+  expiresAt     BigInt     @map("expires_at")
+  /// Se marca al canjearlo. Un segundo canje revoca el grant entero (RFC 6749 §4.1.2).
+  usedAt        BigInt?    @map("used_at")
+
+  @@index([expiresAt])
+  @@map("oauth_authorization_codes")
+}
+
+/// Un par access/refresh. Tokens **opacos** guardados solo como hash: revocar es marcar una
+/// fila, y el endpoint MCP igual va a la base en cada llamada para chequear baneo y políticas.
+model OAuthToken {
+  id               String     @id @default(cuid())
+  grantId          String     @map("grant_id")
+  grant            OAuthGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  accessTokenHash  String     @unique @map("access_token_hash")
+  refreshTokenHash String?    @unique @map("refresh_token_hash")
+  scopes           String[]
+  resource         String
+  accessExpiresAt  BigInt     @map("access_expires_at")
+  refreshExpiresAt BigInt?    @map("refresh_expires_at")
+  /// Rotación: al canjear el refresh se crea un token nuevo y este apunta a él. Si llega
+  /// de nuevo un refresh ya rotado, alguien lo robó: se revoca el grant entero.
+  replacedById     String?    @map("replaced_by_id")
+  revokedAt        BigInt?    @map("revoked_at")
+  createdAt        BigInt     @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+
+  @@index([grantId])
+  @@index([refreshExpiresAt])
+  @@map("oauth_tokens")
+}

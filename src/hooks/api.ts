@@ -18,6 +18,7 @@ import type {
   Incident,
   UserDashboardStats,
   UserProfile,
+  ConnectedAssistantItem,
   PasskeyItem,
   ProfileChangeRequestItem,
 } from "@/types/api";
@@ -81,6 +82,16 @@ export function useOwnProfileChangeRequests(): UseApiResult<
 > {
   return useApi<ProfileChangeRequestItem[]>(
     "/api/user/profile/change-requests",
+  );
+}
+
+/** Asistentes conectados por MCP y la URL a pegar en el asistente (milestone 20). */
+export function useConnectedAssistants(): UseApiResult<{
+  assistants: ConnectedAssistantItem[];
+  mcpUrl: string;
+}> {
+  return useApi<{ assistants: ConnectedAssistantItem[]; mcpUrl: string }>(
+    "/api/user/assistants",
   );
 }
 
