@@ -10,7 +10,9 @@ import { usePathname } from "next/navigation";
  * "Resumen" del evento, los inputs de configuración) y filas de tablas, sin aportar nada a
  * quien ya está trabajando dentro de la app.
  */
-const HIDDEN_PREFIXES = ["/admin", "/user"];
+// `/policies/accept` (milestone 19): la pantalla del gate tiene una sola acción; el botón
+// flotante tapaba el diff en celulares.
+const HIDDEN_PREFIXES = ["/admin", "/user", "/policies/accept"];
 
 /**
  * Global floating WhatsApp button (bottom-right, public pages). Opens a wa.me chat to the

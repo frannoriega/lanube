@@ -6,6 +6,8 @@
  * React Strict Mode double-effects in dev — produce a single network call.
  */
 
+import { policyGateUrl } from "@/lib/policies/gate";
+
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -41,9 +43,32 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   const body = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
+    redirectIfPoliciesPending(res.status, body);
     throw new ApiError(res.status, body);
   }
   return body as T;
+}
+
+/** Código con el que la API avisa que la cuenta tiene políticas sin aceptar (milestone 19). */
+export const POLICIES_PENDING_CODE = "POLICIES_PENDING";
+
+/**
+ * Si la API respondió que hay políticas pendientes, se va a la pantalla de aceptación (y se
+ * vuelve después a esta misma página). Pasa cuando una versión entra en vigencia con una
+ * pestaña ya abierta: sin esto, cada acción mostraría un error genérico. El `ApiError` se
+ * lanza igual, para que quien llamó no siga como si hubiera salido bien.
+ */
+function redirectIfPoliciesPending(status: number, body: unknown): void {
+  if (
+    status !== 403 ||
+    typeof window === "undefined" ||
+    (body as { code?: unknown } | null)?.code !== POLICIES_PENDING_CODE
+  ) {
+    return;
+  }
+  window.location.assign(
+    policyGateUrl(window.location.pathname + window.location.search),
+  );
 }
 
 /**
