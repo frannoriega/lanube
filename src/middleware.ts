@@ -5,6 +5,7 @@ import {
   type Permission,
   type PermissionSet,
 } from "@/lib/rbac";
+import { PATHNAME_HEADER, policyGateUrl } from "@/lib/policies/gate";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -60,6 +61,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/banned", request.url));
   }
 
+  // Gate de políticas (milestone 19): con políticas pendientes no se usa nada de la zona
+  // autenticada — admins y superadmins incluidos — hasta aceptarlas. Va después del baneo (un
+  // suspendido ve /banned: no tiene sentido pedirle que acepte para usar algo que no puede
+  // usar) y antes del perfil completo (una cuenta vieja sin perfil acepta primero). Las
+  // páginas públicas no se frenan.
+  //
+  // El token puede atrasarse respecto de la base (la cookie se reescribe recién cuando el
+  // cliente consulta /api/auth/session); por eso los layouts de /user y /admin y
+  // `requireActiveSession()` vuelven a chequear con la sesión fresca.
+  const pathname = request.nextUrl.pathname;
+  if (
+    isAuth &&
+    token?.policiesPending === true &&
+    (requiresSession || pathname.startsWith("/auth/signup"))
+  ) {
+    return NextResponse.redirect(
+      new URL(policyGateUrl(pathname + request.nextUrl.search), request.url),
+    );
+  }
+
   if (isAuthPage && isSignedUp) {
     // If user is already authenticated and trying to access auth pages, redirect to dashboard
     return NextResponse.redirect(new URL("/user/dashboard", request.url));
@@ -82,7 +103,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Los layouts de servidor no conocen la ruta pedida; el gate la necesita para volver a ella.
+  const headers = new Headers(request.headers);
+  headers.set(PATHNAME_HEADER, pathname + request.nextUrl.search);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

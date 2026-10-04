@@ -1,3 +1,4 @@
+import { POLICIES_PENDING_CODE } from "@/lib/api/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/json-bigint";
@@ -11,6 +12,20 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.email) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
+    // Gate de políticas (milestone 19). Esta ruta no puede usar requireActiveSession() (todavía
+    // no hay perfil), así que lo chequea a mano: sin esto, una cuenta vieja con políticas sin
+    // aceptar podría completar el perfil por API salteándose el gate.
+    if (session.policiesPending) {
+      return NextResponse.json(
+        {
+          message:
+            "Tenés que aceptar las políticas antes de completar tu perfil",
+          code: POLICIES_PENDING_CODE,
+        },
+        { status: 403 },
+      );
     }
 
     const { name, lastName, dni, institution, reasonToJoin } =

@@ -16,6 +16,7 @@ import { CredentialsSignin } from "next-auth";
 import { signInSchema } from "./schemas/auth";
 import { passkeyAuthenticationSchema } from "./schemas/passkeys";
 import { verifyPasskeyAuthentication } from "./passkeys/server";
+import { getPendingPoliciesForUser } from "./db/policies";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60; // 7 days
@@ -32,6 +33,11 @@ declare module "next-auth" {
     /** Protected owner tier: implicitly holds every permission. */
     isSuperadmin: boolean;
     userId: string;
+    /**
+     * Hay políticas que la cuenta tiene que aceptar (milestone 19). Recalculado en cada
+     * `jwt()` desde el registro + `policy_acceptances`; nunca viene del cliente.
+     */
+    policiesPending: boolean;
     user: DefaultSession["user"] & {
       /** Original signup / display form; fall back to `email` in UI when null. */
       displayEmail?: string | null;
@@ -49,6 +55,8 @@ declare module "next-auth" {
     /** True when a `RegisteredUser` row exists (JWT-safe; never store Prisma rows here — BigInt breaks `JSON.stringify`). */
     signedUp: boolean;
     displayEmail?: string | null;
+    /** Ver `Session.policiesPending`. Lo lee el middleware para el gate. */
+    policiesPending: boolean;
   }
 }
 
@@ -163,6 +171,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           : [];
         session.isSuperadmin = token.isSuperadmin === true;
         session.userId = token.userId as string;
+        session.policiesPending = token.policiesPending === true;
         if (session.user) {
           session.user.displayEmail =
             (token.displayEmail as string | null | undefined) ?? null;
@@ -176,6 +185,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token }) {
       if (token && token.email) {
         const registeredUser = await getRegisteredUserByEmail(token.email);
+        // Gate de políticas (milestone 19): se calcula sobre la cuenta (`User`), haya o no
+        // perfil completo — una cuenta creada antes de este milestone acepta antes de
+        // completar el perfil. Una consulta chica por llamada, como el baneo y el rol.
+        const accountId =
+          registeredUser?.userId ??
+          (
+            await prisma.user.findUnique({
+              where: { email: token.email },
+              select: { id: true },
+            })
+          )?.id;
+        token.policiesPending = accountId
+          ? (await getPendingPoliciesForUser(accountId)).length > 0
+          : false;
         if (registeredUser) {
           const atMs = nowMs();
           const defaultExp = atMs + SESSION_EXPIRATION_TIME_MS;

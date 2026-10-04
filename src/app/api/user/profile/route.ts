@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { requireActiveSession } from "@/lib/api-auth";
 import { updateOwnPersonalInfo } from "@/lib/db/users";
 import { prisma } from "@/lib/prisma";
@@ -13,11 +12,10 @@ import { personalInfoSchema } from "@/lib/schemas/profile";
 
 export async function GET() {
   try {
-    const session = await auth();
-
-    if (!session?.userId) {
-      return apiError("No autorizado", 401);
-    }
+    // requireActiveSession y no auth() a pelo: también corta a suspendidos y a cuentas con
+    // políticas sin aceptar (milestone-12 D24, milestone 19).
+    const { session, error } = await requireActiveSession();
+    if (error) return error;
 
     const row = await prisma.registeredUser.findUnique({
       where: { id: session.userId },

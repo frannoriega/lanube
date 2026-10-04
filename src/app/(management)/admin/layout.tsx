@@ -8,6 +8,7 @@ import { isAdminRole } from "@/lib/rbac";
 import { type RegisteredUser } from "@/types/prisma";
 import { ThemeProvider } from "next-themes";
 import { redirect } from "next/navigation";
+import { redirectIfPoliciesPending } from "@/lib/policies/page-gate";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,8 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   if (!session?.userId) {
     redirect("/auth/signin");
   }
+  // Políticas pendientes → pantalla de aceptación (milestone 19; ver page-gate.ts).
+  await redirectIfPoliciesPending(session);
   const registeredUser = await getRegisteredUserById(session.userId);
   if (!registeredUser) {
     redirect("/auth/signup");

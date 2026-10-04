@@ -1,5 +1,6 @@
 import "server-only";
 import { auth } from "@/lib/auth";
+import { POLICIES_PENDING_CODE } from "@/lib/api/client";
 import { getPermissionSetForUser } from "@/lib/db/roles";
 import { hasPermission, type Permission } from "@/lib/rbac";
 import type { Session } from "next-auth";
@@ -11,7 +12,8 @@ type GuardResult =
 
 /**
  * Guard de ruta de API para cualquier acción que requiera una cuenta activa, sin exigir un
- * permiso puntual. Exige sesión, perfil completo y **que el usuario no esté suspendido**.
+ * permiso puntual. Exige sesión, perfil completo, **que el usuario no esté suspendido** y
+ * **que no tenga políticas sin aceptar** (milestone 19).
  *
  * Existe porque el baneo era solo un redirect de UI: `src/middleware.ts` solo matchea
  * `/`, `/user/**`, `/admin/**` y `/auth/**` — **`/api/**` no está en el matcher**. Un
@@ -36,6 +38,21 @@ export async function requireActiveSession(): Promise<GuardResult> {
           message: session.bannedReason
             ? `Tu cuenta está suspendida: ${session.bannedReason}`
             : "Tu cuenta está suspendida",
+        },
+        { status: 403 },
+      ),
+    };
+  }
+  // Gate de políticas (milestone 19): el middleware no cubre `/api/**`, así que sin esto una
+  // cuenta con políticas pendientes podría seguir operando por API. El `code` lo reconoce el
+  // cliente (`src/lib/api/client.ts`) y manda a la pantalla de aceptación.
+  if (session.policiesPending) {
+    return {
+      error: NextResponse.json(
+        {
+          message:
+            "Tenés que aceptar las políticas actualizadas para seguir usando La Nube",
+          code: POLICIES_PENDING_CODE,
         },
         { status: 403 },
       ),
