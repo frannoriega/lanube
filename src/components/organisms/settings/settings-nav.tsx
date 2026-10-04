@@ -47,7 +47,7 @@ export const SETTINGS_SECTIONS: ReadonlyArray<{
   {
     href: "/user/settings/account",
     title: "Cuenta",
-    description: "Email, rol y fecha de alta",
+    description: "Email, rol, alta y políticas",
     icon: CircleUser,
   },
 ];
