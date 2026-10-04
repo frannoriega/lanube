@@ -61,15 +61,22 @@ export default function ParticlesLayout({
     };
   }, [themeToUse, isCoarsePointer, prefersReducedMotion]);
 
+  // ⚠️ Solo el canvas va dentro de `ParticlesProvider`, nunca `children`. En
+  // `@tsparticles/react` 4.x el provider renderiza `loaded ? children : null`, y `loaded`
+  // recién pasa a true en un efecto del navegador. Con la página adentro (así estuvo desde
+  // el 2026-05-23, `ff762cf`), el servidor nunca renderizaba el contenido: todo el sitio
+  // público y el ingreso se servían como un HTML vacío que se llenaba recién con JS (malo
+  // para buscadores y primera pintura), y un `notFound()` de una página no llegaba a correr
+  // en el servidor, así que las páginas inexistentes respondían 200 en vez de 404.
   return (
-    <ParticlesProvider init={loadSlim}>
-      <div
-        className={cn(
-          "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
-          className,
-        )}
-      >
-        {!prefersReducedMotion && (
+    <div
+      className={cn(
+        "relative min-h-[100svh] w-full bg-background transition-opacity duration-1000",
+        className,
+      )}
+    >
+      {!prefersReducedMotion && (
+        <ParticlesProvider init={loadSlim}>
           <Particles
             options={options}
             className={cn(
@@ -77,9 +84,9 @@ export default function ParticlesLayout({
               backgroundClass,
             )}
           />
-        )}
-        <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
-      </div>
-    </ParticlesProvider>
+        </ParticlesProvider>
+      )}
+      <div className="relative z-10 w-full min-h-[100svh]">{children}</div>
+    </div>
   );
 }
