@@ -1,8 +1,10 @@
 # Milestone 19 — Políticas versionadas y aceptación obligatoria
 
-**Estado:** diseño (2026-10-04). Sin código todavía. Las decisiones marcadas **(propuesta)** son
-de Claude y esperan confirmación; las marcadas **(abierta)** están también en
-`docs/OPEN_QUESTIONS.md`.
+**Estado:** implementado (2026-10-04) en `preview`, en cinco commits sin firmar (diseño + slices
+1–4 + este doc). El usuario dio luz verde a todo el diseño ("go ahead and implement milestone
+19"), así que las decisiones marcadas **(propuesta)** abajo se tomaron como aprobadas; las
+**(abiertas)** siguen en `docs/OPEN_QUESTIONS.md`. Lo construido y en qué se apartó del diseño
+está en [Implementación](#implementación-2026-10-04), al final.
 **Tipo:** feature — legal/cumplimiento + autenticación (un "gate" nuevo en la sesión).
 **Prioridad:** alta. Es el primero de los dos milestones pedidos el 2026-10-04 (el otro es el
 20, conector MCP) y el usuario lo marcó como **lo más importante**.
@@ -366,7 +368,7 @@ Slices 2 y 3 deben salir **juntos a producción**: el 2 sin el 3 hace que solo l
 acepten; el 3 sin el 2 frena a los nuevos en el gate justo después de registrarse (funciona,
 pero es feo).
 
-## Verificación (cuando se implemente)
+## Verificación (plan original)
 
 - Unit: `pendingPolicies` (casos del §3), `registry.test.ts`.
 - Con FAKETIME: desplegar una versión con `effectiveAt` futuro, verificar que no frena;
@@ -375,3 +377,139 @@ pero es feo).
   `/admin`, gate vs baneo, API devuelve 403 `POLICIES_PENDING`, `next` malicioso
   (`//evil.com`, `https://…`) ignorado.
 - `node scripts/mobile-shots.mjs` para `/policies/accept` y el registro.
+
+## Implementación (2026-10-04)
+
+### Qué se construyó, por slice
+
+1. **Registro + páginas** (`1ee1f09`). `src/lib/policies/registry.ts` (datos puros, importable
+   desde el cliente), `pending.ts` (la regla del §3) y `format.ts`. La política se movió a
+   `src/assets/policies/privacy/2025-11-16.mdx`. Páginas `/policies`, `/policies/[slug]`,
+   `/policies/[slug]/versions` y `/policies/[slug]/versions/[version]` sobre un
+   `PolicyDocument` compartido (`components/organisms/policies/`), que generaliza el diseño del
+   milestone 18. Todas son dinámicas (`connection()`): "vigente" depende del reloj. El footer
+   lista las políticas desde el registro.
+2. **Modelo + alta** (`4657477`). `prisma/models/policies.prisma` + migración
+   `20261004100000_policy_acceptances`, `src/lib/db/policies.ts` (solo insertar y leer),
+   `src/lib/policies/evidence.ts` (IP vía `getClientIp()` + user-agent). El registro manda
+   `acceptedPolicies` y `POST /api/auth/register` crea `User` + aceptaciones en una
+   transacción (`createUser` acepta un cliente de transacción). `/auth/signin` pasó a ser una
+   página de servidor que lee lo requerido del registro y renderiza `signin-screen.tsx` (la
+   pantalla de cliente de siempre, movida). Checkbox compartido: `PolicyCheckboxes`.
+3. **Gate** (`f8fa9c2`). `policiesPending` en `jwt()`/`session()`, middleware, layouts,
+   `/policies/accept`, `POST /api/policies/accept`, `requireActiveSession()` → 403
+   `POLICIES_PENDING`, redirección en `src/lib/api/client.ts`, `src/lib/policies/gate.ts`
+   (`safeGateNext`, `policyGateUrl`) y `page-gate.ts`.
+4. **Visibilidad** (`fa83e50`). Bloque "Políticas aceptadas" en Configuración → Cuenta
+   (`GET /api/user/policies`) y columna "Políticas" en la lista de usuarios del admin.
+
+### En qué se apartó del diseño (y por qué)
+
+- **El gate también vive en los layouts de `/user` y `/admin`**, no solo en el middleware. Al
+  probarlo apareció que el middleware lee el JWT **de la cookie**, y la cookie solo se
+  reescribe cuando el cliente consulta `/api/auth/session`. Una versión que entra en vigencia a
+  mitad de sesión no llegaba al middleware. `auth()` en un Server Component sí recalcula el
+  token desde la base, así que `redirectIfPoliciesPending(session)` en los dos layouts frena en
+  la siguiente navegación. El middleware sigue sirviendo para el caso principal (el ingreso,
+  que escribe una cookie fresca) y para `/auth/signup`. Para que los layouts sepan a dónde
+  volver, el middleware pasa la ruta pedida en el header `x-lanube-pathname`.
+- **Salir del gate refresca la sesión antes de navegar.** Por la misma razón, tras aceptar el
+  formulario llama a `getSession()` (que corre `jwt()` y reescribe la cookie) y recién después
+  navega, con navegación completa. Y si alguien llega al gate sin nada pendiente (aceptó en
+  otra pestaña), la página **no** redirige desde el servidor —la cookie vieja lo mandaría de
+  vuelta: loop—, sino que el formulario hace ese mismo refresco y sale solo.
+- **El endpoint es `POST /api/policies/accept`, no `/api/user/policies/accept`.** Todo
+  `/api/user/**` exige `requireActiveSession()` (lo impone el test nuevo, ver abajo), y ese
+  guard rechaza justamente a quien tiene que aceptar.
+- **La pantalla vive en un grupo propio, `src/app/(gate)/`**, con un shell estilo `/forms`
+  (logo y nada más). No usa el layout de gestión (asume un usuario habilitado) ni el público
+  (su navegación invita a irse). El botón flotante de WhatsApp se oculta ahí: tapaba el diff en
+  el celular.
+- **Admin: columna en la lista en vez de bloque en el detalle**, porque el admin **no tiene
+  detalle de usuario** (solo la tabla). La columna dice "Al día" / "Pendiente" con la última
+  aceptación, calculada con la misma `pendingPolicies()` (las aceptaciones vienen en la misma
+  consulta de la página). Construir un detalle de usuario era agrandar el alcance.
+- **`/api/auth/signup` (completar perfil) chequea el gate a mano.** No puede usar
+  `requireActiveSession()` (todavía no hay perfil), y sin el chequeo una cuenta vieja podía
+  completar el perfil por API salteándose el gate.
+- **Rutas de usuario sin guard**: `user/events`, `user/stats` y el `GET` de `user/profile`
+  usaban `auth()` a pelo y pasaron a `requireActiveSession()`; `src/lib/api-auth.test.ts`
+  recorre `src/app/api/user/**` y `src/app/api/resources/**` y falla si una ruta no usa el
+  guard (o usa `auth()` a pelo). Ninguna pantalla dependía de que esas tres respondieran a
+  un suspendido (`/banned` no las llama).
+- **Inmutabilidad también en la base**: además de que `db/policies.ts` solo inserta, un
+  trigger (`policy_acceptances_no_update`) rechaza todo `UPDATE`. Los `DELETE` quedan
+  permitidos porque los necesita la cascada al borrar un `User`.
+- **El diff es legible, no markdown crudo**: se quitan `**`, los `## ` de los títulos y las
+  reglas `---` antes de comparar (`src/lib/policies/source.ts`). En Vercel los `.mdx` llegan al
+  bundle de esa página por `outputFileTracingIncludes` (`next.config.ts`).
+- **El código de error del registro**: 409 lleva `code: "POLICIES_CHANGED"` y el formulario
+  destilda y recarga la lista (`router.refresh()`); el 400 por no tildar no lleva código.
+
+### Hallazgos en el camino
+
+- **La política publicada mostraba el correo de contacto vacío desde el 2026-09-03.** El MDX
+  hacía `import { email } from "@/lib/constants/contact"`, y el commit `9e078ef` (contacto
+  configurable por superadmin) borró ese export. El build solo avisaba ("Attempted import
+  error") y la sección 1 decía "a través del correo institucional \***\*". Se arregló escribiendo
+  el correo literal en la v1 (el que tenía al publicarse: `polotecnologicolanube@gmail.com`)
+  — legítimo porque esta versión del registro nunca se había desplegado — y se agregó un test:
+  **un texto de política es autocontenido\*\* (sin `import`/`export` ni `{…}`). Si importa un
+  valor, lo que se muestra cambia sin que cambie el archivo, y el hash deja de probar nada.
+- **`max-w-2xl` vale 1400px en este repo**: `globals.css` redefine `--container-2xl`. El shell
+  de `/forms` usa `max-w-2xl` creyendo que son 42rem y en escritorio ocupa todo el ancho. El
+  gate usa `max-w-[42rem]`; `/forms` quedó como estaba (anotado en `OPEN_QUESTIONS.md`).
+- **`notFound()` responde 200 en las rutas dinámicas públicas** (también `/news/...` y
+  `/events/...`, no solo las de políticas): la página muestra "no existe" pero el status es
+  200, probablemente porque el layout público asíncrono ya empezó el streaming. Anotado; no se
+  tocó.
+- **El script `scripts/mobile-shots.mjs` entra como `u1`/`sa1` y espera llegar a `/user/`.**
+  En una base sembrada después de este milestone funciona (el seed acepta las políticas); en
+  una base vieja, la primera vez cae en el gate. Se resuelve aceptando una vez a mano, o
+  `npm run db:seed`.
+
+### Cómo publicar una versión nueva de una política
+
+1. Copiar el MDX vigente a `src/assets/policies/<key>/<YYYY-MM-DD>.mdx` (la fecha de
+   publicación) y editar **la copia**. Todo literal: sin imports ni expresiones.
+2. Agregar la entrada **al final** de `versions` en `src/lib/policies/registry.ts`:
+   `effectiveAt` (puede ser futuro: se despliega antes y rige ese día a las 00:00 de
+   Concepción del Uruguay), `reacceptance` (`"required"` si es un cambio sustancial,
+   `"not-required"` si es editorial), `changeSummary` (1–5 viñetas en castellano llano: es lo
+   primero que lee la gente en el gate) y `sha256` (`shasum -a 256 <archivo>` — correrlo
+   **después** de `prettier`, que el commit aplica a los `.mdx`).
+3. Agregar su `import` dinámico en `POLICY_CONTENT`
+   (`src/components/organisms/policies/policy-content.tsx`).
+4. `npx vitest run src/lib/policies` — falla si falta alguna de las piezas.
+5. Avisar antes de desplegar si `reacceptance` es `"required"`: desde `effectiveAt`, cada
+   persona va a encontrar el gate al entrar.
+
+Una política nueva (p. ej. términos y condiciones) es lo mismo con una clave nueva en
+`POLICIES`: aparece sola en `/policies`, el footer, el registro y el gate.
+
+### Verificación hecha
+
+- `vitest`: 444 tests, todos verdes. Nuevos: `pending.test.ts` (16: vigencia en la zona del
+  predio, usuario nuevo, editorial vs. sustancial, vigencia futura, informativa que pasa a
+  obligatoria, 400/409), `registry.test.ts` (hash, autocontenido, import en `POLICY_CONTENT`,
+  orden, `changeSummary`, slugs), `gate.test.ts` (17 casos de `next`, incluidos `//evil.com`,
+  `/\evil.com`, control chars) y `api-auth.test.ts` (13 rutas).
+- `tsc`, `eslint` y `prettier --check` limpios.
+- Contra el dev server (Docker), con Playwright:
+  - Usuarios existentes (sin aceptaciones, como producción el día del deploy): `u1` cae en
+    el gate al ingresar; `/api/user/stats` → 403 `POLICIES_PENDING`; `/api/auth/signup` → 403;
+    un link profundo (`/user/settings/profile`) va al gate con `next` y vuelve ahí al aceptar;
+    sin tildar, el formulario muestra el error; después de aceptar, la API responde 200.
+  - Con una **v2 temporal** (vigente hoy, `required`, con un cambio de una palabra y una línea
+    nueva): `u1`, que había aceptado la v1, ve "Actualizamos nuestras políticas" con el
+    resumen y el diff por palabras; capturas en escritorio (claro) y 390px (oscuro), sin
+    scroll horizontal. La v2 se borró después (no está en ningún commit).
+  - Cookie atrasada: aceptar por API (como desde otra pestaña) y volver a abrir el gate → sale
+    solo a `next`, sin loop. Un segundo `POST` sin nada pendiente → 200 `{ accepted: 0 }`.
+  - `sa1` (superadmin): frenado en `/admin/roles` (página → gate con `next`; API admin → 403);
+    `next=//evil.com` cae en `/user/dashboard`.
+  - Registro por la UI a 390px: "Crear cuenta" deshabilitado hasta tildar; el enlace va a la
+    versión exacta (`/policies/privacy/versions/2025-11-16`); la fila queda con `SIGNUP`, hash,
+    IP y user-agent. Por API: sin `acceptedPolicies` → 400, versión vieja → 409, y un
+    `UPDATE` a mano sobre `policy_acceptances` lo rechaza el trigger. Un registro que falló a
+    mitad de transacción no dejó el `User` creado.
