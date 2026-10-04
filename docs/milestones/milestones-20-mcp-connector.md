@@ -1,5 +1,9 @@
 # Milestone 20 — Conector MCP: "traé tu propio asistente"
 
+> **Continuación:** el [milestone 21](./milestones-21-mcp-management.md) extiende este conector a
+> la gestión (consulta solo lectura, borradores de noticias, información pública) y reorganiza
+> `src/lib/mcp/tools.ts` en `src/lib/mcp/tools/` con una tabla de acceso (`access.ts`).
+
 **Estado:** **implementado (2026-10-04)** en `preview`, slices 1–5; falta la slice 6 (probar de
 punta a punta con Claude web y ChatGPT contra un deploy público — ver
 [Implementación](#implementación-2026-10-04)). Diseño del mismo día; depende del milestone 19

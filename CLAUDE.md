@@ -123,7 +123,7 @@ src/
 │       ├── spaces/ events/ reservation-types/   # Public read endpoints
 │       ├── resources/[spaceId]/  # Available resources & calendar for a Space
 │       ├── session/              # GET current session (session validation)
-│       ├── mcp/                  # MCP endpoint (milestone 20): Bearer-token, 5 reservation tools
+│       ├── mcp/                  # MCP endpoint (milestones 20–21): Bearer-token; tools in src/lib/mcp/tools/
 │       ├── oauth/                # OAuth 2.1 AS: register (DCR), token, revoke, authorize (consent decision)
 │       ├── cron/
 │       │   ├── maintain-reservations/  # Daily 5am UTC (scheduled in vercel.json)
@@ -849,8 +849,22 @@ Full design + what was built: `docs/milestones/milestones-20-mcp-connector.md`.
 - **Account state is a tool error, not a 401** (`src/lib/mcp/auth.ts`): no profile / banned /
   policies pending → every tool returns a readable message with the web link; a 401 would make
   the client loop on OAuth. Only a bad/missing token is a 401 with `WWW-Authenticate`.
-- The connector acts as a **regular user on their own reservations** even for admin accounts;
-  no event/profile/admin tools. Per-user rate limits: 60 reads/min, 20 writes/h.
+- **Who gets which tool is one table**: `TOOL_ACCESS` in `src/lib/mcp/access.ts` (milestone 21)
+  — each tool needs its OAuth **scope** (a ceiling the user consented to) **and** any of its
+  **permissions** (the same catalog the panel uses, resolved fresh per request). `defineTool()`
+  (`src/lib/mcp/tools/shared.ts`) doesn't even register a tool the caller can't use. Adding a
+  tool = an entry there + `defineTool` in the right module; `access.test.ts` pins the matrix.
+- **Never exposed** (user decision, `FORBIDDEN_PERMISSIONS`, enforced by the test): audit,
+  reservation types, space management, contact-info editing, roles, landing themes.
+- **Management is read-only**, except news **drafts**: `create/update_news_draft` only write
+  `DRAFT` (require `confirmed_by_user: true` after a preview, are audited with
+  «Vía: Asistente»), and return the panel link; a human adds the cover and publishes. No tool
+  publishes, submits, approves or rejects anything. Contact info, policies and "Quiénes somos"
+  are public tools (no scope; they work even for a blocked account). The About text lives in
+  `src/lib/about/content.ts`, shared with the page.
+- Management scopes (`management:read`, `news:write`) are only offered/stored for accounts with
+  matching permissions (`scopesForAccount`); a role change needs a reconnect. Rate limits per
+  grant: 60 reads/min, 20 writes/h.
 - `/oauth/*` is in the middleware matcher + `requiresSession`; sign-in honors a validated
   `callbackUrl` (`src/lib/signin/callback-url.ts`). Password reset and recovery-code redemption
   revoke every grant (`revokeAllGrantsForUser`). The daily cron prunes expired codes/tokens.

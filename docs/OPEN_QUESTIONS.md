@@ -207,3 +207,15 @@ Contexto en
   de Vercel en lugar del `401` de OAuth.
 - **Scope insuficiente como `403` + step-up** en lugar de un error de tool — solo si algún día
   existe un asistente de "solo consultar".
+
+## Milestone 21 — Conector MCP para la gestión
+
+Contexto en
+[`milestones/milestones-21-mcp-management.md`](./milestones/milestones-21-mcp-management.md).
+
+- **¿Sumar como solo lectura** gestión de reservas, usuarios, check-in o incidentes? No se
+  pidieron, así que no se agregaron.
+- **¿El asistente puede rechazar una nota en revisión con motivo** (sin poder aprobar, que
+  publica)? Hoy decidir es solo en el panel.
+- **Privacidad**: ¿la política debe mencionar que el personal puede consultar, con su
+  asistente, datos de inscriptos y solicitudes de cambio de datos?
