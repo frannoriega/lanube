@@ -68,6 +68,12 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig = {
   /* config options here */
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  // La pantalla de aceptación de políticas (milestone 19) lee el texto fuente de dos versiones
+  // con `fs` para mostrar el diff "Ver qué cambió". Sin esto, el bundle serverless de Vercel no
+  // incluye los .mdx (solo los incluye compilados, vía import) y el diff fallaría en producción.
+  outputFileTracingIncludes: {
+    "/policies/accept": ["./src/assets/policies/**/*.mdx"],
+  },
   images: { remotePatterns: imageRemotePatterns },
   async redirects() {
     return [

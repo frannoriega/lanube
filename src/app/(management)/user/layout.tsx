@@ -8,6 +8,7 @@ import { serializeJson } from "@/lib/json-bigint";
 import { type RegisteredUser } from "@/types/prisma";
 import { ThemeProvider } from "next-themes";
 import { redirect } from "next/navigation";
+import { redirectIfPoliciesPending } from "@/lib/policies/page-gate";
 
 interface UserLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,8 @@ export default async function UserLayout({ children }: UserLayoutProps) {
   if (!session?.userId) {
     redirect("/auth/signin");
   }
+  // Políticas pendientes → pantalla de aceptación (milestone 19; ver page-gate.ts).
+  await redirectIfPoliciesPending(session);
   const [registeredUser, spaces] = await Promise.all([
     getRegisteredUserById(session.userId),
     getReservableSpaces(),
