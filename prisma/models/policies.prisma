@@ -1,0 +1,42 @@
+/// En qué momento se registró una aceptación de política (milestone 19).
+enum PolicyAcceptanceContext {
+  /// En el formulario de registro, al crear la cuenta.
+  SIGNUP
+  /// En la pantalla "Actualizamos nuestras políticas" (`/policies/accept`): una versión
+  /// nueva, o la primera aceptación de una cuenta creada antes de este milestone.
+  REACCEPT
+}
+
+/// La aceptación de **una versión** de **una política** por una cuenta (milestone 19).
+///
+/// El texto de las políticas vive en código (`src/lib/policies/registry.ts` + los MDX de
+/// `src/assets/policies/`); acá solo se guarda la evidencia de que alguien lo aceptó. Por eso
+/// la tabla es **append-only**: `src/lib/db/policies.ts` solo inserta y lee, y un trigger
+/// rechaza cualquier `UPDATE` (ver la migración `20261004100000_policy_acceptances`). Una fila
+/// solo desaparece por la cascada al borrar el `User`.
+///
+/// Cuelga de `User` y no de `RegisteredUser` porque se acepta en el registro, cuando todavía no
+/// existe el perfil. El estado "tiene políticas pendientes" no se guarda en ningún lado: se
+/// deriva del registro + estas filas (`pendingPolicies()`).
+model PolicyAcceptance {
+  id          String                  @id @default(cuid())
+  userId      String                  @map("user_id")
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Clave de la política en el registro (`"privacy"`).
+  policyKey   String                  @map("policy_key")
+  /// Id de la versión aceptada (`"2025-11-16"`).
+  version     String
+  /// SHA-256 del MDX aceptado, copiado del registro: prueba del texto exacto aunque se
+  /// muevan archivos o se reescriba la historia de git.
+  contentHash String                  @map("content_hash")
+  context     PolicyAcceptanceContext
+  /// IP y user-agent de la request que aceptó: la evidencia habitual de un consentimiento
+  /// electrónico. Nulos si la plataforma no los informó.
+  ipAddress   String?                 @map("ip_address")
+  userAgent   String?                 @map("user_agent")
+  acceptedAt  BigInt                  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("accepted_at")
+
+  @@unique([userId, policyKey, version])
+  @@index([userId, policyKey])
+  @@map("policy_acceptances")
+}
