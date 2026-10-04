@@ -19,12 +19,22 @@ export const REGISTER_PATH = "/api/oauth/register";
 export const REVOKE_PATH = "/api/oauth/revoke";
 
 /**
- * Los scopes del conector. Se piden juntos en la práctica, pero separarlos deja la puerta
- * abierta a un asistente de "solo consultar".
+ * Los scopes del conector. Los de reservas se piden juntos en la práctica, pero separarlos
+ * deja la puerta abierta a un asistente de "solo consultar".
+ *
+ * Los de gestión (milestone 21) son un **tope**, no un permiso: `management:read` habilita
+ * las tools de consulta de gestión y `news:write` la redacción de borradores, pero cada tool
+ * además exige el permiso del rol correspondiente (`src/lib/mcp/access.ts`). A una cuenta sin
+ * permisos de gestión no se le ofrecen (ver `scopeAppliesTo`).
+ *
+ * La información pública (contacto, políticas, quiénes somos) no requiere scope: la lee
+ * cualquier token válido.
  */
 export const OAUTH_SCOPES = [
   "reservations:read",
   "reservations:write",
+  "management:read",
+  "news:write",
 ] as const;
 export type OAuthScope = (typeof OAUTH_SCOPES)[number];
 
@@ -40,6 +50,12 @@ export const SCOPE_DESCRIPTIONS: Record<OAuthScope, string[]> = {
   "reservations:write": [
     "Pedir reservas en tu nombre (quedan pendientes de aprobación)",
     "Cancelar tus reservas",
+  ],
+  "management:read": [
+    "Consultar, solo lectura, lo que tus permisos de gestión te dejan ver (noticias, eventos, formularios, solicitudes de cambio de datos, reportes, recursos)",
+  ],
+  "news:write": [
+    "Redactar borradores de noticias en tu nombre (nunca publicarlas: eso lo hacés vos desde el panel)",
   ],
 };
 

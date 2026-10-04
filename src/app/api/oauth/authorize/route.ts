@@ -2,6 +2,7 @@ import { requireActiveSession } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import {
   buildClientRedirect,
+  scopesForAccount,
   validateAuthorizationRequest,
 } from "@/lib/oauth/authorize";
 import { requestOrigin } from "@/lib/oauth/origin";
@@ -68,7 +69,8 @@ export async function POST(request: Request) {
     const code = await createAuthorizationCode({
       userId,
       clientRowId: result.client.id,
-      scopes: result.scopes,
+      // Solo los scopes que aplican a esta cuenta: lo mismo que mostró la pantalla.
+      scopes: await scopesForAccount(result.scopes, session.userId),
       redirectUri: result.redirectUri,
       codeChallenge: result.codeChallenge,
       resource: result.resource,
