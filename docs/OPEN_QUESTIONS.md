@@ -187,6 +187,12 @@ Las decisiones de diseño marcadas "(propuesta)" en el doc también esperan conf
   permite; no se pidió.
 - **Inscripciones a eventos sin cuenta** (`/forms/[slug]`): ¿deben aceptar la política de
   privacidad? Recolectan nombre y email.
+- **El shell de `/forms` ocupa todo el ancho en escritorio**: usa `max-w-2xl`, que en este
+  repo vale 1400px porque `globals.css` redefine `--container-2xl`. Encontrado al construir el
+  gate (que usa `max-w-[42rem]`). ¿Arreglar `/forms` igual, o cambiar el token?
+- **`notFound()` responde 200 en rutas dinámicas públicas** (`/news/...`, `/events/...`,
+  `/policies/...`): se ve "no existe" pero el status no es 404. Probablemente el layout
+  público asíncrono empieza el streaming antes. Afecta SEO más que a personas.
 
 ## Milestone 20 — Conector MCP
 

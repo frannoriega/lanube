@@ -64,6 +64,7 @@ src/
 │   ├── (public)/                 # Public pages (landing, about, spaces, news, events, policies)
 │   │   └── news/[yyyy]/[mm]/[dd]/[slug]/  # Noticia detail. Public URLs are English:
 │   │                             #   "/noticias" 308-redirects here (next.config.ts)
+│   ├── (gate)/policies/accept/   # "Actualizamos nuestras políticas" gate (milestone 19)
 │   ├── forms/                    # Public, UNAUTHENTICATED event registration
 │   │   ├── [slug]/               # Submit a registration (+ /submitted confirmation)
 │   │   └── response/[token]/     # Edit/cancel via the participant's editToken
@@ -179,7 +180,7 @@ src/
 │   └── admin/                    # Admin-specific types
 │
 └── assets/
-    └── policies/                 # Policy content (markdown/mdx)
+    └── policies/<key>/<version>.mdx  # One IMMUTABLE file per policy version (milestone 19)
 ```
 
 ### Database Model Overview
@@ -205,6 +206,7 @@ src/
 - `Ban`: User suspension record (time-bounded)
 - `ProfileChangeRequest`: a user's request to change their **DNI** or **reasonToJoin** (milestone 17) — those fields are never edited directly by anyone; see §14 below.
 - `PasskeyCredential` (→ `User`) + `WebAuthnChallenge`: WebAuthn passkeys and their single-use challenges (milestone 17).
+- `PolicyAcceptance` (→ `User`): append-only evidence that an account accepted one version of one policy (milestone 19, see §15). A trigger rejects every `UPDATE`.
 
 **Features** (expanding):
 
@@ -262,7 +264,7 @@ src/
 2. **Email Verification**: GET `/api/auth/confirm-email?token=...` → marks `emailVerified`
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
 4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`. Or **passkey** (milestone 17): `POST /api/auth/passkey/options` → browser → `signIn("passkey", …)`, a second `Credentials` provider whose `authorize` verifies the WebAuthn assertion (`src/lib/passkeys/server.ts`); same `jwt()` pipeline after that
-5. **Session**: NextAuth JWT strategy (7-day expiration); ban status checked in `jwt()` callback
+5. **Session**: NextAuth JWT strategy (7-day expiration); ban status **and pending policies** (`policiesPending`, milestone 19) checked in `jwt()` callback
 6. **Role-based (RBAC)** — ⚠️ **roles are DATA, not an enum** (milestone 9). A role is a row in `roles` (`prisma/models/roles.prisma`); `RegisteredUser.roleId` replaced the old `UserRole` enum column, and **NULL means the base tier**. The permission _catalog_ stays code-defined in `src/lib/rbac.ts` (`PERMISSIONS`, `hasPermission()`, `isAdminRole()`) because each string maps to a real call site; _which_ of those a role carries is `Role.permissions`, edited by a superadmin at `/admin/roles` (`roles:manage`). Full rationale: `docs/design/03-auth-and-permissions.md`.
    - **Protected rows**: `Role.isSystem` blocks rename/delete/re-scope (403) — seeded on `USER` and `SUPERADMIN`. `Role.isSuperadmin` makes `hasPermission()` return true for _everything_, including permissions added in a later deploy; it can never be set from the UI (`createRole` hardcodes both flags false). Seeded roles: USER / ADMIN / SUPERADMIN / COMUNICADOR, with the exact permission sets they had pre-migration. COMUNICADOR is an admin-panel role scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts.
    - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles`, `/admin/audit` and `/admin/profile-requests` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
@@ -774,6 +776,35 @@ Full design + decisions: `docs/milestones/milestones-17-account-settings-and-pas
 - Request decisions notify the requester via `notify()` (`profileChange.decided`: bell +
   email). **OAuth, when built, must ask for the password before linking** and lives in
   Seguridad ("Conectar tu cuenta de X").
+
+### 15. Policies & mandatory acceptance (milestone 19)
+
+Full design + what was built: `docs/milestones/milestones-19-policies-and-acceptance.md`
+(including the **step-by-step for publishing a new version**).
+
+- **Policy text lives in code, acceptances in the DB.** `src/lib/policies/registry.ts` is the
+  single source of truth: each policy has `versions` (in order), each with `effectiveAt`,
+  `requiresAcceptance`, `reacceptance` (`required` = substantive change, everyone re-accepts;
+  `not-required` = editorial) and the file's `sha256`. Who must accept what is the pure
+  `pendingPolicies()` (`pending.ts`, unit-tested) — reuse it, never re-derive the rule.
+- **A published version is never edited.** `registry.test.ts` checks every file's hash and that
+  the text is **self-contained** (no `import`/`export`/`{…}` — a policy that imported a contact
+  email rendered it empty for a month). Changing the text = new file + new entry + its line in
+  `POLICY_CONTENT` (`components/organisms/policies/policy-content.tsx`).
+- **The gate is the invariant; the sign-up checkbox is UX.** Pending policies block `/user`,
+  `/admin` and `/auth/signup` (middleware, after the ban check, before profile completion) **and
+  again in the user/admin layouts** via `redirectIfPoliciesPending()` — the middleware reads the
+  cookie JWT, which lags until the client hits `/api/auth/session`. The API answers 403
+  `code: "POLICIES_PENDING"` from `requireActiveSession()`; `apiGet`/`apiSend` redirect on it.
+  Admins and superadmins are gated too; public pages are not.
+- **Every `/api/user/**`and`/api/resources/**`route must use`requireActiveSession()`** (or
+  `requirePermission()`) — enforced by `src/lib/api-auth.test.ts`. It's the only ban + policy
+  check on the API. The accept endpoint is `POST /api/policies/accept` for that reason.
+- Leaving the gate refreshes the session (`getSession()`) **before** a full navigation;
+  redirecting server-side from the gate would loop on a stale cookie. `next` goes through
+  `safeGateNext()` (no open redirect).
+- `prisma/seed.ts` accepts the current policies for the example users; an older local DB will
+  send `u1`/`sa1` to the gate once.
 
 ## Testing & Seeding
 
