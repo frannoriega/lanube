@@ -2,6 +2,8 @@
 import { now, nowMs } from "@/lib/clock";
 import { DomainError } from "@/lib/errors";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
+import { pendingPolicies } from "@/lib/policies/pending";
+import { POLICIES } from "@/lib/policies/registry";
 import { prisma } from "@/lib/prisma";
 import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
 import { dateToUnixMs } from "@/lib/unix-ms";
@@ -12,6 +14,11 @@ type RegisteredUserListRow = RegisteredUser & {
   roleRef: { id: string; name: string } | null;
   user: {
     email: string;
+    policyAcceptances: {
+      policyKey: string;
+      version: string;
+      acceptedAt: bigint;
+    }[];
   };
   bans: Ban[];
 };
@@ -50,6 +57,13 @@ export interface GetUsersResult {
     updatedAt: number;
     email: string;
     status: "ACTIVE" | "BANNED";
+    /**
+     * Si la cuenta tiene aceptadas las políticas vigentes (milestone 19). Misma regla que el
+     * gate (`pendingPolicies`): "PENDING" es que la próxima vez que entre la va a frenar.
+     */
+    policies: "UP_TO_DATE" | "PENDING";
+    /** Cuándo aceptó una política por última vez (ms), o null si nunca. */
+    lastPolicyAcceptedAt: number | null;
   }>;
 }
 
@@ -156,6 +170,11 @@ export async function getRegisteredUsers({
         user: {
           select: {
             email: true,
+            // Pocas filas por usuario (una por versión aceptada): alcanza para calcular el
+            // estado de políticas de la página sin otra consulta (milestone 19).
+            policyAcceptances: {
+              select: { policyKey: true, version: true, acceptedAt: true },
+            },
           },
         },
         roleRef: {
@@ -237,6 +256,15 @@ export async function getRegisteredUsers({
         updatedAt: Number(user.updatedAt),
         email: user.user.email,
         status: isBanned ? "BANNED" : "ACTIVE",
+        policies:
+          pendingPolicies(POLICIES, user.user.policyAcceptances, atMs)
+            .length === 0
+            ? "UP_TO_DATE"
+            : "PENDING",
+        lastPolicyAcceptedAt: user.user.policyAcceptances.reduce<number | null>(
+          (max, a) => Math.max(max ?? 0, Number(a.acceptedAt)),
+          null,
+        ),
       };
     },
   );
