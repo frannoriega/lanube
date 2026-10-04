@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getSiteConfig } from "@/lib/db/siteConfig";
 import { links } from "@/lib/constants/nav";
+import { POLICIES, POLICY_KEYS } from "@/lib/policies/registry";
 import { cn } from "@/lib/utils";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
@@ -91,14 +92,17 @@ export default async function Footer({ className }: { className?: string }) {
               </h2>
               <nav>
                 <ul className="text-foreground flex flex-col">
-                  <li>
-                    <Link
-                      href="/policies/privacy"
-                      className="block py-2 hover:underline"
-                    >
-                      Política de Privacidad
-                    </Link>
-                  </li>
+                  {/* Del registro de políticas (milestone 19): una nueva aparece sola. */}
+                  {POLICY_KEYS.map((key) => (
+                    <li key={key}>
+                      <Link
+                        href={`/policies/${POLICIES[key].slug}`}
+                        className="block py-2 hover:underline"
+                      >
+                        {POLICIES[key].title}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </nav>
             </div>
