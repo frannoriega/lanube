@@ -135,6 +135,19 @@ export interface AdminProfileChangeRequestPage {
 }
 
 /** Una passkey del usuario (sin material criptográfico). */
+/** Un asistente conectado por MCP (milestone 20): un grant OAuth vigente. */
+export interface ConnectedAssistantItem {
+  id: string;
+  /** Nombre **declarado** por el cliente ("Claude"). */
+  clientName: string;
+  /** Dominio verificable del cliente (el de su redirect_uri o su CIMD). */
+  clientHost: string;
+  kind: "DCR" | "CIMD";
+  scopes: string[];
+  createdAt: number;
+  lastUsedAt: number | null;
+}
+
 export interface PasskeyItem {
   id: string;
   label: string;

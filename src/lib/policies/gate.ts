@@ -16,8 +16,16 @@ export const POLICY_GATE_DEFAULT_NEXT = "/user/dashboard";
  */
 export const PATHNAME_HEADER = "x-lanube-pathname";
 
-/** Prefijos a los que se puede volver: lo que el gate frena. */
-const ALLOWED_PREFIXES = ["/user", "/admin", "/auth/signup"];
+/**
+ * Prefijos a los que se puede volver: lo que el gate frena. `/oauth/authorize` es la
+ * pantalla de consentimiento del conector MCP (milestone 20).
+ */
+const ALLOWED_PREFIXES = [
+  "/user",
+  "/admin",
+  "/auth/signup",
+  "/oauth/authorize",
+];
 
 /**
  * El `next` validado: solo rutas internas de la zona que el gate frena. Cualquier otra cosa
