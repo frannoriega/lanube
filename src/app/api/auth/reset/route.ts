@@ -6,7 +6,9 @@ import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import {
   consumeResetToken,
   createResetToken,
+  resendEmailConfirmationIfExpired,
 } from "@/lib/db/verificationTokens";
+import { prisma } from "@/lib/prisma";
 import { sendResetEmail } from "@/lib/email/reset";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
@@ -69,7 +71,17 @@ export async function POST(request: NextRequest) {
     }
     const email = await normalizeEmailForIdentityServer(clientNormalizedEmail);
     const user = await getRegisteredUserByEmail(email);
-    if (user) {
+    if (!user) {
+      // Sin perfil no hay reset posible. Si es una cuenta que nunca confirmó el correo,
+      // lo que le sirve es un enlace de confirmación nuevo (solo si el anterior venció).
+      const account = await prisma.user.findUnique({
+        where: { email },
+        select: { email: true, emailVerified: true },
+      });
+      if (account && !account.emailVerified) {
+        await resendEmailConfirmationIfExpired(account.email);
+      }
+    } else {
       const token = await createResetToken(user.id);
       const { error } = await sendResetEmail(user.user.email, token);
       if (error) {

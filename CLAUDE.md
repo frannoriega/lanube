@@ -270,6 +270,7 @@ src/
 
 1. **Sign-up**: `/auth/signup` → POST `/api/auth/register` → email + password hashed (bcryptjs, 12 rounds)
 2. **Email Verification**: GET `/api/auth/confirm-email?token=...` → marks `emailVerified`
+   - **Enlace vencido (24 h)**: `resendEmailConfirmationIfExpired()` (`db/verificationTokens.ts`) manda uno nuevo cuando una cuenta sin confirmar entra con credenciales correctas o pide un reset (sin perfil no hay reset). Solo si no queda ningún token vigente → como máximo 1 correo por cuenta cada 24 h (anti-spam SMTP). Nunca revelar al cliente si se envió.
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
 4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`. Or **passkey** (milestone 17): `POST /api/auth/passkey/options` → browser → `signIn("passkey", …)`, a second `Credentials` provider whose `authorize` verifies the WebAuthn assertion (`src/lib/passkeys/server.ts`); same `jwt()` pipeline after that
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status **and pending policies** (`policiesPending`, milestone 19) checked in `jwt()` callback
