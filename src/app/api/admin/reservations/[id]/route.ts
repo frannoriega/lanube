@@ -17,7 +17,7 @@ import { notify } from "@/lib/notifications/dispatch";
 import type { ReservationDecidedData } from "@/lib/notifications/types";
 import { createId } from "@paralleldrive/cuid2";
 import { NextRequest, NextResponse } from "next/server";
-import { apiCatch } from "@/lib/api/response";
+import { apiCatch, apiError } from "@/lib/api/response";
 
 /**
  * Notifies the reservation's owner of an approve/reject decision — only when it's a
@@ -67,6 +67,20 @@ export async function PATCH(
     }
 
     const resolvedParams = await params;
+
+    // Las reservas de un evento no se gestionan desde acá (ni se listan: ver
+    // `EXCLUDE_EVENT_RESERVATIONS`): cancelar o rechazar una a mano deja al evento dando por
+    // ocupado un espacio que ya no lo está. Se cambian editando el evento.
+    const target = await prisma.reservation.findUnique({
+      where: { id: resolvedParams.id },
+      select: { reservableType: true },
+    });
+    if (target?.reservableType === "EVENT") {
+      return apiError(
+        "Esta reserva pertenece a un evento: modificala desde la gestión del evento.",
+        409,
+      );
+    }
 
     if (status === "APPROVED") {
       if (preview) {
