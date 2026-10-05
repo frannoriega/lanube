@@ -480,8 +480,8 @@
     "semantic_hash": ""
   },
   "src/app/api/admin/reservations/[id]/route.ts": {
-    "mtime": 1791067088.3842573,
-    "ast_hash": "8ae7b6539edb4cb42131d8b86ebe9dbf",
+    "mtime": 1791241357.468215,
+    "ast_hash": "6e27d1e45a1b8e8578c717c8e45d64d7",
     "semantic_hash": ""
   },
   "src/app/api/admin/reservations/by-date/route.ts": {
@@ -1165,13 +1165,13 @@
     "semantic_hash": ""
   },
   "src/lib/db/adminReservations.ts": {
-    "mtime": 1791152334.2700899,
-    "ast_hash": "affba6018a8bc2fd905863763da63c9c",
+    "mtime": 1791241350.6518035,
+    "ast_hash": "64cf898a4f9446412efc993376e52dd7",
     "semantic_hash": ""
   },
   "src/lib/db/adminStats.ts": {
-    "mtime": 1790971835.5973594,
-    "ast_hash": "b99926561a3f3f867e35bb7e85f65e5e",
+    "mtime": 1791241357.4676807,
+    "ast_hash": "225ea9cebe520362fdd3abd633017a52",
     "semantic_hash": ""
   },
   "src/lib/db/dashboardStats.ts": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791207071.2490458,
-    "ast_hash": "92da26180e474de958ca9378a23aabf0",
+    "mtime": 1791241394.0676634,
+    "ast_hash": "4f049cc314e7a9b14b4e49a623fb33fb",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -2800,7 +2800,7 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1791152334.214716,
+    "mtime": 1791241312.2014008,
     "ast_hash": "14ef84fbe7fb321a250b38bd04cd0f7e",
     "semantic_hash": ""
   },
@@ -2885,7 +2885,7 @@
     "semantic_hash": ""
   },
   "src/app/(public)/news/[yyyy]/[mm]/[dd]/[slug]/page.tsx": {
-    "mtime": 1791207060.397869,
+    "mtime": 1791208257.3398025,
     "ast_hash": "a8664b42af7e8b0a3946eb68c7fa8eb7",
     "semantic_hash": ""
   },
@@ -3335,8 +3335,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-15-news-redesign.md": {
-    "mtime": 1790971835.3739927,
-    "ast_hash": "52219232fbf0d6a531159015c448e52a",
+    "mtime": 1791208257.318906,
+    "ast_hash": "9066955f80f48162040d245e3820fb0c",
     "semantic_hash": ""
   },
   "src/components/templates/landing/news/reading-progress.tsx": {
@@ -3785,7 +3785,7 @@
     "semantic_hash": ""
   },
   "src/components/organisms/policies/policy-document.tsx": {
-    "mtime": 1791207060.398108,
+    "mtime": 1791208257.339977,
     "ast_hash": "e9be5ba41d9120dbdcfaaa8f005c743d",
     "semantic_hash": ""
   },
