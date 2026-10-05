@@ -179,7 +179,7 @@ export function SignInScreen({
       if (res?.error) {
         if (res?.code === "email_not_verified") {
           toast.error(
-            "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
+            "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada (si tu enlace había vencido, te enviamos uno nuevo).",
           );
         } else {
           setError(true);
