@@ -822,6 +822,10 @@ Full design + what was built: `docs/milestones/milestones-19-policies-and-accept
 - Leaving the gate refreshes the session (`getSession()`) **before** a full navigation;
   redirecting server-side from the gate would loop on a stale cookie. `next` goes through
   `safeGateNext()` (no open redirect).
+- **Reading time + progress pill on policies**: `PolicyDocument` computes `readingMinutes()` from
+  the source markdown (`readPolicyMarkdown`) and mounts the same `ReadingProgress` pill as the
+  news detail, measuring the `#politica` article. The news detail's text column is
+  **left-aligned** (`max-w-3xl`, no `mx-auto`) — centering it left a wide dead margin.
 - `prisma/seed.ts` accepts the current policies for the example users; an older local DB will
   send `u1`/`sa1` to the gate once.
 
