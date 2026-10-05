@@ -127,28 +127,32 @@ export async function consumeResetToken(
   password: string,
 ): Promise<string | null> {
   const hashedToken = hash(token);
-  const record = await prisma.passwordResetToken.delete({
-    where: { token: hashedToken },
-  });
-  if (!record || record.expiresAt < BigInt(nowMs())) {
-    return null;
-  }
   const hashedPassword = await bcryptHash(password);
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
+    // `delete` lanzaba P2025 (un 500) con un token inexistente: enlace ya usado, doble envío
+    // del formulario, un escáner de correo que lo abrió antes, o uno inventado. `deleteMany`
+    // devuelve la cantidad, así que "no había token" es un resultado normal y el consumo sigue
+    // siendo atómico (dos pedidos simultáneos: solo uno borra la fila). Al ir en la misma
+    // transacción que el cambio de contraseña, si este falla el token no se pierde.
+    const record = await tx.passwordResetToken.findUnique({
+      where: { token: hashedToken },
+    });
+    if (!record) return null;
+    const { count } = await tx.passwordResetToken.deleteMany({
+      where: { token: hashedToken },
+    });
+    // Otro pedido lo consumió entre la lectura y el borrado.
+    if (count === 0) return null;
+    if (record.expiresAt < BigInt(nowMs())) return null;
+
     const updated = await tx.registeredUser.update({
       where: { id: record.userId },
-      data: {
-        user: {
-          update: {
-            passwordHash: hashedPassword,
-          },
-        },
-      },
+      data: { user: { update: { passwordHash: hashedPassword } } },
       select: { userId: true },
     });
     // Cambiar la contraseña desconecta todos los asistentes (milestone 20): después de un
     // "me robaron la cuenta", nada de lo que estaba conectado debe seguir funcionando.
     await revokeAllGrantsForUser(updated.userId, tx);
+    return record.userId;
   });
-  return record.userId;
 }
