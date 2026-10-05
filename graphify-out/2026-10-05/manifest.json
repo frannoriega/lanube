@@ -535,8 +535,8 @@
     "semantic_hash": ""
   },
   "src/app/api/auth/reset/route.ts": {
-    "mtime": 1790971835.5510569,
-    "ast_hash": "751a747243ae2e58f72382bec942b05a",
+    "mtime": 1791204146.8874536,
+    "ast_hash": "f287963fcdf88726fc5c91fc8a2394a1",
     "semantic_hash": ""
   },
   "src/app/api/auth/signup/route.ts": {
@@ -1115,8 +1115,8 @@
     "semantic_hash": ""
   },
   "src/lib/auth.ts": {
-    "mtime": 1791139963.6094463,
-    "ast_hash": "1686b5ee713ce8991fd177804428a2ac",
+    "mtime": 1791204146.8869605,
+    "ast_hash": "d44b0cb1de4feef8d35d1b42164293f9",
     "semantic_hash": ""
   },
   "src/lib/clock.ts": {
@@ -1220,8 +1220,8 @@
     "semantic_hash": ""
   },
   "src/lib/db/verificationTokens.ts": {
-    "mtime": 1791152334.2703154,
-    "ast_hash": "a908f3ddb4329d99cff490aefa4927d3",
+    "mtime": 1791204146.8864913,
+    "ast_hash": "3bc656d7aa3005d9bd0934823345d29a",
     "semantic_hash": ""
   },
   "src/lib/email/confirmation.ts": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791152334.2139819,
-    "ast_hash": "9b7c99057d392c05f9198c0e5ce0c305",
+    "mtime": 1791204160.970323,
+    "ast_hash": "84a039eec00ec1e7cb4c32720297aa3d",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3730,8 +3730,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/auth/signin/signin-screen.tsx": {
-    "mtime": 1791152334.259762,
-    "ast_hash": "e9da5bb435781e87b3a3e643356e2e56",
+    "mtime": 1791204146.8879592,
+    "ast_hash": "65ccc607ddea1d5147033e26c6835826",
     "semantic_hash": ""
   },
   "src/app/(public)/policies/[slug]/page.tsx": {
@@ -4102,6 +4102,11 @@
   "docs/milestones/milestones-21-mcp-management.md": {
     "mtime": 1791152334.2154574,
     "ast_hash": "037ee5524944a78087c0166e74e94c7c",
+    "semantic_hash": ""
+  },
+  "src/lib/db/verificationTokens.test.ts": {
+    "mtime": 1791204146.8955953,
+    "ast_hash": "155e5e889d08d5a6df70100911e6fa3f",
     "semantic_hash": ""
   }
 }

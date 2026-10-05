@@ -107,9 +107,10 @@ export default async function NoticiaDetailPage({
           }
         >
           {/* El artículo es la única tarjeta de la página: encabezado, portada, cuerpo y
-              cierre viven adentro, sobre una sola columna de lectura (~65ch) centrada. */}
+              cierre viven adentro, sobre una sola columna de lectura (max-w-3xl) alineada a la izquierda, con el mismo borde
+              que la portada y el footer (centrarla dejaba un hueco enorme a la izquierda). */}
           <article className="min-w-0 overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <header className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 pt-8 pb-8 sm:px-10 sm:pt-12">
+            <header className="flex w-full max-w-3xl flex-col gap-5 px-6 pt-8 pb-8 sm:px-10 sm:pt-12">
               {/* El kicker de la pantalla, como ruta: "noticias" vuelve al listado. */}
               <p className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-la-nube-selected dark:text-la-nube-secondary">
                 ~/{" "}
@@ -171,14 +172,14 @@ export default async function NoticiaDetailPage({
 
             <div
               id={BODY_ID}
-              className="mx-auto w-full max-w-2xl px-6 py-10 sm:px-10 sm:py-12"
+              className="w-full max-w-3xl px-6 py-10 sm:px-10 sm:py-12"
             >
               <Markdown size="reading">{post.body}</Markdown>
             </div>
 
             {/* Cierre: a dónde ir después de terminar de leer. */}
             <footer className="border-t bg-muted/40">
-              <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+              <div className="flex w-full flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10">
                 <Link
                   href="/news"
                   className="flex w-fit items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-la-nube-selected dark:hover:text-la-nube-secondary"
