@@ -17,6 +17,7 @@ import { signInSchema } from "./schemas/auth";
 import { passkeyAuthenticationSchema } from "./schemas/passkeys";
 import { verifyPasskeyAuthentication } from "./passkeys/server";
 import { getPendingPoliciesForUser } from "./db/policies";
+import { resendEmailConfirmationIfExpired } from "./db/verificationTokens";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60; // 7 days
@@ -87,6 +88,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
           if (!user) return null;
           if (!user.emailVerified) {
+            // Credenciales correctas + sin confirmar: si el enlace anterior ya venció,
+            // mandamos uno nuevo (como mucho uno por vida de enlace; ver la función).
+            await resendEmailConfirmationIfExpired(user.email);
             const err = new CredentialsSignin(
               "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
             );
@@ -140,6 +144,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
           if (!user) return null;
           if (!user.emailVerified) {
+            // Credenciales correctas + sin confirmar: si el enlace anterior ya venció,
+            // mandamos uno nuevo (como mucho uno por vida de enlace; ver la función).
+            await resendEmailConfirmationIfExpired(user.email);
             const err = new CredentialsSignin(
               "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
             );
