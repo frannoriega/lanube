@@ -363,6 +363,13 @@ src/
 - **Calendar display**: `getEventOccurrencesForType()` surfaces APPROVED EVENT occurrences
   as named, read-only cards (with an "Inscribirse" form link) instead of anonymous
   unavailable blocks (see `resourceCalendar.ts` + `WeekCalendar.tsx`).
+- **Event reservations are not managed from `/admin/reservations`.** They are born `APPROVED`
+  with the event and are changed with the event tooling (edit, cancel/reschedule sessions).
+  Every admin reservation view — the list, the timeline, the per-day counts and the dashboard's
+  pending/approved/rejected counters — filters `EXCLUDE_EVENT_RESERVATIONS`
+  (`src/lib/db/adminReservations.ts`), and `PATCH /api/admin/reservations/[id]` answers 409 for
+  an `EVENT` reservation. A new admin reservation query must include that filter. Usage reports
+  (`adminReports.ts`) still count events on purpose.
 - **Public form flow**: unauthenticated routes under `/forms/[slug]` (submit) and
   `/forms/response/[token]` (edit/cancel); APIs under `/api/forms/*` (rate-limited).
   Participant email uses the same normalization + `displayEmail` rules as registration.

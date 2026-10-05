@@ -1,4 +1,5 @@
 import { now, nowMs } from "@/lib/clock";
+import { EXCLUDE_EVENT_RESERVATIONS } from "@/lib/db/adminReservations";
 import { getPermissionSetForUser } from "@/lib/db/roles";
 import { isAdminRole } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
@@ -47,11 +48,19 @@ export async function getAdminAggregateStats() {
     prisma.checkIn.count({
       where: { checkInTime: { gte: dateToUnixMs(startOfMonth) } },
     }),
-    prisma.reservation.count({ where: { status: "PENDING" } }),
     prisma.reservation.count({
-      where: { status: "APPROVED", startTime: { gte: dateToUnixMs(at) } },
+      where: { status: "PENDING", ...EXCLUDE_EVENT_RESERVATIONS },
     }),
-    prisma.reservation.count({ where: { status: "REJECTED" } }),
+    prisma.reservation.count({
+      where: {
+        status: "APPROVED",
+        startTime: { gte: dateToUnixMs(at) },
+        ...EXCLUDE_EVENT_RESERVATIONS,
+      },
+    }),
+    prisma.reservation.count({
+      where: { status: "REJECTED", ...EXCLUDE_EVENT_RESERVATIONS },
+    }),
   ]);
 
   const currentUsersRaw = await prisma.checkIn.findMany({
@@ -72,7 +81,7 @@ export async function getAdminAggregateStats() {
   });
 
   const recentReservationsRaw = await prisma.reservation.findMany({
-    where: { status: "PENDING" },
+    where: { status: "PENDING", ...EXCLUDE_EVENT_RESERVATIONS },
     include: {
       registeredUser: { select: { name: true, lastName: true } },
       space: { select: { name: true } },

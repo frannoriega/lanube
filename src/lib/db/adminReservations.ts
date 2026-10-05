@@ -18,6 +18,18 @@ import { ReservationStatus } from "@/generated/prisma/client";
 const MAX_PAGE_SIZE = 100;
 const RANGE_FETCH_MAX = 3000;
 
+/**
+ * Las reservas de un evento (`reservableType = EVENT`) **no** se gestionan desde la gestión de
+ * reservas: nacen `APPROVED` con el evento y se modifican con las herramientas de eventos
+ * (editar, cancelar o reprogramar sesiones). Listarlas acá mezclaba filas sin dueño con las
+ * reservas de personas, inflaba los contadores y dejaba cancelar a mano una reserva que el
+ * evento sigue dando por hecha. Todo `where` de una vista de gestión de reservas la incluye.
+ * Los reportes de uso, en cambio, siguen contando los eventos.
+ */
+export const EXCLUDE_EVENT_RESERVATIONS = {
+  reservableType: { not: "EVENT" },
+} satisfies Prisma.ReservationWhereInput;
+
 /** Default forward window length for admin reservation views (days, inclusive of today). */
 export const ADMIN_RESERVATION_FORWARD_DAYS = 14;
 
@@ -433,7 +445,10 @@ export async function listAdminReservationsBySpace(
     Math.max(1, options?.pageSize ?? 50),
   );
 
-  const where: Prisma.ReservationWhereInput = { spaceId };
+  const where: Prisma.ReservationWhereInput = {
+    spaceId,
+    ...EXCLUDE_EVENT_RESERVATIONS,
+  };
 
   if (options?.startMs != null && options?.endMs != null) {
     where.startTime = {
@@ -469,6 +484,7 @@ export async function listAllAdminReservationsInDateRange(
 ): Promise<AdminReservationListResult[]> {
   const where: Prisma.ReservationWhereInput = {
     spaceId,
+    ...EXCLUDE_EVENT_RESERVATIONS,
     startTime: {
       gte: BigInt(startMs),
       lte: BigInt(endMs),
@@ -491,6 +507,7 @@ export async function listAllAdminReservationsAllServicesInDateRange(
   endMs: number,
 ): Promise<AdminReservationListResult[]> {
   const where: Prisma.ReservationWhereInput = {
+    ...EXCLUDE_EVENT_RESERVATIONS,
     startTime: {
       gte: BigInt(startMs),
       lte: BigInt(endMs),
@@ -519,6 +536,7 @@ export async function listAdminReservationsAllServicesByRange(
   );
 
   const where: Prisma.ReservationWhereInput = {
+    ...EXCLUDE_EVENT_RESERVATIONS,
     startTime: {
       gte: BigInt(startMs),
       lte: BigInt(endMs),
@@ -588,6 +606,7 @@ export async function listReservationDayCountsInRange(
 
   const where: Prisma.ReservationWhereInput = {
     spaceId,
+    ...EXCLUDE_EVENT_RESERVATIONS,
     startTime: { gte: BigInt(startMs), lte: BigInt(endMs) },
   };
   if (status) where.status = status;
@@ -622,6 +641,7 @@ export async function listDaysWithPendingReservationsAllServices(
   const rows = await prisma.reservation.findMany({
     where: {
       status: "PENDING",
+      ...EXCLUDE_EVENT_RESERVATIONS,
       startTime: { gte: BigInt(startMs), lte: BigInt(endMs) },
     },
     select: { startTime: true },
