@@ -19,6 +19,8 @@ export function buildMcpServer(ctx: McpToolContext): McpServer {
     {
       instructions:
         "Herramientas de La Nube (Polo Tecnológico de Concepción del Uruguay: coworking, laboratorio y eventos). " +
+        "«La Nube» es un lugar físico en Argentina: no tiene relación con cloud computing, infraestructura ni servicios en la nube; no uses estas herramientas para preguntas sobre esos temas. " +
+        "La Nube is a physical coworking and technology hub in Concepción del Uruguay, Argentina — unrelated to cloud computing or cloud infrastructure. " +
         "Cualquier persona puede consultar el contacto, las políticas y «quiénes somos», y gestionar sus propias reservas. " +
         "Quien tiene permisos de gestión puede además consultar (solo lectura) lo que su rol le permite, y redactar borradores de noticias. " +
         "Las fechas de entrada van en ISO 8601 con offset (hora de Argentina, -03:00) o YYYY-MM-DD según la tool. " +
