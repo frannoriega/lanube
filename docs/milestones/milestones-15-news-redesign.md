@@ -130,8 +130,9 @@ Igual se cambió el byline a fecha larga (ver abajo), por legibilidad, no por co
 ### Detalle (commit 3)
 
 - **Se eliminó la tarjeta de autor separada.** El artículo es la única tarjeta de la
-  página y todo vive adentro, en una columna de lectura centrada `max-w-2xl` (~65ch al
-  tamaño del cuerpo, DESIGN.md "65–75ch"):
+  página y todo vive adentro, en una columna de lectura `max-w-3xl` **alineada a la izquierda**
+  (2026-10-05: antes `max-w-2xl` centrada con `mx-auto`, lo que dejaba un hueco enorme a la
+  izquierda; ahora comparte borde con la portada y el footer):
   1. **Kicker como ruta**: `~/ noticias / 2026 / 09▌` — "noticias" es link al listado; es
      el único kicker de la pantalla, con el cursor que parpadea.
   2. Título `text-3xl`/`sm:text-5xl`, `leading-[1.1]`, `text-balance`.
@@ -233,3 +234,13 @@ Igual se cambió el byline a fecha larga (ver abajo), por legibilidad, no por co
   previo a este milestone y afecta a todo el sitio público.
 - `LandingCard` sigue con su `hover:shadow-md` gris para los eventos; aplicarle la Blue
   Shadow Rule a todo el landing es un cambio aparte.
+
+## Revisión 2026-10-05: columna a la izquierda y progreso en las políticas
+
+- La columna de lectura del detalle (encabezado, cuerpo y footer) ya no se centra: es
+  `max-w-3xl` pegada al borde izquierdo de la tarjeta. Centrada, sobraba mucho espacio a la
+  izquierda y el texto se sentía flotando.
+- `ReadingProgress` (porcentaje + barra + "quedan N min") también se usa en las políticas:
+  `PolicyDocument` calcula `readingMinutes()` del markdown fuente (`readPolicyMarkdown`) y mide
+  sobre `#politica`; además muestra "N min de lectura" junto a la fecha de vigencia. Si el
+  archivo no se puede leer, no se muestra ni el tiempo ni la píldora.
