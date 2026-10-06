@@ -1,26 +1,6 @@
 "use server";
-import nodemailer from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { FROM_EMAIL, transporter } from "@/lib/email/transport";
 import { logger } from "@/lib/logger";
-
-const SMTP_SERVER_HOST = process.env.SMTP_SERVER_HOST;
-const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
-const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD;
-const SMTP_SERVER_PORT = process.env.SMTP_SERVER_PORT;
-const SMTP_SERVER_SECURE = process.env.SMTP_SERVER_SECURE === "true";
-const transporter = nodemailer.createTransport({
-  host: SMTP_SERVER_HOST,
-  port: SMTP_SERVER_PORT,
-  secure: SMTP_SERVER_SECURE,
-  // Ver el comentario de `requireTLS` en reset.ts: sin TLS no se envían credenciales.
-  requireTLS: process.env.NODE_ENV === "production",
-  auth: {
-    user: SMTP_SERVER_USERNAME,
-    pass: SMTP_SERVER_PASSWORD,
-  },
-} as SMTPTransport.Options);
-
-const FROM_EMAIL = "La Nube <no-responder@cdeluruguay.gob.ar>";
 
 export async function sendEmailConfirmation(
   email: string,

@@ -4,7 +4,12 @@ import { verifyCaptcha } from "@/lib/auth";
 import { recordPolicyAcceptances } from "@/lib/db/policies";
 import { createUser } from "@/lib/db/users";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
-import { createEmailVerificationToken } from "@/lib/db/verificationTokens";
+import {
+  createEmailVerificationToken,
+  discardEmailVerificationTokens,
+} from "@/lib/db/verificationTokens";
+import { assertMailerAvailable } from "@/lib/email/transport";
+import { isDomainError } from "@/lib/errors";
 import { sendEmailConfirmation } from "@/lib/email/confirmation";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/request-ip";
@@ -97,6 +102,9 @@ export async function POST(request: NextRequest) {
   const email = await normalizeEmailForIdentityServer(displayRaw);
 
   try {
+    // Sin correo no hay registro posible (el enlace es la confirmación): se falla antes de
+    // crear la cuenta para no dejarla a medias.
+    await assertMailerAvailable("auth/register POST");
     // Cuenta y consentimiento en una sola transacción: no puede quedar una sin el otro.
     await prisma.$transaction(async (tx) => {
       const user = await createUser(email, password, displayRaw, tx);
@@ -112,11 +120,15 @@ export async function POST(request: NextRequest) {
     const { success, error } = await sendEmailConfirmation(email, token);
 
     if (!success) {
+      // La cuenta ya existe y el correo no salió (el SMTP cayó entre la verificación y el
+      // envío). Se borra el token: uno vigente que nadie recibió impediría el reenvío
+      // automático al iniciar sesión (`resendEmailConfirmationIfExpired`).
+      logger.warn("confirmation email failed to send", { error });
+      await discardEmailVerificationTokens(email);
       return NextResponse.json(
         {
           message:
-            error ??
-            "Cuenta creada pero no pudimos enviar el email de confirmación. Intenta iniciar sesión más tarde.",
+            "Creamos tu cuenta pero no pudimos enviar el correo de confirmación. Iniciá sesión más tarde y te mandaremos uno nuevo.",
         },
         { status: 503 },
       );
@@ -130,6 +142,12 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
+    if (isDomainError(error)) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status },
+      );
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         return NextResponse.json(
