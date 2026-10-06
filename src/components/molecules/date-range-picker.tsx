@@ -73,6 +73,8 @@ export function DateRangePicker({
   today,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
+  /** Primer clic de un rango a medio elegir ("yyyy-MM-dd"); `undefined` = el próximo clic abre un rango. */
+  const [anchor, setAnchor] = useState<string | undefined>();
 
   const selected: DateRange | undefined = value.from
     ? { from: keyToDate(value.from), to: keyToDate(value.to) }
@@ -90,21 +92,35 @@ export function DateRangePicker({
   // behaviour is confusing): the 1st click sets the start, the 2nd sets the end (auto-ordered),
   // and a click on an already-complete range starts a fresh range. The popover stays open
   // until both ends are chosen. `triggerDate` is the day that was actually clicked.
+  //
+  // El primer clic se recuerda en `anchor` (estado propio) en vez de deducirlo de `value`:
+  // un formulario que normaliza el valor al recibirlo (p. ej. `to ?? from`, como el de días
+  // cerrados) hacía que el picker viera un rango completo y el segundo clic empezara otro,
+  // por lo que nunca se podía elegir más de un día.
   const handleSelect = (_range: DateRange | undefined, triggerDate: Date) => {
-    const startingFresh = !value.from || (value.from && value.to);
-    if (startingFresh) {
-      onChange({ from: dateToKey(triggerDate), to: undefined });
+    if (!anchor) {
+      const key = dateToKey(triggerDate);
+      setAnchor(key);
+      onChange({ from: key, to: undefined });
       return;
     }
-    let from = keyToDate(value.from)!;
+    let from = keyToDate(anchor)!;
     let to = triggerDate;
     if (to < from) [from, to] = [to, from];
     onChange({ from: dateToKey(from), to: dateToKey(to) });
+    setAnchor(undefined);
     setOpen(false);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        // Cerrar a medio elegir descarta el primer clic: al reabrir se empieza de cero.
+        if (!next) setAnchor(undefined);
+        setOpen(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           id={id}

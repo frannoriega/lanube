@@ -278,6 +278,20 @@ eso los cierres parciales entran desde el principio.
    deploy público).
 9. **Docs** ✅: CLAUDE.md (modelo, regla, sync), este doc, README de milestones, `OPEN_QUESTIONS.md`.
 
+### Arreglo posterior: el rango de fechas solo dejaba elegir un día
+
+Probando el formulario de días cerrados a mano, el selector de rango solo aceptaba un día.
+`DateRangePicker` deducía si el clic era el primero o el segundo **mirando el valor que
+recibía**, y el formulario normaliza ese valor en cuanto lo recibe (`endDate = to ?? from`):
+el picker veía un rango completo y el segundo clic empezaba otro. Ahora el picker recuerda su
+primer clic en un estado propio (`anchor`) y cerrar el popover a medio elegir lo descarta
+(`src/components/molecules/date-range-picker.tsx`). Los demás usos (formulario de eventos,
+filtros, temas de la portada) no cambian. Sin test automático (Vitest corre sin DOM).
+
+Durante la prueba apareció además un congelamiento del navegador en el panel de
+mantenimiento (milestone 22, ajeno a este milestone), arreglado en esta misma rama y
+documentado en `milestones-22-maintenance-mode.md`.
+
 ## Fuera de alcance (a propósito)
 
 - Datos por empleado, saldos, aprobaciones de vacaciones (RRHH).
