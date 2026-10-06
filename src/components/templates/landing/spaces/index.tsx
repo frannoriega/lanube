@@ -4,7 +4,7 @@ import { Reveal } from "@/components/molecules/reveal";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
 import { getSpaceIcon } from "@/lib/constants/spaces";
-import { getPublicSpaces, type Space } from "@/lib/db/spaces";
+import { getSpacesByKind, type Space } from "@/lib/db/spaces";
 import { ArrowRight, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,7 +20,8 @@ import Link from "next/link";
  * `/spaces#<slug>`, que es donde está el botón de reservar.
  */
 export default async function SpacesSection() {
-  const spaces = await getPublicSpaces();
+  // Solo espacios: las áreas comunes («amenities») tienen su propia sección (milestone 24).
+  const spaces = await getSpacesByKind("SPACE");
 
   if (spaces.length === 0) return null;
 
@@ -67,7 +68,14 @@ function AllSpacesLink() {
 }
 
 /** Tarjeta-foto de un espacio. Sin foto, un panel con el degradé de marca y su ícono. */
-function SpaceTile({ space }: { space: Space }) {
+export function SpaceTile({
+  space,
+  cta = "Conocer el espacio",
+}: {
+  space: Space;
+  /** Texto del enlace al pie; las áreas comunes dicen «Conocer más». */
+  cta?: string;
+}) {
   const Icon = getSpaceIcon(space.iconName);
   return (
     <Link
@@ -97,16 +105,19 @@ function SpaceTile({ space }: { space: Space }) {
         className="absolute inset-0 bg-linear-to-t from-la-nube-night via-la-nube-night/50 to-transparent"
       />
       <div className="relative flex flex-col gap-2 p-5">
-        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium backdrop-blur-sm">
-          <Users className="size-3.5" aria-hidden />
-          {space.capacity} {space.capacity === 1 ? "persona" : "personas"}
-        </span>
+        {/* Un área común puede no tener capacidad: entonces no hay chip. */}
+        {space.capacity !== null && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium backdrop-blur-sm">
+            <Users className="size-3.5" aria-hidden />
+            {space.capacity} {space.capacity === 1 ? "persona" : "personas"}
+          </span>
+        )}
         <h3 className="text-2xl font-bold tracking-tight">{space.name}</h3>
         <p className="line-clamp-2 text-sm text-white/80">
           {space.description}
         </p>
         <span className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-la-nube-secondary">
-          Conocer el espacio
+          {cta}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
         </span>
       </div>

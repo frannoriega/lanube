@@ -27,6 +27,7 @@
  */
 
 import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
+import { SPACE_KIND_LABELS } from "@/lib/constants/spaces";
 import { FIELD_TYPE_LABELS } from "@/lib/constants/form-fields";
 import {
   MAINTENANCE_AREAS,
@@ -144,6 +145,7 @@ export const AUDIT_ENTITIES = {
     phrase: "del espacio",
     subject: { key: "name", label: "Espacio" },
     fields: {
+      kind: enumOf("Tipo", SPACE_KIND_LABELS),
       name: text("Nombre"),
       slug: text("Dirección (slug)"),
       description: longText("Descripción breve"),
@@ -154,7 +156,7 @@ export const AUDIT_ENTITIES = {
       }),
       imageUrl: image("Imagen"),
       iconName: text("Ícono"),
-      capacity: num("Capacidad", "personas"),
+      capacity: num("Capacidad", "personas"), // null = sin capacidad (áreas comunes)
       isExclusive: bool("Uso exclusivo"),
       isReservable: bool("Reservable"),
       isFeatured: bool("Destacado"),

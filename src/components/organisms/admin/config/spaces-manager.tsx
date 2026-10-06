@@ -19,6 +19,7 @@ import {
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -37,7 +38,8 @@ interface SpaceRow {
   id: string;
   name: string;
   slug: string;
-  capacity: number;
+  kind: "SPACE" | "AMENITY";
+  capacity: number | null;
   isExclusive: boolean;
   isReservable: boolean;
   isFeatured: boolean;
@@ -48,7 +50,12 @@ interface SpaceRow {
 export function SpacesManager() {
   const { data, error, firstTime, refetch } =
     useApi<SpaceRow[]>("/api/admin/spaces");
-  const spaces = data ?? [];
+  // Espacios y áreas comunes comparten tabla y formulario (milestone 24), pero se listan y
+  // se reordenan por separado: el orden solo se compara dentro de un mismo tipo.
+  const [kind, setKind] = useState<SpaceRow["kind"]>("SPACE");
+  const amenity = kind === "AMENITY";
+  const noun = amenity ? "área común" : "espacio";
+  const spaces = (data ?? []).filter((s) => s.kind === kind);
   const [deleting, setDeleting] = useState<SpaceRow | null>(null);
   const [busy, setBusy] = useState(false);
   /*
@@ -63,9 +70,7 @@ export function SpacesManager() {
       invalidateApi("/api/admin/spaces");
       await refetch();
     } catch (err) {
-      toast.error(
-        apiErrorMessage(err, "No se pudo guardar el orden de los espacios"),
-      );
+      toast.error(apiErrorMessage(err, "No se pudo guardar el orden"));
       throw err;
     }
   });
@@ -75,12 +80,12 @@ export function SpacesManager() {
     setBusy(true);
     try {
       await apiSend(`/api/admin/spaces/${deleting.id}`, "DELETE");
-      toast.success("Espacio eliminado");
+      toast.success(amenity ? "Área común eliminada" : "Espacio eliminado");
       setDeleting(null);
       invalidateApi("/api/admin/spaces");
       await refetch();
     } catch (err) {
-      toast.error(apiErrorMessage(err, "No se pudo eliminar el espacio"));
+      toast.error(apiErrorMessage(err, `No se pudo eliminar el ${noun}`));
     } finally {
       setBusy(false);
     }
@@ -122,7 +127,7 @@ export function SpacesManager() {
       id: "capacity",
       header: "Capacidad",
       meta: { label: "Capacidad" },
-      cell: ({ row }) => row.original.capacity,
+      cell: ({ row }) => row.original.capacity ?? "Sin capacidad",
     },
     {
       id: "attributes",
@@ -178,10 +183,11 @@ export function SpacesManager() {
     <Card className="glass-card dark:glass-card-dark">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <CardTitle>Espacios</CardTitle>
+          <CardTitle>Espacios y áreas comunes</CardTitle>
           <CardDescription>
-            Espacios reservables del centro (coworking, laboratorio, …) y su
-            capacidad.
+            {amenity
+              ? "Áreas comunes que se muestran en el sitio sin reservas (cocina, jardín, living, …)."
+              : "Espacios del centro (coworking, laboratorio, …): se reservan y tienen capacidad."}
           </CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -193,13 +199,28 @@ export function SpacesManager() {
             <ArrowUpDown className="mr-1 h-4 w-4" /> Reordenar
           </Button>
           <Button asChild>
-            <Link href="/admin/spaces/new">
-              <Plus className="mr-1 h-4 w-4" /> Nuevo espacio
+            <Link
+              href={
+                amenity ? "/admin/spaces/new?kind=amenity" : "/admin/spaces/new"
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" />{" "}
+              {amenity ? "Nueva área común" : "Nuevo espacio"}
             </Link>
           </Button>
         </div>
       </CardHeader>
       <CardContent>
+        <Tabs
+          value={kind}
+          onValueChange={(v) => setKind(v as SpaceRow["kind"])}
+          className="mb-4"
+        >
+          <TabsList>
+            <TabsTrigger value="SPACE">Espacios</TabsTrigger>
+            <TabsTrigger value="AMENITY">Áreas comunes</TabsTrigger>
+          </TabsList>
+        </Tabs>
         {error ? (
           <LoadError
             message="No se pudieron cargar los espacios."
@@ -215,11 +236,19 @@ export function SpacesManager() {
           <div className="space-y-3">
             <ReorderBar
               reorder={reorder}
-              hint="El orden se usa en el menú y en el sitio público."
+              hint={
+                amenity
+                  ? "El orden se usa en el sitio público."
+                  : "El orden se usa en el menú y en el sitio público."
+              }
             />
             <DataTable
               table={table}
-              emptyMessage="No hay espacios definidos."
+              emptyMessage={
+                amenity
+                  ? "No hay áreas comunes definidas."
+                  : "No hay espacios definidos."
+              }
               reorder={
                 reorder.active
                   ? { onMove: reorder.move, nameOf: (s) => s.name }
@@ -241,7 +270,9 @@ export function SpacesManager() {
               ¿Eliminar {deleting?.name}?
             </ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
-              Solo puede eliminarse si no tiene eventos ni reservas asociadas.
+              {amenity
+                ? "Se quita del sitio público. Esta acción no se puede deshacer."
+                : "Solo puede eliminarse si no tiene eventos ni reservas asociadas."}
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           <ResponsiveDialogFooter>
