@@ -3,7 +3,13 @@
   "framework": "nextjs",
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
-  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"preview\" ]",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "preview": true,
+      "**": false
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/maintain-reservations",
