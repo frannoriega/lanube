@@ -3,6 +3,7 @@ import { startOfDateKeyMs } from "@/lib/admin/admin-timezone";
 import {
   closureIntervalOnDay,
   closureRejectionMessage,
+  closuresOnDay,
   closureSlotsForRange,
   closureWindowLabel,
   findClosureForWindow,
@@ -230,5 +231,15 @@ describe("closureSlotsForRange", () => {
     expect(
       closureSlotsForRange([noche], at("2026-05-25", 0), at("2026-05-25", 23)),
     ).toEqual([]);
+  });
+});
+
+describe("closuresOnDay", () => {
+  it("devuelve solo los cierres que tocan ese día", () => {
+    const a = fullDay("2026-07-20", "2026-07-24");
+    const b = partial("2026-07-22", 840, 1080);
+    expect(closuresOnDay([a, b], "2026-07-21")).toEqual([a]);
+    expect(closuresOnDay([a, b], "2026-07-22")).toEqual([a, b]);
+    expect(closuresOnDay([a, b], "2026-07-27")).toEqual([]);
   });
 });
