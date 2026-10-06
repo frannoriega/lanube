@@ -5,6 +5,12 @@ import { isDomainError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import type { PermissionSet } from "@/lib/rbac";
 import { checkRateLimit } from "@/lib/ratelimit";
+import {
+  blockedMessage,
+  findWriteBlockForArea,
+} from "@/lib/maintenance/evaluate";
+import type { MaintenanceAreaId } from "@/lib/maintenance/areas";
+import { getMaintenanceSnapshotCached } from "@/lib/maintenance/server";
 import type { McpTokenInfo, McpUser } from "../auth";
 import { canUseTool, type McpToolName, TOOL_ACCESS } from "../access";
 
@@ -58,7 +64,16 @@ export function fail(message: string): ToolResult {
  */
 const READ_LIMIT = { maxAttempts: 60, windowMs: 60_000 };
 const WRITE_LIMIT = { maxAttempts: 20, windowMs: 60 * 60 * 1000 };
-const WRITE_SCOPES = new Set(["reservations:write", "news:write"]);
+/**
+ * Scope de escritura → área de mantenimiento (milestone 22). `/api/mcp` es siempre POST, así
+ * que el middleware no distingue lecturas de escrituras: las tools que escriben consultan la
+ * ventana acá, con el mismo criterio que la web (solo lectura global o su área).
+ */
+const WRITE_SCOPE_AREAS: Record<string, MaintenanceAreaId> = {
+  "reservations:write": "reservations",
+  "news:write": "news",
+};
+const WRITE_SCOPES = new Set(Object.keys(WRITE_SCOPE_AREAS));
 
 /** Configuración de una tool (lo que `McpServer.registerTool` necesita y usamos). */
 export interface ToolConfig<S extends z.ZodType> {
@@ -110,6 +125,15 @@ export function defineTool<
     if (!isPublic && (ctx.blockedMessage || !ctx.user))
       return fail(ctx.blockedMessage ?? "Cuenta no habilitada");
     const isWrite = access.scope != null && WRITE_SCOPES.has(access.scope);
+    if (isWrite && access.scope) {
+      // Antes del rate limit: un intento frenado por mantenimiento no gasta cupo.
+      const { windows } = await getMaintenanceSnapshotCached();
+      const block = findWriteBlockForArea(
+        windows,
+        WRITE_SCOPE_AREAS[access.scope],
+      );
+      if (block) return fail(blockedMessage(block));
+    }
     const { allowed } = await checkRateLimit(
       `grant:${ctx.token.grantId}`,
       `/api/mcp:${isWrite ? "write" : "read"}`,

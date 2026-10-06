@@ -2,6 +2,7 @@ import "server-only";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@/lib/logger";
+import { areEventEmailsSuspended } from "@/lib/maintenance/server";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -24,6 +25,11 @@ export async function sendEventRegistrationEmail(
   /** Manual-approval events: reinforce that registering doesn't guarantee a spot. */
   requiresApproval = false,
 ): Promise<{ success: boolean; error?: string }> {
+  // Mantenimiento (milestone 22): con los correos de eventos apagados no se manda nada.
+  if (await areEventEmailsSuspended()) {
+    logger.info("event registration email skipped (maintenance)");
+    return { success: true };
+  }
   const baseUrl =
     process.env.NEXTAUTH_URL ??
     process.env.VERCEL_URL ??

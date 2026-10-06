@@ -400,10 +400,12 @@
   "398": "page.tsx",
   "399": "🎉 Success!",
   "400": "🔄 Migration Path",
+  "401": "📚 Documentation Updates",
   "402": "auditEventDef",
   "403": "page.tsx",
   "404": "errors.ts",
   "405": "pick.ts",
+  "406": "server-only.test.ts",
   "408": "page.tsx",
   "409": "roles.grantable.test.ts",
   "410": "Domain model",
@@ -418,6 +420,5 @@
   "423": "GET",
   "424": "POST",
   "426": "🧪 Testing Implications",
-  "427": "🎯 Success Metrics",
-  "429": "🎉 Success!"
+  "427": "🎯 Success Metrics"
 }
