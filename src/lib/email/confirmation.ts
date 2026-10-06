@@ -12,6 +12,8 @@ const transporter = nodemailer.createTransport({
   host: SMTP_SERVER_HOST,
   port: SMTP_SERVER_PORT,
   secure: SMTP_SERVER_SECURE,
+  // Ver el comentario de `requireTLS` en reset.ts: sin TLS no se envían credenciales.
+  requireTLS: process.env.NODE_ENV === "production",
   auth: {
     user: SMTP_SERVER_USERNAME,
     pass: SMTP_SERVER_PASSWORD,
