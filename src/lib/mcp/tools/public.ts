@@ -2,7 +2,10 @@ import "server-only";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { aboutAsMarkdown } from "@/lib/about/content";
+import { todayDateKeyInAdminTz } from "@/lib/admin/admin-timezone";
+import { closureWindowLabel } from "@/lib/closed-days/closures";
 import { nowMs } from "@/lib/clock";
+import { getUpcomingClosures } from "@/lib/db/closedDays";
 import { getSiteConfig } from "@/lib/db/siteConfig";
 import { currentVersion } from "@/lib/policies/pending";
 import {
@@ -31,11 +34,14 @@ export function registerPublicTools(
     {
       title: "Datos de contacto",
       description:
-        "Los datos de contacto públicos de La Nube (dirección, email, teléfono, redes), los mismos que muestra el sitio.",
+        "Los datos de contacto públicos de La Nube (dirección, email, teléfono, redes), los mismos que muestra el sitio, y los próximos días cerrados (feriados, vacaciones, cierres por horario) con su motivo.",
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     async () => {
-      const c = await getSiteConfig();
+      const [c, closures] = await Promise.all([
+        getSiteConfig(),
+        getUpcomingClosures(todayDateKeyInAdminTz(nowMs())),
+      ]);
       return ok({
         address: { text: c.addressText, map_url: c.addressUrl },
         email: c.email,
@@ -43,6 +49,14 @@ export function registerPublicTools(
         instagram: { handle: c.instagramText, url: c.instagramUrl },
         github: { name: c.githubText, url: c.githubUrl },
         website: ctx.origin,
+        // Cierres próximos (feriados, vacaciones, cierres por horario): para responder
+        // «¿está abierto el viernes?» sin tener que consultar la disponibilidad de un espacio.
+        upcoming_closures: closures.map((cl) => ({
+          from: cl.startDate,
+          to: cl.endDate,
+          hours: closureWindowLabel(cl),
+          reason: cl.title,
+        })),
       });
     },
   );

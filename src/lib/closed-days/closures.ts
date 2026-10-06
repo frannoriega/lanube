@@ -154,3 +154,11 @@ export function closureSlotsForRange(
   }
   return slots;
 }
+
+/** Los cierres que tocan el día local `dateKey` (`YYYY-MM-DD`), en el orden recibido. */
+export function closuresOnDay<C extends ClosureLike>(
+  closures: readonly C[],
+  dateKey: string,
+): C[] {
+  return closures.filter((c) => closureIntervalOnDay(c, dateKey) !== null);
+}
