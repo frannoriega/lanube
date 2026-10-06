@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cache as perRender } from "react";
 import {
   NO_PERMISSIONS,
   sanitizePermissions,
@@ -126,17 +127,29 @@ export function permissionSetOf(
  * This is the authoritative path used by the API and page guards — deliberately *not*
  * the JWT, which can lag a role change by one request.
  */
-export async function getPermissionSetForUser(
-  registeredUserId: string,
-): Promise<{ role: RoleSnapshot | null; permissions: PermissionSet } | null> {
-  const user = await prisma.registeredUser.findUnique({
-    where: { id: registeredUserId },
-    select: { roleId: true },
-  });
-  if (!user) return null;
-  const role = await getRoleById(user.roleId);
-  return { role, permissions: permissionSetOf(role) };
-}
+/*
+ * `cache()` (React) deduplica la lectura dentro de **un mismo render de servidor**: el layout raíz,
+ * el de `/admin` o `/user` y la página llaman `auth()` cada uno, y cada `auth()` corre el callback
+ * `jwt()`, que repetía estas consultas 2–4 veces por página (milestone 25, P3/DB2). No cambia la
+ * frescura entre pedidos —cada pedido lee de nuevo— y fuera de un render (rutas de API) no
+ * memoiza nada: ahí se llama una sola vez de todos modos.
+ */
+export const getPermissionSetForUser = perRender(
+  async (
+    registeredUserId: string,
+  ): Promise<{
+    role: RoleSnapshot | null;
+    permissions: PermissionSet;
+  } | null> => {
+    const user = await prisma.registeredUser.findUnique({
+      where: { id: registeredUserId },
+      select: { roleId: true },
+    });
+    if (!user) return null;
+    const role = await getRoleById(user.roleId);
+    return { role, permissions: permissionSetOf(role) };
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Writes (superadmin, `roles:manage`). Every one invalidates the cache.

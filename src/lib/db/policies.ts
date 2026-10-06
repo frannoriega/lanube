@@ -4,6 +4,7 @@ import type {
   Prisma,
 } from "@/generated/prisma/client";
 import { nowMs } from "@/lib/clock";
+import { cache } from "react";
 import { pendingPolicies, type PendingPolicy } from "@/lib/policies/pending";
 import { POLICIES } from "@/lib/policies/registry";
 import { prisma } from "@/lib/prisma";
@@ -63,12 +64,22 @@ export async function getPendingPoliciesForUser(
   userId: string,
   atMs: number = nowMs(),
 ): Promise<PendingPolicy[]> {
-  const rows = await prisma.policyAcceptance.findMany({
+  return pendingPolicies(POLICIES, await acceptedPolicyVersions(userId), atMs);
+}
+
+/*
+ * `cache()` (React) deduplica la lectura dentro de **un mismo render de servidor**: el layout raíz,
+ * el de `/admin` o `/user` y la página llaman `auth()` cada uno, y cada `auth()` corre el callback
+ * `jwt()`, que repetía estas consultas 2–4 veces por página (milestone 25, P3/DB2). No cambia la
+ * frescura entre pedidos —cada pedido lee de nuevo— y fuera de un render (rutas de API) no
+ * memoiza nada: ahí se llama una sola vez de todos modos.
+ */
+const acceptedPolicyVersions = cache((userId: string) =>
+  prisma.policyAcceptance.findMany({
     where: { userId },
     select: { policyKey: true, version: true },
-  });
-  return pendingPolicies(POLICIES, rows, atMs);
-}
+  }),
+);
 
 /**
  * Registra la aceptación de cada política de `accepted` en su versión y hash **del servidor**
