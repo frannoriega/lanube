@@ -1,0 +1,39 @@
+/// Nivel de una ventana de mantenimiento (milestone 22). Se evalúa por área
+/// (`src/lib/maintenance/areas.ts`): `NOTICE` solo avisa, `READ_ONLY` bloquea los cambios
+/// (se puede ver todo) y `UNAVAILABLE` apaga la función por completo.
+enum MaintenanceMode {
+  NOTICE
+  READ_ONLY
+  UNAVAILABLE
+
+  @@map("maintenance_modes")
+}
+
+/// Una ventana de mantenimiento declarada por un superadmin (`/admin/maintenance`).
+/// No hay un "interruptor": cada ventana es una fila con su motivo y, opcionalmente, su
+/// horario. Nunca se borra — al terminar queda como historial (`endedAt`).
+///
+/// Está **vigente** si `endedAt` es nulo y ahora cae en `[startsAt, endsAt)` (cada extremo
+/// nulo = sin límite). `startsAt` nulo = rige desde que se crea; `endsAt` nulo = se apaga a
+/// mano. La regla vive en `windowState()` (`src/lib/maintenance/evaluate.ts`).
+model MaintenanceWindow {
+  id       String          @id @default(cuid())
+  /// Título corto: encabezado del aviso y nombre en la lista del panel.
+  title    String
+  /// Motivo para los usuarios, en markdown.
+  reasonMd String          @map("reason_md")
+  mode     MaintenanceMode
+  /// Ids del catálogo de áreas (`MAINTENANCE_AREAS`); `"all"` = todo el sitio. Es texto y no
+  /// un enum a propósito: sumar un área es una línea de código, no una migración.
+  areas    String[]
+  startsAt BigInt?         @map("starts_at")
+  endsAt   BigInt?         @map("ends_at")
+  /// Se completa al terminarla a mano ("Finalizar ahora").
+  endedAt  BigInt?         @map("ended_at")
+
+  createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+
+  @@index([endedAt])
+  @@map("maintenance_windows")
+}

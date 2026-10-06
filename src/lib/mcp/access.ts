@@ -96,6 +96,7 @@ export const FORBIDDEN_PERMISSIONS: readonly Permission[] = [
   "site-config:manage",
   "roles:manage",
   "landing-themes:manage",
+  "maintenance:manage",
 ];
 
 /**
