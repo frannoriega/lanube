@@ -9,7 +9,7 @@ import {
   formatEventTimeRange,
 } from "@/lib/constants/events";
 import { listEvents, weekdaysFromRrule } from "@/lib/db/events";
-import { getPublicSpaces } from "@/lib/db/spaces";
+import { getSpacesByKind } from "@/lib/db/spaces";
 import { ArrowUpDown, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -53,7 +53,7 @@ export default async function EventsPage({
             to: sp.to,
           },
     ),
-    getPublicSpaces(),
+    getSpacesByKind("SPACE"),
   ]);
   const spaceOptions = spaces
     .filter((s) => s.isReservable)
