@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2 (parcial).
+Slices hechos: 1, 2, 3.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -182,8 +182,23 @@ eso los cierres parciales entran desde el principio.
    `requestUserReservation`, que usan la web y el MCP; el refuerzo en `create_reservation()` se
    hace en el slice 3, porque ahí se recrean las mismas funciones SQL): rechazo en `user-rules.ts`/`requestUserReservation` y en SQL; tests; MCP
    hereda el mensaje.
-3. **Recurrentes y eventos**: leer las funciones SQL vigentes y resolver la pregunta abierta de
-   (4.4); tests contra Postgres.
+3. **Recurrentes y eventos** ✅ — **decisión (resuelve la pregunta abierta de 4.4): el ledger
+   NO conoce los cierres.** Leídas las funciones vigentes (`create_reservation()` y
+   `peak_space_usage()` en `20260924110000_capacity_predicates`, `create_event_reservation()` en
+   `20260706110000`), hacer que el ledger omita ocurrencias en un cierre sería silencioso (un
+   evento desaparecería del calendario sin avisar a los inscriptos) y obligaría a recrear
+   funciones enormes. En cambio: un cierre es una capa aparte; las ocurrencias de eventos y de
+   reservas recurrentes que lo cruzan se **marcan para el admin** (slice 6), que cancela la
+   sesión con motivo (`ReservationException` + aviso) o la deja. Lo que sí se hizo acá es la red
+   de seguridad en la base (migración `20261006110000_closed_days_guard`): la función
+   `closed_day_overlapping_window()` (mismo cálculo que `closureIntervalOnDay`, en la zona
+   `America/Argentina/Buenos_Aires`) y un **trigger** `reservations_no_closed_day` que rechaza el
+   INSERT de una reserva **puntual de usuario** que pise un cierre activo ('Closed day: título' →
+   `DomainError` en `createReservation`). Se eligió trigger y no recrear `create_reservation()`
+   para no duplicar ≈200 líneas de lógica de capacidad por sumar una guarda; y solo mira
+   reservas de USUARIO no recurrentes porque `create_event_reservation()` crea eventos semanales
+   que forzosamente cruzan feriados y fallarían. Verificado contra la base local (franjas,
+   bordes, cierres pendientes que no cierran, y rechazo/aceptación de punta a punta).
 4. **Admin CRUD + auditoría + permiso**: página, API con `requirePermission`, registro de
    auditoría, rbac/middleware/nav.
 5. **Calendario**: tarjetas de cierre en `WeekCalendar`/`DayStrip`, mensajes en reserva móvil.
