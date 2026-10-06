@@ -220,6 +220,31 @@ Lo que **no** se frena durante la ventana (a propósito) y por lo tanto puede pe
 entre el snapshot y el cambio de DNS: ingresos (no escriben datos de dominio), aceptación de
 políticas, renovación de tokens del conector y marcar leída la campanita. Son repetibles/inocuos.
 
+## Botón de emergencia: funciones SQL
+
+Migración `20261006110000_maintenance_sql_helpers`. Para cuando no se puede usar el panel (la app
+no levanta, el login falla, o se está migrando y solo hay acceso a la base). Normalmente **no
+hace falta**: ninguna ventana puede dejar el panel inaccesible (`all` no admite `UNAVAILABLE`, y
+`/api/admin/maintenance` está exento de la solo lectura).
+
+```sql
+SELECT * FROM maintenance_status();          -- vigentes y programadas, con id, estado, áreas y fechas
+SELECT maintenance_end_all();                -- termina todo; devuelve cuántas cortó
+SELECT maintenance_end('<id>');              -- termina una; true si la cortó
+SELECT maintenance_start('Migración', 'Texto **markdown**', 'READ_ONLY', ARRAY['all']);
+SELECT maintenance_start('SMTP caído', 'Texto', 'UNAVAILABLE',
+                         ARRAY['signup','password-recovery','event-emails'],
+                         interval '2 hours');  -- con fin previsto (sin el último argumento, queda abierta)
+```
+
+- `maintenance_start` valida lo mismo que el panel (título y motivo no vacíos, modo válido, al
+  menos un área, `all` + `UNAVAILABLE` prohibido) y devuelve el id (`sql_<uuid>`).
+- La base **no conoce el catálogo de áreas** (vive en código): un id inexistente se ignora en
+  silencio. Los ids vigentes están en el comentario de la migración.
+- **No escriben en la auditoría**: quedan solo las filas de `maintenance_windows`.
+- Se aplica con la misma demora de ~15 s del portero.
+- Como son parte de las migraciones, **viajan con el snapshot** al VPS.
+
 ## Alternativas descartadas
 
 - **Un guard por ruta + un test que recorre las rutas** (primer diseño): obliga a tocar ~65
