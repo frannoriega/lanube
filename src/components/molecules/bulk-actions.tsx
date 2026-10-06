@@ -21,7 +21,7 @@ import {
 } from "@/components/molecules/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
-import type { BulkAction, BulkActionResult } from "@/lib/schemas/bulk";
+import type { BulkActionResult } from "@/lib/schemas/bulk";
 import type { ColumnDef } from "@tanstack/react-table";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -176,7 +176,7 @@ export function useBulkAction(endpoint: string, onDone: () => void) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
-  const run = async (action: BulkAction, ids: string[], success: string) => {
+  const run = async (action: string, ids: string[], success: string) => {
     setBusy(true);
     try {
       const result = await apiSend<BulkActionResult>(endpoint, "POST", {

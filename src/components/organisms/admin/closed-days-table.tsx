@@ -19,15 +19,26 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
+import {
+  BulkActionBar,
+  BulkConfirmDialog,
+  selectionColumn,
+  useBulkAction,
+} from "@/components/molecules/bulk-actions";
 import { Button } from "@/components/ui/button";
-import { DataTable, useStaticTable } from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import {
   CLOSED_DAY_SOURCE_LABELS,
   CLOSED_DAY_STATUS_LABELS,
 } from "@/lib/constants/closed-days";
-import type { ColumnDef } from "@tanstack/react-table";
-import { Trash2 } from "lucide-react";
+import {
+  type ColumnDef,
+  getCoreRowModel,
+  type RowSelectionState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Check, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,6 +53,8 @@ export interface ClosedDayRow {
   window: string;
   source: string;
   status: string;
+  /** Solo feriados sincronizados: `inamovible` / `trasladable` / `puente`. */
+  holidayKind: string | null;
 }
 
 const STATUS_TONE: Record<string, StatusTone> = {
@@ -53,11 +66,21 @@ const STATUS_TONE: Record<string, StatusTone> = {
 export function ClosedDaysTable({
   rows,
   emptyMessage,
+  selectable = false,
 }: {
   rows: ClosedDayRow[];
   emptyMessage: string;
+  /** En «Por revisar»: checkboxes y confirmar / descartar en lote. */
+  selectable?: boolean;
 }) {
   const router = useRouter();
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [pendingBulk, setPendingBulk] = useState<"confirm" | "dismiss" | null>(
+    null,
+  );
+  const bulk = useBulkAction("/api/admin/closed-days/bulk", () =>
+    setRowSelection({}),
+  );
   const [toDelete, setToDelete] = useState<ClosedDayRow | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -78,13 +101,21 @@ export function ClosedDaysTable({
   };
 
   const columns: ColumnDef<ClosedDayRow, unknown>[] = [
+    ...(selectable ? [selectionColumn<ClosedDayRow>()] : []),
     {
       id: "title",
       header: "Motivo",
       meta: { mobile: "title", label: "Motivo" },
       cell: ({ row }) => (
-        <div className="font-medium [overflow-wrap:anywhere]">
-          {row.original.title}
+        <div className="space-y-0.5">
+          <div className="font-medium [overflow-wrap:anywhere]">
+            {row.original.title}
+          </div>
+          {row.original.holidayKind === "puente" ? (
+            <div className="text-xs text-muted-foreground">
+              Puente turístico: es opcional, La Nube puede abrir.
+            </div>
+          ) : null}
         </div>
       ),
     },
@@ -152,11 +183,73 @@ export function ClosedDaysTable({
     },
   ];
 
-  const table = useStaticTable(rows, columns);
+  const table = useReactTable({
+    data: rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (r) => r.id,
+    state: { rowSelection },
+    onRowSelectionChange: setRowSelection,
+  });
+  const ids = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+  const selected = rows.filter((r) => rowSelection[r.id]);
 
   return (
     <>
+      {selectable ? (
+        <BulkActionBar count={ids.length} onClear={() => setRowSelection({})}>
+          <Button
+            size="sm"
+            disabled={bulk.busy}
+            onClick={() => setPendingBulk("confirm")}
+          >
+            <Check className="mr-1 h-4 w-4" /> Confirmar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulk.busy}
+            onClick={() => setPendingBulk("dismiss")}
+          >
+            <X className="mr-1 h-4 w-4" /> Descartar
+          </Button>
+        </BulkActionBar>
+      ) : null}
       <DataTable table={table} emptyMessage={emptyMessage} />
+      <BulkConfirmDialog
+        open={pendingBulk === "confirm"}
+        onOpenChange={(o) => !o && setPendingBulk(null)}
+        title={`¿Confirmar ${ids.length} día${ids.length === 1 ? "" : "s"} cerrado${ids.length === 1 ? "" : "s"}?`}
+        description="Pasan a estar activos: el espacio queda cerrado esas fechas y no se podrán pedir reservas. Si ya hay reservas o eventos esos días, no se cancelan solos: los vas a ver en cada cierre."
+        names={selected.map((r) => `${r.title} (${r.dates})`)}
+        confirmLabel="Confirmar"
+        busy={bulk.busy}
+        onConfirm={async () => {
+          const ok = await bulk.run(
+            "confirm",
+            ids,
+            "Días cerrados confirmados",
+          );
+          if (ok) setPendingBulk(null);
+        }}
+      />
+      <BulkConfirmDialog
+        open={pendingBulk === "dismiss"}
+        onOpenChange={(o) => !o && setPendingBulk(null)}
+        title={`¿Descartar ${ids.length} día${ids.length === 1 ? "" : "s"}?`}
+        description="No cierran el espacio y la sincronización no los vuelve a proponer. Los ves en «Pasados» o desde cada fila si más adelante querés reactivarlos."
+        names={selected.map((r) => `${r.title} (${r.dates})`)}
+        confirmLabel="Descartar"
+        busy={bulk.busy}
+        onConfirm={async () => {
+          const ok = await bulk.run(
+            "dismiss",
+            ids,
+            "Días cerrados descartados",
+          );
+          if (ok) setPendingBulk(null);
+        }}
+      />
       <ResponsiveDialog
         open={toDelete !== null}
         onOpenChange={(open) => !open && setToDelete(null)}

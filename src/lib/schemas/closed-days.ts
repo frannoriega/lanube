@@ -96,3 +96,22 @@ export const closedDayInputSchema = z
   });
 
 export type ClosedDayInput = z.infer<typeof closedDayInputSchema>;
+
+/**
+ * Acciones en lote sobre las propuestas de la sincronización: confirmar las marcadas (pasan a
+ * `ACTIVE` y empiezan a cerrar el espacio) o descartarlas (`DISMISSED`: se conservan para que
+ * la sincronización no las vuelva a proponer). Mismo contrato que las demás acciones en lote
+ * (`{ ids, action }` → `{ done, skipped }`).
+ */
+export const closedDayBulkSchema = z.object({
+  ids: z
+    .array(z.string().min(1))
+    .min(1, "Elegí al menos un día cerrado")
+    .max(100)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: "La lista tiene elementos repetidos",
+    }),
+  action: z.enum(["confirm", "dismiss"]),
+});
+
+export type ClosedDayBulkInput = z.infer<typeof closedDayBulkSchema>;
