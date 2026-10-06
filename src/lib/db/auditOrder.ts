@@ -16,9 +16,11 @@ import type { OrderEntry } from "@/lib/audit/humanize";
  * devuelve la lista en el mismo orden en que la muestra el panel de administración.
  */
 const ORDER_LOADERS: Record<string, () => Promise<OrderEntry[]>> = {
+  // Espacios primero y áreas comunes después, cada grupo en su orden (milestone 24): es como
+  // las muestra el panel, que reordena cada tipo por separado.
   Space: () =>
     prisma.space.findMany({
-      orderBy: { displayOrder: "asc" },
+      orderBy: [{ kind: "asc" }, { displayOrder: "asc" }],
       select: { id: true, name: true },
     }),
   ReservationType: () =>

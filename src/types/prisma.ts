@@ -72,6 +72,11 @@ export type ReservationType = {
   updatedAt: number;
 };
 
+export enum SpaceKind {
+  SPACE = "SPACE",
+  AMENITY = "AMENITY",
+}
+
 export enum EventStatus {
   DRAFT = "DRAFT",
   PUBLISHED = "PUBLISHED",

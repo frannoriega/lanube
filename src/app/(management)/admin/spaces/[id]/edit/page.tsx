@@ -19,6 +19,7 @@ export default async function EditSpacePage({
   // Narrow to the editable, BigInt-free shape so it is serializable to the client form.
   const editable: SpaceEditable = {
     id: space.id,
+    kind: space.kind,
     name: space.name,
     slug: space.slug,
     description: space.description,
@@ -38,7 +39,7 @@ export default async function EditSpacePage({
       <div className="space-y-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Editar espacio
+            {space.kind === "AMENITY" ? "Editar área común" : "Editar espacio"}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">{space.name}</p>
         </div>

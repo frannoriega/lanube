@@ -44,8 +44,13 @@ async function getSpaceCapacity(
 ): Promise<number | null> {
   const space = await tx.space.findUnique({
     where: { id: spaceId },
-    select: { capacity: true },
+    select: { capacity: true, kind: true },
   });
+  // Una área común (milestone 24) nunca alberga eventos: se rechaza acá con un mensaje claro
+  // antes de que lo haga el trigger `events_reject_amenity` de la base.
+  if (space?.kind === "AMENITY") {
+    throw new DomainError("Un área común no se puede usar para eventos");
+  }
   return space?.capacity ?? null;
 }
 

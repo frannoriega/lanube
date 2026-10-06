@@ -141,3 +141,9 @@ export function getMetadataIcon(iconName: string | undefined): LucideIcon {
   if (!iconName) return Star;
   return METADATA_ICON_MAP[iconName] ?? Star;
 }
+
+/** Etiquetas de `Space.kind` (milestone 24), compartidas por el panel y la auditoría. */
+export const SPACE_KIND_LABELS: Record<string, string> = {
+  SPACE: "Espacio",
+  AMENITY: "Área común",
+};
