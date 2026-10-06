@@ -210,6 +210,32 @@ auditadas.
    podía llamar `sendResetEmail(correo, token)` desde el navegador. Pasan a `server-only` y
    `src/lib/email/server-only.test.ts` impide volver atrás.
 
+## Regresión: «Finalizar» congelaba el navegador (2026-10-06)
+
+**Síntoma.** En `/admin/maintenance`, tocar el botón de apagar de cualquier ventana colgaba la
+pestaña entera: el diálogo de confirmación nunca llegaba a dibujarse y no salía ningún pedido
+al servidor (el log del app no mostraba ni el `POST …/end`).
+
+**Causa.** `MaintenanceManager` ordenaba las ventanas **en cada render**
+(`[...(data ?? [])].sort(…)`) y le pasaba ese array nuevo a `useStaticTable` (TanStack Table).
+TanStack trata un array de `data` con otra identidad como datos nuevos y reinicia la paginación,
+lo que dispara un re-render, que arma otro array nuevo, y así sin fin. Con la página quieta el
+ciclo no arrancaba; **cualquier cambio de estado lo disparaba** (acá, `setEnding(w)` al tocar el
+botón), y como el reinicio corre en microtareas el hilo principal nunca respiraba. Las demás
+tablas del panel no lo sufrían porque pasan a `useStaticTable` el array de `useApi`, que es
+estable entre renders. No se debió a un `while`, al middleware ni al portero.
+
+**Arreglo.** El orden se memoiza con `useMemo` sobre `data`
+(`src/components/organisms/admin/config/maintenance-manager.tsx`). La regla general quedó en
+CLAUDE.md §13: lo que se le pasa a `useStaticTable` tiene que tener identidad estable.
+
+**Cómo se encontró.** Reproduciendo en el navegador: el clic congelaba el renderer (el
+automatizador daba timeout en `Input.dispatchMouseEvent`) y el log del app no mostraba pedidos,
+lo que descartó el servidor y el middleware. Se confirmó probando el arreglo a mano.
+
+**Sin test automático**: el proyecto corre Vitest en entorno `node` (sin DOM), así que no hay
+forma barata de renderizar el componente. Queda cubierto por la regla de CLAUDE.md y este doc.
+
 ## Runbook: migrar al VPS
 
 1. `/admin/maintenance` → «Nuevo» → atajo «Migración o respaldo». Ajustar el texto, **Declarar**.

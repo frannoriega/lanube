@@ -31,7 +31,7 @@ import type { AdminMaintenanceWindow } from "@/lib/maintenance/server";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Power } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const STATE_LABELS: Record<WindowState, string> = {
@@ -72,9 +72,17 @@ export function MaintenanceManager() {
   const { data, error, firstTime, refetch } = useApi<AdminMaintenanceWindow[]>(
     "/api/admin/maintenance",
   );
-  const windows = [...(data ?? [])].sort(
-    (a, b) =>
-      STATE_ORDER[a.state] - STATE_ORDER[b.state] || b.createdAt - a.createdAt,
+  // Memoizado: `useStaticTable` (TanStack) trata un array nuevo como datos nuevos y reinicia
+  // la paginación → re-render → array nuevo… Ordenar en cada render congelaba el navegador
+  // en cuanto cambiaba cualquier estado (p. ej. al tocar «Finalizar»).
+  const windows = useMemo(
+    () =>
+      [...(data ?? [])].sort(
+        (a, b) =>
+          STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+          b.createdAt - a.createdAt,
+      ),
+    [data],
   );
   const [ending, setEnding] = useState<AdminMaintenanceWindow | null>(null);
   const [busy, setBusy] = useState(false);
