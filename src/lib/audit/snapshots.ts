@@ -135,6 +135,9 @@ export const SNAPSHOTS: Partial<Record<AuditEntityType, SnapshotLoader>> = {
   LandingTheme: (id) => prisma.landingTheme.findUnique({ where: { id } }),
 
   SiteConfig: (id) => prisma.siteConfig.findUnique({ where: { id } }),
+
+  MaintenanceWindow: (id) =>
+    prisma.maintenanceWindow.findUnique({ where: { id } }),
 };
 
 /** La foto de un registro, o `null` si no existe (o la entidad no tiene foto). */

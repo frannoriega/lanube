@@ -34,6 +34,8 @@ export const PERMISSIONS = [
   "reservation-types:manage",
   "site-config:manage",
   "landing-themes:manage",
+  /** Declarar ventanas de mantenimiento (solo lectura, aviso, función apagada) — milestone 22. */
+  "maintenance:manage",
   /** Create roles and choose which permissions each one carries. */
   "roles:manage",
   /** View the audit trail (can expose role changes and bans). */
@@ -106,6 +108,7 @@ export const PERMISSION_GROUPS: ReadonlyArray<{
       "reservation-types:manage",
       "site-config:manage",
       "landing-themes:manage",
+      "maintenance:manage",
     ],
   },
   {
@@ -133,6 +136,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "reservation-types:manage": "Gestionar tipos de reserva",
   "site-config:manage": "Configurar el sitio",
   "landing-themes:manage": "Gestionar temas de la portada",
+  "maintenance:manage": "Gestionar el mantenimiento del sitio",
   "roles:manage": "Definir roles y permisos",
   "audit:view": "Ver la auditoría",
 };
