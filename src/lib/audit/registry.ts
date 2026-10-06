@@ -26,6 +26,10 @@
  * historial. Puro y seguro para el cliente (el panel de auditoría lo importa).
  */
 
+import {
+  CLOSED_DAY_SOURCE_LABELS,
+  CLOSED_DAY_STATUS_LABELS,
+} from "@/lib/constants/closed-days";
 import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
 import { SPACE_KIND_LABELS } from "@/lib/constants/spaces";
 import { FIELD_TYPE_LABELS } from "@/lib/constants/form-fields";
@@ -180,6 +184,21 @@ export const AUDIT_ENTITIES = {
       name: text("Nombre"),
       code: text("Código"),
       order: order("Orden"),
+    },
+  },
+  ClosedDay: {
+    label: "Días cerrados",
+    phrase: "del día cerrado",
+    subject: { key: "title", label: "Día cerrado" },
+    fields: {
+      title: text("Motivo"),
+      // Texto ya formateado (dd/mm/aaaa) en el snapshot: son fechas de calendario locales y el
+      // tipo `date` las correría de día al interpretarlas como instantes.
+      startDate: text("Desde"),
+      endDate: text("Hasta"),
+      window: text("Horario"),
+      source: enumOf("Origen", CLOSED_DAY_SOURCE_LABELS),
+      status: enumOf("Estado", CLOSED_DAY_STATUS_LABELS),
     },
   },
   Event: {
@@ -481,6 +500,26 @@ export const AUDIT_EVENTS = {
     kind: "custom",
     label: "Reordenó los tipos de reserva",
     verb: "Reordenamiento",
+  },
+
+  // Días cerrados
+  "closedDay.create": {
+    entity: "ClosedDay",
+    kind: "create",
+    label: "Cargó un día cerrado",
+    verb: "Creación",
+  },
+  "closedDay.update": {
+    entity: "ClosedDay",
+    kind: "update",
+    label: "Editó un día cerrado",
+    verb: "Edición",
+  },
+  "closedDay.delete": {
+    entity: "ClosedDay",
+    kind: "delete",
+    label: "Eliminó un día cerrado",
+    verb: "Eliminación",
   },
 
   // Eventos y formularios

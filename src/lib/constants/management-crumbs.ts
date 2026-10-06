@@ -31,6 +31,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   roles: "Roles y permisos",
   audit: "Auditoría",
   "profile-requests": "Cambios de datos",
+  "closed-days": "Días cerrados",
   // Configuración del usuario (milestone 17): una ruta por sección.
   settings: "Configuración",
   profile: "Perfil",

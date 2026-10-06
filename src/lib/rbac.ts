@@ -24,6 +24,11 @@ export const PERMISSIONS = [
   "reports:view",
   "checkin:manage",
   "incidents:manage",
+  /**
+   * Cargar, editar, confirmar y descartar los días cerrados del espacio (feriados, vacaciones,
+   * cierres parciales; milestone 23). Es operación diaria, no configuración técnica.
+   */
+  "closed-days:manage",
   /** Author/edit Noticias posts (including one's own drafts and submitting for review). */
   "news:manage",
   /** Approve/reject a Noticias post out of PENDING_REVIEW. Not granted to Comunicador. */
@@ -77,6 +82,7 @@ export const PERMISSION_GROUPS: ReadonlyArray<{
       "reservations:manage",
       "checkin:manage",
       "incidents:manage",
+      "closed-days:manage",
       "reports:view",
     ],
   },
@@ -129,6 +135,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "reports:view": "Ver reportes",
   "checkin:manage": "Gestionar ingresos y egresos",
   "incidents:manage": "Gestionar incidentes",
+  "closed-days:manage": "Gestionar días cerrados",
   "news:manage": "Redactar noticias",
   "news:approve": "Aprobar o rechazar noticias",
   "spaces:manage": "Gestionar espacios",
