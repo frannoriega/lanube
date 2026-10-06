@@ -1,3 +1,4 @@
+import { MaintenanceProvider } from "@/components/providers/maintenance";
 import { ServerTimeProvider } from "@/components/providers/server-time";
 import { WhatsAppFloatButton } from "@/components/molecules/whatsapp-float-button";
 import { auth } from "@/lib/auth";
@@ -51,7 +52,9 @@ export default async function RootLayout({
           Saltar al contenido
         </a>
         <ServerTimeProvider serverNowMs={serverNowMs}>
-          <SessionProvider session={session}>{children}</SessionProvider>
+          <SessionProvider session={session}>
+            <MaintenanceProvider>{children}</MaintenanceProvider>
+          </SessionProvider>
         </ServerTimeProvider>
         <WhatsAppFloatButton phoneClickable={siteConfig.phoneClickable} />
       </body>
