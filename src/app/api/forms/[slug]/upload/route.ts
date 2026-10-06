@@ -1,6 +1,9 @@
 import { apiCatch } from "@/lib/api/response";
 import { getPublicForm } from "@/lib/db/participants";
-import { handleParticipantUpload } from "@/lib/events/participant-upload";
+import {
+  handleParticipantUpload,
+  participantUploadRateLimit,
+} from "@/lib/events/participant-upload";
 import { NextRequest, NextResponse } from "next/server";
 
 /** Uploads a file for a FILE field while filling out a form (submit flow). */
@@ -9,6 +12,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
+    // Primero el límite por IP: sin presupuesto no se toca la base (milestone 25, DB8).
+    const limited = await participantUploadRateLimit();
+    if (limited) return limited;
+
     const { slug } = await params;
     const form = await getPublicForm(slug);
     if (!form) {
@@ -23,11 +30,12 @@ export async function POST(
         { status: 409 },
       );
     }
-    return handleParticipantUpload(request, form.schema, [
-      "events",
-      "participant-uploads",
-      slug,
-    ]);
+    return handleParticipantUpload(
+      request,
+      form.schema,
+      ["events", "participant-uploads", slug],
+      form.eventId,
+    );
   } catch (err) {
     return apiCatch("forms/[slug]/upload POST", err);
   }

@@ -1,15 +1,20 @@
 /**
  * Shared handler for participant (public, unauthenticated) file uploads. Both the submit
  * (`/api/forms/[slug]/upload`) and edit (`/api/forms/response/[token]/upload`) routes call this:
- * rate-limit → resolve the FILE field → validate the file's metadata → store it **privately** →
- * return an UploadedFile descriptor for the client to place in the answer.
+ * rate-limit (first, before any DB read) → resolve the FILE field → validate name/size → store it **privately** with a server-derived type →
+ * return a **signed** UploadedFile descriptor for the client to place in the answer (milestone 25).
  *
  * Files are stored private (never publicly linkable); admins read them back through an
  * authenticated proxy (see /api/admin/events/[id]/participants/file).
  */
 
 import { nowMs } from "@/lib/clock";
-import { findFileNode, validateUploadMeta } from "@/lib/events/form-files";
+import {
+  contentTypeForName,
+  findFileNode,
+  validateUploadMeta,
+} from "@/lib/events/form-files";
+import { signUploadedFile } from "@/lib/events/upload-signing";
 import type { FormSchema, UploadedFile } from "@/lib/events/form-schema";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
@@ -17,11 +22,13 @@ import { getClientIp } from "@/lib/request-ip";
 import { getStorage } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function handleParticipantUpload(
-  request: NextRequest,
-  schema: FormSchema,
-  folder: string[],
-): Promise<NextResponse> {
+/**
+ * Límite por IP de las subidas públicas. Va **antes** de cualquier consulta (las rutas lo llaman
+ * primero, antes de buscar el formulario o la inscripción): un pedido sin presupuesto no debe
+ * costar ni una lectura de la base (milestone 25, DB8). Devuelve la respuesta de error, o `null`
+ * si el pedido puede seguir.
+ */
+export async function participantUploadRateLimit(): Promise<NextResponse | null> {
   const ip = await getClientIp();
   if (!ip) {
     return NextResponse.json({ message: "IP no encontrada" }, { status: 400 });
@@ -41,7 +48,20 @@ export async function handleParticipantUpload(
       { status: 429 },
     );
   }
+  return null;
+}
 
+/**
+ * Guarda el archivo y devuelve el descriptor **firmado para `eventId`** (milestone 25, S2). El
+ * tipo MIME lo decide el servidor por la extensión (S1); el que manda el navegador se ignora.
+ * Quien llama ya aplicó {@link participantUploadRateLimit}.
+ */
+export async function handleParticipantUpload(
+  request: NextRequest,
+  schema: FormSchema,
+  folder: string[],
+  eventId: string,
+): Promise<NextResponse> {
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");
   const fieldId = String(formData?.get("fieldId") ?? "");
@@ -70,19 +90,18 @@ export async function handleParticipantUpload(
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
+    const contentType = contentTypeForName(file.name);
     const { url } = await getStorage().upload({
       buffer,
-      contentType: file.type || "application/octet-stream",
+      contentType,
       filename: file.name,
       folder,
       access: "private",
     });
-    const descriptor: UploadedFile = {
-      url,
-      name: file.name,
-      size: file.size,
-      type: file.type || "application/octet-stream",
-    };
+    const descriptor: UploadedFile = signUploadedFile(
+      { url, name: file.name, size: file.size, type: contentType },
+      eventId,
+    );
     return NextResponse.json(descriptor, { status: 201 });
   } catch (e) {
     // Loguear la falla real y devolver un mensaje controlado. Devolver `e.message` acá

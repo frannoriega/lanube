@@ -8,6 +8,7 @@ import {
   StorageUploadInput,
   StorageUploadResult,
   buildStorageKey,
+  isCanonicalKey,
 } from "@/lib/storage/types";
 
 const PUBLIC_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -51,20 +52,32 @@ export class LocalStorage implements StorageProvider {
   }
 
   async remove(url: string): Promise<void> {
+    // Mismo cuidado que `fetchPrivate`: nunca borrar fuera de la raíz correspondiente.
     if (url.startsWith(PRIVATE_SCHEME)) {
-      const rel = url.slice(PRIVATE_SCHEME.length);
-      await unlink(path.join(PRIVATE_ROOT, rel)).catch(() => {});
+      const key = this.privateKeyOf(url);
+      if (key) await unlink(path.join(PRIVATE_ROOT, key)).catch(() => {});
       return;
     }
     if (!url.startsWith("/uploads/")) return;
     const rel = url.replace(/^\/uploads\//, "");
+    if (!isCanonicalKey(rel)) return;
     await unlink(path.join(PUBLIC_ROOT, rel)).catch(() => {});
   }
 
-  async fetchPrivate(url: string): Promise<PrivateFetchResult | null> {
+  privateKeyOf(url: string): string | null {
     if (!url.startsWith(PRIVATE_SCHEME)) return null;
-    const rel = url.slice(PRIVATE_SCHEME.length);
-    const abs = path.join(PRIVATE_ROOT, rel);
+    const key = url.slice(PRIVATE_SCHEME.length);
+    return isCanonicalKey(key) ? key : null;
+  }
+
+  async fetchPrivate(url: string): Promise<PrivateFetchResult | null> {
+    // `path.join` con un `..` en la clave salía de PRIVATE_ROOT: `local-private:../../.env` leía
+    // cualquier archivo del proceso (milestone 25, S2). Solo claves canónicas, y además se
+    // comprueba que la ruta resuelta siga adentro.
+    const key = this.privateKeyOf(url);
+    if (!key) return null;
+    const abs = path.resolve(PRIVATE_ROOT, key);
+    if (!abs.startsWith(PRIVATE_ROOT + path.sep)) return null;
     try {
       const info = await stat(abs);
       const ext = path.extname(abs).slice(1).toLowerCase();
