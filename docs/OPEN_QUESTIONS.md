@@ -219,3 +219,24 @@ Contexto en
   publica)? Hoy decidir es solo en el panel.
 - **Privacidad**: ¿la política debe mencionar que el personal puede consultar, con su
   asistente, datos de inscriptos y solicitudes de cambio de datos?
+
+## Milestone 23 — Días cerrados
+
+Contexto en
+[`milestones/milestones-23-closed-days.md`](./milestones/milestones-23-closed-days.md).
+
+- **Cancelar desde la pantalla del cierre** (una reserva, o en lote) en lugar de linkear a
+  Reservas / a las sesiones del evento. Hoy se resuelve donde ya existía el flujo, para no
+  duplicar sus reglas y avisos; reabrir si resolver cierre por cierre resulta lento.
+- **Avisar a quien tiene una reserva** cuando un cierre la pisa y el admin la deja. Hoy no se
+  notifica a nadie por el cierre en sí (solo por la cancelación, si el admin la hace).
+- **Cierres anuales de la ciudad** («siempre el 4 de marzo»): hoy se cargan a mano cada año.
+- **Cierres por espacio o recurso** (cerrar solo el laboratorio): hoy el cierre es del espacio
+  entero; sería una columna opcional, no un modelo nuevo.
+- **¿Un tap en un tramo «Cerrado» del calendario debería explicar algo?** Hoy el motivo ya se ve
+  dentro de la tarjeta; falta un aviso al intentar reservar encima en pantallas táctiles.
+- **Probar las tools MCP con un cliente real** (`get_availability` con `closed`,
+  `get_contact_info` con `upcoming_closures`), como el resto del conector.
+- **Fuente de feriados**: ArgentinaDatos no es oficial. Si alguna vez falla o se equivoca de
+  forma sostenida, la alternativa documentada es el endpoint del Banco Central do Brasil
+  (`olinda.bcb.gov.br`, `FeriadosArgentina`); el parser es de un solo archivo.

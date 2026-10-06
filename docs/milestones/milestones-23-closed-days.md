@@ -1,8 +1,9 @@
 # Milestone 23 — Días cerrados (feriados, vacaciones y cierres parciales)
 
-**Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
-release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2, 3, 4, 5, 6, 7, 8.
+**Estado:** **implementado (2026-10-06)** en la rama `milestone-23` (aparte de `preview`, para
+que un release desde `preview` no promueva una feature a medio hacer), sin mergear. Diseño
+acordado el 2026-10-06. Los 9 slices están hechos; lo que quedó abierto está en
+`docs/OPEN_QUESTIONS.md` (milestone 23).
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -275,7 +276,7 @@ eso los cierres parciales entran desde el principio.
    pública; las tools MCP se verificaron con `tsc`/lint/tests de sus piezas puras, **no** contra
    un cliente real (igual que los milestones 20 y 21, falta probarlas desde Claude/ChatGPT con un
    deploy público).
-9. **Docs**: CLAUDE.md (modelo, regla, sync), este doc, README de milestones, `OPEN_QUESTIONS.md`.
+9. **Docs** ✅: CLAUDE.md (modelo, regla, sync), este doc, README de milestones, `OPEN_QUESTIONS.md`.
 
 ## Fuera de alcance (a propósito)
 
