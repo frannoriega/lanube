@@ -201,6 +201,13 @@ export async function createReservation(
           `Ya tenés una reserva aprobada en "${overlapMatch[1]}" en ese horario`,
         );
       }
+      // Red de seguridad de la base (milestone 23): el trigger `reservations_no_closed_day`
+      // levanta 'Closed day: <título>' si una reserva puntual de usuario pisa un cierre
+      // activo. Normalmente `requestUserReservation` ya la rechazó antes, con la franja horaria.
+      const closedMatch = error.message?.match(/Closed day: (.+)$/m);
+      if (closedMatch) {
+        throw new DomainError(`El espacio está cerrado: ${closedMatch[1]}`);
+      }
       if (error.message?.includes("Conflict on")) {
         throw new DomainError(
           "Conflicto en una de las fechas de la recurrencia",
