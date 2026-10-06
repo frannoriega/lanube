@@ -11,6 +11,11 @@ import {
   safeCallbackUrl,
   signInUrl,
 } from "@/lib/signin/callback-url";
+import {
+  loadSnapshotFor,
+  maintenanceBlock,
+  needsMaintenanceCheck,
+} from "@/lib/maintenance/gate";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -25,12 +30,37 @@ const ADMIN_PATH_PERMISSIONS: Array<[prefix: string, permission: Permission]> =
     ["/admin/reservation-types", "reservation-types:manage"],
     ["/admin/site", "site-config:manage"],
     ["/admin/themes", "landing-themes:manage"],
+    ["/admin/maintenance", "maintenance:manage"],
     ["/admin/roles", "roles:manage"],
     ["/admin/audit", "audit:view"],
     ["/admin/profile-requests", "users:profile-requests:review"],
   ];
 
+/**
+ * Mantenimiento (milestone 22). Corre para **todo** pedido a `/api/**` y, sin tocar ninguna
+ * ruta, responde 503 si una ventana vigente lo frena (solo lectura, función apagada). El
+ * resto de este middleware —sesión, baneo, políticas— es de las páginas y no se aplica acá:
+ * la API tiene sus propios guards (`requireActiveSession`, `requirePermission`).
+ */
+async function apiGate(request: NextRequest): Promise<NextResponse> {
+  const { method, nextUrl } = request;
+  if (needsMaintenanceCheck(method, nextUrl.pathname)) {
+    const snapshot = await loadSnapshotFor(nextUrl.origin);
+    const block = maintenanceBlock(snapshot, method, nextUrl.pathname);
+    if (block) {
+      return NextResponse.json(block, {
+        status: 503,
+        headers: { "Retry-After": "120" },
+      });
+    }
+  }
+  return NextResponse.next();
+}
+
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return apiGate(request);
+  }
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -137,5 +167,6 @@ export const config = {
     "/admin/:path*",
     "/auth/:path*",
     "/oauth/:path*",
+    "/api/:path*",
   ],
 };

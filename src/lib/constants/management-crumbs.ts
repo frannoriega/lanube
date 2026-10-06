@@ -27,6 +27,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   "reservation-types": "Tipos de reserva",
   site: "Contacto",
   themes: "Temas del landing",
+  maintenance: "Mantenimiento",
   roles: "Roles y permisos",
   audit: "Auditoría",
   "profile-requests": "Cambios de datos",
