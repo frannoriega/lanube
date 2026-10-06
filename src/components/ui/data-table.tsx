@@ -91,6 +91,14 @@ function cellLabel<TData>(cell: Cell<TData, unknown>): string {
  * escritas a mano y se migraron al `DataTable` en el milestone 14 para ganar la vista de
  * tarjetas en teléfonos. `getRowId` usa el `id` de la fila cuando existe, así las filas
  * conservan su identidad (y su foco) al reordenar o refrescar.
+ *
+ * `autoResetPageIndex: false` es la red de seguridad contra el congelamiento del milestone 22
+ * (ver milestone 25, R1/R2): por defecto TanStack reinicia la paginación cada vez que `data`
+ * cambia de identidad, y ese reinicio es un setState que re-renderiza; si quien llama arma el
+ * array en el render (`.filter`, `.sort`, `.map`), cada render produce otro array y el ciclo no
+ * termina nunca — el navegador queda colgado. Estas tablas no paginan, así que el reinicio no
+ * les sirve de nada. Igual conviene pasar `data` con identidad estable (`useMemo`): sin esto
+ * se recalcula el modelo de filas en cada render.
  */
 export function useStaticTable<TData>(
   data: TData[],
@@ -99,6 +107,7 @@ export function useStaticTable<TData>(
   return useReactTable<TData>({
     data,
     columns,
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row, index) => {
       const id = (row as { id?: unknown }).id;
