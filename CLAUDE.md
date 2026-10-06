@@ -728,7 +728,9 @@ Full design + decisions: `docs/milestones/milestones-14-mobile-redesign.md`.
   stable identity between renders** (the array from `useApi`, or `useMemo` if you sort/filter
   it): TanStack resets pagination whenever it gets a new array, which re-renders, which builds
   another new array… — a sort in the render body froze the browser the moment any state changed
-  (`MaintenanceManager`, milestone 22). Don't add an
+  (`MaintenanceManager`, milestone 22; `SpacesManager` and the `/admin/reports` tables had the
+  same bug, milestone 25). `useStaticTable` now passes `autoResetPageIndex: false` as a safety
+  net; a hand-rolled `useReactTable` without pagination should do the same. Don't add an
   `overflow-x-auto` table "fix" — a wrapper alone still makes a phone scroll sideways.
 - **Dialogs: `ResponsiveDialog*` (`molecules/responsive-dialog.tsx`)**, same API as
   `ui/dialog` — a centered Dialog from `md`, a bottom Drawer (vaul) below. **Dialog vs page

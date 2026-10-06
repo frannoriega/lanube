@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { DataTable, useStaticTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
 
 interface AdminReportParams {
   data: ReportData;
@@ -491,9 +492,14 @@ type PerResourceRow = ReportData["reservations"]["perResource"][number];
 
 /** Reservas por servicio: total y desglose por estado (+ variación vs el período anterior). */
 function PerResourceTable({ data }: { data: ReportData }) {
-  const rows = data.reservations.perResource
-    .slice()
-    .sort((a, b) => b.count - a.count);
+  // Memoizado: armar las filas en el render le daba a TanStack un array nuevo en cada render,
+  // y el reinicio de paginación resultante colgaba la página al llegar el reporte
+  // (milestone 25, R2).
+  const rows = useMemo(
+    () =>
+      data.reservations.perResource.slice().sort((a, b) => b.count - a.count),
+    [data],
+  );
   const columns: ColumnDef<PerResourceRow>[] = [
     {
       id: "service",
@@ -594,10 +600,10 @@ interface DurationRow {
   overall: boolean;
 }
 
-/** Duración de las reservas aprobadas: total / mínima / promedio / máxima. */
-function DurationTable({ data }: { data: ReportData }) {
+/** Filas de la tabla de duraciones: la "General" primero, después cada servicio por volumen. */
+function buildDurationRows(data: ReportData): DurationRow[] {
   const stats = data.reservations.durationStats;
-  const rows: DurationRow[] = [
+  return [
     ...(stats.overall
       ? [
           {
@@ -624,6 +630,12 @@ function DurationTable({ data }: { data: ReportData }) {
         overall: false,
       })),
   ];
+}
+
+/** Duración de las reservas aprobadas: total / mínima / promedio / máxima. */
+function DurationTable({ data }: { data: ReportData }) {
+  // Memoizado por la misma razón que en `PerResourceTable` (milestone 25, R2).
+  const rows = useMemo(() => buildDurationRows(data), [data]);
   const num = (
     key: "total" | "min" | "avg" | "max",
     label: string,

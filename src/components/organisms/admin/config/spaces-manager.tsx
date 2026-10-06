@@ -30,7 +30,7 @@ import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend, invalidateApi } from "@/lib/api/client";
 import { Pencil, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { LoadError } from "@/components/molecules/load-error";
 
@@ -55,7 +55,12 @@ export function SpacesManager() {
   const [kind, setKind] = useState<SpaceRow["kind"]>("SPACE");
   const amenity = kind === "AMENITY";
   const noun = amenity ? "área común" : "espacio";
-  const spaces = (data ?? []).filter((s) => s.kind === kind);
+  // Memoizado: un array nuevo en cada render hacía que TanStack reiniciara la paginación en
+  // cada render y colgaba el navegador al tocar cualquier botón (milestone 25, R1).
+  const spaces = useMemo(
+    () => (data ?? []).filter((s) => s.kind === kind),
+    [data, kind],
+  );
   const [deleting, setDeleting] = useState<SpaceRow | null>(null);
   const [busy, setBusy] = useState(false);
   /*
