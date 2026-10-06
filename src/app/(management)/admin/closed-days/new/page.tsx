@@ -1,9 +1,7 @@
-import {
-  ClosedDayForm,
-  emptyClosedDay,
-} from "@/components/organisms/admin/closed-day-form";
+import { ClosedDayForm } from "@/components/organisms/admin/closed-day-form";
 import { todayDateKeyInAdminTz } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
+import { emptyClosedDay } from "@/lib/closed-days/form-values";
 import { requirePagePermission } from "@/lib/page-auth";
 
 /** Alta de un día cerrado como página (milestone 23). */
