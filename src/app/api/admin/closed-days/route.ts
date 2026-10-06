@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/api-auth";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { beginAudit } from "@/lib/audit/emit";
 import { createClosedDay } from "@/lib/db/closedDays";
+import { getReservationsAffectedByClosure } from "@/lib/db/closedDayImpact";
 import { serializeJson } from "@/lib/json-bigint";
 import { closedDayInputSchema } from "@/lib/schemas/closed-days";
 import { NextRequest, NextResponse } from "next/server";
@@ -31,7 +32,14 @@ export async function POST(request: NextRequest) {
     await audit.commit(session, AUDIT_ACTIONS.closedDayCreate, {
       entityId: closedDay.id,
     });
-    return NextResponse.json(serializeJson(closedDay), { status: 201 });
+    // Cuántas reservas vigentes quedaron en conflicto: el formulario lleva al admin a
+    // resolverlas en lugar de dejarlas olvidadas (un cierre no cancela nada solo).
+    const affectedCount = (await getReservationsAffectedByClosure(closedDay))
+      .length;
+    return NextResponse.json(
+      { ...(serializeJson(closedDay) as object), affectedCount },
+      { status: 201 },
+    );
   } catch (err) {
     return apiCatch("admin/closed-days POST", err);
   }
