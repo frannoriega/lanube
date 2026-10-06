@@ -206,7 +206,7 @@ src/
 - `ReservationException`: Overrides for a single occurrence of a recurring reservation
 - `ReservationLedger`: Expanded bookings by 15-min bucket (used for capacity/availability checks)
 - `CheckIn`: User entry/exit records (linked to reservation)
-- `Space`: Reservable space (coworking, lab, auditorium, meeting room) with capacity/exclusive/reservable flags — superadmin CRUD at `/admin/spaces`. Booking UI is the single dynamic route `/user/spaces/[slug]` (resolves the Space by its editable `slug`; 404s if missing or not reservable) — there are no per-space hardcoded folders. The user sidebar's space links are built from `getReservableSpaces()` in the user layout and passed to `ManagementLayout` (`spaceNav`), so a renamed/added space stays in sync automatically.
+- `Space`: Reservable space (coworking, lab, auditorium, meeting room) with capacity/exclusive/reservable flags. **Since milestone 24 it also stores _amenities_** (`kind = AMENITY`: kitchen, garden, living room — shown, never reserved, no events, `capacity` nullable); see §18. Spanish public name: «Amenities» / «áreas comunes» — superadmin CRUD at `/admin/spaces`. Booking UI is the single dynamic route `/user/spaces/[slug]` (resolves the Space by its editable `slug`; 404s if missing or not reservable) — there are no per-space hardcoded folders. The user sidebar's space links are built from `getReservableSpaces()` in the user layout and passed to `ManagementLayout` (`spaceNav`), so a renamed/added space stays in sync automatically.
 - `Resource`: Physical equipment inventory (superadmin CRUD at `/admin/resources`)
 - `ReservationType`: Catalog of reservation/event types (was the `event_types` Postgres enum). `code` is the stable identifier stored on `Event.eventType` / `Reservation.eventType` (text FK, `ON UPDATE CASCADE`, delete restricted while in use); `name` is the display name. Superadmin CRUD at `/admin/reservation-types`; public read at `GET /api/reservation-types`. Migration `20260706110000` seeded MEETING/WORKSHOP/CONFERENCE/OTHER and recreated the SQL functions with `text` params.
 - `Role`: RBAC role (milestone 9) — `key`, `name`, `permissions String[]`, `isSystem` (protected from edit/delete), `isSuperadmin` (implicit all-permissions). `RegisteredUser.roleId` FKs here with `onDelete: Restrict`, so an in-use role can't be deleted. Superadmin CRUD at `/admin/roles`.
@@ -899,6 +899,25 @@ Full design, runbook de migración + alternativas descartadas: `docs/milestones/
 - Permiso `maintenance:manage`: solo SUPERADMIN, fuera del conector. Cada alta/edición/fin se audita (`MaintenanceWindow`).
 - Server Actions no pasan por `/api` (el repo no usa ninguna): si se agregan, el portero no las ve.
 - **Botón de emergencia**: `maintenance_status()`, `maintenance_start(...)`, `maintenance_end(id)` y `maintenance_end_all()` (migración `20261006110000`) manejan las ventanas desde `psql` sin la app. No auditan. Detalle en el doc del milestone.
+
+### 18. Amenities / áreas comunes (milestone 24)
+
+Full design: `docs/milestones/milestones-24-amenities.md`.
+
+- **One model, `Space.kind` (`SPACE` | `AMENITY`)**, not a second table — they share image, markdown, FAQs,
+  order, admin CRUD and audit. An amenity is never reservable/exclusive, never hosts an event, and may have
+  **no capacity** (`capacity` is nullable; a `SPACE` always has one). Enforced **in the DB**: `CHECK
+spaces_kind_invariants` + triggers `reservations_reject_amenity` / `events_reject_amenity` /
+  `spaces_reject_amenity_if_in_use`, mirrored by `spaceInputSchema.superRefine` and `getSpaceCapacity()`.
+  The `kind` is chosen at creation (`/admin/spaces/new?kind=amenity`) and **never changed on edit**.
+- **`getPublicSpaces()` returns BOTH kinds.** Anything that needs bookable places / event hosts uses
+  `getSpacesByKind("SPACE")` or `getReservableSpaces()`; `src/lib/db/spaces-kind.test.ts` fails if
+  `getPublicSpaces` shows up in a new file (add it to `ALLOWED` with a reason only if that surface should
+  show amenities too).
+- Public: the landing's «Nuestros espacios» filters to `SPACE`; `AmenitiesSection` follows it (photo tiles,
+  returns `null` when empty). `/spaces` has two blocks (`#amenities`). Admin `/admin/spaces` has
+  Espacios / Áreas comunes tabs, each reordered on its own (order compares only within a kind).
+- The MCP connector does **not** expose amenities (`list_spaces` = reservable only).
 
 ## Testing & Seeding
 

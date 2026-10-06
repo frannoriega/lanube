@@ -604,6 +604,65 @@ async function main() {
     update: {},
   });
 
+  // ── Áreas comunes (milestone 24) ───────────────────────────────────────────────
+  // Sin foto a propósito: la sube el admin; mientras tanto la landing muestra el panel con el
+  // ícono. La cocina va sin capacidad para ejercitar ese caso.
+  const amenities = [
+    {
+      slug: "kitchen",
+      name: "Cocina",
+      iconName: "Coffee",
+      capacity: null,
+      description:
+        "Un lugar para el mate, el almuerzo y la charla de pasillo.\n\n Heladera, microondas y pava eléctrica a disposición de quienes trabajan en La Nube.",
+      faqs: [
+        {
+          question: "¿Puedo guardar mi comida?",
+          answer:
+            "Sí, hay **heladera compartida**. Pedimos rotular lo que se guarda y llevarse lo que sobre a fin de semana.",
+        },
+      ],
+    },
+    {
+      slug: "garden",
+      name: "Jardín",
+      iconName: "MapPin",
+      capacity: 20,
+      description:
+        "Un patio verde para descansar entre reuniones o trabajar al aire libre.\n\n Con mesas y sombra.",
+      faqs: [],
+    },
+    {
+      slug: "living",
+      name: "Living",
+      iconName: "Armchair",
+      capacity: 10,
+      description:
+        "Sillones y pufs para una charla informal, una pausa o una reunión distendida.",
+      faqs: [],
+    },
+  ];
+  for (const [i, a] of amenities.entries()) {
+    await prisma.space.upsert({
+      where: { slug: a.slug },
+      create: {
+        kind: "AMENITY",
+        name: a.name,
+        slug: a.slug,
+        description: a.description,
+        faqs: a.faqs,
+        iconName: a.iconName,
+        capacity: a.capacity,
+        isReservable: false,
+        isExclusive: false,
+        isFeatured: false,
+        displayOrder: 10 + i,
+        metadata: [],
+      },
+      update: {},
+    });
+  }
+
   const [meetingRoom, laboratory, auditorium, coworking] = await Promise.all([
     prisma.space.findUniqueOrThrow({
       where: { slug: "meeting-room" },

@@ -59,7 +59,7 @@ export interface ApprovalPreview {
   autoRejectedIds: string[];
   conflicts: ApprovalConflict[];
   /** El espacio de la reserva que se va a aprobar, para explicar los rechazos por capacidad. */
-  space: { name: string; capacity: number; isExclusive: boolean } | null;
+  space: { name: string; capacity: number | null; isExclusive: boolean } | null;
 }
 
 /**

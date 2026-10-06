@@ -21,11 +21,15 @@ import Link from "next/link";
 export const metadata = {
   title: "Espacios | La Nube",
   description:
-    "Conocé los espacios de La Nube: coworking, sala de reuniones, sala de conferencias y laboratorio.",
+    "Conocé los espacios de La Nube —coworking, sala de reuniones, sala de conferencias y laboratorio— y sus amenities.",
 };
 
 export default async function SpacesPage() {
-  const spaces = await getPublicSpaces();
+  // Una sola consulta y dos bloques (milestone 24): los espacios, que se reservan, y las
+  // amenities, que solo se muestran. `getPublicSpaces` ya viene en el orden del panel.
+  const all = await getPublicSpaces();
+  const spaces = all.filter((s) => s.kind === "SPACE");
+  const amenities = all.filter((s) => s.kind === "AMENITY");
 
   return (
     <Container className="h-fit">
@@ -53,6 +57,29 @@ export default async function SpacesPage() {
                 flip={index % 2 === 1}
               />
             ))}
+          </div>
+        )}
+
+        {amenities.length > 0 && (
+          <div
+            id="amenities"
+            className="flex scroll-mt-28 flex-col gap-12 md:gap-16"
+          >
+            <SectionHeading
+              eyebrow="amenities"
+              title="Y además, nuestras"
+              accent="amenities"
+              lead="Áreas comunes para usar durante el día: no se reservan, están a disposición de quienes trabajan en La Nube."
+            />
+            <div className="flex flex-col gap-16 md:gap-24">
+              {amenities.map((amenity, index) => (
+                <SpaceSection
+                  key={amenity.id}
+                  space={amenity}
+                  flip={index % 2 === 1}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -109,9 +136,13 @@ function SpaceSection({ space, flip }: { space: Space; flip: boolean }) {
               className="flex flex-wrap gap-2"
               aria-label="Capacidad y equipamiento"
             >
-              <Chip icon={Users}>
-                {space.capacity} {space.capacity === 1 ? "persona" : "personas"}
-              </Chip>
+              {/* Las amenities pueden no tener capacidad: entonces no hay chip. */}
+              {space.capacity !== null && (
+                <Chip icon={Users}>
+                  {space.capacity}{" "}
+                  {space.capacity === 1 ? "persona" : "personas"}
+                </Chip>
+              )}
               {equipment.map((item, i) => (
                 <Chip key={i} icon={getMetadataIcon(item.icon)}>
                   {item.type === "stat"

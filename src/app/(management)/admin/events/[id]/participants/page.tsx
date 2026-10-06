@@ -32,7 +32,7 @@ export default async function ParticipantsPage({
   // bajarlo (o mover el evento a un espacio más chico) después de que la gente se inscribió —
   // cuando lo hace confirma un aviso, y acá es donde el excedente queda visible
   // (milestone-12 D11).
-  const capacity = event.capacity ?? event.space.capacity;
+  const capacity = event.capacity ?? event.space.capacity ?? 0;
   const oversubscribed = capacity > 0 && active.length > capacity;
 
   const rows = participants.map((p) => ({

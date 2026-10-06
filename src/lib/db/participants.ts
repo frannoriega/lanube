@@ -68,7 +68,7 @@ function formFields(form: FormRow): PublicFormField[] {
 
 async function resolveCapacity(event: {
   capacity: number | null;
-  space: { capacity: number } | null;
+  space: { capacity: number | null } | null;
 }): Promise<number> {
   return event.capacity ?? event.space?.capacity ?? 0;
 }
