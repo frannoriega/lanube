@@ -13,6 +13,11 @@ vi.mock("nodemailer", () => ({
   default: { createTransport: () => ({ sendMail }) },
 }));
 vi.mock("@/lib/db/participants", () => ({ listEventParticipants }));
+// Mantenimiento (milestone 22): por defecto los correos de eventos están habilitados.
+const { areEventEmailsSuspended } = vi.hoisted(() => ({
+  areEventEmailsSuspended: vi.fn(),
+}));
+vi.mock("@/lib/maintenance/server", () => ({ areEventEmailsSuspended }));
 // The in-app bell goes through notify() (src/lib/notifications/dispatch.ts), which pulls in
 // "server-only" transitively — stub it out here the same way the email/DB deps are stubbed,
 // so this stays a focused test of the email batching behaviour.
@@ -29,6 +34,8 @@ beforeEach(() => {
   listEventParticipants.mockReset();
   notify.mockReset();
   notify.mockResolvedValue(undefined);
+  areEventEmailsSuspended.mockReset();
+  areEventEmailsSuspended.mockResolvedValue(false);
 });
 
 describe("notifyEventParticipantsBatch", () => {
@@ -137,5 +144,33 @@ describe("notifyEventParticipantsBatch", () => {
       expect(call[0].type).toBe("event.sessionChanged");
       expect(call[0].recipient).toEqual({ registeredUserId: "ru_b" });
     }
+  });
+
+  it("con los correos de eventos apagados por mantenimiento no manda mails, pero la campanita sigue", async () => {
+    areEventEmailsSuspended.mockResolvedValue(true);
+    listEventParticipants.mockResolvedValue([
+      {
+        email: "a@x.com",
+        displayEmail: "a@x.com",
+        editToken: "t1",
+        status: "APPROVED",
+        userId: "u1",
+      },
+    ]);
+
+    const res = await notifyEventParticipantsBatch("ev1", {
+      eventName: "Taller",
+      changes: [
+        {
+          kind: "cancelled",
+          originalStartMs: START,
+          originalEndMs: START + 3 * HOUR,
+        },
+      ],
+    });
+
+    expect(sendMail).not.toHaveBeenCalled();
+    expect(res).toEqual({ sent: 0, failed: 0 });
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 });

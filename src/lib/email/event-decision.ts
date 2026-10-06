@@ -2,6 +2,7 @@ import "server-only";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@/lib/logger";
+import { areEventEmailsSuspended } from "@/lib/maintenance/server";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -89,6 +90,14 @@ export async function notifyParticipantsDecision(
   recipients: DecisionRecipient[],
 ): Promise<{ sent: number; failed: number }> {
   if (recipients.length === 0) return { sent: 0, failed: 0 };
+  // Mantenimiento (milestone 22): con los correos de eventos apagados no se manda nada (ni se
+  // cuenta como fallo: no se intentó).
+  if (await areEventEmailsSuspended()) {
+    logger.info("participant decision emails skipped (maintenance)", {
+      recipients: recipients.length,
+    });
+    return { sent: 0, failed: 0 };
+  }
 
   const baseUrl =
     process.env.NEXTAUTH_URL ??

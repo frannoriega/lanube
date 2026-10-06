@@ -3,6 +3,7 @@ import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { listEventParticipants } from "@/lib/db/participants";
 import { logger } from "@/lib/logger";
+import { areEventEmailsSuspended } from "@/lib/maintenance/server";
 import { notify } from "@/lib/notifications/dispatch";
 import type { EventSessionChangedData } from "@/lib/notifications/types";
 import { ParticipantStatus } from "@/types/prisma";
@@ -133,9 +134,19 @@ export async function notifyEventParticipantsBatch(
     ? `<p style="color:#555;line-height:1.6;"><strong>Motivo:</strong> ${payload.reason}</p>`
     : "";
 
+  // Mantenimiento (milestone 22): con los correos de eventos apagados no se manda ninguno,
+  // pero la campanita de más abajo sí se actualiza.
+  const emailsSuspended = await areEventEmailsSuspended();
+  if (emailsSuspended) {
+    logger.info("event occurrence emails skipped (maintenance)", {
+      eventId,
+      recipients: participants.length,
+    });
+  }
+
   let sent = 0;
   let failed = 0;
-  for (const p of participants) {
+  for (const p of emailsSuspended ? [] : participants) {
     const to = p.displayEmail ?? p.email;
     const editLink = `${baseUrl}/forms/response/${encodeURIComponent(p.editToken)}`;
     try {

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getGlobalReadOnlyWindow } from "@/lib/maintenance/server";
 import { pruneExpiredOAuthRows } from "@/lib/oauth/server";
 
 type MaintainRow = {
@@ -34,6 +35,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Solo lectura global (milestone 22): el cron escribe (poda y rematerializa el ledger),
+    // así que durante un respaldo o una migración se saltea. Es seguro: `maintain_reservations()`
+    // recalcula todo hacia adelante desde "hoy", de modo que la próxima corrida recupera lo
+    // que esta dejó. Si una ventana de solo lectura se olvida abierta días, esto se nota en
+    // el log y en `skipped`.
+    const readOnly = await getGlobalReadOnlyWindow();
+    if (readOnly) {
+      logger.warn(
+        "cron/maintain-reservations skipped (read-only maintenance)",
+        {
+          window: readOnly.title,
+        },
+      );
+      return NextResponse.json({
+        skipped: true,
+        reason: "read-only maintenance",
+      });
+    }
+
     const rows = await prisma.$queryRaw<MaintainRow[]>`
       SELECT * FROM maintain_reservations()
     `;
