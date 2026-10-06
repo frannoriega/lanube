@@ -31,6 +31,7 @@ import {
   LayoutDashboard,
   LucideProps,
   Menu,
+  CalendarOff,
   Newspaper,
   Settings,
   Shield,
@@ -113,6 +114,12 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/admin/reservations",
       icon: Calendar,
       permission: "reservations:manage",
+    },
+    {
+      name: "Días cerrados",
+      href: "/admin/closed-days",
+      icon: CalendarOff,
+      permission: "closed-days:manage",
     },
     {
       name: "Eventos",
