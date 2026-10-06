@@ -7,6 +7,8 @@ const { sendMail, listEventParticipants, notify } = vi.hoisted(() => ({
   listEventParticipants: vi.fn(),
   notify: vi.fn(),
 }));
+// El módulo es `server-only` (no un Server Action): ver `server-only.test.ts`.
+vi.mock("server-only", () => ({}));
 vi.mock("nodemailer", () => ({
   default: { createTransport: () => ({ sendMail }) },
 }));
