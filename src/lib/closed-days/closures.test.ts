@@ -3,6 +3,7 @@ import { startOfDateKeyMs } from "@/lib/admin/admin-timezone";
 import {
   closureIntervalOnDay,
   closureRejectionMessage,
+  closureSlotsForRange,
   closureWindowLabel,
   findClosureForWindow,
   formatMinutes,
@@ -183,5 +184,51 @@ describe("mensajes", () => {
     expect(closureRejectionMessage(partial("2026-05-25", 840, 1080))).toBe(
       "El espacio está cerrado de 14:00 a 18:00: Cierre parcial",
     );
+  });
+});
+
+describe("closureSlotsForRange", () => {
+  it("recorta un día completo al horario de reserva", () => {
+    const slots = closureSlotsForRange(
+      [fullDay("2026-05-25")],
+      at("2026-05-25", 0),
+      at("2026-05-25", 23),
+    );
+    expect(slots).toEqual([
+      {
+        title: "Feriado",
+        startTime: at("2026-05-25", 9),
+        endTime: at("2026-05-25", 18),
+      },
+    ]);
+  });
+
+  it("genera un tramo por día de un rango, solo los que caen en la ventana", () => {
+    const slots = closureSlotsForRange(
+      [fullDay("2026-07-20", "2026-07-24")],
+      at("2026-07-22", 0),
+      at("2026-07-23", 23),
+    );
+    expect(slots.map((s) => s.startTime)).toEqual([
+      at("2026-07-22", 9),
+      at("2026-07-23", 9),
+    ]);
+  });
+
+  it("respeta una franja y descarta la que queda fuera del horario", () => {
+    const tarde = partial("2026-05-25", 14 * 60, 20 * 60);
+    expect(
+      closureSlotsForRange([tarde], at("2026-05-25", 0), at("2026-05-25", 23)),
+    ).toEqual([
+      {
+        title: "Cierre parcial",
+        startTime: at("2026-05-25", 14),
+        endTime: at("2026-05-25", 18),
+      },
+    ]);
+    const noche = partial("2026-05-25", 19 * 60, 21 * 60);
+    expect(
+      closureSlotsForRange([noche], at("2026-05-25", 0), at("2026-05-25", 23)),
+    ).toEqual([]);
   });
 });

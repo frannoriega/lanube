@@ -28,6 +28,7 @@ import {
   getCurrentWorkWeekStart,
   fromUtcMs,
   isDayFullyBlocked,
+  isDayFullyClosed,
   minutesToTime,
   TIME_INTERVAL_MINUTES,
   timeToMinutes,
@@ -53,13 +54,15 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-export type UnavailableSlotKind = "resource_full" | "cross_resource";
+export type UnavailableSlotKind = "resource_full" | "cross_resource" | "closed";
 
 export interface UnavailableSlot {
   spaceId?: string;
   startTime: number;
   endTime: number;
   kind?: UnavailableSlotKind;
+  /** Solo `closed` (milestone 23): el motivo del cierre, que se muestra en el calendario. */
+  title?: string;
 }
 
 export interface DragSelection {
@@ -264,7 +267,11 @@ export function WeekCalendar({
       let current = rawSlots[0];
       for (let i = 1; i < rawSlots.length; i++) {
         const slot = rawSlots[i];
-        if (current.endTime === slot.startTime && current.kind === slot.kind) {
+        if (
+          current.endTime === slot.startTime &&
+          current.kind === slot.kind &&
+          current.title === slot.title
+        ) {
           current = { ...current, endTime: slot.endTime };
         } else {
           processedUnavailableSlots.push(current);
@@ -759,7 +766,10 @@ export function WeekCalendar({
             focusedIndex={focusedDayIdx}
             visibleIndices={visibleIdx}
             todayRef={now()}
-            isBlocked={(day) => isDayFullyBlocked(day, now())}
+            isBlocked={(day) =>
+              isDayFullyBlocked(day, now()) ||
+              isDayFullyClosed(day, unavailableSlots)
+            }
             hasOwnReservation={(day) =>
               occurrences.some(
                 (occ) =>
@@ -789,7 +799,10 @@ export function WeekCalendar({
                   key={dayIdx}
                   day={day}
                   isToday={isSameDay(day, clock)}
-                  bookable={!isDayFullyBlocked(day, clock)}
+                  bookable={
+                    !isDayFullyBlocked(day, clock) &&
+                    !isDayFullyClosed(day, unavailableSlots)
+                  }
                   onBook={() => openBookingForDay(day)}
                 />
               );
