@@ -52,6 +52,7 @@ export const AUDIT_ACTIONS = {
   closedDayCreate: "closedDay.create",
   closedDayUpdate: "closedDay.update",
   closedDayDelete: "closedDay.delete",
+  closedDaySync: "closedDay.sync",
 
   // Eventos y formularios
   eventCreate: "event.create",
