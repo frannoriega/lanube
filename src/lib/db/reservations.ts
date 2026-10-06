@@ -874,22 +874,7 @@ export async function getUserNextReservations(
   limit: number = 10,
   offset: number = 0,
 ): Promise<ReservationLedgerRow[]> {
-  const rows = await prisma.$queryRaw<
-    {
-      id: string;
-      reservation_id: string;
-      occurrence_start_time: bigint;
-      occurrence_end_time: bigint;
-      reservable_type: ReservableType;
-      reservable_id: string;
-      space_id: string;
-      event_type: EventType;
-      reason: string | null;
-      actor_size: number;
-      status: ReservationStatus;
-      created_at: bigint;
-    }[]
-  >`
+  const rows = await prisma.$queryRaw<UserOccurrenceSqlRow[]>`
     SELECT * FROM get_user_next_reservations(
       ${userId}::text,
       ${spaceId ?? null}::text,
@@ -898,7 +883,50 @@ export async function getUserNextReservations(
     )
   `;
 
-  return rows.map((row) => ({
+  return rows.map(toLedgerRow);
+}
+
+/**
+ * Ocurrencias de un usuario (todas sus reservas, cualquier espacio) que empiezan dentro de
+ * `[fromMs, toMs]`, con las recurrencias expandidas y las excepciones aplicadas. Lo usa el
+ * calendario: antes pedía las próximas 500 desde ahora y filtraba la semana en JS, así que costaba
+ * lo mismo para cualquier semana y, con muchas recurrentes, dejaba de mostrar las reservas propias
+ * en semanas lejanas (milestone 25, DB5). Misma expansión que `getUserNextReservations`: las dos
+ * usan `get_user_reservations_window` (migración `20261007120000`).
+ */
+export async function getUserReservationsInWindow(
+  userId: string,
+  fromMs: number,
+  toMs: number,
+): Promise<ReservationLedgerRow[]> {
+  const rows = await prisma.$queryRaw<UserOccurrenceSqlRow[]>`
+    SELECT * FROM get_user_reservations_window(
+      ${userId}::text,
+      NULL::text,
+      ${fromMs}::bigint,
+      ${toMs}::bigint
+    )
+  `;
+  return rows.map(toLedgerRow);
+}
+
+type UserOccurrenceSqlRow = {
+  id: string;
+  reservation_id: string;
+  occurrence_start_time: bigint;
+  occurrence_end_time: bigint;
+  reservable_type: ReservableType;
+  reservable_id: string;
+  space_id: string;
+  event_type: EventType;
+  reason: string | null;
+  actor_size: number;
+  status: ReservationStatus;
+  created_at: bigint;
+};
+
+function toLedgerRow(row: UserOccurrenceSqlRow): ReservationLedgerRow {
+  return {
     id: row.id,
     reservationId: row.reservation_id,
     occurrenceStartTime: row.occurrence_start_time,
@@ -911,7 +939,7 @@ export async function getUserNextReservations(
     actorSize: Number(row.actor_size),
     status: row.status as ReservationStatus,
     createdAt: row.created_at,
-  }));
+  };
 }
 
 /**
