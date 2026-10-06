@@ -383,6 +383,8 @@
   "381": "Auth & permissions",
   "382": "route.ts",
   "383": "Milestone 3 — Seasonal / date-based landing themes",
+  "384": "🔄 Migration Path",
+  "385": "🎯 Success Metrics",
   "386": "Troubleshooting",
   "387": "Milestone 2 — Audit trail",
   "388": "spaces.ts",
@@ -394,6 +396,7 @@
   "394": "global-error.tsx",
   "395": "🔄 Migration Path",
   "396": "🎯 Success Metrics",
+  "397": "🎯 User Flow Comparison",
   "398": "page.tsx",
   "399": "🎉 Success!",
   "400": "🔄 Migration Path",
@@ -407,7 +410,6 @@
   "411": "route.ts",
   "412": "date-time-picker.tsx",
   "414": "Overview",
-  "416": "participant-upload.ts",
   "417": "Milestone 6 — Teams & Organizations",
   "419": "Foundation: date & time handling",
   "420": "Use case: book a recurring space, then skip one week",
@@ -417,6 +419,5 @@
   "424": "POST",
   "426": "🧪 Testing Implications",
   "427": "🎯 Success Metrics",
-  "428": "🎯 User Flow Comparison",
   "429": "🎉 Success!"
 }

@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 import { FROM_EMAIL, transporter } from "@/lib/email/transport";
 import { logger } from "@/lib/logger";
 
