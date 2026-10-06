@@ -41,8 +41,19 @@ export interface UploadedFile {
   name: string;
   /** Size in bytes. */
   size: number;
-  /** MIME type reported by the browser at upload time. */
+  /**
+   * Tipo MIME **derivado por el servidor a partir de la extensión** (`contentTypeForName`),
+   * nunca el que informó el navegador: ese lo elige quien sube, y el proxy de admin lo servía
+   * tal cual (XSS almacenado, milestone 25 S1). Filas viejas pueden tener todavía el del
+   * navegador; el proxy ignora este campo y lo vuelve a derivar de `name`.
+   */
   type: string;
+  /**
+   * HMAC que agrega el endpoint de subida (`upload-signing.ts`) para que el envío pueda probar
+   * que el descriptor salió de nuestra propia subida y no lo inventó el cliente (milestone 25
+   * S2). No existe en filas guardadas antes de ese cambio.
+   */
+  sig?: string;
 }
 
 /** Narrows an unknown value to an UploadedFile descriptor. */

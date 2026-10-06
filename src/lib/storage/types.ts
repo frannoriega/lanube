@@ -51,6 +51,29 @@ export interface StorageProvider {
    * asset is missing or the url isn't one this provider produced. Callers must authorize first.
    */
   fetchPrivate(url: string): Promise<PrivateFetchResult | null>;
+  /**
+   * La clave de almacenamiento (`<env>/<…carpeta>/<archivo>`, ver {@link buildStorageKey}) a la
+   * que apunta un locator privado de este proveedor, o `null` si no es uno suyo o no es
+   * canónico (segmentos `..`, `.` o vacíos). Lo usa el proxy de admin para exigir que el archivo
+   * esté bajo la carpeta de subidas de participantes de este entorno (milestone 25, S2).
+   */
+  privateKeyOf(url: string): string | null;
+}
+
+/**
+ * ¿Es una clave canónica? Sin segmentos vacíos, `.` ni `..`, sin barras invertidas: lo que
+ * produce {@link buildStorageKey}. Rechazar lo demás es lo que impide salir de la carpeta.
+ */
+export function isCanonicalKey(key: string): boolean {
+  if (!key || key.includes("\\") || key.includes("\0")) return false;
+  return key
+    .split("/")
+    .every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}
+
+/** Prefijo de clave de las subidas de participantes en este entorno. */
+export function participantUploadsPrefix(): string {
+  return `${storageEnvRoot()}/events/participant-uploads/`;
 }
 
 /** Lowercased, filesystem/URL-safe version of an uploaded filename. */

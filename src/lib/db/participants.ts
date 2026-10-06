@@ -10,7 +10,12 @@ import {
   schemaToPublicFields,
   validateForm,
 } from "@/lib/events/form-engine";
-import type { FormSchema } from "@/lib/events/form-schema";
+import {
+  collectUploadedFiles,
+  mapUploadedFiles,
+} from "@/lib/events/form-files";
+import type { FormSchema, UploadedFile } from "@/lib/events/form-schema";
+import { verifyUploadedFile } from "@/lib/events/upload-signing";
 import { weekdaysFromRrule } from "@/lib/db/events";
 import { prisma } from "@/lib/prisma";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
@@ -66,6 +71,31 @@ function formFields(form: FormRow): PublicFormField[] {
   return schemaToPublicFields(formSchema(form));
 }
 
+/** Mensaje cuando una respuesta trae un archivo que no salió de nuestra subida. */
+const INVALID_FILE_MESSAGE =
+  "Uno de los archivos adjuntos no es válido. Volvé a subirlo.";
+
+/**
+ * Cambia cada descriptor de archivo de la respuesta por uno verificado (milestone 25, S2):
+ * - si ya estaba guardado en esta inscripción (`trusted`, misma `url`), se usa **el guardado**
+ *   — así una edición no puede cambiarle el nombre o el tipo, y las filas anteriores a la firma
+ *   siguen siendo editables;
+ * - si no, tiene que traer una firma válida para este evento (`verifyUploadedFile`).
+ * Devuelve `null` si algún archivo no pasa.
+ */
+function verifiedAnswerFiles(
+  answers: unknown,
+  eventId: string,
+  trusted: UploadedFile[] = [],
+): Record<string, unknown> | null {
+  const stored = new Map(trusted.map((f) => [f.url, f]));
+  return mapUploadedFiles(answers, (file) => {
+    const kept = stored.get(file.url);
+    if (kept) return kept;
+    return verifyUploadedFile(file, eventId) ? file : null;
+  }) as Record<string, unknown> | null;
+}
+
 async function resolveCapacity(event: {
   capacity: number | null;
   space: { capacity: number | null } | null;
@@ -76,6 +106,8 @@ async function resolveCapacity(event: {
 export interface PublicFormView {
   status: FormStatus;
   slug: string;
+  /** Id del evento (público: es el de `/events/[id]`). Ata la firma de los archivos subidos. */
+  eventId: string;
   /** Participant-facing event name (the internal form name is never exposed). */
   eventName: string;
   /** Participant-facing event description. */
@@ -154,6 +186,7 @@ export async function getPublicForm(
   return {
     status,
     slug: eventForm.slug,
+    eventId: eventForm.event.id,
     eventName: eventForm.event.name,
     eventDescription: eventForm.event.description,
     eventImageUrl: eventForm.event.imageUrl,
@@ -249,8 +282,13 @@ export async function submitForm(
     const { ok, errors } = validateForm(schema, answers);
     if (!ok) return { ok: false, errors };
 
-    // Drop answers for hidden branches + unknown fields.
-    const cleaned = pruneAnswers(schema, answers);
+    // Drop answers for hidden branches + unknown fields, then accept only files our own upload
+    // signed for this event (milestone 25, S2).
+    const cleaned = verifiedAnswerFiles(
+      pruneAnswers(schema, answers),
+      eventForm.event.id,
+    );
+    if (!cleaned) return { ok: false, message: INVALID_FILE_MESSAGE };
 
     const existing = await tx.eventParticipant.findUnique({
       where: { eventId_email: { eventId: eventForm.event.id, email } },
@@ -336,6 +374,7 @@ export async function getParticipantByToken(token: string) {
   if (!participant) return null;
   const instance = participant.event.form?.form;
   return {
+    eventId: participant.eventId,
     eventName: participant.event.name,
     eventDescription: participant.event.description,
     eventImageUrl: participant.event.imageUrl,
@@ -385,7 +424,14 @@ export async function updateParticipantAnswers(
   const { ok, errors } = validateForm(schema, answers);
   if (!ok) return { ok: false, errors };
 
-  const cleaned = pruneAnswers(schema, answers);
+  // Archivos: los ya guardados en esta inscripción se conservan tal cual; los nuevos tienen que
+  // venir firmados por nuestra subida (milestone 25, S2).
+  const cleaned = verifiedAnswerFiles(
+    pruneAnswers(schema, answers),
+    participant.eventId,
+    collectUploadedFiles(participant.answers),
+  );
+  if (!cleaned) return { ok: false, message: INVALID_FILE_MESSAGE };
 
   await prisma.eventParticipant.update({
     where: { editToken: token },
