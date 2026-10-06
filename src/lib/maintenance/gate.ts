@@ -90,12 +90,39 @@ export function maintenanceBlock(
   return w ? { message: blockedMessage(w), code: MAINTENANCE_CODE } : null;
 }
 
-/** Lector real, atado al origen del pedido (el `fetch` va a la propia app). */
+/**
+ * Tope de lectores en memoria (milestone 25, S4). El origen sale del header `Host`; detrás de un
+ * proxy que lo reenvíe tal cual (VPS), cada `Host` inventado creaba un lector nuevo para siempre.
+ * Un deploy real tiene uno o dos orígenes (dominio y quizás `www`).
+ */
+const MAX_LOADERS = 8;
+
+/**
+ * El origen al que el middleware le pregunta por las ventanas. Por defecto, el del pedido (en
+ * Vercel el `Host` tiene que ser un dominio del deploy, así que es confiable, y cada preview se
+ * pregunta a sí mismo). En un VPS conviene fijarlo con `MAINTENANCE_PROBE_ORIGIN` (p. ej.
+ * `http://127.0.0.1:3000`): así un `Host` arbitrario no puede hacer que el servidor haga pedidos
+ * a otro lado (SSRF, milestone 25 S4). Ver el runbook del milestone 22.
+ */
+export function probeOrigin(requestOrigin: string): string {
+  return process.env.MAINTENANCE_PROBE_ORIGIN?.trim() || requestOrigin;
+}
+
+/** Lector real, atado al origen (el `fetch` va a la propia app). */
 const loaders = new Map<string, ReturnType<typeof createSnapshotLoader>>();
 
-export function loadSnapshotFor(origin: string): Promise<MaintenanceSnapshot> {
+export function loadSnapshotFor(
+  requestOrigin: string,
+): Promise<MaintenanceSnapshot> {
+  const origin = probeOrigin(requestOrigin);
   let loader = loaders.get(origin);
   if (!loader) {
+    // `Map` en orden de inserción: se descarta el lector más viejo.
+    while (loaders.size >= MAX_LOADERS) {
+      const oldest = loaders.keys().next().value;
+      if (oldest === undefined) break;
+      loaders.delete(oldest);
+    }
     loader = createSnapshotLoader(async () => {
       const res = await fetch(`${origin}${PROBE_PATH}?fresh=1`, {
         cache: "no-store",
