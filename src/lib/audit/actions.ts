@@ -48,6 +48,11 @@ export const AUDIT_ACTIONS = {
   reservationTypeDelete: "reservationType.delete",
   reservationTypeReorder: "reservationType.reorder",
 
+  // Días cerrados (milestone 23)
+  closedDayCreate: "closedDay.create",
+  closedDayUpdate: "closedDay.update",
+  closedDayDelete: "closedDay.delete",
+
   // Eventos y formularios
   eventCreate: "event.create",
   eventUpdate: "event.update",

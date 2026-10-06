@@ -1,7 +1,9 @@
+import { nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { ClosedDayStatus } from "@/generated/prisma/client";
-import type { ClosedDay } from "@/generated/prisma/client";
+import type { ClosedDay, Prisma } from "@/generated/prisma/client";
+import type { ClosedDayInput } from "@/lib/schemas/closed-days";
 
 export type { ClosedDay };
 
@@ -28,4 +30,96 @@ export async function getActiveClosuresForWindow(
     },
     orderBy: [{ startDate: "asc" }, { createdAt: "asc" }],
   });
+}
+
+/** Pestañas de `/admin/closed-days`. */
+export type ClosedDayScope = "upcoming" | "review" | "past";
+
+export interface ListClosedDaysResult {
+  items: ClosedDay[];
+  total: number;
+  /** Propuestas sin revisar: alimenta el contador de la pestaña «Por revisar». */
+  pendingReview: number;
+}
+
+/**
+ * Lista paginada para el panel. «Próximos» son los activos que todavía no terminaron (los que
+ * hoy ya están en curso incluidos), «Por revisar» las propuestas pendientes y «Pasados» todo lo
+ * que ya terminó, descartado o no. Las fechas se comparan como texto `YYYY-MM-DD`, que ordena
+ * igual que el calendario.
+ */
+export async function listClosedDays(opts: {
+  scope: ClosedDayScope;
+  /** `YYYY-MM-DD` de hoy en la zona del predio. */
+  todayKey: string;
+  page: number;
+  pageSize: number;
+}): Promise<ListClosedDaysResult> {
+  const { scope, todayKey, page, pageSize } = opts;
+  const where: Prisma.ClosedDayWhereInput =
+    scope === "review"
+      ? { status: ClosedDayStatus.PENDING_REVIEW }
+      : scope === "upcoming"
+        ? { status: ClosedDayStatus.ACTIVE, endDate: { gte: todayKey } }
+        : { endDate: { lt: todayKey } };
+  const [items, total, pendingReview] = await Promise.all([
+    prisma.closedDay.findMany({
+      where,
+      orderBy:
+        scope === "past"
+          ? [{ startDate: "desc" }, { createdAt: "desc" }]
+          : [{ startDate: "asc" }, { createdAt: "asc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.closedDay.count({ where }),
+    prisma.closedDay.count({
+      where: { status: ClosedDayStatus.PENDING_REVIEW },
+    }),
+  ]);
+  return { items, total, pendingReview };
+}
+
+export async function getClosedDay(id: string): Promise<ClosedDay | null> {
+  return prisma.closedDay.findUnique({ where: { id } });
+}
+
+export async function createClosedDay(
+  input: ClosedDayInput,
+): Promise<ClosedDay> {
+  return prisma.closedDay.create({
+    data: {
+      title: input.title,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      source: input.source ?? "MANUAL_OTHER",
+      // Lo carga un admin a mano: nace activo (la revisión es solo para lo sincronizado).
+      status: ClosedDayStatus.ACTIVE,
+    },
+  });
+}
+
+/** Edita un cierre. El origen no se toca: un feriado nacional sigue siéndolo aunque se renombre. */
+export async function updateClosedDay(
+  id: string,
+  input: ClosedDayInput,
+): Promise<ClosedDay> {
+  return prisma.closedDay.update({
+    where: { id },
+    data: {
+      title: input.title,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      ...(input.status ? { status: input.status } : {}),
+      updatedAt: BigInt(nowMs()),
+    },
+  });
+}
+
+export async function deleteClosedDay(id: string): Promise<void> {
+  await prisma.closedDay.delete({ where: { id } });
 }
