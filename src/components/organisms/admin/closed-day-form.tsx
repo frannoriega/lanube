@@ -65,17 +65,6 @@ function parseTime(value: string): number | null {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 
-export function emptyClosedDay(today: string): ClosedDayInput {
-  return {
-    title: "",
-    startDate: today,
-    endDate: today,
-    startTime: null,
-    endTime: null,
-    source: "MANUAL_OTHER",
-  };
-}
-
 export function ClosedDayForm({
   closedDayId,
   defaultValues,

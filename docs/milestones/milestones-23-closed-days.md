@@ -214,10 +214,7 @@ eso los cierres parciales entran desde el principio.
    rango máximo de un año). UI: lista con `DataTable` y pestañas Próximos / Por revisar /
    Pasados con paginación, y formulario como página (`FormPageLayout` + `StickySaveBar` + guardia
    de cambios sin guardar; rango con `DateRangePicker`, interruptor «Todo el día», horarios en
-   pasos de 15 min). ⚠️ **La UI se verificó con `tsc` y `eslint` pero no se vio en un navegador**:
-   Docker (y con él Postgres) se cayó durante la sesión y no se pudo levantar la app. Falta
-   recorrer `/admin/closed-days` (escritorio y teléfono, claro y oscuro), `scripts/mobile-shots.mjs`
-   ya tiene las dos rutas nuevas.
+   pasos de 15 min). Verificada en el navegador con `scripts/mobile-shots.mjs` (teléfono claro/oscuro, tablet, escritorio; sin desbordes). Eso encontró un bug que `tsc` no ve: la página de alta llamaba `emptyClosedDay()` exportada desde un módulo `"use client"`, y una función de un módulo cliente no se puede invocar desde el servidor (500). Ahora vive en `src/lib/closed-days/form-values.ts`.
 5. **Calendario**: tarjetas de cierre en `WeekCalendar`/`DayStrip`, mensajes en reserva móvil.
 6. **Reservas afectadas**: diálogo de resolución al crear/confirmar un cierre.
 7. **Sincronización**: cliente de ArgentinaDatos, upsert idempotente, cron en `vercel.json`,
