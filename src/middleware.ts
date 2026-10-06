@@ -34,6 +34,7 @@ const ADMIN_PATH_PERMISSIONS: Array<[prefix: string, permission: Permission]> =
     ["/admin/roles", "roles:manage"],
     ["/admin/audit", "audit:view"],
     ["/admin/profile-requests", "users:profile-requests:review"],
+    ["/admin/closed-days", "closed-days:manage"],
   ];
 
 /**
