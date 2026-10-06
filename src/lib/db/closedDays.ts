@@ -1,6 +1,9 @@
 import { nowMs } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
-import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
+import {
+  addDaysToDateKey,
+  dateKeyFromUnixMs,
+} from "@/lib/admin/admin-timezone";
 import { ClosedDayStatus } from "@/generated/prisma/client";
 import type { ClosedDay, Prisma } from "@/generated/prisma/client";
 import type { ClosedDayInput } from "@/lib/schemas/closed-days";
@@ -148,4 +151,24 @@ export async function setClosedDayStatus(
   }))
     ? "unchanged"
     : "not_found";
+}
+
+/**
+ * Los cierres **activos** que empiezan en los próximos `days` días o ya están en curso, para
+ * avisarle al público (página de Espacios, `get_contact_info` del asistente). Acotado a 20: es
+ * un aviso, no el listado completo.
+ */
+export async function getUpcomingClosures(
+  todayKey: string,
+  days = 90,
+): Promise<ClosedDay[]> {
+  return prisma.closedDay.findMany({
+    where: {
+      status: ClosedDayStatus.ACTIVE,
+      endDate: { gte: todayKey },
+      startDate: { lte: addDaysToDateKey(todayKey, days) },
+    },
+    orderBy: [{ startDate: "asc" }, { createdAt: "asc" }],
+    take: 20,
+  });
 }

@@ -3,6 +3,12 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { nowMs } from "@/lib/clock";
 import {
+  closureSlotsForRange,
+  closureWindowLabel,
+  closuresOnDay,
+} from "@/lib/closed-days/closures";
+import { getActiveClosuresForWindow } from "@/lib/db/closedDays";
+import {
   getUnavailableSlots,
   getUserNextReservations,
 } from "@/lib/db/reservations";
@@ -77,7 +83,7 @@ export function registerReservationTools(
         })),
         reservation_types: types.map((t) => ({ code: t.code, name: t.name })),
         booking_rules:
-          "Lunes a viernes de 09:00 a 18:00 (hora de Argentina), en intervalos de 15 minutos, con al menos 24 h de anticipación. Toda reserva queda pendiente de aprobación.",
+          "Lunes a viernes de 09:00 a 18:00 (hora de Argentina), en intervalos de 15 minutos, con al menos 24 h de anticipación, y nunca en un día cerrado (feriados, vacaciones: get_availability indica el motivo). Toda reserva queda pendiente de aprobación.",
       });
     },
   );
@@ -88,7 +94,7 @@ export function registerReservationTools(
     "get_availability",
     {
       title: "Ver horarios libres",
-      description: `Devuelve los tramos libres y reservables de un espacio, por día, entre dos fechas (como máximo ${MAX_AVAILABILITY_DAYS} días). Ya descuenta lo ocupado, los fines de semana, el horario de apertura y la anticipación mínima de 24 h.`,
+      description: `Devuelve los tramos libres y reservables de un espacio, por día, entre dos fechas (como máximo ${MAX_AVAILABILITY_DAYS} días). Ya descuenta lo ocupado, los días cerrados (feriados, vacaciones, cierres por horario: cada día indica el motivo en el campo closed), los fines de semana, el horario de apertura y la anticipación mínima de 24 h.`,
       inputSchema: z.object({
         space_id: z.string().describe("Id del espacio (de list_spaces)"),
         from_date: z
@@ -136,13 +142,15 @@ export function registerReservationTools(
       if (days > MAX_AVAILABILITY_DAYS)
         return fail(`El rango no puede superar ${MAX_AVAILABILITY_DAYS} días.`);
 
-      const [slots, own] = await Promise.all([
+      const [slots, own, closures] = await Promise.all([
         getUnavailableSlots(
           space.id,
           unixMsToDate(fromDayMs),
           unixMsToDate(toDayMs),
         ),
         getUserNextReservations(user.registeredUserId, space.id, 200, 0),
+        // Días cerrados (milestone 23): del espacio entero, no de un recurso.
+        getActiveClosuresForWindow(fromDayMs, toDayMs),
       ]);
       // Lo ocupado por otros + las reservas propias vigentes en ese espacio (pedir encima de
       // una propia fallaría igual).
@@ -157,6 +165,11 @@ export function registerReservationTools(
             startMs: Number(r.occurrenceStartTime),
             endMs: Number(r.occurrenceEndTime),
           })),
+        // Un cierre ocupa el horario como cualquier otro bloque.
+        ...closureSlotsForRange(closures, fromDayMs, toDayMs).map((c) => ({
+          startMs: c.startTime,
+          endMs: c.endTime,
+        })),
       ];
       const availability = computeFreeWindows({
         fromDayMs,
@@ -171,6 +184,10 @@ export function registerReservationTools(
         days: availability.map((d) => ({
           date: toVenueDateKey(d.dayStartMs),
           label: formatVenueDay(d.dayStartMs),
+          // Por qué un día aparece sin tramos libres, si es porque el espacio está cerrado.
+          closed: closuresOnDay(closures, toVenueDateKey(d.dayStartMs)).map(
+            (c) => ({ reason: c.title, hours: closureWindowLabel(c) }),
+          ),
           free: d.windows.map((w) => ({
             start: toVenueIso(w.startMs),
             end: toVenueIso(w.endMs),

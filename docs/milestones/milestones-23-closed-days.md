@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2, 3, 4, 5, 6, 7.
+Slices hechos: 1, 2, 3, 4, 5, 6, 7, 8.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -263,7 +263,18 @@ eso los cierres parciales entran desde el principio.
    (lista, diálogo de confirmación, confirmar en lote → pasan a «Próximos», contador
    22 → 20, auditoría con `requestId` compartido). El dato dudoso «Visita del papa León XIV»
    aparece como propuesta, que es justamente para lo que sirve la revisión.
-8. **Superficies públicas y MCP**: `get_availability`, página de contacto/espacios.
+8. **Superficies públicas y MCP** ✅ — `get_availability` descuenta los cierres (los trata como
+   bloques ocupados, recortados al horario de reserva con `closureSlotsForRange`) y cada día
+   trae `closed: [{ reason, hours }]` para que el asistente explique por qué no hay tramos libres
+   (`closuresOnDay`, pura y testeada). `list_spaces` y las instrucciones del servidor aclaran que
+   no se reserva en días cerrados. `get_contact_info` (pública) devuelve `upcoming_closures`
+   (próximos 90 días, máx. 20) para responder «¿está abierto el viernes?» sin consultar un
+   espacio. `/spaces` muestra el aviso «Próximos cierres» (`ClosuresNotice`; no renderiza nada
+   si no hay) con `revalidate = 300` para que no quede congelado desde el último build; las
+   fechas se formatean como texto, sin pasar por `Date`. Verificado en el navegador la página
+   pública; las tools MCP se verificaron con `tsc`/lint/tests de sus piezas puras, **no** contra
+   un cliente real (igual que los milestones 20 y 21, falta probarlas desde Claude/ChatGPT con un
+   deploy público).
 9. **Docs**: CLAUDE.md (modelo, regla, sync), este doc, README de milestones, `OPEN_QUESTIONS.md`.
 
 ## Fuera de alcance (a propósito)
