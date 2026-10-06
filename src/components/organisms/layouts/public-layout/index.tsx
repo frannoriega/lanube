@@ -1,4 +1,5 @@
 import Container from "@/components/atoms/container";
+import { MaintenanceBanner } from "@/components/organisms/maintenance/maintenance-banner";
 import ParticlesLayout from "../particles-layout";
 import Footer from "./footer";
 import Header from "./header";
@@ -16,6 +17,7 @@ export default function PublicLayout({
       >
         Ir al contenido principal
       </a>
+      <MaintenanceBanner className="relative z-40 px-4 py-2 lg:px-16" />
       <Header />
       <main id="main-content">
         <Container>{children}</Container>

@@ -3,6 +3,8 @@
 import { TimeSelect } from "@/components/molecules/time-select";
 import { DatePicker } from "@/components/molecules/date-picker";
 import { EventMeta } from "@/components/molecules/event-meta";
+import { AreaMaintenanceNotice } from "@/components/molecules/maintenance-notice";
+import { useAreaWriteBlock } from "@/components/providers/maintenance";
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { Button } from "@/components/ui/button";
 import {
@@ -147,6 +149,9 @@ export function PublicForm({
     [schema, mode],
   );
 
+  // Mantenimiento (milestone 22): inscribirse, editar o cancelar caen en el área "events".
+  const blockedByMaintenance = useAreaWriteBlock("events") !== null;
+
   const form = useForm<PublicFormValues>({
     resolver: zodResolver(zodSchema),
     defaultValues: {
@@ -267,20 +272,24 @@ export function PublicForm({
           />
         </UploadContext.Provider>
 
+        <AreaMaintenanceNotice area="events" />
         <div className="flex justify-between gap-2">
           {mode === "edit" ? (
             <Button
               type="button"
               variant="destructive"
               onClick={handleCancel}
-              disabled={cancelling}
+              disabled={cancelling || blockedByMaintenance}
             >
               Cancelar inscripción
             </Button>
           ) : (
             <span />
           )}
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting || blockedByMaintenance}
+          >
             {form.formState.isSubmitting
               ? "Enviando…"
               : mode === "submit"

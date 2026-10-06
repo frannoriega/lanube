@@ -1,4 +1,5 @@
 import Logo from "@/components/atoms/logos/lanube";
+import { MaintenanceBanner } from "@/components/organisms/maintenance/maintenance-banner";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import Link from "next/link";
@@ -30,6 +31,7 @@ export default function FormsLayout({
           id="main-content"
           className="mx-auto w-full max-w-2xl flex-1 px-4 pb-16"
         >
+          <MaintenanceBanner className="mb-4" />
           <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
             {children}
           </div>

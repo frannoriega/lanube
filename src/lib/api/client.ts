@@ -6,7 +6,12 @@
  * React Strict Mode double-effects in dev — produce a single network call.
  */
 
+import { MAINTENANCE_CODE } from "@/lib/maintenance/evaluate";
 import { policyGateUrl } from "@/lib/policies/gate";
+
+// Mismo valor que `MAINTENANCE_REFRESH_EVENT` (providers/maintenance.tsx): se repite acá para
+// que este módulo no importe un componente de React.
+const MAINTENANCE_REFRESH_EVENT = "lanube:maintenance-refresh";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -44,9 +49,26 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const body = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     redirectIfPoliciesPending(res.status, body);
+    refreshMaintenanceIfBlocked(res.status, body);
     throw new ApiError(res.status, body);
   }
   return body as T;
+}
+
+/**
+ * Si el 503 es de mantenimiento (milestone 22), se avisa al aviso del sitio para que se
+ * actualice ya: si la acción chocó con una ventana, probablemente el cartel todavía no la
+ * mostraba (empezó después de cargar la página). El `ApiError` se lanza igual, con el motivo.
+ */
+function refreshMaintenanceIfBlocked(status: number, body: unknown): void {
+  if (
+    status !== 503 ||
+    typeof window === "undefined" ||
+    (body as { code?: unknown } | null)?.code !== MAINTENANCE_CODE
+  ) {
+    return;
+  }
+  window.dispatchEvent(new Event(MAINTENANCE_REFRESH_EVENT));
 }
 
 /** Código con el que la API avisa que la cuenta tiene políticas sin aceptar (milestone 19). */
