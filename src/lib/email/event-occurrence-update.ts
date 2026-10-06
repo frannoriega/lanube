@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { listEventParticipants } from "@/lib/db/participants";
