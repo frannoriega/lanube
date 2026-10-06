@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { Ban, Prisma, RegisteredUser, User } from "@/generated/prisma/client";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import bcrypt from "bcryptjs";
+import { cache } from "react";
 import { startOfMonth } from "date-fns";
 
 type RegisteredUserListRow = RegisteredUser & {
@@ -412,7 +413,14 @@ async function getUserByEmailAndPassword(
   return user?.passwordHash && matches ? user : null;
 }
 
-async function getRegisteredUserByEmail(
+/*
+ * `cache()` (React) deduplica la lectura dentro de **un mismo render de servidor**: el layout raíz,
+ * el de `/admin` o `/user` y la página llaman `auth()` cada uno, y cada `auth()` corre el callback
+ * `jwt()`, que repetía estas consultas 2–4 veces por página (milestone 25, P3/DB2). No cambia la
+ * frescura entre pedidos —cada pedido lee de nuevo— y fuera de un render (rutas de API) no
+ * memoiza nada: ahí se llama una sola vez de todos modos.
+ */
+const getRegisteredUserByEmail = cache(async function getRegisteredUserByEmail(
   email: string,
 ): Promise<RegisteredUserWithBans | null> {
   email = await normalizeEmailForIdentityServer(email);
@@ -435,7 +443,7 @@ async function getRegisteredUserByEmail(
     where: { user: { email } },
   });
   return user ?? null;
-}
+});
 
 async function updateUser(
   user: Omit<RegisteredUser, "user">,
