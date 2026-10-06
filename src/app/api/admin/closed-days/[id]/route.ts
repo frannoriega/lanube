@@ -7,6 +7,7 @@ import {
   getClosedDay,
   updateClosedDay,
 } from "@/lib/db/closedDays";
+import { getReservationsAffectedByClosure } from "@/lib/db/closedDayImpact";
 import { serializeJson } from "@/lib/json-bigint";
 import { closedDayInputSchema } from "@/lib/schemas/closed-days";
 import { NextRequest, NextResponse } from "next/server";
@@ -42,7 +43,14 @@ export async function PUT(
     const audit = await beginAudit("ClosedDay", id);
     const closedDay = await updateClosedDay(id, parsed.data);
     await audit.commit(session, AUDIT_ACTIONS.closedDayUpdate);
-    return NextResponse.json(serializeJson(closedDay));
+    const affectedCount =
+      closedDay.status === "DISMISSED"
+        ? 0
+        : (await getReservationsAffectedByClosure(closedDay)).length;
+    return NextResponse.json({
+      ...(serializeJson(closedDay) as object),
+      affectedCount,
+    });
   } catch (err) {
     return apiCatch("admin/closed-days PUT", err);
   }
