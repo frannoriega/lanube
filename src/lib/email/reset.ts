@@ -12,6 +12,11 @@ const transporter = nodemailer.createTransport({
   host: SMTP_SERVER_HOST,
   port: SMTP_SERVER_PORT,
   secure: SMTP_SERVER_SECURE,
+  // En el puerto 587 la conexión arranca en texto plano y se sube a TLS con STARTTLS. Por
+  // defecto nodemailer sigue sin cifrar si el servidor no ofrece STARTTLS (p. ej. un atacante
+  // en el camino que lo quite) y mandaría usuario y contraseña en claro. Con `requireTLS`
+  // se niega a autenticar sin TLS. Solo en producción: el Mailpit local (1025) no tiene TLS.
+  requireTLS: process.env.NODE_ENV === "production",
   auth: {
     user: SMTP_SERVER_USERNAME,
     pass: SMTP_SERVER_PASSWORD,

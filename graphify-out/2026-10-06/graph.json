@@ -20402,7 +20402,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_lib_db_resourcecalendar_reservationoccurrence",
-      "community": 18,
+      "community": 143,
       "norm_label": "reservationoccurrence"
     },
     {
@@ -21299,7 +21299,7 @@
       "label": "sendEmailConfirmation()",
       "file_type": "code",
       "source_file": "src/lib/email/confirmation.ts",
-      "source_location": "L25",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "src_lib_email_confirmation_sendemailconfirmation",
       "community": 38,
@@ -21329,7 +21329,7 @@
       "label": "DecisionRecipient",
       "file_type": "code",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L22",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "src_lib_email_event_decision_decisionrecipient",
       "community": 399,
@@ -21339,7 +21339,7 @@
       "label": "escapeHtml()",
       "file_type": "code",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L29",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "src_lib_email_event_decision_escapehtml",
       "community": 399,
@@ -21349,7 +21349,7 @@
       "label": "approvedHtml()",
       "file_type": "code",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L37",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "src_lib_email_event_decision_approvedhtml",
       "community": 399,
@@ -21359,7 +21359,7 @@
       "label": "rejectedHtml()",
       "file_type": "code",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L57",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "src_lib_email_event_decision_rejectedhtml",
       "community": 399,
@@ -21369,7 +21369,7 @@
       "label": "notifyParticipantsDecision()",
       "file_type": "code",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L85",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "src_lib_email_event_decision_notifyparticipantsdecision",
       "community": 399,
@@ -21429,7 +21429,7 @@
       "label": "dateFmt",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L28",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_datefmt",
       "community": 395,
@@ -21439,7 +21439,7 @@
       "label": "timeFmt",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L34",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_timefmt",
       "community": 395,
@@ -21449,7 +21449,7 @@
       "label": "formatSession()",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L42",
+      "source_location": "L40",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_formatsession",
       "community": 395,
@@ -21459,7 +21459,7 @@
       "label": "OccurrenceChange",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L47",
+      "source_location": "L45",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_occurrencechange",
       "community": 395,
@@ -21469,7 +21469,7 @@
       "label": "OccurrenceBatchPayload",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L58",
+      "source_location": "L56",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_occurrencebatchpayload",
       "community": 395,
@@ -21479,7 +21479,7 @@
       "label": "changeLine()",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L66",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_changeline",
       "community": 395,
@@ -21489,7 +21489,7 @@
       "label": "notifyEventParticipantsBatch()",
       "file_type": "code",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L88",
+      "source_location": "L86",
       "_origin": "ast",
       "id": "src_lib_email_event_occurrence_update_notifyeventparticipantsbatch",
       "community": 395,
@@ -21519,7 +21519,7 @@
       "label": "sendEventRegistrationEmail()",
       "file_type": "code",
       "source_file": "src/lib/email/event-registration.ts",
-      "source_location": "L20",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "src_lib_email_event_registration_sendeventregistrationemail",
       "community": 38,
@@ -21789,7 +21789,7 @@
       "label": "sendResetEmail()",
       "file_type": "code",
       "source_file": "src/lib/email/reset.ts",
-      "source_location": "L28",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "src_lib_email_reset_sendresetemail",
       "community": 38,
@@ -24799,7 +24799,7 @@
       "label": "resolveEmail()",
       "file_type": "code",
       "source_file": "src/lib/notifications/providers/email.ts",
-      "source_location": "L24",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "src_lib_notifications_providers_email_resolveemail",
       "community": 30,
@@ -24809,7 +24809,7 @@
       "label": "emailProvider",
       "file_type": "code",
       "source_file": "src/lib/notifications/providers/email.ts",
-      "source_location": "L40",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "src_lib_notifications_providers_email_emailprovider",
       "community": 30,
@@ -37982,7 +37982,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_technical_changes",
-      "community": 138,
+      "community": 373,
       "norm_label": "\ud83d\udd27 technical changes"
     },
     {
@@ -37992,7 +37992,7 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_state_management",
-      "community": 138,
+      "community": 373,
       "norm_label": "state management"
     },
     {
@@ -38002,7 +38002,7 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_component_architecture",
-      "community": 138,
+      "community": 373,
       "norm_label": "component architecture"
     },
     {
@@ -38012,7 +38012,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_position_calculations",
-      "community": 138,
+      "community": 373,
       "norm_label": "position calculations"
     },
     {
@@ -38022,7 +38022,7 @@
       "source_location": "L213",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_layout_changes",
-      "community": 138,
+      "community": 373,
       "norm_label": "layout changes"
     },
     {
@@ -38042,7 +38042,7 @@
       "source_location": "L239",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_user_flow_comparison",
-      "community": 397,
+      "community": 138,
       "norm_label": "\ud83c\udfaf user flow comparison"
     },
     {
@@ -38052,7 +38052,7 @@
       "source_location": "L241",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_v1_flow_5_steps",
-      "community": 397,
+      "community": 138,
       "norm_label": "v1 flow (5 steps)"
     },
     {
@@ -38062,7 +38062,7 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_v2_flow_4_steps",
-      "community": 397,
+      "community": 138,
       "norm_label": "v2 flow (4 steps)"
     },
     {
@@ -38212,7 +38212,7 @@
       "source_location": "L372",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_bundle_size_impact",
-      "community": 373,
+      "community": 138,
       "norm_label": "\ud83d\udce6 bundle size impact"
     },
     {
@@ -38222,7 +38222,7 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_new_code",
-      "community": 373,
+      "community": 138,
       "norm_label": "new code"
     },
     {
@@ -38232,7 +38232,7 @@
       "source_location": "L386",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_removed_code",
-      "community": 373,
+      "community": 138,
       "norm_label": "removed code"
     },
     {
@@ -38282,7 +38282,7 @@
       "source_location": "L427",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_migration_path",
-      "community": 384,
+      "community": 138,
       "norm_label": "\ud83d\udd04 migration path"
     },
     {
@@ -38292,7 +38292,7 @@
       "source_location": "L429",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_for_existing_users",
-      "community": 384,
+      "community": 138,
       "norm_label": "for existing users"
     },
     {
@@ -38302,7 +38302,7 @@
       "source_location": "L448",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_for_developers",
-      "community": 384,
+      "community": 138,
       "norm_label": "for developers"
     },
     {
@@ -38312,7 +38312,7 @@
       "source_location": "L469",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_backwards_compatibility",
-      "community": 138,
+      "community": 416,
       "norm_label": "\u2705 backwards compatibility"
     },
     {
@@ -38322,7 +38322,7 @@
       "source_location": "L471",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_what_s_preserved",
-      "community": 138,
+      "community": 416,
       "norm_label": "what's preserved"
     },
     {
@@ -38332,7 +38332,7 @@
       "source_location": "L479",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_what_s_different",
-      "community": 138,
+      "community": 416,
       "norm_label": "what's different"
     },
     {
@@ -38342,7 +38342,7 @@
       "source_location": "L487",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_documentation_updates",
-      "community": 138,
+      "community": 428,
       "norm_label": "\ud83d\udcda documentation updates"
     },
     {
@@ -38352,7 +38352,7 @@
       "source_location": "L489",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_new_documents",
-      "community": 138,
+      "community": 428,
       "norm_label": "new documents"
     },
     {
@@ -38362,7 +38362,7 @@
       "source_location": "L502",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_updated_documents",
-      "community": 138,
+      "community": 428,
       "norm_label": "updated documents"
     },
     {
@@ -38372,7 +38372,7 @@
       "source_location": "L513",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_success_metrics",
-      "community": 385,
+      "community": 138,
       "norm_label": "\ud83c\udfaf success metrics"
     },
     {
@@ -38382,7 +38382,7 @@
       "source_location": "L515",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_user_experience_metrics",
-      "community": 385,
+      "community": 138,
       "norm_label": "user experience metrics"
     },
     {
@@ -38392,7 +38392,7 @@
       "source_location": "L522",
       "_origin": "ast",
       "id": "docs_changes_meeting_room_v2_changes_technical_metrics",
-      "community": 385,
+      "community": 138,
       "norm_label": "technical metrics"
     },
     {
@@ -49883,7 +49883,7 @@
       "weight": 1.0,
       "context": "import",
       "source": "package_devdependencies_prisma",
-      "target": "src_types_prisma",
+      "target": "src_lib_prisma",
       "confidence_score": 1.0
     },
     {
@@ -127399,7 +127399,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L96",
+      "source_location": "L94",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update_notifyeventparticipantsbatch",
       "target": "src_lib_constants_participants_spot_holding_statuses"
@@ -132543,7 +132543,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L95",
+      "source_location": "L93",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update_notifyeventparticipantsbatch",
       "target": "src_lib_db_participants_listeventparticipants"
@@ -135958,7 +135958,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/confirmation.ts",
-      "source_location": "L25",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "src_lib_email_confirmation",
       "target": "src_lib_email_confirmation_sendemailconfirmation",
@@ -136000,7 +136000,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L37",
+      "source_location": "L35",
       "weight": 1.0,
       "source": "src_lib_email_event_decision",
       "target": "src_lib_email_event_decision_approvedhtml",
@@ -136010,7 +136010,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L22",
+      "source_location": "L20",
       "weight": 1.0,
       "source": "src_lib_email_event_decision",
       "target": "src_lib_email_event_decision_decisionrecipient",
@@ -136020,7 +136020,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L29",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "src_lib_email_event_decision",
       "target": "src_lib_email_event_decision_escapehtml",
@@ -136030,7 +136030,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L85",
+      "source_location": "L83",
       "weight": 1.0,
       "source": "src_lib_email_event_decision",
       "target": "src_lib_email_event_decision_notifyparticipantsdecision",
@@ -136040,7 +136040,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L57",
+      "source_location": "L55",
       "weight": 1.0,
       "source": "src_lib_email_event_decision",
       "target": "src_lib_email_event_decision_rejectedhtml",
@@ -136083,7 +136083,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L46",
+      "source_location": "L44",
       "weight": 1.0,
       "source": "src_lib_email_event_decision_approvedhtml",
       "target": "src_lib_email_event_decision_escapehtml",
@@ -136094,7 +136094,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L59",
+      "source_location": "L57",
       "weight": 1.0,
       "source": "src_lib_email_event_decision_rejectedhtml",
       "target": "src_lib_email_event_decision_escapehtml",
@@ -136105,7 +136105,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L110",
+      "source_location": "L108",
       "weight": 1.0,
       "source": "src_lib_email_event_decision_notifyparticipantsdecision",
       "target": "src_lib_email_event_decision_approvedhtml",
@@ -136116,7 +136116,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-decision.ts",
-      "source_location": "L111",
+      "source_location": "L109",
       "weight": 1.0,
       "source": "src_lib_email_event_decision_notifyparticipantsdecision",
       "target": "src_lib_email_event_decision_rejectedhtml",
@@ -136168,7 +136168,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L66",
+      "source_location": "L64",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_changeline",
@@ -136178,7 +136178,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L28",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_datefmt",
@@ -136188,7 +136188,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L42",
+      "source_location": "L40",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_formatsession",
@@ -136198,7 +136198,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L88",
+      "source_location": "L86",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_notifyeventparticipantsbatch",
@@ -136208,7 +136208,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L58",
+      "source_location": "L56",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_occurrencebatchpayload",
@@ -136218,7 +136218,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L47",
+      "source_location": "L45",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_occurrencechange",
@@ -136228,7 +136228,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L34",
+      "source_location": "L32",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update",
       "target": "src_lib_email_event_occurrence_update_timefmt",
@@ -136337,7 +136337,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L67",
+      "source_location": "L65",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update_changeline",
       "target": "src_lib_email_event_occurrence_update_formatsession",
@@ -136348,7 +136348,7 @@
       "context": "argument",
       "confidence": "INFERRED",
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L129",
+      "source_location": "L127",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update_notifyeventparticipantsbatch",
       "target": "src_lib_email_event_occurrence_update_changeline",
@@ -136360,7 +136360,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/email/event-occurrence-update.ts",
-      "source_location": "L193",
+      "source_location": "L191",
       "weight": 1.0,
       "source": "src_lib_email_event_occurrence_update_notifyeventparticipantsbatch",
       "target": "src_lib_notifications_dispatch_notify"
@@ -136369,7 +136369,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/event-registration.ts",
-      "source_location": "L20",
+      "source_location": "L18",
       "weight": 1.0,
       "source": "src_lib_email_event_registration",
       "target": "src_lib_email_event_registration_sendeventregistrationemail",
@@ -136956,7 +136956,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/email/reset.ts",
-      "source_location": "L28",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "src_lib_email_reset",
       "target": "src_lib_email_reset_sendresetemail",
@@ -144784,7 +144784,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/notifications/providers/email.ts",
-      "source_location": "L40",
+      "source_location": "L38",
       "weight": 1.0,
       "source": "src_lib_notifications_providers_email",
       "target": "src_lib_notifications_providers_email_emailprovider",
@@ -144794,7 +144794,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/notifications/providers/email.ts",
-      "source_location": "L24",
+      "source_location": "L22",
       "weight": 1.0,
       "source": "src_lib_notifications_providers_email",
       "target": "src_lib_notifications_providers_email_resolveemail",
@@ -168495,5 +168495,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b694e686abcb5a34fb0c6660b6692788babd11c3"
+  "built_at_commit": "62025263904c80467f9793d9c71aba0a181870d5"
 }

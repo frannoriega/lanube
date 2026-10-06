@@ -1,16 +1,16 @@
-# Graph Report - lanube  (2026-10-06)
+# Graph Report - lanube  (2026-10-05)
 
 ## Corpus Check
-- 786 files · ~1,443,936 words
+- 786 files · ~1,443,764 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4743 nodes · 11289 edges · 421 communities (237 shown, 184 thin omitted)
+- 4743 nodes · 11289 edges · 420 communities (236 shown, 184 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 90 edges (avg confidence: 0.75)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b694e686`
+- Built from commit: `62025263`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -390,8 +390,6 @@
 - [[_COMMUNITY_Auth & permissions|Auth & permissions]]
 - [[_COMMUNITY_route.ts|route.ts]]
 - [[_COMMUNITY_Milestone 3 — Seasonal  date-based landing themes|Milestone 3 — Seasonal / date-based landing themes]]
-- [[_COMMUNITY_🔄 Migration Path|🔄 Migration Path]]
-- [[_COMMUNITY_🎯 Success Metrics|🎯 Success Metrics]]
 - [[_COMMUNITY_Troubleshooting|Troubleshooting]]
 - [[_COMMUNITY_spaces.ts|spaces.ts]]
 - [[_COMMUNITY_Use case book a recurring space, then skip one week|Use case: book a recurring space, then skip one week]]
@@ -401,7 +399,6 @@
 - [[_COMMUNITY_0002-magic-link-login|0002-magic-link-login.md]]
 - [[_COMMUNITY_🔄 Migration Path|🔄 Migration Path]]
 - [[_COMMUNITY_🎯 Success Metrics|🎯 Success Metrics]]
-- [[_COMMUNITY_🎯 User Flow Comparison|🎯 User Flow Comparison]]
 - [[_COMMUNITY_page.tsx|page.tsx]]
 - [[_COMMUNITY_🎉 Success!|🎉 Success!]]
 - [[_COMMUNITY_🔄 Migration Path|🔄 Migration Path]]
@@ -415,6 +412,7 @@
 - [[_COMMUNITY_route.ts|route.ts]]
 - [[_COMMUNITY_date-time-picker.tsx|date-time-picker.tsx]]
 - [[_COMMUNITY_Overview|Overview]]
+- [[_COMMUNITY_participant-upload.ts|participant-upload.ts]]
 - [[_COMMUNITY_Milestone 6 — Teams & Organizations|Milestone 6 — Teams & Organizations]]
 - [[_COMMUNITY_Foundation date & time handling|Foundation: date & time handling]]
 - [[_COMMUNITY_Use case book a recurring space, then skip one week|Use case: book a recurring space, then skip one week]]
@@ -424,6 +422,7 @@
 - [[_COMMUNITY_POST|POST]]
 - [[_COMMUNITY_🧪 Testing Implications|🧪 Testing Implications]]
 - [[_COMMUNITY_🎯 Success Metrics|🎯 Success Metrics]]
+- [[_COMMUNITY_🎯 User Flow Comparison|🎯 User Flow Comparison]]
 - [[_COMMUNITY_🎉 Success!|🎉 Success!]]
 
 ## God Nodes (most connected - your core abstractions)
@@ -458,7 +457,7 @@
 - 4-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
 - 5-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 
-## Communities (421 total, 184 thin omitted)
+## Communities (420 total, 184 thin omitted)
 
 ### Community 0 - "Admin Pages & Check-In"
 Cohesion: 0.09
@@ -529,8 +528,8 @@ Cohesion: 0.15
 Nodes (17): Breakout(), LogoCard(), LogoCardProps, Marquee(), MarqueeDirection, MarqueeProps, AlliesSection(), MembersSection() (+9 more)
 
 ### Community 18 - "Prisma & Email Infrastructure"
-Cohesion: 0.13
-Nodes (34): format(), BookingForm(), bookingFormSchema, BookingFormValues, formatDuration(), TIME_OPTIONS, BUSINESS_HOURS, firstBookableDayIndex() (+26 more)
+Cohesion: 0.14
+Nodes (33): format(), BookingForm(), bookingFormSchema, BookingFormValues, formatDuration(), TIME_OPTIONS, BUSINESS_HOURS, firstBookableDayIndex() (+25 more)
 
 ### Community 19 - "UI Card & Drawer Components"
 Cohesion: 0.11
@@ -826,7 +825,7 @@ Nodes (7): 1. Drag-and-Drop Selection, 2. 15-Minute Intervals, 3. Continuous Cal
 
 ### Community 138 - "Meeting Room Calendar V2 - Drag & Drop Implementation"
 Cohesion: 0.09
-Nodes (22): ✅ Backwards Compatibility, 📊 Comparison Table, Component Architecture, 🎉 Conclusion, 📚 Documentation Updates, Future Optimizations, Layout Changes, Meeting Room Calendar V2 - Drag & Drop Implementation (+14 more)
+Nodes (23): 📦 Bundle Size Impact, 📊 Comparison Table, 🎉 Conclusion, For Developers, For Existing Users, Future Optimizations, Meeting Room Calendar V2 - Drag & Drop Implementation, 🔄 Migration Path (+15 more)
 
 ### Community 139 - "page.tsx"
 Cohesion: 0.06
@@ -845,8 +844,8 @@ Cohesion: 0.33
 Nodes (5): Anti-Patterns Verdict, Design Health Score, Minor Observations, Persona Red Flags, Priority Issues
 
 ### Community 143 - "route.ts"
-Cohesion: 0.12
-Nodes (23): DashboardStats, getDashboardStatsByEmail(), getDashboardStatsByUserId(), toHours(), getUnavailableSlots(), getUserNextReservations(), CalendarUnavailableSlot, EventOccurrenceRow (+15 more)
+Cohesion: 0.11
+Nodes (24): DashboardStats, getDashboardStatsByEmail(), getDashboardStatsByUserId(), toHours(), getUnavailableSlots(), getUserNextReservations(), CalendarUnavailableSlot, EventOccurrenceRow (+16 more)
 
 ### Community 144 - "Files Created"
 Cohesion: 0.33
@@ -1213,8 +1212,8 @@ Cohesion: 0.17
 Nodes (11): FramedImage(), components, Markdown(), READING_CLASSES, GeneratedCover(), GRADIENTS, NewsCover(), COVER_VIEWBOX (+3 more)
 
 ### Community 373 - "CREATE Operations"
-Cohesion: 0.67
-Nodes (3): 📦 Bundle Size Impact, New Code, Removed Code
+Cohesion: 0.40
+Nodes (5): Component Architecture, Layout Changes, Position Calculations, State Management, 🔧 Technical Changes
 
 ### Community 375 - "🗄️ Database Requirements"
 Cohesion: 0.12
@@ -1252,14 +1251,6 @@ Nodes (3): SpaceEditable, SpaceInput, SpaceFaq
 Cohesion: 0.22
 Nodes (8): Current state, Design constraint: themes must stay inside the brand system, not outside it, Implementation plan, Milestone 3 — Seasonal / date-based landing themes, Open questions (needs a product decision before/while building), Resolved (2026-09-18), Use case, What needs building
 
-### Community 384 - "🔄 Migration Path"
-Cohesion: 0.67
-Nodes (3): For Developers, For Existing Users, 🔄 Migration Path
-
-### Community 385 - "🎯 Success Metrics"
-Cohesion: 0.67
-Nodes (3): 🎯 Success Metrics, Technical Metrics, User Experience Metrics
-
 ### Community 386 - "Troubleshooting"
 Cohesion: 0.23
 Nodes (8): isOnLedgerGrid(), BOOKING_WINDOW_MESSAGES, BookingWindowViolation, checkBookingWindow(), localMinutes(), localWeekday(), NOW, validateUserReservationWindow()
@@ -1287,10 +1278,6 @@ Nodes (12): SPOT_HOLDING_STATUSES, changeLine(), dateFmt, formatSession(), notif
 ### Community 396 - "🎯 Success Metrics"
 Cohesion: 0.40
 Nodes (5): 1. **Maintainability**, 2. **Consistency**, 3. **Extensibility**, 4. **Code Quality**, 🎯 Benefits
-
-### Community 397 - "🎯 User Flow Comparison"
-Cohesion: 0.67
-Nodes (3): 🎯 User Flow Comparison, V1 Flow (5 steps), V2 Flow (4 steps)
 
 ### Community 398 - "page.tsx"
 Cohesion: 0.40
@@ -1336,6 +1323,10 @@ Nodes (3): After (V2) - Drag & Drop System, Before (V1) - Slot-Based System, �
 Cohesion: 0.33
 Nodes (6): How the pieces fit together, Non-goals, Overview, Relationship to other docs in this repo, What this is, Who it's for
 
+### Community 416 - "participant-upload.ts"
+Cohesion: 0.67
+Nodes (3): ✅ Backwards Compatibility, What's Different, What's Preserved
+
 ### Community 417 - "Milestone 6 — Teams & Organizations"
 Cohesion: 0.33
 Nodes (5): Engineering input — where I'd push back, Milestone 6 — Teams & Organizations, Open questions (needs a product decision before/while building), Use case (as described 2026-09-21), What needs building
@@ -1359,6 +1350,10 @@ Nodes (3): 🎨 Design Highlights, Responsive Design, Visual States
 ### Community 427 - "🎯 Success Metrics"
 Cohesion: 0.67
 Nodes (3): Load Times, Optimizations, 📊 Performance
+
+### Community 428 - "🎯 User Flow Comparison"
+Cohesion: 0.67
+Nodes (3): 📚 Documentation Updates, New Documents, Updated Documents
 
 ### Community 429 - "🎉 Success!"
 Cohesion: 0.67

@@ -237,18 +237,18 @@ Si necesitás compilar sin tocar la base (poco habitual), podés usar `npm run b
 
 Configura las siguientes variables de entorno en Vercel:
 
-| Variable                        | Función                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------- |
-| `DATABASE_URL`                  | URL de conexión a PostgreSQL (**requerida en build** para `prisma migrate deploy`) |
-| `NEXTAUTH_URL`                  | URL pública de la aplicación                                                       |
-| `NEXTAUTH_SECRET`               | Secreto para encriptación de cookies                                               |
-| `SMTP_SERVER_HOST`              | Host del servidor SMTP                                                             |
-| `SMTP_SERVER_PORT`              | Puerto del servidor SMTP                                                           |
-| `SMTP_SERVER_USERNAME`          | Usuario del servidor SMTP                                                          |
-| `SMTP_SERVER_PASSWORD`          | Contraseña del servidor SMTP                                                       |
-| `SMTP_SERVER_SECURE`            | `true` en producción para habilitar TLS                                            |
-| `TURNSTILE_SECRET_KEY`          | Secreto de Cloudflare Turnstile                                                    |
-| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Cloudflare Turnstile                                             |
+| Variable                        | Función                                                                                                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | URL de conexión a PostgreSQL (**requerida en build** para `prisma migrate deploy`)                                |
+| `NEXTAUTH_URL`                  | URL pública de la aplicación                                                                                      |
+| `NEXTAUTH_SECRET`               | Secreto para encriptación de cookies                                                                              |
+| `SMTP_SERVER_HOST`              | Host del servidor SMTP                                                                                            |
+| `SMTP_SERVER_PORT`              | Puerto del servidor SMTP                                                                                          |
+| `SMTP_SERVER_USERNAME`          | Usuario del servidor SMTP                                                                                         |
+| `SMTP_SERVER_PASSWORD`          | Contraseña del servidor SMTP                                                                                      |
+| `SMTP_SERVER_SECURE`            | `true` solo para TLS implícito (465); `false` con STARTTLS (587), que en producción es obligatorio (`requireTLS`) |
+| `TURNSTILE_SECRET_KEY`          | Secreto de Cloudflare Turnstile                                                                                   |
+| `NEXT_PUBLIC_TURNSTILE_SITEKEY` | Key del widget de Cloudflare Turnstile                                                                            |
 
 ### 2. Deploy
 
