@@ -5,7 +5,7 @@
  * (`calendar-utils.test.ts`).
  */
 import { hasMinimumNotice } from "@/lib/reservations/booking-window";
-import { addDays, addWeeks, getDay, startOfWeek } from "date-fns";
+import { addDays, addWeeks, getDay, isSameDay, startOfWeek } from "date-fns";
 
 /** Horario de atención: el eje vertical del calendario va de START a END. */
 export const BUSINESS_HOURS = {
@@ -157,4 +157,32 @@ export function firstBookableWeekStart(now: Date): Date {
   return firstBookableDayIndex(days, now) === -1
     ? addWeeks(current, 1)
     : current;
+}
+
+/**
+ * ¿Los cierres del espacio (`kind: "closed"`, milestone 23) cubren **todo** el horario de
+ * reserva de `day`? Entonces no tiene sentido ofrecer «Reservar» ese día: se pediría algo que
+ * el servidor va a rechazar. Une los cierres del día (dos cierres parciales contiguos, mañana y
+ * tarde, también cierran el día completo). Los tramos ya vienen recortados a 09:00–18:00.
+ */
+export function isDayFullyClosed(
+  day: Date,
+  slots: ReadonlyArray<{ kind?: string; startTime: number; endTime: number }>,
+): boolean {
+  const minutes = (ms: number) => {
+    const d = fromUtcMs(ms);
+    return d.getHours() * 60 + d.getMinutes();
+  };
+  const closed = slots
+    .filter(
+      (s) => s.kind === "closed" && isSameDay(fromUtcMs(s.startTime), day),
+    )
+    .map((s) => [minutes(s.startTime), minutes(s.endTime)] as const)
+    .sort((a, b) => a[0] - b[0]);
+  let covered = BUSINESS_HOURS.START * 60;
+  for (const [from, to] of closed) {
+    if (from > covered) break;
+    covered = Math.max(covered, to);
+  }
+  return covered >= BUSINESS_HOURS.END * 60;
 }

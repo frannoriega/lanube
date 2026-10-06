@@ -150,6 +150,26 @@ export function DayColumn({
       {!blocked &&
         unavailableSlots.map((slot, idx) => {
           const style = getSlotStyle(slot);
+          // Un cierre del espacio (milestone 23) no es un rayado anónimo: dice por qué.
+          if (slot.kind === "closed") {
+            return (
+              <div
+                key={idx}
+                className="absolute z-50 w-full px-0.5"
+                style={{ top: style.top, height: style.height }}
+                title={slot.title}
+              >
+                <div className="flex h-full flex-col items-center justify-start gap-0.5 overflow-hidden rounded border border-border bg-muted px-1 py-1.5 text-center text-xs text-foreground">
+                  <span className="font-semibold">Cerrado</span>
+                  {slot.title ? (
+                    <span className="line-clamp-4 text-muted-foreground [overflow-wrap:anywhere]">
+                      {slot.title}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            );
+          }
           return (
             <div
               key={idx}

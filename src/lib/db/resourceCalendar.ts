@@ -3,6 +3,8 @@ import {
   getUserNextReservations,
 } from "@/lib/db/reservations";
 import { nowMs } from "@/lib/clock";
+import { closureSlotsForRange } from "@/lib/closed-days/closures";
+import { getActiveClosuresForWindow } from "@/lib/db/closedDays";
 import { logger } from "@/lib/logger";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
@@ -35,13 +37,19 @@ export interface ReservationOccurrence {
 }
 
 /** Why a time slot is unavailable. Extend this union for new blocking reasons. */
-export type UnavailableSlotKind = "resource_full" | "cross_resource";
+export type UnavailableSlotKind =
+  | "resource_full"
+  | "cross_resource"
+  /** Día cerrado (milestone 23): el espacio no atiende; lleva el motivo en `title`. */
+  | "closed";
 
 export interface CalendarUnavailableSlot {
   spaceId: string;
   startTime: number;
   endTime: number;
   kind: UnavailableSlotKind;
+  /** Solo `closed`: el motivo del cierre, para mostrarlo en el calendario. */
+  title?: string;
 }
 
 /** Returns the RegisteredUser ID for a given account email, or null. */
@@ -193,7 +201,7 @@ export async function getCalendarDataBySpace(
   const rangeStartMs = dateToUnixMs(startDate);
   const rangeEndMs = dateToUnixMs(endDate);
 
-  const [unavailableSlotsRaw, allUserReservations, eventOccurrences] =
+  const [unavailableSlotsRaw, allUserReservations, eventOccurrences, closures] =
     await Promise.all([
       getUnavailableSlots(spaceId, startDate, endDate, userId),
       // `get_user_next_reservations` devuelve las ocurrencias en orden ascendente desde
@@ -214,6 +222,8 @@ export async function getCalendarDataBySpace(
         0,
       ),
       getEventOccurrencesForSpace(spaceId, startDate, endDate),
+      // Días cerrados (milestone 23): del espacio entero, así que no dependen de `spaceId`.
+      getActiveClosuresForWindow(Number(rangeStartMs), Number(rangeEndMs)),
     ]);
 
   if (
@@ -292,8 +302,26 @@ export async function getCalendarDataBySpace(
         ),
     );
 
+  // Cada cierre se dibuja con su motivo; el cliente los bloquea como cualquier otro tramo no
+  // disponible. Ya vienen expandidos por día y recortados al horario de reserva.
+  const closedSlots: CalendarUnavailableSlot[] = closureSlotsForRange(
+    closures,
+    Number(rangeStartMs),
+    Number(rangeEndMs),
+  ).map((c) => ({
+    spaceId,
+    startTime: c.startTime,
+    endTime: c.endTime,
+    kind: "closed" as const,
+    title: c.title,
+  }));
+
   return {
-    unavailableSlots: [...resourceFullSlots, ...crossResourceSlots],
+    unavailableSlots: [
+      ...resourceFullSlots,
+      ...crossResourceSlots,
+      ...closedSlots,
+    ],
     userReservations: [...userReservations, ...eventOccurrences],
   };
 }

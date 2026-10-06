@@ -7,7 +7,8 @@ import { serializeJson } from "@/lib/json-bigint";
 import { closedDayInputSchema } from "@/lib/schemas/closed-days";
 import { NextRequest, NextResponse } from "next/server";
 
-// La lectura pública (el calendario muestra los cierres) va por GET /api/closed-days.
+// La lectura pública no pasa por acá: el calendario de reservas recibe los cierres dentro de
+// la respuesta de GET /api/resources/[spaceId] (getCalendarDataBySpace).
 export async function POST(request: NextRequest) {
   try {
     const { error, session } = await requirePermission("closed-days:manage");

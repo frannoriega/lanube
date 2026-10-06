@@ -4,6 +4,7 @@ import {
   firstBookableWeekStart,
   getCurrentWorkWeekStart,
   isDayFullyBlocked,
+  isDayFullyClosed,
   visibleDayCountFor,
   visibleDayIndices,
 } from "./calendar-utils";
@@ -79,5 +80,35 @@ describe("getCurrentWorkWeekStart / firstBookableWeekStart", () => {
 
   it("el jueves a la noche toda la semana está bloqueada: abre en la siguiente (hallazgo F)", () => {
     expect(firstBookableWeekStart(new Date(2026, 9, 8, 20))).toEqual(mon12);
+  });
+});
+
+describe("isDayFullyClosed", () => {
+  const day = new Date(2026, 9, 2); // vie 2 oct 2026, hora local
+  const slot = (fromH: number, toH: number, kind = "closed") => ({
+    kind,
+    startTime: new Date(2026, 9, 2, fromH).getTime(),
+    endTime: new Date(2026, 9, 2, toH).getTime(),
+  });
+
+  it("es true con un cierre de 09:00 a 18:00", () => {
+    expect(isDayFullyClosed(day, [slot(9, 18)])).toBe(true);
+  });
+
+  it("es false con un cierre parcial", () => {
+    expect(isDayFullyClosed(day, [slot(14, 18)])).toBe(false);
+  });
+
+  it("une cierres contiguos que juntos cubren el día", () => {
+    expect(isDayFullyClosed(day, [slot(14, 18), slot(9, 14)])).toBe(true);
+  });
+
+  it("no lo cierra si queda un hueco entre dos cierres", () => {
+    expect(isDayFullyClosed(day, [slot(9, 12), slot(14, 18)])).toBe(false);
+  });
+
+  it("ignora los tramos que no son cierres y los de otro día", () => {
+    expect(isDayFullyClosed(day, [slot(9, 18, "resource_full")])).toBe(false);
+    expect(isDayFullyClosed(new Date(2026, 9, 5), [slot(9, 18)])).toBe(false);
   });
 });
