@@ -6,10 +6,12 @@ import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import {
   consumeResetToken,
   createResetToken,
+  discardResetToken,
   resendEmailConfirmationIfExpired,
 } from "@/lib/db/verificationTokens";
 import { prisma } from "@/lib/prisma";
 import { sendResetEmail } from "@/lib/email/reset";
+import { assertMailerAvailable } from "@/lib/email/transport";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/request-ip";
@@ -69,6 +71,10 @@ export async function POST(request: NextRequest) {
         },
       );
     }
+    // El único fin de este endpoint es entregar un enlace: con el correo caído se falla (503)
+    // en vez de responder "enlace enviado". Va antes de buscar la cuenta para que la
+    // respuesta no dependa de si el correo existe (anti-enumeración).
+    await assertMailerAvailable("auth/reset POST");
     const email = await normalizeEmailForIdentityServer(clientNormalizedEmail);
     const user = await getRegisteredUserByEmail(email);
     if (!user) {
@@ -85,7 +91,16 @@ export async function POST(request: NextRequest) {
       const token = await createResetToken(user.id);
       const { error } = await sendResetEmail(user.user.email, token);
       if (error) {
+        // Falló entre la verificación y el envío (carrera poco probable): no se deja un
+        // enlace válido que nadie recibió, y se avisa en vez de mentir.
         logger.warn("reset email failed to send", { error });
+        await discardResetToken(token);
+        return NextResponse.json(
+          {
+            message: "No pudimos enviar el correo. Intentá de nuevo más tarde.",
+          },
+          { status: 503 },
+        );
       }
     }
     return NextResponse.json(
