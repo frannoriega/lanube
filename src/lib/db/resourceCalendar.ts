@@ -1,22 +1,15 @@
 import {
   getUnavailableSlots,
-  getUserNextReservations,
+  getUserReservationsInWindow,
 } from "@/lib/db/reservations";
 import { nowMs } from "@/lib/clock";
 import { closureSlotsForRange } from "@/lib/closed-days/closures";
 import { getActiveClosuresForWindow } from "@/lib/db/closedDays";
-import { logger } from "@/lib/logger";
 import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
 import { ReservableType } from "@/generated/prisma/client";
-
-/**
- * Cuántas ocurrencias próximas del usuario se traen para armar una semana de calendario.
- * Ver la nota en su call site para entender por qué esto es un techo y no una ventana.
- */
-const USER_OCCURRENCE_FETCH_LIMIT = 500;
 
 export interface ReservationOccurrence {
   reservationId: string;
@@ -204,37 +197,19 @@ export async function getCalendarDataBySpace(
   const [unavailableSlotsRaw, allUserReservations, eventOccurrences, closures] =
     await Promise.all([
       getUnavailableSlots(spaceId, startDate, endDate, userId),
-      // `get_user_next_reservations` devuelve las ocurrencias en orden ascendente desde
-      // ahora, y el loop de más abajo las filtra a la semana visible — así que el límite se
-      // consume con todo lo que hay entre hoy y esa semana, no con la semana en sí. Con 100,
-      // un usuario con unas pocas reservas recurrentes lo agotaba en semanas, y a partir de
-      // ahí sus propias reservas y sus bloques de conflicto entre espacios dejaban de
-      // dibujarse en las semanas siguientes, en silencio (milestone-12, Parte 4).
-      //
-      // Se subió el techo en lugar de quitarlo, y se acompaña con un warning de desarrollo:
-      // la corrección real es meter la ventana dentro de la función SQL para que devuelva
-      // solo el rango pedido. Eso cambia su firma y tiene otros callers, así que no se
-      // incluye acá.
-      getUserNextReservations(
+      // Solo la ventana visible, y desde ahora (las ocurrencias pasadas de esta semana no se
+      // dibujan como propias, igual que antes). Antes se pedían las próximas 500 y se filtraba
+      // acá: costaba lo mismo para cualquier semana y el techo se agotaba con muchas
+      // recurrentes (milestone 25, DB5).
+      getUserReservationsInWindow(
         userId,
-        undefined,
-        USER_OCCURRENCE_FETCH_LIMIT,
-        0,
+        Math.max(nowMs(), Number(rangeStartMs)),
+        Number(rangeEndMs),
       ),
       getEventOccurrencesForSpace(spaceId, startDate, endDate),
       // Días cerrados (milestone 23): del espacio entero, así que no dependen de `spaceId`.
       getActiveClosuresForWindow(Number(rangeStartMs), Number(rangeEndMs)),
     ]);
-
-  if (
-    allUserReservations.length === USER_OCCURRENCE_FETCH_LIMIT &&
-    process.env.NODE_ENV !== "production"
-  ) {
-    logger.warn(
-      "getCalendarDataBySpace hit USER_OCCURRENCE_FETCH_LIMIT; later weeks may be missing the user's own reservations",
-      { userId, spaceId, limit: USER_OCCURRENCE_FETCH_LIMIT },
-    );
-  }
 
   const recurringIds = new Set(
     (
