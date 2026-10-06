@@ -1,8 +1,8 @@
 # Milestone 24 — Áreas comunes («amenities»)
 
-**Estado:** implementado (2026-10-07) en la rama `milestone-24` (desde `preview`), sin commitear
-al escribir este doc. Numeración: el 22 se trabaja en otra rama y existe una rama `milestone-23`
-ajena a este trabajo; el usuario pidió este como 24.
+**Estado:** implementado y mergeado (2026-10-07). Se desarrolló en la rama `milestone-24` (desde
+`preview`) y ya está en `preview` y en `main`. Numeración: existió una rama `milestone-23` ajena a
+este trabajo; el usuario pidió este como 24.
 
 ## Pedido
 
