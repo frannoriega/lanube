@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2, 3.
+Slices hechos: 1, 2, 3, 4.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -199,8 +199,25 @@ eso los cierres parciales entran desde el principio.
    reservas de USUARIO no recurrentes porque `create_event_reservation()` crea eventos semanales
    que forzosamente cruzan feriados y fallarían. Verificado contra la base local (franjas,
    bordes, cierres pendientes que no cierran, y rechazo/aceptación de punta a punta).
-4. **Admin CRUD + auditoría + permiso**: página, API con `requirePermission`, registro de
-   auditoría, rbac/middleware/nav.
+4. **Admin CRUD + auditoría + permiso** ✅ — permiso `closed-days:manage` (catálogo, grupo
+   «Operación», etiqueta; la migración `20261006120000_closed_days_permission` se lo agrega al
+   rol ADMIN sembrado, como se hizo con `users:profile-requests:review`), ruta
+   `/admin/closed-days` en `ADMIN_PATH_PERMISSIONS`, ítem «Días cerrados» en la navegación y
+   etiqueta en `management-crumbs.ts`. Entidad `ClosedDay` en el registro de auditoría (campos
+   motivo, desde, hasta, horario, origen, estado; las fechas van como texto `dd/mm/aaaa` ya
+   formateado en el snapshot, porque el tipo `date` del registro las interpreta como instantes y
+   las correría de día) con eventos create/update/delete. **Cambio respecto del diseño:** no hay
+   eventos `custom` de confirmar/descartar — confirmar y descartar son una edición del campo
+   `status`, y el diff ya lo muestra; el lote del slice 7 escribirá una entrada `update` por
+   cierre con un `requestId` compartido. API `POST /api/admin/closed-days`, `PUT`/`DELETE`
+   `/api/admin/closed-days/[id]` (esquema Zod con las mismas reglas que los CHECK de la base,
+   rango máximo de un año). UI: lista con `DataTable` y pestañas Próximos / Por revisar /
+   Pasados con paginación, y formulario como página (`FormPageLayout` + `StickySaveBar` + guardia
+   de cambios sin guardar; rango con `DateRangePicker`, interruptor «Todo el día», horarios en
+   pasos de 15 min). ⚠️ **La UI se verificó con `tsc` y `eslint` pero no se vio en un navegador**:
+   Docker (y con él Postgres) se cayó durante la sesión y no se pudo levantar la app. Falta
+   recorrer `/admin/closed-days` (escritorio y teléfono, claro y oscuro), `scripts/mobile-shots.mjs`
+   ya tiene las dos rutas nuevas.
 5. **Calendario**: tarjetas de cierre en `WeekCalendar`/`DayStrip`, mensajes en reserva móvil.
 6. **Reservas afectadas**: diálogo de resolución al crear/confirmar un cierre.
 7. **Sincronización**: cliente de ArgentinaDatos, upsert idempotente, cron en `vercel.json`,
