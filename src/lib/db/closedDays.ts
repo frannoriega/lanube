@@ -123,3 +123,29 @@ export async function updateClosedDay(
 export async function deleteClosedDay(id: string): Promise<void> {
   await prisma.closedDay.delete({ where: { id } });
 }
+
+/**
+ * Cambia el estado de un cierre respetando el ciclo de vida: `ACTIVE` solo desde
+ * `PENDING_REVIEW` (confirmar una propuesta) y `DISMISSED` solo desde `PENDING_REVIEW` o
+ * `ACTIVE`. Es un `updateMany` condicional, así dos admins confirmando a la vez no pisan nada.
+ */
+export async function setClosedDayStatus(
+  id: string,
+  next: "ACTIVE" | "DISMISSED",
+): Promise<"changed" | "unchanged" | "not_found"> {
+  const from: ClosedDayStatus[] =
+    next === "ACTIVE"
+      ? [ClosedDayStatus.PENDING_REVIEW]
+      : [ClosedDayStatus.PENDING_REVIEW, ClosedDayStatus.ACTIVE];
+  const { count } = await prisma.closedDay.updateMany({
+    where: { id, status: { in: from } },
+    data: { status: next, updatedAt: BigInt(nowMs()) },
+  });
+  if (count > 0) return "changed";
+  return (await prisma.closedDay.findUnique({
+    where: { id },
+    select: { id: true },
+  }))
+    ? "unchanged"
+    : "not_found";
+}
