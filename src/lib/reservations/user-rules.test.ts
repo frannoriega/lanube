@@ -5,7 +5,10 @@ import {
   BOOKING_WINDOW_MESSAGES,
   MINIMUM_NOTICE_MESSAGE,
 } from "./booking-window";
-import { validateUserReservationWindow } from "./user-rules";
+import {
+  validateAgainstClosures,
+  validateUserReservationWindow,
+} from "./user-rules";
 
 /** Unix ms de una fecha/hora local del predio, para que los casos se lean como la regla. */
 function local(y: number, m: number, d: number, h: number, min = 0): number {
@@ -94,5 +97,60 @@ describe("validateUserReservationWindow", () => {
         NOW,
       ),
     ).toBe(BOOKING_WINDOW_MESSAGES.outside_hours);
+  });
+});
+
+describe("validateAgainstClosures", () => {
+  const feriado = {
+    title: "Feriado: Día de la Soberanía",
+    startDate: "2026-10-08",
+    endDate: "2026-10-08",
+    startTime: null,
+    endTime: null,
+  };
+
+  it("acepta cuando no hay cierres", () => {
+    expect(
+      validateAgainstClosures(
+        local(2026, 10, 8, 10),
+        local(2026, 10, 8, 12),
+        [],
+      ),
+    ).toBeNull();
+  });
+
+  it("rechaza con el motivo del cierre", () => {
+    expect(
+      validateAgainstClosures(local(2026, 10, 8, 10), local(2026, 10, 8, 12), [
+        feriado,
+      ]),
+    ).toBe("El espacio está cerrado: Feriado: Día de la Soberanía");
+  });
+
+  it("acepta otro día", () => {
+    expect(
+      validateAgainstClosures(local(2026, 10, 9, 10), local(2026, 10, 9, 12), [
+        feriado,
+      ]),
+    ).toBeNull();
+  });
+
+  it("un cierre parcial solo rechaza su franja", () => {
+    const tarde = {
+      ...feriado,
+      title: "Cerrado por la tarde",
+      startTime: 14 * 60,
+      endTime: 18 * 60,
+    };
+    expect(
+      validateAgainstClosures(local(2026, 10, 8, 10), local(2026, 10, 8, 12), [
+        tarde,
+      ]),
+    ).toBeNull();
+    expect(
+      validateAgainstClosures(local(2026, 10, 8, 15), local(2026, 10, 8, 16), [
+        tarde,
+      ]),
+    ).toBe("El espacio está cerrado de 14:00 a 18:00: Cerrado por la tarde");
   });
 });

@@ -6,12 +6,16 @@ import {
   deleteReservation,
   type ReservationWithRelations,
 } from "@/lib/db/reservations";
+import { getActiveClosuresForWindow } from "@/lib/db/closedDays";
 import { getReservationTypeByCode } from "@/lib/db/reservationTypes";
 import { getSpaceById } from "@/lib/db/spaces";
 import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { unixMsToDate } from "@/lib/unix-ms";
-import { validateUserReservationWindow } from "./user-rules";
+import {
+  validateAgainstClosures,
+  validateUserReservationWindow,
+} from "./user-rules";
 
 /**
  * Acciones de reserva **de un usuario sobre sus propias reservas** (milestone 20, slice 1).
@@ -75,6 +79,16 @@ export async function requestUserReservation(
     nowMs(),
   );
   if (violation) throw new DomainError(violation);
+
+  // Días cerrados (milestone 23): feriados, vacaciones y cierres parciales. Después de las
+  // reglas de apertura para que el mensaje más específico del motivo solo aparezca cuando
+  // la ventana ya era reservable en un día normal.
+  const closureViolation = validateAgainstClosures(
+    input.startMs,
+    input.endMs,
+    await getActiveClosuresForWindow(input.startMs, input.endMs),
+  );
+  if (closureViolation) throw new DomainError(closureViolation);
 
   const reservation = await createReservation({
     reservableType: "USER",
