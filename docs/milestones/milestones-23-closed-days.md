@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2, 3, 4.
+Slices hechos: 1, 2, 3, 4, 5.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -215,7 +215,17 @@ eso los cierres parciales entran desde el principio.
    Pasados con paginación, y formulario como página (`FormPageLayout` + `StickySaveBar` + guardia
    de cambios sin guardar; rango con `DateRangePicker`, interruptor «Todo el día», horarios en
    pasos de 15 min). Verificada en el navegador con `scripts/mobile-shots.mjs` (teléfono claro/oscuro, tablet, escritorio; sin desbordes). Eso encontró un bug que `tsc` no ve: la página de alta llamaba `emptyClosedDay()` exportada desde un módulo `"use client"`, y una función de un módulo cliente no se puede invocar desde el servidor (500). Ahora vive en `src/lib/closed-days/form-values.ts`.
-5. **Calendario**: tarjetas de cierre en `WeekCalendar`/`DayStrip`, mensajes en reserva móvil.
+5. **Calendario** ✅ — no hace falta un `GET /api/closed-days` público para esto: los cierres
+   viajan dentro de la respuesta que el calendario ya pide (`getCalendarDataBySpace`), como
+   tramos `kind: "closed"` con `title`. `closureSlotsForRange()` (pura, testeada) los expande
+   **por día y recortados a 09:00–18:00** en el servidor, así el navegador no repite la lógica de
+   zona horaria y el chequeo de solapes de `WeekCalendar` (que compara minutos del día) no lee
+   la medianoche de un cierre de día completo como las 00:00. `DayColumn` los dibuja como una
+   tarjeta «Cerrado» + el motivo (no un rayado anónimo); la fusión de tramos contiguos no mezcla
+   cierres con motivos distintos. `isDayFullyClosed()` (une cierres contiguos, p. ej. mañana y
+   tarde) quita el botón «Reservar» de un día cerrado entero, en la cabecera y en la tira de días
+   del teléfono. Verificado en el navegador (escritorio y teléfono) con cierres de prueba, ya
+   borrados. Pendiente de pulir si se quiere: un aviso al tocar un tramo cerrado.
 6. **Reservas afectadas**: diálogo de resolución al crear/confirmar un cierre.
 7. **Sincronización**: cliente de ArgentinaDatos, upsert idempotente, cron en `vercel.json`,
    botón manual, pantalla «Por revisar».
