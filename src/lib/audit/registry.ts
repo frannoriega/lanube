@@ -28,6 +28,11 @@
 
 import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
 import { FIELD_TYPE_LABELS } from "@/lib/constants/form-fields";
+import {
+  MAINTENANCE_AREAS,
+  MAINTENANCE_MODE_LABELS,
+  type MaintenanceAreaId,
+} from "@/lib/maintenance/areas";
 import { PERMISSION_LABELS } from "@/lib/rbac";
 import {
   bool,
@@ -276,6 +281,28 @@ export const AUDIT_ENTITIES = {
       instagramText: text("Usuario de Instagram"),
       githubUrl: text("Enlace de GitHub"),
       githubText: text("Usuario de GitHub"),
+    },
+  },
+  MaintenanceWindow: {
+    label: "Mantenimiento",
+    phrase: "del mantenimiento",
+    subject: { key: "title", label: "Mantenimiento" },
+    fields: {
+      title: text("Título"),
+      reasonMd: longText("Motivo"),
+      mode: enumOf("Modo", MAINTENANCE_MODE_LABELS),
+      areas: setOf(
+        "Áreas",
+        Object.fromEntries(
+          (Object.keys(MAINTENANCE_AREAS) as MaintenanceAreaId[]).map((id) => [
+            id,
+            MAINTENANCE_AREAS[id].label,
+          ]),
+        ),
+      ),
+      startsAt: dateTime("Desde"),
+      endsAt: dateTime("Hasta"),
+      endedAt: dateTime("Finalizado"),
     },
   },
   CheckIn: {
@@ -585,6 +612,24 @@ export const AUDIT_EVENTS = {
     kind: "update",
     label: "Actualizó la configuración del sitio",
     verb: "Actualización",
+  },
+  "maintenance.create": {
+    entity: "MaintenanceWindow",
+    kind: "create",
+    label: "Declaró un mantenimiento",
+    verb: "Alta",
+  },
+  "maintenance.update": {
+    entity: "MaintenanceWindow",
+    kind: "update",
+    label: "Editó un mantenimiento",
+    verb: "Edición",
+  },
+  "maintenance.end": {
+    entity: "MaintenanceWindow",
+    kind: "update",
+    label: "Finalizó un mantenimiento",
+    verb: "Fin",
   },
   "checkin.update": {
     entity: "CheckIn",

@@ -73,6 +73,9 @@ export const AUDIT_ACTIONS = {
 
   // Configuración y operación
   siteConfigUpdate: "siteConfig.update",
+  maintenanceCreate: "maintenance.create",
+  maintenanceUpdate: "maintenance.update",
+  maintenanceEnd: "maintenance.end",
   checkinUpdate: "checkin.update",
 } as const satisfies Record<string, AuditAction>;
 
