@@ -1,10 +1,10 @@
 import { ReservationsPageContent } from "./_reservations-page-content";
-import { getPublicSpaces } from "@/lib/db/spaces";
+import { getSpacesByKind } from "@/lib/db/spaces";
 import type { SpaceOption } from "@/components/molecules/admin-resource-type-combobox";
 import { Suspense } from "react";
 
 export default async function AdminReservationsPage() {
-  const spaces = await getPublicSpaces();
+  const spaces = await getSpacesByKind("SPACE");
   const spaceOptions: SpaceOption[] = spaces
     .filter((s) => s.isReservable)
     .map((s) => ({ id: s.id, name: s.name }));

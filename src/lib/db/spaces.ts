@@ -1,6 +1,6 @@
 import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
-import type { Space } from "@/generated/prisma/client";
+import type { Space, SpaceKind } from "@/generated/prisma/client";
 import type { SpaceFaq } from "@/lib/types/spaces";
 import { Prisma } from "@/generated/prisma/client";
 
@@ -13,10 +13,28 @@ export function getSpaceFaqs(space: Pick<Space, "faqs">): SpaceFaq[] {
 /** Backward-compat alias — Space now includes capacity directly. */
 export type SpaceWithFungible = Space;
 
+/**
+ * Todo lo que se muestra en el sitio, **espacios y áreas comunes juntos** (milestone 24).
+ * Quien necesite solo lugares reservables o donde cargar eventos NO debe usar esta: pase por
+ * `getSpacesByKind("SPACE")` (un test impide que reaparezca en esos lugares).
+ */
 export async function getPublicSpaces(): Promise<Space[]> {
   return prisma.space.findMany({
     orderBy: { displayOrder: "asc" },
   });
+}
+
+/** Los registros de un solo tipo, en el orden del panel (`displayOrder`). */
+export async function getSpacesByKind(kind: SpaceKind): Promise<Space[]> {
+  return prisma.space.findMany({
+    where: { kind },
+    orderBy: { displayOrder: "asc" },
+  });
+}
+
+/** Áreas comunes (cocina, jardín, living…): se muestran, no se reservan. */
+export function getPublicAmenities(): Promise<Space[]> {
+  return getSpacesByKind("AMENITY");
 }
 
 export async function getSpaceBySlug(slug: string): Promise<Space | null> {
@@ -29,7 +47,9 @@ export async function getSpaceById(id: string): Promise<Space | null> {
 
 export async function getReservableSpaces(): Promise<Space[]> {
   return prisma.space.findMany({
-    where: { isReservable: true },
+    // `kind` además de `isReservable`: el CHECK de la base ya lo garantiza, pero así la
+    // intención se lee en la consulta.
+    where: { isReservable: true, kind: "SPACE" },
     orderBy: { displayOrder: "asc" },
   });
 }
@@ -37,12 +57,15 @@ export async function getReservableSpaces(): Promise<Space[]> {
 // ── Superadmin CRUD ───────────────────────────────────────────────────────────
 
 export interface SpaceInput {
+  /** Se elige al crear y no cambia después (ver `updateSpace`). */
+  kind?: SpaceKind;
   name: string;
   slug: string;
   description: string;
   longDescription?: string | null;
   faqs?: SpaceFaq[];
-  capacity: number;
+  /** `null` = sin capacidad; solo válido para un área común. */
+  capacity: number | null;
   isExclusive: boolean;
   isReservable: boolean;
   isFeatured: boolean;
@@ -59,8 +82,11 @@ function toSpaceData(input: SpaceInput) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { faqs, longDescription, iconName, imageUrl, displayOrder, ...rest } =
     input;
+  // Una área común nunca se reserva ni es exclusiva (lo exige también un CHECK en la base).
+  const amenity = rest.kind === "AMENITY";
   return {
     ...rest,
+    ...(amenity ? { isReservable: false, isExclusive: false } : {}),
     longDescription: longDescription?.trim() ? longDescription : null,
     faqs: (faqs ?? []) as unknown as Prisma.InputJsonValue,
     iconName: iconName ?? null,
@@ -101,9 +127,17 @@ export async function updateSpace(
   id: string,
   input: SpaceInput,
 ): Promise<Space> {
+  // El tipo no se cambia al editar: pasar de espacio a área común (o al revés) con reservas,
+  // eventos y links por medio es una migración de datos, no una edición. Se ignora lo que
+  // llegue y se conserva el guardado; el formulario ni lo ofrece.
+  const existing = await prisma.space.findUnique({
+    where: { id },
+    select: { kind: true },
+  });
+  if (!existing) throw new DomainError("Espacio no encontrado", 404);
   return prisma.space.update({
     where: { id },
-    data: toSpaceData(input),
+    data: toSpaceData({ ...input, kind: existing.kind }),
   });
 }
 

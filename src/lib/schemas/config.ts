@@ -19,42 +19,62 @@ export const spaceFaqSchema = z.object({
 
 export type SpaceFaqInput = z.infer<typeof spaceFaqSchema>;
 
-export const spaceInputSchema = z.object({
-  name: z.string().trim().min(1, { message: "El nombre es obligatorio" }),
-  slug: z
-    .string()
-    .trim()
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
-      message: "Solo minúsculas, números y guiones (ej: sala-de-reuniones)",
-    }),
-  description: z
-    .string()
-    .trim()
-    .min(1, { message: "La descripción es obligatoria" })
-    .max(500),
-  // Long-form markdown shown on the public "Espacios" page. Optional — an empty string
-  // normalizes to null in the API layer.
-  longDescription: z.string().trim().max(5000).optional().nullable(),
-  faqs: z.array(spaceFaqSchema).max(30).optional(),
-  capacity: z
-    .number()
-    .int()
-    .positive({ message: "La capacidad debe ser positiva" }),
-  isExclusive: z.boolean(),
-  isReservable: z.boolean(),
-  isFeatured: z.boolean(),
-  // Milestone 14: ya no se edita desde el formulario (se ordena con el modo "Reordenar").
-  // Queda opcional para no romper clientes viejos; las escrituras lo ignoran al editar.
-  displayOrder: z.number().int().min(0).optional(),
-  iconName: z.string().trim().optional().nullable(),
-  imageUrl: z
-    .string()
-    .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/"), {
-      message: "URL de imagen inválida",
-    })
-    .optional()
-    .nullable(),
-});
+export const spaceInputSchema = z
+  .object({
+    kind: z.enum(["SPACE", "AMENITY"]),
+    name: z.string().trim().min(1, { message: "El nombre es obligatorio" }),
+    slug: z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
+        message: "Solo minúsculas, números y guiones (ej: sala-de-reuniones)",
+      }),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: "La descripción es obligatoria" })
+      .max(500),
+    // Long-form markdown shown on the public "Espacios" page. Optional — an empty string
+    // normalizes to null in the API layer.
+    longDescription: z.string().trim().max(5000).optional().nullable(),
+    faqs: z.array(spaceFaqSchema).max(30).optional(),
+    // `null` = sin capacidad: solo se admite en un área común (ver el `superRefine` abajo).
+    capacity: z
+      .number()
+      .int()
+      .positive({ message: "La capacidad debe ser positiva" })
+      .nullable(),
+    isExclusive: z.boolean(),
+    isReservable: z.boolean(),
+    isFeatured: z.boolean(),
+    // Milestone 14: ya no se edita desde el formulario (se ordena con el modo "Reordenar").
+    // Queda opcional para no romper clientes viejos; las escrituras lo ignoran al editar.
+    displayOrder: z.number().int().min(0).optional(),
+    iconName: z.string().trim().optional().nullable(),
+    imageUrl: z
+      .string()
+      .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/"), {
+        message: "URL de imagen inválida",
+      })
+      .optional()
+      .nullable(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind === "SPACE" && v.capacity === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["capacity"],
+        message: "La capacidad es obligatoria para un espacio",
+      });
+    }
+    if (v.kind === "AMENITY" && (v.isReservable || v.isExclusive)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["isReservable"],
+        message: "Un área común no se puede reservar",
+      });
+    }
+  });
 
 export type SpaceInput = z.infer<typeof spaceInputSchema>;
 

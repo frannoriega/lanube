@@ -9,8 +9,20 @@ model Resource {
   @@map("resources")
 }
 
+/// Qué es un `Space` (milestone 24). `SPACE`: lugar que se puede reservar y albergar eventos.
+/// `AMENITY`: área común que solo se muestra (cocina, jardín, living): sin reservas, sin
+/// eventos y con capacidad opcional. Mismo modelo porque comparten todo lo demás (foto,
+/// markdown, preguntas frecuentes, orden, panel, auditoría).
+enum SpaceKind {
+  SPACE
+  AMENITY
+
+  @@map("space_kinds")
+}
+
 model Space {
   id           String        @id @default(cuid())
+  kind         SpaceKind     @default(SPACE)
   name         String
   slug         String        @unique
   description  String
@@ -22,7 +34,8 @@ model Space {
   faqs         Json?
   imageUrl     String?       @map("image_url")
   iconName     String?       @map("icon_name")
-  capacity     Int           @default(1)
+  // `null` = sin capacidad (solo para `AMENITY`; un `SPACE` siempre la tiene, lo exige un CHECK).
+  capacity     Int?          @default(1)
   isExclusive  Boolean       @default(false) @map("is_exclusive")
   isReservable Boolean       @default(false) @map("is_reservable")
   isFeatured   Boolean       @default(false) @map("is_featured")
@@ -33,5 +46,6 @@ model Space {
   reservations Reservation[]
   events       Event[]
 
+  @@index([kind, displayOrder])
   @@map("spaces")
 }

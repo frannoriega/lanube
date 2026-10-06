@@ -19,7 +19,7 @@ export interface ReservationWithRelations extends Reservation {
   space?: {
     id: string;
     name: string;
-    capacity: number;
+    capacity: number | null;
     isExclusive: boolean;
   } | null;
   registeredUser?: {

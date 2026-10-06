@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "prisma/seed.ts": {
-    "mtime": 1791139963.584427,
-    "ast_hash": "ecbb47a0a0df6d7e3acb6db4b3412aef",
+    "mtime": 1791317737.5499141,
+    "ast_hash": "60fc1bcfb9c7a4ffa1427d2aadcc881e",
     "semantic_hash": ""
   },
   "scripts/normalize-user-emails.ts": {
@@ -280,8 +280,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/events/[id]/participants/page.tsx": {
-    "mtime": 1790971835.524118,
-    "ast_hash": "05dce655df3770a3be3b7ce41064bc47",
+    "mtime": 1791317512.2634082,
+    "ast_hash": "e562b250323ef0a37fb10b65867193c1",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/events/new/page.tsx": {
@@ -290,8 +290,8 @@
     "semantic_hash": "9e69ea7f94bc79a9212dc3a9b5359244"
   },
   "src/app/(management)/admin/events/page.tsx": {
-    "mtime": 1790971835.5247679,
-    "ast_hash": "abe28b3cc159260d0eeb00661f5df16e",
+    "mtime": 1791317618.3863938,
+    "ast_hash": "e9cb62d2056d18e6939c67aea871959b",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/forms/[id]/page.tsx": {
@@ -325,8 +325,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/reservations/page.tsx": {
-    "mtime": 1788565052.8608286,
-    "ast_hash": "7bd8ae9f4ce81a1cb8ddb9696a8d796b",
+    "mtime": 1791317618.3858886,
+    "ast_hash": "5ba9e8e6b09adbdf903587f7e6241575",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/users/columns.tsx": {
@@ -420,8 +420,8 @@
     "semantic_hash": "7e63cfdea39e2ecba079cfe86090160e"
   },
   "src/app/(public)/page.tsx": {
-    "mtime": 1791139963.5924952,
-    "ast_hash": "950fb39637123c845430ba194b77a043",
+    "mtime": 1791317650.0839572,
+    "ast_hash": "f9ee46166e2cd504dc07c8af3131718c",
     "semantic_hash": ""
   },
   "src/app/api/admin/checkin/[id]/route.ts": {
@@ -1155,8 +1155,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants/spaces.ts": {
-    "mtime": 1788562302.3609176,
-    "ast_hash": "807b3cde43ae19a5f09ade41a15a7a60",
+    "mtime": 1791317621.5797312,
+    "ast_hash": "9046e34b7c26fca9a2ea759c04651be3",
     "semantic_hash": ""
   },
   "src/lib/db/adminReports.ts": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": "d2b1378c3e2ec6fd8313f8deec000371"
   },
   "src/lib/db/events.ts": {
-    "mtime": 1790971835.5983543,
-    "ast_hash": "35c0bb3575b56a9b11d4c2173897d7f4",
+    "mtime": 1791317540.3872914,
+    "ast_hash": "af45c4b3babe27e62dba9eeb10b1dbe6",
     "semantic_hash": ""
   },
   "src/lib/db/forms.ts": {
@@ -1195,13 +1195,13 @@
     "semantic_hash": ""
   },
   "src/lib/db/participants.ts": {
-    "mtime": 1790971835.600651,
-    "ast_hash": "5e22ff6b3e105a4d5b3988780711ffa8",
+    "mtime": 1791317512.2619367,
+    "ast_hash": "49cd22d4830755278e75bcc2a9845057",
     "semantic_hash": ""
   },
   "src/lib/db/reservations.ts": {
-    "mtime": 1791302939.144152,
-    "ast_hash": "4add9645517be3d070600dfdd4869bd0",
+    "mtime": 1791317512.2628284,
+    "ast_hash": "6f0ca3ceda4ff063e80b6c6cb38dd2b8",
     "semantic_hash": ""
   },
   "src/lib/db/resourceCalendar.ts": {
@@ -1210,8 +1210,8 @@
     "semantic_hash": ""
   },
   "src/lib/db/spaces.ts": {
-    "mtime": 1790971835.6033564,
-    "ast_hash": "634cd0b5c716cc4ebf6d1fea0f900d4a",
+    "mtime": 1791317540.3878696,
+    "ast_hash": "0eba6c15ca146f24e1c5009948d2706c",
     "semantic_hash": ""
   },
   "src/lib/db/users.ts": {
@@ -1405,8 +1405,8 @@
     "semantic_hash": "46912b12562f9a69ab3dfeb6bcb534c7"
   },
   "src/types/prisma.ts": {
-    "mtime": 1791302939.1495914,
-    "ast_hash": "3bbc49753141abc3447d4e5892d35e39",
+    "mtime": 1791317479.3323116,
+    "ast_hash": "5e9ac52969ca7518b046fd652e0a50c4",
     "semantic_hash": ""
   },
   "src/types/stats/index.ts": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791315153.2960684,
-    "ast_hash": "d38bca395691b8ac7a93ff8823b9590b",
+    "mtime": 1791318313.0280638,
+    "ast_hash": "4ae8ad518a075914f454477503ee9a93",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -1945,8 +1945,8 @@
     "semantic_hash": ""
   },
   "src/components/templates/landing/spaces/index.tsx": {
-    "mtime": 1791139963.6063533,
-    "ast_hash": "0bcf9ba7f52ccb44ef7ec1f97a5d811a",
+    "mtime": 1791317650.08313,
+    "ast_hash": "61c7ad59629b17b30011a3cf03257e29",
     "semantic_hash": ""
   },
   "src/components/ui/skeleton.tsx": {
@@ -2050,8 +2050,8 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/spaces/page.tsx": {
-    "mtime": 1785506761.5889168,
-    "ast_hash": "70ef58ca0f3083892cbff18618cf910b",
+    "mtime": 1791318312.9998198,
+    "ast_hash": "4a42164ec3285182a9a007e55b28f2e3",
     "semantic_hash": ""
   },
   "src/app/api/admin/reservation-types/[id]/route.ts": {
@@ -2100,8 +2100,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/spaces-manager.tsx": {
-    "mtime": 1790971835.5694811,
-    "ast_hash": "da16eba4f57b9b24c238e31650bb5da6",
+    "mtime": 1791317600.585526,
+    "ast_hash": "631d93b85978d52b3bab403f4f3a2848",
     "semantic_hash": ""
   },
   "src/lib/api-auth.ts": {
@@ -2135,8 +2135,8 @@
     "semantic_hash": ""
   },
   "src/lib/schemas/config.ts": {
-    "mtime": 1790971835.620127,
-    "ast_hash": "6a8a5b385707361f6f96e60bdbd1b769",
+    "mtime": 1791317565.0826588,
+    "ast_hash": "942894b49e3988e6251ad2613b7ec85f",
     "semantic_hash": ""
   },
   "prisma/migrations/20260713000000_fix_get_actor_size_space/migration.sql": {
@@ -2405,23 +2405,23 @@
     "semantic_hash": ""
   },
   "src/app/(management)/admin/spaces/[id]/edit/page.tsx": {
-    "mtime": 1790971835.5296063,
-    "ast_hash": "8c4cbc7ec01d2d69d0e9940f32389def",
+    "mtime": 1791317575.3843687,
+    "ast_hash": "d20e5bfb7b1705848d8f243d55bba751",
     "semantic_hash": ""
   },
   "src/app/(management)/admin/spaces/new/page.tsx": {
-    "mtime": 1790971835.5300076,
-    "ast_hash": "9976109817952a807288552f08c5ac93",
+    "mtime": 1791317575.3904533,
+    "ast_hash": "902afb1b199ca7a4d875fcf29319bdda",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/config/space-form.tsx": {
-    "mtime": 1791067088.3888392,
-    "ast_hash": "ef9a3bb5f9f43a61de331d3209215384",
+    "mtime": 1791317576.0149436,
+    "ast_hash": "24c2b99a949d35e5f7b08ca20194eed9",
     "semantic_hash": ""
   },
   "src/app/(public)/spaces/page.tsx": {
-    "mtime": 1791302939.1383464,
-    "ast_hash": "c354400c62e1caafcc7c63feed4259d0",
+    "mtime": 1791317650.1091936,
+    "ast_hash": "8effebe67ace523c334c74fb68585889",
     "semantic_hash": ""
   },
   "src/components/templates/landing/allies/index.tsx": {
@@ -2800,8 +2800,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1791314217.017306,
-    "ast_hash": "0afd62e0cfff571661932a437a650b35",
+    "mtime": 1791318313.0001802,
+    "ast_hash": "1b987a5cd6a81ddb6102acc52d5ff804",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -3345,8 +3345,8 @@
     "semantic_hash": ""
   },
   "src/lib/db/auditOrder.ts": {
-    "mtime": 1790971835.5979972,
-    "ast_hash": "3f1728205ac8ee985be28fff4ed33a98",
+    "mtime": 1791317599.8433852,
+    "ast_hash": "8cafa21d998df110fd092e16c26785e4",
     "semantic_hash": ""
   },
   "src/app/api/admin/events/bulk/route.ts": {
@@ -3405,8 +3405,8 @@
     "semantic_hash": ""
   },
   "src/lib/audit/registry.ts": {
-    "mtime": 1791314214.8066063,
-    "ast_hash": "e430698b9cd3cdf5c7f44cc132b57be3",
+    "mtime": 1791317618.3869686,
+    "ast_hash": "9865a162a3bac71f1ef547daf0aa7ca9",
     "semantic_hash": ""
   },
   "src/lib/audit/snapshots.ts": {
@@ -3635,8 +3635,8 @@
     "semantic_hash": ""
   },
   "src/lib/reservations/approval-conflicts.ts": {
-    "mtime": 1791067088.4058895,
-    "ast_hash": "4859ab70af08a309cd4bed951f75d3bb",
+    "mtime": 1791317512.262289,
+    "ast_hash": "e8e4e6e326428971d1714738ab7f0307",
     "semantic_hash": ""
   },
   "src/app/(public)/events/[id]/event-fact.tsx": {
@@ -4232,6 +4232,31 @@
   "prisma/migrations/20261006110000_maintenance_sql_helpers/migration.sql": {
     "mtime": 1791315133.725656,
     "ast_hash": "113b4d17a96edfe659b2bf06633a0f52",
+    "semantic_hash": ""
+  },
+  "prisma/migrations/20261007100000_space_kind/migration.sql": {
+    "mtime": 1791317488.8214521,
+    "ast_hash": "2581d037925ae5758dddc8255521098a",
+    "semantic_hash": ""
+  },
+  "src/components/templates/landing/amenities/index.tsx": {
+    "mtime": 1791317650.083404,
+    "ast_hash": "3713cb83a1ef08562d4d3365f089f355",
+    "semantic_hash": ""
+  },
+  "src/lib/db/spaces-kind.test.ts": {
+    "mtime": 1791317672.7227173,
+    "ast_hash": "511f2a830991f5a06300db6d61985b74",
+    "semantic_hash": ""
+  },
+  "src/lib/schemas/config.test.ts": {
+    "mtime": 1791317672.7265093,
+    "ast_hash": "037f1a633037f31486d741fb6898e0c2",
+    "semantic_hash": ""
+  },
+  "docs/milestones/milestones-24-amenities.md": {
+    "mtime": 1791318318.3185036,
+    "ast_hash": "d74e91243100065b03b2de98d87387a7",
     "semantic_hash": ""
   }
 }
