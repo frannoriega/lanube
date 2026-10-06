@@ -724,7 +724,11 @@ Full design + decisions: `docs/milestones/milestones-14-mobile-redesign.md`.
   `<Table>`.** Below `md` it renders **one card per row** from each column's
   `meta.mobile` role (`title` | `meta` (default) | `badge` | `actions` | `leading` |
   `hidden`) and `meta.label` (the "Etiqueta: valor" text). Small static lists use
-  `useStaticTable(data, columns)`; clickable rows use `onRowClick`. Don't add an
+  `useStaticTable(data, columns)`; clickable rows use `onRowClick`. ⚠️ **`data` must keep a
+  stable identity between renders** (the array from `useApi`, or `useMemo` if you sort/filter
+  it): TanStack resets pagination whenever it gets a new array, which re-renders, which builds
+  another new array… — a sort in the render body froze the browser the moment any state changed
+  (`MaintenanceManager`, milestone 22). Don't add an
   `overflow-x-auto` table "fix" — a wrapper alone still makes a phone scroll sideways.
 - **Dialogs: `ResponsiveDialog*` (`molecules/responsive-dialog.tsx`)**, same API as
   `ui/dialog` — a centered Dialog from `md`, a bottom Drawer (vaul) below. **Dialog vs page
