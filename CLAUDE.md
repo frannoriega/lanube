@@ -898,6 +898,7 @@ Full design, runbook de migración + alternativas descartadas: `docs/milestones/
 - **UI**: `MaintenanceProvider` (layout raíz) → `MaintenanceBanner` (sitio, panel, `/forms`) y `AreaMaintenanceNotice` + `useAreaWriteBlock(area)` dentro de los formularios apagados (registro, reseteo, inscripción). Un 503 de mantenimiento refresca el aviso al instante (`client.ts`).
 - Permiso `maintenance:manage`: solo SUPERADMIN, fuera del conector. Cada alta/edición/fin se audita (`MaintenanceWindow`).
 - Server Actions no pasan por `/api` (el repo no usa ninguna): si se agregan, el portero no las ve.
+- **Botón de emergencia**: `maintenance_status()`, `maintenance_start(...)`, `maintenance_end(id)` y `maintenance_end_all()` (migración `20261006110000`) manejan las ventanas desde `psql` sin la app. No auditan. Detalle en el doc del milestone.
 
 ## Testing & Seeding
 
