@@ -1,3 +1,4 @@
+import { currentPeriodsInAdminTz } from "@/lib/admin/admin-timezone";
 import { now, nowMs } from "@/lib/clock";
 import { EXCLUDE_EVENT_RESERVATIONS } from "@/lib/db/adminReservations";
 import { getPermissionSetForUser } from "@/lib/db/roles";
@@ -24,12 +25,12 @@ export async function isAdminByEmail(email: string): Promise<boolean> {
 
 export async function getAdminAggregateStats() {
   const at = now();
-  const startOfDay = new Date(at);
-  startOfDay.setHours(0, 0, 0, 0);
-  const startOfWeek = new Date(at);
-  startOfWeek.setDate(at.getDate() - at.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(at.getFullYear(), at.getMonth(), 1);
+  // Hoy / semana / mes en la hora del predio, no en la del servidor (UTC en Vercel) — milestone
+  // 25, C1.
+  const periods = currentPeriodsInAdminTz(at.getTime());
+  const startOfDay = BigInt(periods.day.startMs);
+  const startOfWeek = BigInt(periods.week.startMs);
+  const startOfMonth = BigInt(periods.month.startMs);
 
   const [
     todayUsers,
@@ -40,13 +41,13 @@ export async function getAdminAggregateStats() {
     rejectedReservations,
   ] = await Promise.all([
     prisma.checkIn.count({
-      where: { checkInTime: { gte: dateToUnixMs(startOfDay) } },
+      where: { checkInTime: { gte: startOfDay } },
     }),
     prisma.checkIn.count({
-      where: { checkInTime: { gte: dateToUnixMs(startOfWeek) } },
+      where: { checkInTime: { gte: startOfWeek } },
     }),
     prisma.checkIn.count({
-      where: { checkInTime: { gte: dateToUnixMs(startOfMonth) } },
+      where: { checkInTime: { gte: startOfMonth } },
     }),
     prisma.reservation.count({
       where: { status: "PENDING", ...EXCLUDE_EVENT_RESERVATIONS },
@@ -66,7 +67,7 @@ export async function getAdminAggregateStats() {
   const currentUsersRaw = await prisma.checkIn.findMany({
     where: {
       checkOutTime: null,
-      checkInTime: { gte: dateToUnixMs(startOfDay) },
+      checkInTime: { gte: startOfDay },
     },
     include: {
       registeredUser: { select: { id: true, name: true, lastName: true } },
@@ -122,13 +123,12 @@ export async function getAdminAggregateStats() {
 }
 
 export async function getCurrentCheckinsForToday() {
-  const at = now();
-  const startOfDay = new Date(at);
-  startOfDay.setHours(0, 0, 0, 0);
+  // "Hoy" en la hora del predio (milestone 25, C1).
+  const startOfDay = BigInt(currentPeriodsInAdminTz(nowMs()).day.startMs);
   const rows = await prisma.checkIn.findMany({
     where: {
       checkOutTime: null,
-      checkInTime: { gte: dateToUnixMs(startOfDay) },
+      checkInTime: { gte: startOfDay },
     },
     include: {
       registeredUser: {

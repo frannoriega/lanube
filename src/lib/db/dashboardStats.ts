@@ -1,3 +1,4 @@
+import { currentPeriodsInAdminTz } from "@/lib/admin/admin-timezone";
 import { now } from "@/lib/clock";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
@@ -34,12 +35,25 @@ function toHours(
 export async function getDashboardStatsByUserId(
   userId: string,
 ): Promise<DashboardStats> {
-  const at = now();
-  const atMs = dateToUnixMs(at);
-  const startOfWeek = new Date(at);
-  startOfWeek.setDate(at.getDate() - at.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(at.getFullYear(), at.getMonth(), 1);
+  const atMs = dateToUnixMs(now());
+  // Semana y mes en la hora del predio, con su fin (milestone 25, C1/C2): antes se calculaban
+  // en la zona del servidor (UTC en Vercel) y sin tope, así que "esta semana" sumaba también
+  // todas las reservas futuras.
+  const { week, month } = currentPeriodsInAdminTz(Number(atMs));
+  // `reservableType: "USER"` además de `reservableId`: el índice es
+  // `(reservable_type, reservable_id)` y Postgres no lo usa con la segunda columna sola — sin
+  // esto las cuatro consultas recorrían toda la tabla en cada carga del dashboard
+  // (milestone 25, DB4). Y es lo correcto: el id es de un usuario.
+  const mine = { reservableType: "USER", reservableId: userId } as const;
+  const approvedIn = (period: { startMs: number; endMs: number }) =>
+    prisma.reservation.findMany({
+      select: { startTime: true, endTime: true },
+      where: {
+        ...mine,
+        status: "APPROVED",
+        startTime: { gte: BigInt(period.startMs), lte: BigInt(period.endMs) },
+      },
+    });
 
   const [
     upcomingReservations,
@@ -48,40 +62,10 @@ export async function getDashboardStatsByUserId(
     recentReservations,
   ] = await Promise.all([
     prisma.reservation.count({
-      where: {
-        reservableId: userId,
-        startTime: {
-          gte: atMs,
-        },
-        status: "APPROVED",
-      },
+      where: { ...mine, startTime: { gte: atMs }, status: "APPROVED" },
     }),
-    prisma.reservation.findMany({
-      select: {
-        startTime: true,
-        endTime: true,
-      },
-      where: {
-        reservableId: userId,
-        startTime: {
-          gte: dateToUnixMs(startOfWeek),
-        },
-        status: "APPROVED",
-      },
-    }),
-    prisma.reservation.findMany({
-      select: {
-        startTime: true,
-        endTime: true,
-      },
-      where: {
-        reservableId: userId,
-        startTime: {
-          gte: dateToUnixMs(startOfMonth),
-        },
-        status: "APPROVED",
-      },
-    }),
+    approvedIn(week),
+    approvedIn(month),
     prisma.reservation.findMany({
       select: {
         id: true,
@@ -91,9 +75,7 @@ export async function getDashboardStatsByUserId(
         status: true,
         reason: true,
       },
-      where: {
-        reservableId: userId,
-      },
+      where: mine,
       orderBy: {
         createdAt: "desc",
       },
