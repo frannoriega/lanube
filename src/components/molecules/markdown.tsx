@@ -59,9 +59,17 @@ export function Markdown({
   children,
   className,
   size = "default",
+  breaks = false,
 }: {
   children: string;
   className?: string;
+  /**
+   * Un salto de línea simple se ve como salto de línea (en CommonMark se pierde y las dos
+   * líneas se funden en una). Pensado para textos cortos que alguien escribe a mano, como el
+   * motivo de un mantenimiento; los artículos y descripciones siguen con la regla estándar.
+   * Es CSS (`white-space: pre-line` en los párrafos), sin plugins.
+   */
+  breaks?: boolean;
   /**
    * `default`: la escala compacta de siempre (descripciones de eventos, previews del editor).
    * `reading`: cuerpo de artículo — ver {@link READING_CLASSES}.
@@ -98,6 +106,7 @@ export function Markdown({
         "[&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md [&_img]:border [&_img]:border-border",
         "[&_hr]:my-4 [&_hr]:border-border",
         size === "reading" && READING_CLASSES,
+        breaks && "[&_p]:whitespace-pre-line",
         className,
       )}
     >

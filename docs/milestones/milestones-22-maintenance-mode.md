@@ -170,6 +170,11 @@ mensaje de la ventana lo tiene que decir (el atajo «Correo fuera de servicio» 
 No hay una página `/maintenance` dedicada: con `READ_ONLY` el punto es justamente que el sitio
 siga usándose.
 
+> **Saltos de línea:** el motivo se renderiza con `<Markdown breaks />` (y la vista previa del editor
+> con `breaks`): un salto simple se ve como salto, porque quien lo escribe espera eso. Es CSS
+> (`white-space: pre-line` en los párrafos), sin plugin; los artículos y descripciones de eventos
+> mantienen la regla estándar de CommonMark. El rótulo del modo («No disponible») no se parte.
+
 ## Panel (`/admin/maintenance`)
 
 Permiso nuevo `maintenance:manage` — **solo SUPERADMIN** (implícito; no se agregó a ningún rol

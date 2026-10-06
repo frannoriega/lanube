@@ -83,7 +83,7 @@ export function MaintenanceMessage({
             {w.state === "scheduled" ? "Mantenimiento programado: " : ""}
             {w.title}
             {w.state === "active" && w.mode !== "NOTICE" ? (
-              <span className="ml-2 rounded-full border border-current px-2 py-0.5 align-middle text-xs font-medium">
+              <span className="ml-2 inline-block whitespace-nowrap rounded-full border border-current px-2 py-0.5 align-middle text-xs font-medium">
                 {MAINTENANCE_MODE_LABELS[w.mode]}
               </span>
             ) : null}
@@ -94,10 +94,12 @@ export function MaintenanceMessage({
               <summary className="cursor-pointer text-xs font-medium underline-offset-2 hover:underline">
                 Ver detalle
               </summary>
-              <Markdown className="mt-2">{w.reasonMd}</Markdown>
+              <Markdown breaks className="mt-2">
+                {w.reasonMd}
+              </Markdown>
             </details>
           ) : (
-            <Markdown>{w.reasonMd}</Markdown>
+            <Markdown breaks>{w.reasonMd}</Markdown>
           )}
         </div>
       </div>
