@@ -7,10 +7,10 @@ export default async function SpacesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Espacios
+          Espacios y áreas comunes
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          Administra los espacios reservables del centro.
+          Administra los espacios reservables del centro y sus áreas comunes.
         </p>
       </div>
       <SpacesManager />

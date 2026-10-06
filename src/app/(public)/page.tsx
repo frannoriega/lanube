@@ -6,6 +6,7 @@ import { EmojiShower } from "@/components/templates/landing/theme/emoji-shower";
 import MembersSection from "@/components/templates/landing/members";
 import NewsSection from "@/components/templates/landing/news";
 import PartnersSection from "@/components/templates/landing/partners";
+import AmenitiesSection from "@/components/templates/landing/amenities";
 import SpacesSection from "@/components/templates/landing/spaces";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
@@ -60,6 +61,7 @@ export default async function Home() {
         <EventsSection />
         <NewsSection />
         <SpacesSection />
+        <AmenitiesSection />
         <MembersSection />
         <PartnersSection />
         <AlliesSection />

@@ -43,12 +43,13 @@ import { toast } from "sonner";
  */
 export interface SpaceEditable {
   id: string;
+  kind: SpaceKind;
   name: string;
   slug: string;
   description: string;
   longDescription: string | null;
   faqs: SpaceFaq[] | null;
-  capacity: number;
+  capacity: number | null;
   isExclusive: boolean;
   isReservable: boolean;
   isFeatured: boolean;
@@ -57,7 +58,10 @@ export interface SpaceEditable {
   imageUrl: string | null;
 }
 
+type SpaceKind = SpaceInput["kind"];
+
 const EMPTY: SpaceInput = {
+  kind: "SPACE",
   name: "",
   slug: "",
   description: "",
@@ -70,6 +74,30 @@ const EMPTY: SpaceInput = {
   iconName: "",
   imageUrl: null,
 };
+
+/** Lo que cambia entre un espacio y un área común (milestone 24). */
+const KIND_COPY = {
+  SPACE: {
+    noun: "espacio",
+    newLabel: "Crear espacio",
+    created: "Espacio creado",
+    updated: "Espacio actualizado",
+    saveError: "No se pudo guardar el espacio",
+    identity:
+      "Cómo se llama el espacio, cómo se reconoce y cuántas personas entran.",
+    placeholder: "Sala de reuniones",
+  },
+  AMENITY: {
+    noun: "área común",
+    newLabel: "Crear área común",
+    created: "Área común creada",
+    updated: "Área común actualizada",
+    saveError: "No se pudo guardar el área común",
+    identity:
+      "Cómo se llama, cómo se reconoce y, si querés, cuántas personas entran.",
+    placeholder: "Cocina",
+  },
+} as const;
 
 const FLAGS = [
   {
@@ -112,9 +140,19 @@ const LIST_URL = "/admin/spaces";
  *     a una para editar; su orden se cambia con el modo "Reordenar" compartido.
  *   - Barra de guardado pegada abajo + guardia de cambios sin guardar.
  */
-export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
+export function SpaceForm({
+  space,
+  kind: newKind = "SPACE",
+}: {
+  space?: SpaceEditable | null;
+  /** Tipo al crear (`/admin/spaces/new?kind=amenity`); al editar manda el del registro. */
+  kind?: SpaceKind;
+}) {
   const router = useRouter();
   const editing = space ?? null;
+  const kind: SpaceKind = editing?.kind ?? newKind;
+  const amenity = kind === "AMENITY";
+  const copy = KIND_COPY[kind];
   const [busy, setBusy] = useState(false);
   // Avanzado (slug) arranca cerrado; se abre solo si el slug no valida (ver JSX).
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -126,6 +164,7 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
     resolver: zodResolver(spaceInputSchema),
     defaultValues: editing
       ? {
+          kind: editing.kind,
           name: editing.name,
           slug: editing.slug,
           description: editing.description,
@@ -138,7 +177,14 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
           iconName: editing.iconName ?? "",
           imageUrl: editing.imageUrl,
         }
-      : EMPTY,
+      : {
+          ...EMPTY,
+          kind,
+          // Un área común nace sin capacidad ni reserva: solo se muestra.
+          ...(amenity
+            ? { capacity: null, isReservable: false, isExclusive: false }
+            : {}),
+        },
   });
 
   const faqFields = useFieldArray({ control: form.control, name: "faqs" });
@@ -177,17 +223,17 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
     try {
       if (editing) {
         await apiSend(`/api/admin/spaces/${editing.id}`, "PUT", payload);
-        toast.success("Espacio actualizado");
+        toast.success(copy.updated);
       } else {
         await apiSend("/api/admin/spaces", "POST", payload);
-        toast.success("Espacio creado");
+        toast.success(copy.created);
       }
       invalidateApi("/api/admin/spaces");
       guard.release();
       router.push(LIST_URL);
       router.refresh();
     } catch (err) {
-      toast.error(apiErrorMessage(err, "No se pudo guardar el espacio"));
+      toast.error(apiErrorMessage(err, copy.saveError));
       setBusy(false);
     }
   };
@@ -201,7 +247,7 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
               <FormSection
                 id="identidad"
                 title="Identidad"
-                description="Cómo se llama el espacio, cómo se reconoce y cuántas personas entran."
+                description={copy.identity}
               >
                 <FormField
                   control={form.control}
@@ -211,7 +257,7 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
                       <FormLabel>Nombre</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Sala de reuniones"
+                          placeholder={copy.placeholder}
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
@@ -256,22 +302,46 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Capacidad</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          className="max-w-32"
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(
-                              Number.isNaN(e.target.valueAsNumber)
-                                ? 1
-                                : e.target.valueAsNumber,
-                            )
-                          }
-                        />
-                      </FormControl>
+                      {amenity && (
+                        // Solo un área común puede no tener capacidad: un espacio la necesita
+                        // para el cálculo de disponibilidad.
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="no-capacity"
+                            checked={field.value === null}
+                            onCheckedChange={(noCap) =>
+                              field.onChange(noCap ? null : 1)
+                            }
+                          />
+                          <label htmlFor="no-capacity" className="text-sm">
+                            Sin capacidad
+                          </label>
+                        </div>
+                      )}
+                      {field.value !== null && (
+                        <FormControl>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            className="max-w-32"
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(
+                                Number.isNaN(e.target.valueAsNumber)
+                                  ? 1
+                                  : e.target.valueAsNumber,
+                              )
+                            }
+                          />
+                        </FormControl>
+                      )}
+                      {amenity && (
+                        <FormDescription>
+                          Se muestra como «N personas» en el sitio; sin
+                          capacidad no se muestra nada.
+                        </FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -289,7 +359,7 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
                             value={field.value ?? null}
                             onChange={field.onChange}
                             uploadUrl={`/api/admin/spaces/upload${slug ? `?slug=${encodeURIComponent(slug)}` : ""}`}
-                            alt={form.getValues("name") || "Espacio"}
+                            alt={form.getValues("name") || copy.noun}
                             disabled={busy}
                           />
                         </FormControl>
@@ -548,33 +618,35 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
             </>
           }
           aside={
-            <FormSection
-              id="comportamiento"
-              title="Comportamiento"
-              description="Cómo se puede usar y dónde aparece."
-            >
-              {FLAGS.map((flag) => (
-                <FormField
-                  key={flag.name}
-                  control={form.control}
-                  name={flag.name}
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between gap-3 rounded-md border p-3">
-                      <div className="space-y-1">
-                        <FormLabel>{flag.label}</FormLabel>
-                        <FormDescription>{flag.hint}</FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </FormSection>
+            amenity ? undefined : (
+              <FormSection
+                id="comportamiento"
+                title="Comportamiento"
+                description="Cómo se puede usar y dónde aparece."
+              >
+                {FLAGS.map((flag) => (
+                  <FormField
+                    key={flag.name}
+                    control={form.control}
+                    name={flag.name}
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between gap-3 rounded-md border p-3">
+                        <div className="space-y-1">
+                          <FormLabel>{flag.label}</FormLabel>
+                          <FormDescription>{flag.hint}</FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </FormSection>
+            )
           }
         />
 
@@ -588,7 +660,7 @@ export function SpaceForm({ space }: { space?: SpaceEditable | null }) {
             Cancelar
           </Button>
           <Button type="submit" disabled={busy}>
-            {editing ? "Guardar cambios" : "Crear espacio"}
+            {editing ? "Guardar cambios" : copy.newLabel}
           </Button>
         </StickySaveBar>
       </form>
