@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2, 3, 4, 5, 6.
+Slices hechos: 1, 2, 3, 4, 5, 6, 7.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -242,8 +242,27 @@ eso los cierres parciales entran desde el principio.
    duplicaría esas reglas y notificaciones. Un cancelar-desde-acá (o en lote) queda como mejora
    posible. Un cierre descartado no lista nada. Verificado contra el seed: un cierre sobre el
    día de un evento semanal lista el evento con su franja y el botón «Gestionar sesiones».
-7. **Sincronización**: cliente de ArgentinaDatos, upsert idempotente, cron en `vercel.json`,
-   botón manual, pantalla «Por revisar».
+7. **Sincronización** ✅ — `src/lib/closed-days/holiday-sync.ts` (pura, 14 tests: validar la
+   respuesta con Zod, armar `ar:YYYY-MM-DD`, descartar lo que no es del año pedido, y
+   `planHolidaySync`) y `src/lib/db/holidaySync.ts` (pedido con timeout de 10 s, `createMany` con
+   `skipDuplicates` para que cron + botón simultáneos no dupliquen). Trae el año en curso y el
+   siguiente; si el origen falla para un año, ese año se saltea y se informa (`failedYears`), sin
+   modificar nada a partir de un pedido fallido. Cron `GET /api/cron/sync-holidays` (Bearer
+   `CRON_SECRET`, mensual: `0 7 1 * *` en `vercel.json`) y botón «Sincronizar feriados»
+   (`POST /api/admin/closed-days/sync`, una entrada de auditoría `closedDay.sync` con el
+   resumen). La pestaña «Por revisar» tiene checkboxes y **Confirmar / Descartar en lote**
+   (`POST /api/admin/closed-days/bulk`, `{ ids, action }` → `{ done, skipped }`, una entrada
+   `closedDay.update` por cierre con `requestId` compartido; `setClosedDayStatus` es un
+   `updateMany` condicional, así dos admins a la vez no se pisan). Los `puente` muestran «es
+   opcional, La Nube puede abrir». **Desvíos del diseño, a propósito:** (a) un feriado **ya
+   pasado** no se propone (llenaría «Por revisar»); (b) una fila `ACTIVE` que el origen deja de
+   traer **no se desactiva ni se pasa a revisión**, solo se informa en el aviso del botón
+   (`missing`): un cierre ya confirmado no debería reabrirse solo porque el origen cambie; (c)
+   solo se refrescan nombre/tipo de propuestas todavía sin revisar. Verificado contra la API real
+   (2026 + 2027: 22 propuestas vigentes, segunda corrida sin crear nada) y en el navegador
+   (lista, diálogo de confirmación, confirmar en lote → pasan a «Próximos», contador
+   22 → 20, auditoría con `requestId` compartido). El dato dudoso «Visita del papa León XIV»
+   aparece como propuesta, que es justamente para lo que sirve la revisión.
 8. **Superficies públicas y MCP**: `get_availability`, página de contacto/espacios.
 9. **Docs**: CLAUDE.md (modelo, regla, sync), este doc, README de milestones, `OPEN_QUESTIONS.md`.
 

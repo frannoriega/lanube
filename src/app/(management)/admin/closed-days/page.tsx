@@ -1,4 +1,5 @@
 import { Pagination } from "@/components/molecules/pagination";
+import { SyncHolidaysButton } from "@/components/organisms/admin/sync-holidays-button";
 import { ClosedDaysTable } from "@/components/organisms/admin/closed-days-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ export default async function ClosedDaysPage({
     window: closureWindowLabel(c),
     source: c.source,
     status: c.status,
+    holidayKind: c.holidayKind,
   }));
 
   return (
@@ -68,9 +70,12 @@ export default async function ClosedDaysPage({
             no se pueden pedir reservas.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/closed-days/new">Nuevo día cerrado</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <SyncHolidaysButton />
+          <Button asChild>
+            <Link href="/admin/closed-days/new">Nuevo día cerrado</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="inline-flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
@@ -99,7 +104,11 @@ export default async function ClosedDaysPage({
         </Link>
       </div>
 
-      <ClosedDaysTable rows={rows} emptyMessage={EMPTY[scope]} />
+      <ClosedDaysTable
+        rows={rows}
+        emptyMessage={EMPTY[scope]}
+        selectable={scope === "review"}
+      />
       <Pagination
         page={page}
         totalPages={Math.ceil(total / PAGE_SIZE)}

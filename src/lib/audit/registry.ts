@@ -521,6 +521,19 @@ export const AUDIT_EVENTS = {
     label: "Eliminó un día cerrado",
     verb: "Eliminación",
   },
+  /** Una sola entrada por sincronización (no por feriado): el resumen va en `after`. */
+  "closedDay.sync": {
+    entity: "ClosedDay",
+    kind: "custom",
+    label: "Sincronizó los feriados nacionales",
+    verb: "Sincronización",
+    fields: {
+      created: num("Feriados propuestos"),
+      refreshed: num("Propuestas actualizadas"),
+      missing: num("Cargados que el origen ya no trae"),
+      failedYears: text("Años que no se pudieron traer"),
+    },
+  },
 
   // Eventos y formularios
   "event.create": {
