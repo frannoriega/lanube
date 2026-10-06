@@ -388,6 +388,15 @@ async function createUser(
   return user;
 }
 
+/**
+ * Hash bcrypt (12 rondas, como `hashPassword`) de una contraseña que no es de nadie. Cuando el
+ * correo no existe se compara igual contra esto, para que la respuesta tarde lo mismo que con
+ * una cuenta real: antes volvía en seguida y el tiempo de respuesta revelaba qué correos tienen
+ * cuenta (milestone 25, S3).
+ */
+const DUMMY_PASSWORD_HASH =
+  "$2b$12$FXjIkQUNi08vmvfIif4PYuy1WfnXBQoT9dwgRIRg08X0ffOyrYMLa";
+
 async function getUserByEmailAndPassword(
   email: string,
   password: string,
@@ -396,16 +405,11 @@ async function getUserByEmailAndPassword(
   const user = await prisma.user.findFirst({
     where: { email },
   });
-  if (!user) {
-    return null;
-  }
-  if (
-    user.passwordHash &&
-    (await bcrypt.compare(password, user.passwordHash))
-  ) {
-    return user;
-  }
-  return null;
+  const matches = await bcrypt.compare(
+    password,
+    user?.passwordHash ?? DUMMY_PASSWORD_HASH,
+  );
+  return user?.passwordHash && matches ? user : null;
 }
 
 async function getRegisteredUserByEmail(

@@ -11,6 +11,8 @@ import {
 } from "./db/users";
 import { normalizeEmailForIdentityServer } from "./email/identity-server";
 import { logger } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/request-ip";
 import { prisma } from "./prisma";
 import { CredentialsSignin } from "next-auth";
 import { signInSchema } from "./schemas/auth";
@@ -21,6 +23,42 @@ import { resendEmailConfirmationIfExpired } from "./db/verificationTokens";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 
 const SESSION_EXPIRATION_TIME_MS = 1000 * 7 * 24 * 60 * 60; // 7 days
+
+/** Código que el cliente reconoce para mostrar "demasiados intentos" (`signin-screen.tsx`). */
+export const SIGNIN_RATE_LIMITED_CODE = "rate_limited";
+
+/**
+ * Límite de intentos de ingreso con contraseña (milestone 25, S3). Registro, reseteo y
+ * recuperación ya tenían rate limit + captcha; el ingreso no tenía nada, así que la fuerza bruta
+ * en línea era ilimitada — y cada intento cuesta ~cientos de ms de CPU (bcryptjs es JS puro).
+ *
+ * Dos llaves, como `/api/auth/recovery`:
+ * - **por IP**: frena a un atacante contra muchas cuentas;
+ * - **por correo normalizado**: frena a muchas IPs contra una cuenta. Puede bloquear a la persona
+ *   legítima durante el castigo si alguien ataca su cuenta; es el costo aceptado (la passkey y
+ *   el reseteo siguen andando, y el límite es holgado para un humano).
+ *
+ * Se cuenta **antes** de verificar la contraseña: contar solo los fallos dejaría correr bcrypt
+ * sin límite en paralelo. Sin IP de plataforma no se aplica el límite por IP (en desarrollo
+ * `getClientIp` devuelve 127.0.0.1), pero el de correo sí.
+ */
+async function signInRateLimited(normalizedEmail: string): Promise<boolean> {
+  const ip = await getClientIp();
+  const [byIp, byEmail] = await Promise.all([
+    ip
+      ? checkRateLimit(ip, "/api/auth/signin", {
+          maxAttempts: 20,
+          windowMs: 60_000,
+          blockDurationMs: 15 * 60_000,
+        })
+      : null,
+    checkRateLimit(`email:${normalizedEmail}`, "/api/auth/signin", {
+      maxAttempts: 10,
+      windowMs: 15 * 60_000,
+    }),
+  ]);
+  return (byIp !== null && !byIp.allowed) || !byEmail.allowed;
+}
 
 declare module "next-auth" {
   interface Session {
@@ -82,6 +120,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const { email, password } =
             await signInSchema.parseAsync(credentials);
           const normalizedEmail = await normalizeEmailForIdentityServer(email);
+          if (await signInRateLimited(normalizedEmail)) {
+            const err = new CredentialsSignin(
+              "Demasiados intentos de ingreso. Esperá unos minutos y volvé a probar.",
+            );
+            err.code = SIGNIN_RATE_LIMITED_CODE;
+            throw err;
+          }
           const user = await getUserByEmailAndPassword(
             normalizedEmail,
             password,

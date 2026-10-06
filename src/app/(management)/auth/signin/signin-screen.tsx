@@ -187,6 +187,12 @@ export function SignInScreen({
           toast.error(
             "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada (si tu enlace había vencido, te enviamos uno nuevo).",
           );
+        } else if (res?.code === "rate_limited") {
+          // Mismo código que `SIGNIN_RATE_LIMITED_CODE` (src/lib/auth.ts, milestone 25); se
+          // repite acá para no importar un módulo de servidor en el cliente.
+          toast.error(
+            "Demasiados intentos de ingreso. Esperá unos minutos y volvé a probar.",
+          );
         } else {
           setError(true);
         }
