@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   addDaysToDateKey,
   adminForwardWindowRange,
+  currentPeriodsInAdminTz,
+  dateKeyFromUnixMs,
   enumerateDateKeysInclusive,
   isValidDateKey,
   todayDateKeyInAdminTz,
@@ -42,5 +44,35 @@ describe("admin-timezone", () => {
     const nowMs = new Date("2025-04-04T15:00:00Z").getTime();
     const { fromKey, toKey } = adminForwardWindowRange(60, nowMs);
     expect(enumerateDateKeysInclusive(fromKey, toKey)).toHaveLength(60);
+  });
+
+  // Milestone 25, C1/C2: los períodos de las estadísticas van en hora del predio (UTC-3).
+  describe("currentPeriodsInAdminTz", () => {
+    // Martes 2026-10-06 22:30 en Argentina = miércoles 2026-10-07 01:30 UTC.
+    const lateTuesday = Date.UTC(2026, 9, 7, 1, 30);
+
+    it("hoy es el día de Argentina, no el de UTC", () => {
+      const { day } = currentPeriodsInAdminTz(lateTuesday);
+      expect(dateKeyFromUnixMs(day.startMs)).toBe("2026-10-06");
+      expect(day.startMs).toBe(Date.UTC(2026, 9, 6, 3, 0));
+      expect(day.endMs).toBe(Date.UTC(2026, 9, 7, 2, 59, 59, 999));
+    });
+
+    it("la semana va de domingo a sábado", () => {
+      const { week } = currentPeriodsInAdminTz(lateTuesday);
+      expect(dateKeyFromUnixMs(week.startMs)).toBe("2026-10-04");
+      expect(dateKeyFromUnixMs(week.endMs)).toBe("2026-10-10");
+    });
+
+    it("el mes termina en su último día", () => {
+      const { month } = currentPeriodsInAdminTz(lateTuesday);
+      expect(dateKeyFromUnixMs(month.startMs)).toBe("2026-10-01");
+      expect(dateKeyFromUnixMs(month.endMs)).toBe("2026-10-31");
+    });
+
+    it("diciembre cierra el año", () => {
+      const { month } = currentPeriodsInAdminTz(Date.UTC(2026, 11, 15, 12));
+      expect(dateKeyFromUnixMs(month.endMs)).toBe("2026-12-31");
+    });
   });
 });

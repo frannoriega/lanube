@@ -65,6 +65,46 @@ export function enumerateDateKeysInclusive(
   return out;
 }
 
+/** Límites de un período, en ms: `[startMs, endMs]`, ambos inclusive. */
+export interface PeriodBounds {
+  startMs: number;
+  endMs: number;
+}
+
+/**
+ * Hoy, esta semana (domingo a sábado, como contaban las estadísticas) y este mes **en la hora del
+ * predio**. Las estadísticas los calculaban con `setHours(0)`/`getDay()` sobre un `Date`, o sea
+ * en la zona del servidor: en Vercel eso es UTC, y entre las 21:00 y las 24:00 de Argentina "hoy"
+ * ya era mañana (milestone 25, C1). Cada período trae también su fin, para no sumar lo que viene
+ * después (C2).
+ */
+export function currentPeriodsInAdminTz(nowMs: number): {
+  day: PeriodBounds;
+  week: PeriodBounds;
+  month: PeriodBounds;
+} {
+  const today = dateKeyFromUnixMs(nowMs);
+  const weekday = new TZDate(nowMs, ADMIN_TIMEZONE).getDay();
+  const weekStart = addDaysToDateKey(today, -weekday);
+  const monthStart = `${today.slice(0, 8)}01`;
+  // Primer día del mes siguiente, menos uno: el último día de este mes.
+  const [y, m] = today.split("-").map(Number);
+  const nextMonth =
+    m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+  const monthEnd = addDaysToDateKey(nextMonth, -1);
+  return {
+    day: { startMs: startOfDateKeyMs(today), endMs: endOfDateKeyMs(today) },
+    week: {
+      startMs: startOfDateKeyMs(weekStart),
+      endMs: endOfDateKeyMs(addDaysToDateKey(weekStart, 6)),
+    },
+    month: {
+      startMs: startOfDateKeyMs(monthStart),
+      endMs: endOfDateKeyMs(monthEnd),
+    },
+  };
+}
+
 /** First and last keys for the default forward window (inclusive). */
 export function adminForwardWindowRange(
   dayCount: number,
