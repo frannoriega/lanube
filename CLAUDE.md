@@ -95,6 +95,7 @@ src/
 │   │   │   ├── resources/        # Superadmin: Resource CRUD
 │   │   │   ├── reservation-types/# Superadmin: ReservationType CRUD
 │   │   │   ├── site/             # Superadmin: site config
+│   │   │   ├── maintenance/      # Superadmin: ventanas de mantenimiento (milestone 22)
 │   │   │   ├── themes/           # Superadmin: seasonal landing themes
 │   │   │   ├── roles/            # Superadmin: Role CRUD + permission checklist
 │   │   │   └── profile-requests/ # Approve/reject DNI & reasonToJoin change requests
@@ -125,6 +126,7 @@ src/
 │       ├── session/              # GET current session (session validation)
 │       ├── mcp/                  # MCP endpoint (milestones 20–21): Bearer-token; tools in src/lib/mcp/tools/
 │       ├── oauth/                # OAuth 2.1 AS: register (DCR), token, revoke, authorize (consent decision)
+│       ├── maintenance/          # GET público: ventanas vigentes/próximas (aviso + portero del middleware)
 │       ├── cron/
 │       │   ├── maintain-reservations/  # Daily 5am UTC (scheduled in vercel.json)
 │       │   └── report-snapshot/  # ⚠️ Endpoint exists but is NOT in vercel.json's
@@ -214,6 +216,7 @@ src/
 - `OAuthClient`, `OAuthGrant` (→ `User`), `OAuthAuthorizationCode`, `OAuthToken`: the MCP
   connector's OAuth server (milestone 20, see §16). `Reservation.origin` (`WEB`/`ASSISTANT`)
   marks reservations requested by an assistant.
+- `MaintenanceWindow`: una ventana de mantenimiento (título, motivo markdown, modo, áreas, inicio/fin opcionales, `endedAt`); nunca se borra, queda de historial (milestone 22, §17).
 - `PolicyAcceptance` (→ `User`): append-only evidence that an account accepted one version of one policy (milestone 19, see §15). A trigger rejects every `UPDATE`.
 
 **Features** (expanding):
@@ -277,7 +280,7 @@ src/
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status **and pending policies** (`policiesPending`, milestone 19) checked in `jwt()` callback
 6. **Role-based (RBAC)** — ⚠️ **roles are DATA, not an enum** (milestone 9). A role is a row in `roles` (`prisma/models/roles.prisma`); `RegisteredUser.roleId` replaced the old `UserRole` enum column, and **NULL means the base tier**. The permission _catalog_ stays code-defined in `src/lib/rbac.ts` (`PERMISSIONS`, `hasPermission()`, `isAdminRole()`) because each string maps to a real call site; _which_ of those a role carries is `Role.permissions`, edited by a superadmin at `/admin/roles` (`roles:manage`). Full rationale: `docs/design/03-auth-and-permissions.md`.
    - **Protected rows**: `Role.isSystem` blocks rename/delete/re-scope (403) — seeded on `USER` and `SUPERADMIN`. `Role.isSuperadmin` makes `hasPermission()` return true for _everything_, including permissions added in a later deploy; it can never be set from the UI (`createRole` hardcodes both flags false). Seeded roles: USER / ADMIN / SUPERADMIN / COMUNICADOR, with the exact permission sets they had pre-migration. COMUNICADOR is an admin-panel role scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts.
-   - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles`, `/admin/audit` and `/admin/profile-requests` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
+   - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles`, `/admin/audit`, `/admin/maintenance` and `/admin/profile-requests` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
    - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) resolves fresh from the DB via `getPermissionSetForUser()` and returns 401/403. Authoritative — the JWT claim can lag by one request.
    - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`); the admin/user layouts resolve the set and pass it into `UserProvider`, so client components call `hasPermission(user, "…")` on the user object directly (both `Session` and `CurrentUser` structurally _are_ a `PermissionSet`).
    - **Role cache**: `src/lib/db/roles.ts` keeps a module-scoped snapshot (30 s TTL) invalidated by every role write. Call `invalidateRoleCache()` if you add a new write path. It is the seam for a future Vercel Global Config provider (see `docs/OPEN_QUESTIONS.md`).
@@ -883,6 +886,18 @@ Full design + what was built: `docs/milestones/milestones-20-mcp-connector.md`.
   revoke every grant (`revokeAllGrantsForUser`). The daily cron prunes expired codes/tokens.
 - Users connect/disconnect in Configuración → Seguridad → «Asistentes de IA»; admins see a
   «Vía asistente» chip on the reservation detail.
+
+### 17. Modo mantenimiento (milestone 22)
+
+Full design, runbook de migración + alternativas descartadas: `docs/milestones/milestones-22-maintenance-mode.md`.
+
+- **El middleware ahora también corre para `/api/**`** (`apiGate`en`src/middleware.ts`): sin tocar ninguna ruta, responde 503 `{ code: "MAINTENANCE" }`si una ventana vigente frena el pedido. Lo decide`src/lib/maintenance/gate.ts`con las reglas puras de`evaluate.ts`. No hay base de datos en el middleware (edge): lee las ventanas con un `fetch`al propio`GET /api/maintenance?fresh=1`, caché de 15 s, **falla abierto**.
+- **Falla del lado seguro**: la solo lectura global frena todo método que escribe salvo `READ_ONLY_EXEMPT_PREFIXES` (`areas.ts`: ingreso/NextAuth, passkey options, token OAuth, políticas, cron, mcp, el propio panel, campanita). **Una ruta nueva que escribe queda bloqueada sola**; si debe seguir andando en solo lectura, se agrega a esa lista con su motivo.
+- **Áreas** (`MAINTENANCE_AREAS`): se definen por prefijos de ruta (`paths`) o `effect: "code"` (`event-emails`: los senders de correo de eventos consultan `areEventEmailsSuspended()` y omiten el envío; la campanita sigue). Sumar un área = una entrada en el catálogo.
+- **Lo que se protege adentro** porque el middleware no lo ve: el cron `maintain-reservations` se saltea con solo lectura global (idempotente, recupera al día siguiente) y las tools de escritura del conector MCP (`defineTool`, `/api/mcp` es siempre POST).
+- **UI**: `MaintenanceProvider` (layout raíz) → `MaintenanceBanner` (sitio, panel, `/forms`) y `AreaMaintenanceNotice` + `useAreaWriteBlock(area)` dentro de los formularios apagados (registro, reseteo, inscripción). Un 503 de mantenimiento refresca el aviso al instante (`client.ts`).
+- Permiso `maintenance:manage`: solo SUPERADMIN, fuera del conector. Cada alta/edición/fin se audita (`MaintenanceWindow`).
+- Server Actions no pasan por `/api` (el repo no usa ninguna): si se agregan, el portero no las ve.
 
 ## Testing & Seeding
 
