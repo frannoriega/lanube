@@ -108,6 +108,17 @@ export async function consumeEmailVerificationToken(
   return record.identifier;
 }
 
+/**
+ * Borra los tokens de confirmación de una cuenta. Se usa cuando el envío del enlace falló:
+ * un token vigente que nadie recibió bloquearía `resendEmailConfirmationIfExpired` (solo
+ * reenvía si no queda ninguno vigente) y la cuenta quedaría 24 h sin poder confirmarse.
+ */
+export async function discardEmailVerificationTokens(
+  email: string,
+): Promise<void> {
+  await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+}
+
 export async function createResetToken(userId: string): Promise<string> {
   const token = createToken(32);
   const hashedToken = hash(token);
@@ -120,6 +131,14 @@ export async function createResetToken(userId: string): Promise<string> {
   });
 
   return token;
+}
+
+/**
+ * Borra un token de reseteo recién creado cuyo correo no se pudo enviar: no debe quedar un
+ * enlace válido que nadie recibió. Recibe el token en claro (el que iba en el correo).
+ */
+export async function discardResetToken(token: string): Promise<void> {
+  await prisma.passwordResetToken.deleteMany({ where: { token: hash(token) } });
 }
 
 export async function consumeResetToken(

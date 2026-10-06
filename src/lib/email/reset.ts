@@ -1,29 +1,6 @@
 "use server";
-import nodemailer from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { FROM_EMAIL, transporter } from "@/lib/email/transport";
 import { logger } from "@/lib/logger";
-
-const SMTP_SERVER_HOST = process.env.SMTP_SERVER_HOST;
-const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
-const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD;
-const SMTP_SERVER_PORT = process.env.SMTP_SERVER_PORT;
-const SMTP_SERVER_SECURE = process.env.SMTP_SERVER_SECURE === "true";
-const transporter = nodemailer.createTransport({
-  host: SMTP_SERVER_HOST,
-  port: SMTP_SERVER_PORT,
-  secure: SMTP_SERVER_SECURE,
-  // En el puerto 587 la conexión arranca en texto plano y se sube a TLS con STARTTLS. Por
-  // defecto nodemailer sigue sin cifrar si el servidor no ofrece STARTTLS (p. ej. un atacante
-  // en el camino que lo quite) y mandaría usuario y contraseña en claro. Con `requireTLS`
-  // se niega a autenticar sin TLS. Solo en producción: el Mailpit local (1025) no tiene TLS.
-  requireTLS: process.env.NODE_ENV === "production",
-  auth: {
-    user: SMTP_SERVER_USERNAME,
-    pass: SMTP_SERVER_PASSWORD,
-  },
-} as SMTPTransport.Options);
-
-const FROM_EMAIL = "La Nube <no-responder@cdeluruguay.gob.ar>";
 
 export async function sendResetEmail(
   email: string,
