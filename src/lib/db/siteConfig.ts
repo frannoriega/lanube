@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_SITE_CONFIG } from "@/lib/constants/contact";
 import type { SiteConfigInput } from "@/lib/schemas/config";
@@ -12,7 +13,8 @@ const SITE_CONFIG_ID = "site";
  * missing (migration seeds it, but this keeps a fresh/un-seeded DB working). Public callers
  * (footer, about) can rely on always getting a value.
  */
-export async function getSiteConfig(): Promise<SiteConfig> {
+// `cache()`: el layout raíz y el pie/«Quiénes somos» la leen en el mismo render (milestone 25).
+export const getSiteConfig = cache(async (): Promise<SiteConfig> => {
   const existing = await prisma.siteConfig.findUnique({
     where: { id: SITE_CONFIG_ID },
   });
@@ -20,7 +22,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   return prisma.siteConfig.create({
     data: { id: SITE_CONFIG_ID, ...DEFAULT_SITE_CONFIG },
   });
-}
+});
 
 export async function updateSiteConfig(
   input: SiteConfigInput,
