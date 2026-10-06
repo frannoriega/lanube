@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1, 2, 3, 4, 5.
+Slices hechos: 1, 2, 3, 4, 5, 6.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -226,7 +226,22 @@ eso los cierres parciales entran desde el principio.
    tarde) quita el botón «Reservar» de un día cerrado entero, en la cabecera y en la tira de días
    del teléfono. Verificado en el navegador (escritorio y teléfono) con cierres de prueba, ya
    borrados. Pendiente de pulir si se quiere: un aviso al tocar un tramo cerrado.
-6. **Reservas afectadas**: diálogo de resolución al crear/confirmar un cierre.
+6. **Reservas afectadas** ✅ — `getReservationsAffectedByClosure()`
+   (`src/lib/db/closedDayImpact.ts`) lee del ledger (buckets de 15 min) las reservas
+   **pendientes o aprobadas que todavía no terminaron** y se queda con los buckets que caen en
+   las franjas reales del cierre usando la misma `findClosureForWindow` de la regla de reserva,
+   así «afectada» significa exactamente «no se podría reservar». Une los buckets con
+   `mergeWindows` (el mismo helper de los conflictos de aprobación), y resuelve el nombre del
+   solicitante (y su correo) o del evento. La página de edición muestra la lista (sección
+   «Reservas afectadas», `ClosedDayImpact`); el `POST`/`PUT` devuelven `affectedCount` y, si es
+   mayor que cero, el formulario avisa y lleva al admin a esa página en lugar de a la lista, para
+   que no quede olvidado. **Alcance recortado respecto del diseño:** no hay un diálogo con
+   «cancelar» por fila. Cada fila linkea a donde ya se resuelve — **Reservas** para una reserva
+   de usuario, y **las sesiones del evento** (`/admin/events/[id]?sessions=1`: cancelar la sesión
+   con motivo + aviso a los inscriptos) para un evento — porque reimplementar la cancelación acá
+   duplicaría esas reglas y notificaciones. Un cancelar-desde-acá (o en lote) queda como mejora
+   posible. Un cierre descartado no lista nada. Verificado contra el seed: un cierre sobre el
+   día de un evento semanal lista el evento con su franja y el botón «Gestionar sesiones».
 7. **Sincronización**: cliente de ArgentinaDatos, upsert idempotente, cron en `vercel.json`,
    botón manual, pantalla «Por revisar».
 8. **Superficies públicas y MCP**: `get_availability`, página de contacto/espacios.

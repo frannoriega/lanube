@@ -92,16 +92,34 @@ export function ClosedDayForm({
   const onSubmit = async (values: ClosedDayInput) => {
     setBusy(true);
     try {
-      if (closedDayId) {
-        await apiSend(`/api/admin/closed-days/${closedDayId}`, "PUT", values);
-        toast.success("Día cerrado actualizado");
-      } else {
-        await apiSend("/api/admin/closed-days", "POST", values);
-        toast.success("Día cerrado cargado");
-      }
+      const saved = closedDayId
+        ? await apiSend<{ id: string; affectedCount: number }>(
+            `/api/admin/closed-days/${closedDayId}`,
+            "PUT",
+            values,
+          )
+        : await apiSend<{ id: string; affectedCount: number }>(
+            "/api/admin/closed-days",
+            "POST",
+            values,
+          );
+      toast.success(
+        closedDayId ? "Día cerrado actualizado" : "Día cerrado cargado",
+      );
       invalidateApi("/api/admin/closed-days");
       guard.release();
-      router.push(LIST_URL);
+      if (saved.affectedCount > 0) {
+        // Un cierre no cancela nada solo: se lleva al admin a la lista de lo que quedó en
+        // conflicto (la misma página de edición) en lugar de dejarlo olvidado.
+        toast.warning(
+          saved.affectedCount === 1
+            ? "Hay 1 reserva o evento afectado: revisalo."
+            : `Hay ${saved.affectedCount} reservas o eventos afectados: revisalos.`,
+        );
+        router.push(`${LIST_URL}/${saved.id}/edit`);
+      } else {
+        router.push(LIST_URL);
+      }
       router.refresh();
     } catch (err) {
       toast.error(apiErrorMessage(err, "No se pudo guardar el día cerrado"));
