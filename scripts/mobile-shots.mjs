@@ -122,6 +122,12 @@ const SHOTS = [
   { name: "admin-reservations", user: "admin", url: "/admin/reservations" },
   { name: "admin-users", user: "admin", url: "/admin/users" },
   { name: "admin-checkin", user: "admin", url: "/admin/checkin" },
+  { name: "admin-closed-days", user: "admin", url: "/admin/closed-days" },
+  {
+    name: "admin-closed-day-new",
+    user: "admin",
+    url: "/admin/closed-days/new",
+  },
   { name: "admin-events", user: "admin", url: "/admin/events" },
   { name: "admin-event-new", user: "admin", url: "/admin/events/new" },
   {
