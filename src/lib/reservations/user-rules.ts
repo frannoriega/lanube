@@ -1,3 +1,8 @@
+import {
+  closureRejectionMessage,
+  findClosureForWindow,
+  type ClosureLike,
+} from "@/lib/closed-days/closures";
 import { isOnLedgerGrid } from "@/lib/constants/reservations";
 import {
   BOOKING_WINDOW_MESSAGES,
@@ -44,4 +49,22 @@ export function validateUserReservationWindow(
   if (violation) return BOOKING_WINDOW_MESSAGES[violation];
 
   return null;
+}
+
+/**
+ * Chequea la ventana contra los **cierres activos** del espacio (milestone 23). Devuelve el
+ * mensaje en castellano —con el motivo del cierre— o `null` si ninguno la toca.
+ *
+ * Va aparte de {@link validateUserReservationWindow} porque esa es síncrona y sin datos: los
+ * cierres salen de la base, así que quien llama los trae y los pasa. Corre **después** de las
+ * reglas de apertura: un sábado ya se rechaza como «solo de lunes a viernes», y no hace falta
+ * decir además que un feriado que cae en sábado lo cierra.
+ */
+export function validateAgainstClosures(
+  startMs: number,
+  endMs: number,
+  closures: readonly ClosureLike[],
+): string | null {
+  const closure = findClosureForWindow(startMs, endMs, closures);
+  return closure ? closureRejectionMessage(closure) : null;
 }

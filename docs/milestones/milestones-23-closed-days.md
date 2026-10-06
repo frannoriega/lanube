@@ -2,7 +2,7 @@
 
 **Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
 release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
-Slices hechos: 1.
+Slices hechos: 1, 2 (parcial).
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -177,7 +177,10 @@ eso los cierres parciales entran desde el principio.
    orden, la franja múltiplo de 15 y «clave externa ⇔ NATIONAL_SYNC»; lógica pura en
    `src/lib/closed-days/closures.ts`, 17 tests): schema, migración, `ClosedDay` helpers, función pura
    `closureFor(range, closures)` con tests (rangos, franjas, límites de 15 min, medianoche).
-2. **Regla de reserva**: rechazo en `user-rules.ts`/`requestUserReservation` y en SQL; tests; MCP
+2. **Regla de reserva** (🟡 parte TypeScript hecha: `getActiveClosuresForWindow()` en
+   `src/lib/db/closedDays.ts`, `validateAgainstClosures()` en `user-rules.ts` y el llamado en
+   `requestUserReservation`, que usan la web y el MCP; el refuerzo en `create_reservation()` se
+   hace en el slice 3, porque ahí se recrean las mismas funciones SQL): rechazo en `user-rules.ts`/`requestUserReservation` y en SQL; tests; MCP
    hereda el mensaje.
 3. **Recurrentes y eventos**: leer las funciones SQL vigentes y resolver la pregunta abierta de
    (4.4); tests contra Postgres.
