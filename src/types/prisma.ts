@@ -97,6 +97,18 @@ export enum ParticipantStatus {
   CANCELLED = "CANCELLED",
 }
 
+export enum ClosedDaySource {
+  NATIONAL_SYNC = "NATIONAL_SYNC",
+  MANUAL_HOLIDAY = "MANUAL_HOLIDAY",
+  MANUAL_OTHER = "MANUAL_OTHER",
+}
+
+export enum ClosedDayStatus {
+  PENDING_REVIEW = "PENDING_REVIEW",
+  ACTIVE = "ACTIVE",
+  DISMISSED = "DISMISSED",
+}
+
 export enum LandingThemeEffect {
   NONE = "NONE",
   EMOJI_SHOWER = "EMOJI_SHOWER",

@@ -1,7 +1,8 @@
 # Milestone 23 — Días cerrados (feriados, vacaciones y cierres parciales)
 
-**Estado:** **diseño acordado (2026-10-06)**, sin implementar. Este doc es el punto de partida
-de la implementación.
+**Estado:** **en implementación** en la rama `milestone-23` (aparte de `preview`, para que un
+release desde `preview` no promueva una feature a medio hacer). Diseño acordado el 2026-10-06.
+Slices hechos: 1.
 **Tipo:** feature — dominio de reservas + administración + sincronización externa.
 
 ## Pedido
@@ -171,7 +172,10 @@ eso los cierres parciales entran desde el principio.
 
 ## Plan por slices
 
-1. **Modelo + dominio puro**: schema, migración, `ClosedDay` helpers, función pura
+1. **Modelo + dominio puro** ✅ (`prisma/models/closed-days.prisma`, migración
+   `20261006100000_closed_days` con CHECKs que hacen cumplir en la base el formato de fechas, el
+   orden, la franja múltiplo de 15 y «clave externa ⇔ NATIONAL_SYNC»; lógica pura en
+   `src/lib/closed-days/closures.ts`, 17 tests): schema, migración, `ClosedDay` helpers, función pura
    `closureFor(range, closures)` con tests (rangos, franjas, límites de 15 min, medianoche).
 2. **Regla de reserva**: rechazo en `user-rules.ts`/`requestUserReservation` y en SQL; tests; MCP
    hereda el mensaje.

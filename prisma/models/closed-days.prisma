@@ -1,0 +1,57 @@
+/// De dónde viene un día cerrado (milestone 23). `NATIONAL_SYNC` lo propone la sincronización
+/// con ArgentinaDatos; `MANUAL_HOLIDAY` es un feriado de la ciudad cargado a mano;
+/// `MANUAL_OTHER` son vacaciones y cualquier otro cierre.
+enum ClosedDaySource {
+  NATIONAL_SYNC
+  MANUAL_HOLIDAY
+  MANUAL_OTHER
+}
+
+/// Ciclo de vida de un día cerrado. Solo `ACTIVE` cierra el espacio. `PENDING_REVIEW` es lo que
+/// propone la sincronización hasta que un admin lo confirma; `DISMISSED` se conserva (no se
+/// borra) para que la sincronización no vuelva a proponer lo que un admin ya descartó.
+enum ClosedDayStatus {
+  PENDING_REVIEW
+  ACTIVE
+  DISMISSED
+}
+
+/// Un cierre de La Nube: un rango de fechas con motivo y, opcionalmente, una franja horaria
+/// (milestone 23, ver docs/milestones/milestones-23-closed-days.md). Un feriado, unas
+/// vacaciones y «hoy cerramos de 14 a 18» son la misma cosa.
+///
+/// Es del **espacio entero**, no de un recurso, y no guarda nada sobre empleados (así no se
+/// vuelve un sistema de RRHH).
+///
+/// Las fechas son fechas de calendario locales (`YYYY-MM-DD`, inclusivas, zona
+/// `ADMIN_TIMEZONE`) guardadas como texto, no como `date`/instante: «el 25 de mayo» es un día
+/// del reloj de pared de Concepción del Uruguay, y un tipo con zona lo correría de día según
+/// quién lo lea. El orden lexicográfico de `YYYY-MM-DD` coincide con el cronológico.
+/// La franja son minutos desde la medianoche local; ambos nulos = día completo. Los CHECK de la
+/// migración 20261006100000 hacen cumplir estas reglas en la base.
+model ClosedDay {
+  id    String @id @default(cuid())
+  /// Lo que ven los usuarios («Feriado: Día de la Soberanía»). Obligatorio, texto plano.
+  title String
+
+  startDate String @map("start_date")
+  endDate   String @map("end_date")
+  /// Minutos desde medianoche local, múltiplos de 15. Ambos nulos = día completo.
+  startTime Int?   @map("start_time")
+  endTime   Int?   @map("end_time")
+
+  source ClosedDaySource
+  status ClosedDayStatus @default(ACTIVE)
+
+  /// Solo `NATIONAL_SYNC`: identifica la fila del origen (p. ej. `ar:2026-06-15`) para que la
+  /// sincronización sea idempotente.
+  externalKey String? @unique @map("external_key")
+  /// Solo `NATIONAL_SYNC`: `inamovible` / `trasladable` / `puente`.
+  holidayKind String? @map("holiday_kind")
+
+  createdAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt BigInt @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+
+  @@index([status, startDate, endDate])
+  @@map("closed_days")
+}
