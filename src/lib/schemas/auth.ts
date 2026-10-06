@@ -20,11 +20,23 @@ export const authEmailSchema = z
     return z.NEVER;
   });
 
+/**
+ * Tope de largo de contraseña (milestone 25, S3). bcrypt solo usa los primeros 72 bytes, pero
+ * sin tope el servidor recibe y procesa lo que le manden. 128 sobra para cualquier gestor de
+ * contraseñas.
+ */
+const PASSWORD_MAX = 128;
+const MSG_PASSWORD_MAX = `La contraseña no puede tener más de ${PASSWORD_MAX} caracteres`;
+
+/** Contraseña nueva o de ingreso: mínimo 8, máximo {@link PASSWORD_MAX}. */
+const passwordSchema = z
+  .string()
+  .min(8, { message: "La contraseña debe tener al menos 8 caracteres" })
+  .max(PASSWORD_MAX, { message: MSG_PASSWORD_MAX });
+
 export const signInSchema = z.object({
   email: authEmailSchema,
-  password: z
-    .string()
-    .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+  password: passwordSchema,
 });
 
 /** Registration: validate like sign-in but keep the trimmed raw string for `display_email` (no dot-strip transform). */
@@ -56,12 +68,8 @@ export const acceptPoliciesSchema = z.object({
 export const registerSchema = z
   .object({
     email: registerEmailSchema,
-    password: z
-      .string()
-      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-    passwordConfirmation: z
-      .string()
-      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    password: passwordSchema,
+    passwordConfirmation: passwordSchema,
     captcha: z
       .string()
       .min(1, { message: "Por favor completá la verificación de seguridad" }),
@@ -90,12 +98,8 @@ export const resetSchema = z.object({
 
 export const newPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-    passwordConfirmation: z
-      .string()
-      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    password: passwordSchema,
+    passwordConfirmation: passwordSchema,
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: "Las contraseñas no coinciden",
@@ -113,12 +117,8 @@ export const recoverySchema = z
   .object({
     email: authEmailSchema,
     code: z.string().trim().min(1, { message: "Ingresá un código" }),
-    password: z
-      .string()
-      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
-    passwordConfirmation: z
-      .string()
-      .min(8, { message: "La contraseña debe tener al menos 8 caracteres" }),
+    password: passwordSchema,
+    passwordConfirmation: passwordSchema,
     captcha: z
       .string()
       .min(1, { message: "Por favor completá la verificación de seguridad" }),
