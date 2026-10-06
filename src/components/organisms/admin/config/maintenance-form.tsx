@@ -212,6 +212,7 @@ export function MaintenanceForm({
                           value={field.value}
                           onChange={field.onChange}
                           rows={8}
+                          breaks
                           minLength={10}
                           maxLength={4000}
                           placeholder="Qué está pasando, qué se puede y qué no, y cuándo volvemos."

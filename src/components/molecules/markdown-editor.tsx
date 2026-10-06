@@ -46,6 +46,8 @@ interface MarkdownEditorProps {
    * image + file attachment buttons. Omitted → those buttons are hidden.
    */
   uploadUrl?: string;
+  /** La vista previa muestra los saltos de línea simples (ver `Markdown`'s `breaks`). */
+  breaks?: boolean;
 }
 
 /**
@@ -65,6 +67,7 @@ export function MarkdownEditor({
   maxLength,
   ariaDescribedBy,
   uploadUrl,
+  breaks,
 }: MarkdownEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   // Selection to restore after a toolbar edit re-renders the textarea.
@@ -348,7 +351,7 @@ export function MarkdownEditor({
       <TabsContent value="preview" className="m-0">
         <div className="min-h-[7.5rem] px-3 py-2">
           {value.trim() ? (
-            <Markdown>{value}</Markdown>
+            <Markdown breaks={breaks}>{value}</Markdown>
           ) : (
             <p className="text-sm italic text-muted-foreground">
               Nada para previsualizar.
