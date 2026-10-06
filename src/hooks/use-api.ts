@@ -8,7 +8,10 @@ export type UseApiOptions<T> = {
   parse?: (raw: unknown) => T;
   /** How long a shared cached response stays fresh (default 10s). */
   ttlMs?: number;
-  /** Re-fetches silently every N ms (`loading` toggles, `firstTime` never returns). */
+  /**
+   * Re-fetches silently every N ms (`loading` toggles, `firstTime` never returns). Pauses while
+   * the tab is hidden and refreshes once when it becomes visible again.
+   */
   refreshIntervalMs?: number;
 };
 
@@ -80,10 +83,36 @@ export function useApi<T>(
     load(url, false);
   }, [url, load]);
 
+  // Sondeo pausado mientras la pestaña está oculta, y un refresco al volver (milestone 25, P1).
+  // Antes seguía corriendo en segundo plano: el aviso de mantenimiento (todo visitante, todas
+  // las páginas), la campanita y el check-in sondeaban aunque nadie mirara, y en Vercel cada
+  // sondeo es una invocación facturada (la campanita, además, 2–3 consultas de sesión).
   useEffect(() => {
     if (!url || !refreshIntervalMs) return;
-    const id = setInterval(() => load(url, true), refreshIntervalMs);
-    return () => clearInterval(id);
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (id === null) {
+        id = setInterval(() => load(url, true), refreshIntervalMs);
+      }
+    };
+    const stop = () => {
+      if (id !== null) clearInterval(id);
+      id = null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        stop();
+      } else {
+        load(url, true);
+        start();
+      }
+    };
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [url, refreshIntervalMs, load]);
 
   const refetch = useCallback(async () => {

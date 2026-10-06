@@ -44,6 +44,24 @@ type CacheEntry = { data: unknown; at: number };
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, CacheEntry>();
 
+/**
+ * Tope de respuestas recordadas. La caché nunca se vaciaba: cada URL distinta (paginar usuarios,
+ * cambiar de semana en el calendario) quedaba en memoria toda la sesión (milestone 25, P4). Como
+ * las entradas sirven solo unos segundos (`ttlMs`), alcanza con descartar las más viejas.
+ */
+const CACHE_MAX_ENTRIES = 100;
+
+function rememberResponse(url: string, data: unknown): void {
+  // Borrar antes de escribir mueve la URL al final: el `Map` queda en orden de uso.
+  cache.delete(url);
+  cache.set(url, { data, at: Date.now() });
+  while (cache.size > CACHE_MAX_ENTRIES) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   const body = res.status === 204 ? null : await res.json().catch(() => null);
@@ -114,7 +132,7 @@ export function apiGet<T>(
   }
   const request = requestJson<T>(url, { cache: "no-store" })
     .then((data) => {
-      cache.set(url, { data, at: Date.now() });
+      rememberResponse(url, data);
       return data;
     })
     .finally(() => {
