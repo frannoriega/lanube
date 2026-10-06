@@ -48,37 +48,36 @@ type ReservationAdminRow = Prisma.ReservationGetPayload<{
   };
 }>;
 
+/**
+ * Cuántas personas representa cada reserva (`actor_size` del ledger), para la columna del panel.
+ *
+ * Antes traía **todas** las filas del ledger de las reservas listadas — una por bucket de 15 min
+ * de cada ocurrencia: una recurrente semanal de 2 h suma 8 por semana hacia adelante, y las vistas
+ * por rango listan hasta 3000 reservas — y después, por cada reserva, recorría ese array completo
+ * con `find`/`filter`: O(reservas × filas) en memoria (milestone 25, DB3). `actor_size` se
+ * calcula por reserva (`get_actor_size`), así que alcanza con una fila: `DISTINCT ON` elige en la
+ * base el bucket más temprano, usando el índice por `reservation_id` — lo mismo que hacía antes
+ * (preferir la primera ocurrencia), por si una reconstrucción hacia adelante recalculó los
+ * buckets futuros con otro tamaño de equipo.
+ * Una reserva sin ledger (rechazada antes de materializarse) representa a 1 persona.
+ */
 async function actorSizeByReservationId(
-  reservations: { id: string; startTime: bigint }[],
+  reservations: { id: string }[],
 ): Promise<Map<string, number>> {
-  const result = new Map<string, number>();
-  if (reservations.length === 0) return result;
-
+  if (reservations.length === 0) return new Map();
   const ids = [...new Set(reservations.map((r) => r.id))];
-  const ledgerRows = await prisma.reservationLedger.findMany({
-    where: { reservationId: { in: ids } },
-    select: {
-      reservationId: true,
-      occurrenceStartTime: true,
-      actorSize: true,
-    },
-  });
-
-  for (const res of reservations) {
-    const start = Number(res.startTime);
-    const exact = ledgerRows.find(
-      (l) =>
-        l.reservationId === res.id && Number(l.occurrenceStartTime) === start,
-    );
-    if (exact) {
-      result.set(res.id, exact.actorSize);
-      continue;
-    }
-    const anyFor = ledgerRows.filter((l) => l.reservationId === res.id);
-    result.set(res.id, anyFor[0]?.actorSize ?? 1);
-  }
-
-  return result;
+  const rows = await prisma.$queryRaw<
+    { reservation_id: string; actor_size: number }[]
+  >`
+    SELECT DISTINCT ON (reservation_id) reservation_id, actor_size
+    FROM reservation_ledger
+    WHERE reservation_id = ANY(${ids}::text[])
+    ORDER BY reservation_id, occurrence_start_time
+  `;
+  const sizes = new Map(
+    rows.map((r) => [r.reservation_id, Number(r.actor_size)]),
+  );
+  return new Map(ids.map((id) => [id, sizes.get(id) ?? 1]));
 }
 
 function toAdminReservationListResult(
@@ -110,9 +109,7 @@ function toAdminReservationListResult(
 async function mapRowsToAdminResults(
   rows: ReservationAdminRow[],
 ): Promise<AdminReservationListResult[]> {
-  const sizes = await actorSizeByReservationId(
-    rows.map((r) => ({ id: r.id, startTime: r.startTime })),
-  );
+  const sizes = await actorSizeByReservationId(rows);
   return rows.map((r) => toAdminReservationListResult(r, sizes.get(r.id) ?? 1));
 }
 
