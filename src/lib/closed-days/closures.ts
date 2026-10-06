@@ -1,4 +1,8 @@
 import {
+  BOOKING_CLOSE_MINUTES,
+  BOOKING_OPEN_MINUTES,
+} from "@/lib/reservations/booking-window";
+import {
   addDaysToDateKey,
   dateKeyFromUnixMs,
   startOfDateKeyMs,
@@ -104,4 +108,49 @@ export function closureRejectionMessage(c: ClosureLike): string {
   return isFullDayClosure(c)
     ? `El espacio está cerrado: ${c.title}`
     : `El espacio está cerrado de ${formatMinutes(c.startTime as number)} a ${formatMinutes(c.endTime as number)}: ${c.title}`;
+}
+
+/** Un tramo cerrado de un día concreto, listo para dibujarse en el calendario de reservas. */
+export interface ClosureSlot {
+  title: string;
+  startTime: number;
+  endTime: number;
+}
+
+/**
+ * Expande los cierres a tramos **por día** dentro de `[rangeStartMs, rangeEndMs]`, recortados
+ * al horario en que se puede reservar (09:00–18:00).
+ *
+ * Lo hace el servidor y no el cliente para que el navegador no tenga que repetir la lógica de
+ * zona horaria. El recorte importa por dos motivos: fuera de ese horario el calendario no
+ * dibuja nada, y un cierre de día completo termina a la medianoche siguiente, que el chequeo
+ * de solapes de `WeekCalendar` (que compara minutos del día) leería como las 00:00. Un tramo
+ * que queda vacío tras el recorte (un cierre de 19:00 a 21:00) se descarta.
+ */
+export function closureSlotsForRange(
+  closures: readonly (ClosureLike & { title: string })[],
+  rangeStartMs: number,
+  rangeEndMs: number,
+): ClosureSlot[] {
+  const slots: ClosureSlot[] = [];
+  if (closures.length === 0 || !(rangeStartMs <= rangeEndMs)) return slots;
+  const lastKey = dateKeyFromUnixMs(rangeEndMs);
+  for (
+    let key = dateKeyFromUnixMs(rangeStartMs);
+    key <= lastKey;
+    key = addDaysToDateKey(key, 1)
+  ) {
+    const dayStart = startOfDateKeyMs(key);
+    const open = dayStart + BOOKING_OPEN_MINUTES * MINUTE_MS;
+    const close = dayStart + BOOKING_CLOSE_MINUTES * MINUTE_MS;
+    for (const c of closures) {
+      const interval = closureIntervalOnDay(c, key);
+      if (!interval) continue;
+      const startTime = Math.max(interval[0], open);
+      const endTime = Math.min(interval[1], close);
+      if (startTime < endTime)
+        slots.push({ title: c.title, startTime, endTime });
+    }
+  }
+  return slots;
 }
