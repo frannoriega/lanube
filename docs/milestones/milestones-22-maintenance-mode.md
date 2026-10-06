@@ -244,7 +244,14 @@ forma barata de renderizar el componente. Queda cubierto por la regla de CLAUDE.
    ventana apagada, sería 401). Si da 401, el portero no está leyendo — **no sacar el snapshot**.
 3. Sacar el snapshot (`pg_dump` es consistente de por sí).
 4. Levantar la app contra la base nueva. **La ventana viaja en el snapshot**: el VPS arranca en solo
-   lectura; verificarlo y recién entonces «Finalizar ahora» **en el VPS**.
+   lectura; verificarlo y recién entonces «Finalizar ahora» **en el VPS**. Antes de abrirla al
+   público, dos variables y una regla del proxy (milestone 25, S4):
+   - `MAINTENANCE_PROBE_ORIGIN=http://127.0.0.1:<puerto>`: el portero le pregunta por las ventanas
+     a la propia app en ese origen fijo, no al del header `Host` (que en un VPS puede venir de
+     cualquiera y convertía al middleware en un cliente HTTP a elección del atacante).
+   - El proxy **tiene que pisar** `X-Real-IP` y `X-Forwarded-For` con la IP real del cliente:
+     `getClientIp` confía en ellos (en Vercel los reescribe la plataforma). Si el proxy los deja
+     pasar, todo rate limit (ingreso, registro, reseteo, subidas) queda con presupuesto infinito.
 5. Cambiar el DNS.
 
 Lo que **no** se frena durante la ventana (a propósito) y por lo tanto puede perderse si ocurre
