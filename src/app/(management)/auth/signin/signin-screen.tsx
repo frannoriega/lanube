@@ -19,6 +19,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { AreaMaintenanceNotice } from "@/components/molecules/maintenance-notice";
+import { useAreaWriteBlock } from "@/components/providers/maintenance";
 import { Input } from "@/components/ui/input";
 import {
   allPoliciesChecked,
@@ -55,6 +57,10 @@ export function SignInScreen({
   requiredPolicies: PolicyToAccept[];
 }) {
   const [fadeIn, setFadeIn] = useState(false);
+  // Mantenimiento (milestone 22): con el registro o la recuperación apagados, el formulario
+  // muestra el motivo y no deja enviar (el servidor igual respondería 503).
+  const signupBlocked = useAreaWriteBlock("signup") !== null;
+  const recoveryBlocked = useAreaWriteBlock("password-recovery") !== null;
   const router = useRouter();
   const searchParams = useSearchParams();
   // A dónde volver después de ingresar (milestone 20: la pantalla de autorización OAuth
@@ -470,6 +476,7 @@ export function SignInScreen({
             transition={{ duration: 0.3 }}
             className="w-full flex-col flex gap-4"
           >
+            <AreaMaintenanceNotice area="signup" />
             <Form {...registerForm}>
               <form
                 onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
@@ -591,6 +598,7 @@ export function SignInScreen({
                   className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
                   size="lg"
                   disabled={
+                    signupBlocked ||
                     registerForm.formState.isSubmitting ||
                     !registerForm.formState.isValid
                   }
@@ -621,6 +629,7 @@ export function SignInScreen({
             transition={{ duration: 0.3 }}
             className="w-full flex-col flex gap-4"
           >
+            <AreaMaintenanceNotice area="password-recovery" />
             <Form {...resetForm}>
               <form
                 onSubmit={resetForm.handleSubmit(onResetSubmit)}
@@ -679,6 +688,7 @@ export function SignInScreen({
                   className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
                   size="lg"
                   disabled={
+                    recoveryBlocked ||
                     resetForm.formState.isSubmitting ||
                     !resetForm.formState.isValid
                   }

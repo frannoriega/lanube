@@ -2,6 +2,7 @@
 
 import Logo from "@/components/atoms/logos/lanube";
 import { ManagementBreadcrumbs } from "@/components/molecules/management-breadcrumbs";
+import { MaintenanceBanner } from "@/components/organisms/maintenance/maintenance-banner";
 import { NotificationBell } from "@/components/molecules/notification-bell";
 import { ThemeToggle } from "@/components/molecules/theme";
 import UserProfile from "@/components/molecules/user-profile";
@@ -24,6 +25,7 @@ import {
   CalendarDays,
   ChevronDown,
   FileText,
+  Construction,
   Contact,
   History,
   LayoutDashboard,
@@ -178,6 +180,12 @@ const configNavigation: NavigationItem = {
       href: "/admin/themes",
       icon: Sparkles,
       permission: "landing-themes:manage",
+    },
+    {
+      name: "Mantenimiento",
+      href: "/admin/maintenance",
+      icon: Construction,
+      permission: "maintenance:manage",
     },
     {
       name: "Roles y permisos",
@@ -453,6 +461,7 @@ export default function ManagementLayout({
           {/* Page content */}
           <main id="main-content" className="py-6">
             <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 sm:px-6 lg:px-8">
+              <MaintenanceBanner />
               <ManagementBreadcrumbs userType={userType} spaceNav={spaceNav} />
               {children}
             </div>
