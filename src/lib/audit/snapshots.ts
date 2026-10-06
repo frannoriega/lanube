@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { closureWindowLabel } from "@/lib/closed-days/closures";
+import { formatDateKey } from "@/lib/constants/closed-days";
 import {
   formatEventTimeRange,
   WEEKDAY_SHORT_LABELS,
@@ -73,6 +75,17 @@ export const SNAPSHOTS: Partial<Record<AuditEntityType, SnapshotLoader>> = {
   Resource: (id) => prisma.resource.findUnique({ where: { id } }),
 
   ReservationType: (id) => prisma.reservationType.findUnique({ where: { id } }),
+
+  ClosedDay: async (id) => {
+    const c = await prisma.closedDay.findUnique({ where: { id } });
+    if (!c) return null;
+    return {
+      ...c,
+      startDate: formatDateKey(c.startDate),
+      endDate: formatDateKey(c.endDate),
+      window: closureWindowLabel(c),
+    };
+  },
 
   Event: async (id) => {
     const e = await prisma.event.findUnique({
