@@ -385,6 +385,7 @@
   "383": "Milestone 3 — Seasonal / date-based landing themes",
   "384": "🔄 Migration Path",
   "385": "🎯 Success Metrics",
+  "386": "page.tsx",
   "387": "Milestone 2 — Audit trail",
   "388": "spaces.ts",
   "389": "Use case: book a recurring space, then skip one week",
@@ -432,5 +433,8 @@
   "431": "page.tsx",
   "432": "page.tsx",
   "433": "getUpcomingPublicEventsPage",
-  "435": "Milestone 9 — Superadmin-defined roles & permissions"
+  "434": "serialize.ts",
+  "435": "Milestone 9 — Superadmin-defined roles & permissions",
+  "436": "Milestone 2 — Audit trail",
+  "437": "page.tsx"
 }

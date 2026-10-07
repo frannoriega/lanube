@@ -5,9 +5,12 @@ Un milestone de **calidad**, como el 10 (frontend) y el 12 (dominio). Nació de 
 aprovechar para auditar el rendimiento del frontend y del backend, y anotar en el camino todo
 problema de seguridad.
 
-**Estado (2026-10-07): corregido salvo lo que espera una decisión de producto** (ver
-[Correcciones](#correcciones-2026-10-07)). Este documento es el registro completo de lo
-encontrado, cómo se encontró, qué se propuso y qué se hizo.
+**Estado (2026-10-07, segunda sesión): corregido completo.** La primera sesión corrigió todo
+salvo lo que esperaba una decisión de producto ([Correcciones](#correcciones-2026-10-07)); el
+usuario decidió ([Decisiones](#decisiones-del-usuario-2026-10-07)) y la segunda sesión lo
+implementó y verificó contra la app, también en el navegador
+([Segunda sesión](#segunda-sesión-2026-10-07-decisiones-implementadas)). Este documento es el
+registro completo de lo encontrado, cómo se encontró, qué se propuso y qué se hizo.
 
 ## Método y límites
 
@@ -415,25 +418,26 @@ ingreso ni navegar), así que la verificación se hizo con tests, con `curl` con
 de dev. Lo que solo se puede ver en un navegador quedó en [Pendiente de verificar a
 mano](#pendiente-de-verificar-a-mano).
 
-| #             | Estado      | Qué se hizo                                                                                                                                                                                                                                                                                                                  | Cómo se verificó                                                                                                                                                                                                                               |
-| ------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1, R2        | Corregido   | `useMemo` en `SpacesManager` y en las dos tablas del reporte; `useStaticTable` pasa `autoResetPageIndex: false` como red de seguridad (esas tablas no paginan). Regla en CLAUDE.md §13.                                                                                                                                      | `tsc` + lint. **Sin navegador**: falta tocar los botones (ver abajo).                                                                                                                                                                          |
-| S1            | Corregido   | Tipo MIME por extensión (`contentTypeForName`), nunca el del navegador ni el de la respuesta; el proxy sirve inline solo PDF/imágenes rasterizadas (`isInlineSafe`), el resto como adjunto, con `CSP: sandbox` salvo el PDF.                                                                                                 | Subida de un `cv.pdf` declarado `text/html` → el descriptor vuelve `application/pdf`. Tests de `contentTypeForName`/`isInlineSafe`.                                                                                                            |
-| S2            | Corregido   | La subida firma el descriptor (HMAC con `NEXTAUTH_SECRET`, atado al evento); envío/edición solo aceptan firmados o ya guardados en esa inscripción. `privateKeyOf` canónico en los dos proveedores; el local no sale de su raíz; Blob solo URLs privadas de nuestro store; el proxy exige el prefijo de subidas del entorno. | `curl`: URL forjada `local-private:../../.env` → rechazada; descriptor firmado con el `type` cambiado → rechazado; el firmado intacto → aceptado (inscripción de prueba borrada después). 24 tests nuevos.                                     |
-| DB8           | Corregido   | `participantUploadRateLimit()` antes de buscar el formulario o la inscripción.                                                                                                                                                                                                                                               | Lectura + `tsc`.                                                                                                                                                                                                                               |
-| S3            | Corregido   | Rate limit en `authorize` por IP (20/min, castigo 15 min) y por correo (10 cada 15 min), contado antes de bcrypt; hash ficticio cuando el correo no existe; tope de 128 caracteres en las contraseñas; aviso en la pantalla.                                                                                                 | `curl` contra `/api/auth/callback/credentials`: el intento 12 redirige con `code=rate_limited`. Filas de prueba de `rate_limits` borradas.                                                                                                     |
-| DB3           | Corregido   | `DISTINCT ON (reservation_id)` en vez de todo el ledger + `find`/`filter`.                                                                                                                                                                                                                                                   | SQL corrido en dev. En dev ninguna reserva tiene dos `actor_size` distintos (0 de 13); se toma el bucket más temprano, como antes.                                                                                                             |
-| C1, C2, DB4   | Corregido   | `currentPeriodsInAdminTz` (hoy/semana/mes en hora del predio, con fin); el dashboard filtra `reservableType: "USER"` para usar el índice.                                                                                                                                                                                    | 4 tests nuevos (22:30 del martes en Argentina sigue siendo martes; diciembre). `GET /api/admin/stats` responde igual de forma.                                                                                                                 |
-| DB1, DB2 (P3) | Corregido   | `requirePermission`/`requirePagePermission` usan los permisos de la sesión (verificado en `@auth/core` que `auth()` corre `jwt()` siempre); `cache()` de React en las lecturas que `jwt()` repetía.                                                                                                                          | Transacciones por pedido en dev (10 muestras): `/admin/dashboard` 8→6, `/admin/spaces` 11→6, `/api/admin/stats` 13→11, la campanita 5→5. `u1` sigue recibiendo 403 en `/api/admin/*`; `a1` (ADMIN) 200 en stats, 403 en roles y mantenimiento. |
-| P1, P4        | Corregido   | `useApi` pausa el sondeo con la pestaña oculta y refresca al volver; la caché de `apiGet` guarda 100 URLs como mucho.                                                                                                                                                                                                        | `tsc` + lint. **Sin navegador** (ver abajo).                                                                                                                                                                                                   |
-| S4            | Corregido   | `MAINTENANCE_PROBE_ORIGIN` opcional (VPS) y como mucho 8 lectores. Runbook del VPS: esa variable y que el proxy pise `X-Real-IP`/`X-Forwarded-For`. No se usó `NEXTAUTH_URL` por defecto: un preview que apunte al dominio de prod leería las ventanas de prod.                                                              | Tests de mantenimiento (27) en verde.                                                                                                                                                                                                          |
-| DB5           | Corregido   | Migración `20261007120000_user_reservations_window`: `get_user_reservations_window` (el cuerpo de siempre con la ventana adentro) y `get_user_next_reservations` como envoltorio con `[ahora, ∞)`. El calendario pide solo la semana.                                                                                        | Salida de `get_user_next_reservations` antes/después para todos los usuarios: idéntica (207 filas). Respuesta de `/api/resources/[id]` antes/después en 3 espacios × 4 semanas (hasta 20 adelante): idéntica.                                  |
-| DB6           | Parcial     | `durationStats` en un recorrido (el spread reventaba la pila con ~100k). Pasar los conteos a `GROUP BY` queda para después de decidir C3, que cambia esas mismas consultas.                                                                                                                                                  | Tests en verde.                                                                                                                                                                                                                                |
-| DB7           | Parcial     | Las dos listas del tablero admin entran en el `Promise.all`. **No** se recortó el `body` de las noticias: las tarjetas calculan el tiempo de lectura con él (habría que guardar los minutos en la fila).                                                                                                                     | `GET /api/admin/stats` con los mismos campos.                                                                                                                                                                                                  |
-| D1, C4        | Corregido   | CLAUDE.md (crons) y el comentario de `requireActiveSession`.                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                              |
-| P2            | **Abierto** | Cambio estructural (sacar `connection()`/`auth()`/`getSiteConfig()` del layout raíz y cachear lecturas públicas con tags). Espera decisión: ver abajo.                                                                                                                                                                       | —                                                                                                                                                                                                                                              |
-| C3            | **Abierto** | Decisión de producto: ver abajo.                                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                              |
-| S5            | **Abierto** | Reinscripción de rechazados y mensaje «Ya estás inscripto»: decisión de producto. `editToken` en claro: **postergado a propósito** — los correos de decisión y de cambios de sesión vuelven a mandar el link con el token guardado; hashearlo obliga a rotar el token en cada correo (los links viejos dejarían de andar).   | —                                                                                                                                                                                                                                              |
+| #             | Estado    | Qué se hizo                                                                                                                                                                                                                                                                                                                  | Cómo se verificó                                                                                                                                                                                                                               |
+| ------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1, R2        | Corregido | `useMemo` en `SpacesManager` y en las dos tablas del reporte; `useStaticTable` pasa `autoResetPageIndex: false` como red de seguridad (esas tablas no paginan). Regla en CLAUDE.md §13.                                                                                                                                      | `tsc` + lint. **Sin navegador**: falta tocar los botones (ver abajo).                                                                                                                                                                          |
+| S1            | Corregido | Tipo MIME por extensión (`contentTypeForName`), nunca el del navegador ni el de la respuesta; el proxy sirve inline solo PDF/imágenes rasterizadas (`isInlineSafe`), el resto como adjunto, con `CSP: sandbox` salvo el PDF.                                                                                                 | Subida de un `cv.pdf` declarado `text/html` → el descriptor vuelve `application/pdf`. Tests de `contentTypeForName`/`isInlineSafe`.                                                                                                            |
+| S2            | Corregido | La subida firma el descriptor (HMAC con `NEXTAUTH_SECRET`, atado al evento); envío/edición solo aceptan firmados o ya guardados en esa inscripción. `privateKeyOf` canónico en los dos proveedores; el local no sale de su raíz; Blob solo URLs privadas de nuestro store; el proxy exige el prefijo de subidas del entorno. | `curl`: URL forjada `local-private:../../.env` → rechazada; descriptor firmado con el `type` cambiado → rechazado; el firmado intacto → aceptado (inscripción de prueba borrada después). 24 tests nuevos.                                     |
+| DB8           | Corregido | `participantUploadRateLimit()` antes de buscar el formulario o la inscripción.                                                                                                                                                                                                                                               | Lectura + `tsc`.                                                                                                                                                                                                                               |
+| S3            | Corregido | Rate limit en `authorize` por IP (20/min, castigo 15 min) y por correo (10 cada 15 min), contado antes de bcrypt; hash ficticio cuando el correo no existe; tope de 128 caracteres en las contraseñas; aviso en la pantalla.                                                                                                 | `curl` contra `/api/auth/callback/credentials`: el intento 12 redirige con `code=rate_limited`. Filas de prueba de `rate_limits` borradas.                                                                                                     |
+| DB3           | Corregido | `DISTINCT ON (reservation_id)` en vez de todo el ledger + `find`/`filter`.                                                                                                                                                                                                                                                   | SQL corrido en dev. En dev ninguna reserva tiene dos `actor_size` distintos (0 de 13); se toma el bucket más temprano, como antes.                                                                                                             |
+| C1, C2, DB4   | Corregido | `currentPeriodsInAdminTz` (hoy/semana/mes en hora del predio, con fin); el dashboard filtra `reservableType: "USER"` para usar el índice.                                                                                                                                                                                    | 4 tests nuevos (22:30 del martes en Argentina sigue siendo martes; diciembre). `GET /api/admin/stats` responde igual de forma.                                                                                                                 |
+| DB1, DB2 (P3) | Corregido | `requirePermission`/`requirePagePermission` usan los permisos de la sesión (verificado en `@auth/core` que `auth()` corre `jwt()` siempre); `cache()` de React en las lecturas que `jwt()` repetía.                                                                                                                          | Transacciones por pedido en dev (10 muestras): `/admin/dashboard` 8→6, `/admin/spaces` 11→6, `/api/admin/stats` 13→11, la campanita 5→5. `u1` sigue recibiendo 403 en `/api/admin/*`; `a1` (ADMIN) 200 en stats, 403 en roles y mantenimiento. |
+| P1, P4        | Corregido | `useApi` pausa el sondeo con la pestaña oculta y refresca al volver; la caché de `apiGet` guarda 100 URLs como mucho.                                                                                                                                                                                                        | `tsc` + lint. **Sin navegador** (ver abajo).                                                                                                                                                                                                   |
+| S4            | Corregido | `MAINTENANCE_PROBE_ORIGIN` opcional (VPS) y como mucho 8 lectores. Runbook del VPS: esa variable y que el proxy pise `X-Real-IP`/`X-Forwarded-For`. No se usó `NEXTAUTH_URL` por defecto: un preview que apunte al dominio de prod leería las ventanas de prod.                                                              | Tests de mantenimiento (27) en verde.                                                                                                                                                                                                          |
+| DB5           | Corregido | Migración `20261007120000_user_reservations_window`: `get_user_reservations_window` (el cuerpo de siempre con la ventana adentro) y `get_user_next_reservations` como envoltorio con `[ahora, ∞)`. El calendario pide solo la semana.                                                                                        | Salida de `get_user_next_reservations` antes/después para todos los usuarios: idéntica (207 filas). Respuesta de `/api/resources/[id]` antes/después en 3 espacios × 4 semanas (hasta 20 adelante): idéntica.                                  |
+| DB6           | Corregido | Primera sesión: `durationStats` en un recorrido (el spread reventaba la pila con ~100k). Segunda sesión, con C3: los conteos de reportes y los conteos por día de `/admin/reservations` pasan a `GROUP BY` en SQL.                                                                                                           | Ver [C3](#c3--las-recurrentes-cuentan-por-ocurrencia).                                                                                                                                                                                         |
+| DB7           | Parcial   | Las dos listas del tablero admin entran en el `Promise.all`. **No** se recortó el `body` de las noticias: las tarjetas calculan el tiempo de lectura con él (habría que guardar los minutos en la fila).                                                                                                                     | `GET /api/admin/stats` con los mismos campos.                                                                                                                                                                                                  |
+| D1, C4        | Corregido | CLAUDE.md (crons) y el comentario de `requireActiveSession`.                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                              |
+| P2            | Corregido | Segunda sesión (`d0534eb`): ver [P2](#p2--sitio-público-cacheable).                                                                                                                                                                                                                                                          | `next build` antes/después, `next start` contra la base de dev, invalidación por tag probada.                                                                                                                                                  |
+| C3            | Corregido | Segunda sesión (`2da9d95`): ver [C3](#c3--las-recurrentes-cuentan-por-ocurrencia).                                                                                                                                                                                                                                           | Reportes contra una referencia independiente; reserva recurrente de prueba.                                                                                                                                                                    |
+| S5            | Corregido | Segunda sesión: reinscripción de rechazados (`016a1cc`) y `editToken` hasheado (`3e47d10`). Ver [S5](#s5--reinscripción-de-rechazados) y [editToken](#edittoken--enlaces-hasheados-uno-por-correo).                                                                                                                          | Contra la app local con Mailpit.                                                                                                                                                                                                               |
+| S1 (bis)      | Corregido | Segunda sesión (`0274301`): la `CSP: sandbox` del proxy nunca llegaba al navegador (la pisaba la CSP global de `next.config.ts`). Ver [S1 bis](#s1-bis--la-csp-sandbox-no-llegaba-al-navegador).                                                                                                                             | Headers del proxy contra la app.                                                                                                                                                                                                               |
 
 ### Decisiones del usuario (2026-10-07)
 
@@ -466,7 +470,14 @@ bloqueado por el clasificador).
    porque la búsqueda hashea lo que llega). Un link viejo muestra una pantalla amable con el botón
    para pedir uno nuevo.
 
+   **Cambiado en la segunda sesión:** al ver los pros y contras de rotar, el usuario eligió **no
+   rotar** — un token nuevo por correo, los anteriores siguen valiendo, y todos vencen cuando
+   termina el evento (opción C). Ver [editToken](#edittoken--enlaces-hasheados-uno-por-correo).
+
 ### Pendiente de verificar a mano
+
+**Hecho en la segunda sesión** (resultados en
+[Verificación a mano](#verificación-a-mano-pendiente-de-la-primera-sesión)). La lista original:
 
 1. `/admin/spaces`: tocar «Eliminar» (y cancelar), cambiar a «Áreas comunes», «Reordenar» → la
    pestaña no se cuelga.
@@ -477,3 +488,213 @@ bloqueado por el clasificador).
 4. Sondeo: con DevTools → Network, dejar una página en segundo plano un par de minutos → no hay
    pedidos a `/api/maintenance` ni a `/api/user/notifications`; al volver, uno de cada.
 5. Ingreso: 11 contraseñas mal seguidas con el mismo correo → aviso «Demasiados intentos».
+
+## Segunda sesión (2026-10-07): decisiones implementadas
+
+Rama `preview`, un commit sin firmar por ítem, en el orden pedido: `016a1cc` (S5), `3e47d10`
+(editToken), `2da9d95` (C3/DB6), `d0534eb` (P2), más `0274301` (S1 bis, encontrado al verificar).
+Esta vez la terminal y el navegador anduvieron: la verificación se hizo contra la app local
+(Docker: `lanube-app` en :3000 con hora simulada —30/09/2026—, `lanube-postgres`), ingresando con
+los usuarios de ejemplo (`u1`, `sa1`), con Mailpit para los correos y con un `next build` /
+`next start` en un worktree aparte para P2 (así no se pisaba el `.next` del contenedor de dev).
+Todo dato de prueba se borró al terminar (inscripciones, archivos subidos, filas de auditoría y
+de rate limit, la reserva recurrente de C3).
+
+### S5 — reinscripción de rechazados
+
+- **Regla:** `blocksReRegistration(status)` en `src/lib/constants/participants.ts`: PENDING,
+  APPROVED y REJECTED frenan el envío; solo CANCELLED (la canceló la propia persona) se
+  reactiva. `submitForm` responde `ALREADY_REGISTERED_MESSAGE` («Ya estás inscripto con ese
+  email») en los tres casos, **sin tocar la fila ni su token**: un mensaje distinto le diría a
+  cualquiera que tipee el correo de otro que esa persona fue rechazada.
+- **Consecuencia (documentada en CLAUDE.md y `docs/design/04-events-and-forms.md`):** un rechazo
+  es definitivo. La re-aprobación de un REJECTED en el lugar sigue sin existir (necesita volver a
+  chequear la capacidad), y la salida que se documentaba —«que se reinscriba»— ya no existe.
+- **Enumeración (S5, segundo punto):** no se tocó. «Ya estás inscripto» sigue revelando que un
+  correo tiene una inscripción activa o rechazada en ese evento; el usuario decidió unificar los
+  dos mensajes, no ocultar la existencia.
+- **Verificación:** test de la regla (3 casos). Contra la app: la inscripción E2E en APPROVED →
+  409; en REJECTED → 409 con el mismo texto y fila/token intactos; en CANCELLED → 201 y se
+  reactiva. La fila se restauró desde un respaldo JSON.
+
+### editToken — enlaces hasheados, uno por correo
+
+**Lo que el usuario eligió.** El plan original rotaba el token en cada correo (opción B). Antes de
+dar el OK el usuario pidió los pros y contras; se le presentaron cinco opciones y eligió la **C +
+vencimiento al terminar el evento**:
+
+| Opción                                                  | Enlaces viejos siguen | Fuga de la base                    | Por qué se descartó / eligió                                                                                                                                                                           |
+| ------------------------------------------------------- | --------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A. Dejar en claro                                       | Sí                    | Edita/cancela toda inscripción     | Es el problema.                                                                                                                                                                                        |
+| B. Hash + rotar en cada correo                          | No                    | Nada usable                        | Cada correo de cambio de sesión rompía el enlace del correo de confirmación (el que la gente busca); carreras entre envíos; el sender pasa a escribir en la base (¿mandar primero o guardar primero?). |
+| **C. Hash, un token por correo, los anteriores siguen** | Sí                    | Nada usable                        | **Elegida.** Una tabla chica; el sender solo inserta, nunca pisa; sin carreras.                                                                                                                        |
+| D. Cifrar el token con una clave del servidor           | Sí (el mismo siempre) | Nada, salvo que se filtre la clave | Manejo de claves; quien entra al servidor tiene base y clave.                                                                                                                                          |
+| E. Hash, y los correos de sesión no llevan enlace       | Casi                  | Nada usable                        | La más barata, pero los correos de sesión pierden el «Ver mi inscripción».                                                                                                                             |
+
+Contexto que se le dio al decidir: la ganancia de hashear es moderada — quien lee la base ya ve
+las respuestas (están en la misma tabla); lo que pierde es la capacidad de **editar o cancelar**
+todas las inscripciones. El token no es adivinable (cuid2 antes, 256 bits ahora).
+
+**Qué se hizo:**
+
+- Migración `20261008100000_participant_edit_tokens`: tabla `event_participant_edit_tokens`
+  (`participant_id` → `event_participants` con cascade, `token_hash` único, `created_at`). Los
+  tokens existentes se copian hasheados (`encode(sha256(convert_to(edit_token,'UTF8')),'hex')`,
+  lo mismo que `hashEditToken()` en JS, con ids `legacy_<participante>`) y se borra la columna en
+  claro. Los enlaces ya enviados siguen andando.
+- `src/lib/events/edit-token.ts` (puro, con test): `generateEditToken` (32 bytes base64url),
+  `hashEditToken`, `editLinkExpired` (mismo criterio que el cierre del formulario:
+  `recurrenceEnd ?? endTime` pasado; se calcula al usar el enlace, así reprogramar el evento lo
+  mueve solo) y `editLinkPath`.
+- `db/participants.ts`: `issueEditToken(participantId, tx?)` inserta el hash y devuelve el token
+  en claro; `resolveEditToken` busca por hash y distingue `invalid` / `expired`;
+  `getParticipantByToken`, `updateParticipantAnswers` y `cancelParticipant` pasan por ahí. El
+  token de la confirmación se emite **dentro de la transacción** de `submitForm`.
+- Correos (`src/lib/email/edit-link.ts`): `freshEditLinkUrl(id)` emite un token por correo; lo
+  usan la aprobación y los cambios de sesión (el rechazo no lleva enlace). Se llama **solo si el
+  correo se va a mandar**: con los correos de eventos suspendidos por mantenimiento no se emiten
+  tokens. Todo correo con enlace suma una nota: es personal, vale hasta que termina el evento,
+  y cómo pedir otro.
+- «Pedir un enlace nuevo»: página `/forms/response/request-link` (correo + Turnstile) y
+  `POST /api/forms/request-link`: captcha, rate limit por IP (5/min) **y por correo** (3/hora,
+  para que no sirva para llenarle la casilla a otro), `assertMailerAvailable`, 503 si los
+  correos de eventos están suspendidos. Manda **un** correo con un enlace por inscripción activa
+  (PENDING/APPROVED, evento no cancelado ni terminado). Responde siempre lo mismo y el envío
+  corre en `after()`, para que tampoco el tiempo de respuesta revele si había inscripción.
+- Enlace inexistente o vencido: la API responde **410** `EDIT_LINK_GONE`; la página muestra una
+  pantalla propia (evento terminado → «el evento ya terminó»; inválido → explicación + botón
+  «Pedir un enlace nuevo»); el formulario de edición, ante un 410, recarga la página.
+- El cron diario poda los tokens de eventos terminados (`pruneExpiredEditTokens`); es limpieza,
+  el vencimiento ya rige al usarlos.
+
+**Verificación (app local + Mailpit):** el enlace legado de la inscripción E2E siguió andando
+después de migrar (hash idéntico en SQL y JS); uno de un evento terminado y uno inventado
+devolvieron 410 con su pantalla; una inscripción nueva → correo con enlace; aprobarla (`sa1`,
+`POST …/participants/decision`) → correo con otro enlace; un cambio de sesión (el sender real
+corrido con `tsx` dentro del contenedor) → un correo por participante con su enlace propio; los
+cuatro enlaces (legado, inscripción, aprobación, sesión) andaban a la vez. «Pedir un enlace
+nuevo»: un correo para el inscripto, ninguno para el otro, respuesta idéntica en 75 vs 84 ms; el
+cuarto pedido del mismo correo en la hora → 429; captcha vacío → 400. Poda: un `SELECT`
+equivalente marca solo los 3 tokens de eventos terminados. Tests: `edit-token.test.ts` (6) y el
+de `event-occurrence-update` ampliado (un enlace propio por correo; ninguno con correos
+suspendidos).
+
+**No verificado en el navegador:** la página «Pedir un enlace nuevo» (se probó la API y que la
+página renderiza 200/estática). **No se hizo:** borrar las subidas huérfanas ni topear el cuerpo
+antes de `formData()` (los otros dos puntos menores de S5; siguen anotados arriba).
+
+### C3 — las recurrentes cuentan por ocurrencia
+
+- **Fuente:** el ledger no sirve — `maintain_reservations()` borra cada día los buckets pasados,
+  y los reportes miran sobre todo el pasado. Migración `20261008110000_reservation_occurrences`:
+  `reservation_occurrences(from, to, [tipo, dueño, espacio])`, `LANGUAGE sql STABLE`, que expande
+  desde `reservations` con **la misma regla que `rebuild_reservation_ledger_forward`**: paso
+  según la frecuencia del RRULE desde `start_time` hasta `min(recurrence_end, inicio + 1 año)`,
+  cada ocurrencia por `effective_occurrence_window` (cancelada → afuera; reprogramada → su ventana
+  nueva). Una ocurrencia pertenece al período si su **inicio efectivo** cae en `[from, to]`.
+  Devuelve todos los estados; los filtros opcionales recortan series antes de expandir.
+  `get_user_reservations_window` se descartó como fuente: tiene su propia expansión inline
+  (equivalente hoy, pero una segunda copia de la regla).
+- **Reportes** (`adminReports.ts`): dos `GROUP BY` (por espacio × estado con suma/mín/máx de
+  minutos; por día en hora del predio × estado) y uno de altas de usuarios por día. Cierra DB6:
+  un reporte anual ya no trae todas las reservas a memoria.
+- **Costura con la retención:** el detalle crudo se cuenta desde `coverage.rawFromMs`. Antes de
+  esa fecha las series terminadas ya se borraron; una serie que cruza el corte seguiría
+  expandiéndose hacia atrás y mezclaría un tramo parcial con lo que el aviso de la UI dice que
+  «no está contado en los totales». Recortar vuelve literal el aviso. La comparación se recorta
+  igual y **sigue sin `coverage` propia** (limitación previa, no se tocó). Los snapshots
+  mensuales que tome el cron desde ahora cuentan ocurrencias; los ya guardados contaron series
+  (en dev no hay ninguno).
+- **Tableros:** usuario — próximas (ocurrencias aprobadas desde ahora), horas de la semana y del
+  mes (suma de ocurrencias aprobadas del período); admin — aprobadas futuras por ocurrencia
+  (`src/lib/db/occurrences.ts`). **Pendientes y rechazadas siguen por serie**: son la cola de
+  decisiones, y una serie se aprueba o rechaza entera.
+- **`/admin/reservations`:** los listados por rango (agrupado por día, paginado, por espacio con
+  rango) y los conteos por día devuelven ocurrencias, paginadas y contadas en la base. Cada fila
+  conserva el `id` de la reserva (aprobar desde una ocurrencia decide la serie, como siempre) con
+  el horario de esa ocurrencia. Sin rango, el listado por espacio sigue siendo de series.
+- **Verificación:** los tres reportes (julio, sep–oct, año 2026) coinciden campo por campo
+  (totales, por estado, por espacio, duraciones, cada día) con una referencia contada en Python
+  sobre la lista cruda de `reservation_occurrences()`; el año pasa de 410 a 453 (las 10 series de
+  eventos ahora valen 53 sesiones), pendientes/rechazadas/altas iguales. La expansión coincide con
+  el ledger salvo las ocurrencias que el ledger no materializó por estar en el pasado al
+  reconstruirlo. Listados y conteos por día: idénticos antes/después (en dev no había
+  recurrentes de personas). Con una reserva semanal de prueba para `u1` (una ocurrencia
+  cancelada y otra reprogramada): tablero 1 / 1 h / 6 h → 13 / 3 h / 12 h (lo calculado a mano),
+  admin 58 → 70, la cancelada no aparece en el listado y la reprogramada cae en su día nuevo con
+  su duración. Reporte anual: 2,5 ms en SQL, ~60 ms punta a punta.
+- **Encontrado y no tocado:** la tarjeta «Reservas Totales» del tablero de usuario muestra
+  `recentReservations.length` (como mucho 10). En dev hay 397 reservas sembradas sin ledger
+  (`cmuo1zo7…`): datos de prueba de otra sesión, no un bug del código.
+
+### P2 — sitio público cacheable
+
+- **Layout raíz sin nada del pedido.** `ServerTimeProvider` y la sesión resuelta en el servidor
+  pasan a un layout nuevo, `(management)/layout.tsx` (todos los consumidores de la hora están
+  ahí). El sitio público monta `SessionProvider` sin `session`: la pide el navegador (para un
+  anónimo no toca la base: sin cookie no corre `jwt()`). El botón del encabezado reserva su
+  lugar mientras carga, para no mostrar «Iniciar sesión» a quien ya ingresó (el parpadeo apareció
+  al verificar y se corrigió en el mismo commit).
+- **Lecturas cacheadas** (`src/lib/cache/public-reads.ts`): `unstable_cache` con tags
+  (`public:site-config|events|news|spaces|landing-themes`) y vencimiento de 300 s para lo que
+  depende del reloj. `unstable_cache` guarda con `JSON.stringify`, que revienta con BigInt: se
+  serializa con `cache/serialize.ts` (BigInt y Date etiquetados, con test). El tema de la landing
+  se cachea como lista (`listEnabledLandingThemes`) y se resuelve el del día al renderizar.
+- **Invalidación:** `revalidatePublic(tag)` justo después de la auditoría en toda ruta admin que
+  escribe eventos, noticias, espacios, temas, configuración y tipos de reserva (los nombres de
+  tipo salen en las tarjetas), en la decisión sobre participantes y en la inscripción/cancelación
+  públicas (la fase «completo» de la tarjeta).
+- **Páginas:** `revalidate = 300` (literal, Next lo exige). `/`, `/about`, `/spaces` y políticas
+  se prerenderizan; `/events/[id]` y el detalle de noticias son ISR a demanda
+  (`generateStaticParams` → `[]`); `/news` sigue dinámica (`searchParams`) pero lee de la caché.
+  Las políticas dejaron `connection()`: una versión con `effectiveAt` futuro aparece a lo sumo 5
+  minutos (más la visita que regenera) después de su hora. La aceptación obligatoria no depende de
+  esa página.
+- **Protección:** `public-cache.test.ts` falla si el layout raíz o una página pública usa
+  `auth()/connection()/cookies()/headers()/getSiteConfig()`, si un `revalidate` no es igual a la
+  constante, si lo público importa lecturas de `@/lib/db/*`, o si una ruta admin de esas
+  entidades escribe sin invalidar.
+- **Verificación.** `next build` antes: todas las páginas `ƒ`. Después: `○` con ISR 5 min para
+  `/`, `/about`, `/spaces`, políticas y `request-link`; `●` para eventos y noticias. Con
+  `next start` contra la base de dev, contando transacciones en `pg_stat_database` (esperando 15 s
+  a que Postgres publique las estadísticas): 10 visitas a la landing, **93 → 5** (5 es el ruido de
+  fondo de 15 s: el portero de mantenimiento); 10 a `/spaces`, **36 → 9**. Respuestas `HIT` con
+  `s-maxage=300`. Editar el teléfono (`PUT /api/admin/site-config`) se vio en la visita siguiente
+  de `/`, `/spaces` y `/about` (`MISS` → regenerada); destacar el evento E2E (bulk) apareció y
+  desapareció de la landing. En dev, el área logueada sigue recibiendo `serverNowMs` y el
+  encabezado público pasa a «Ir a mi perfil» con sesión.
+- **Hallazgo previo, no corregido:** en `next start` sobre **http** el área logueada redirige al
+  ingreso — el middleware lee la cookie con `secureCookie: NODE_ENV === "production"`
+  (`__Secure-authjs.session-token`) y NextAuth la emite sin prefijo sobre http. En Vercel (https)
+  coinciden; afecta solo a probar un build de producción en local, o a un VPS sin TLS.
+
+### S1 bis — la CSP sandbox no llegaba al navegador
+
+Al verificar el archivo de participante: la respuesta del proxy traía **solo la CSP global**. Los
+headers de `next.config.ts` pisan los que pone la ruta, así que la `sandbox; default-src 'none'`
+de S1 nunca se aplicó. No era explotable (lo no inline va como `attachment` +
+`application/octet-stream`), pero faltaba esa capa. La regla de la CSP global ahora excluye
+solo esa ruta (`/((?!api/admin/events/[^/]+/participants/file$).*)`); el resto de los headers
+sigue en `/:path*`. `src/lib/security-headers.test.ts` fija la regex. Verificado: un `.html`
+forjado como `text/html` → `attachment`, `octet-stream`, `CSP: sandbox`; el PDF → `inline` sin
+CSP (el visor de Chrome no abre con `sandbox`); la landing conserva la global.
+
+### Verificación a mano (pendiente de la primera sesión)
+
+En Chrome contra la app de dev, como `sa1`:
+
+1. **`/admin/spaces`:** «Eliminar» abre el diálogo y «Cancelar» lo cierra; «Áreas comunes»
+   cambia de pestaña; la página sigue respondiendo después de cada paso. (Los timers medidos
+   tardaban ~1 s en las dos páginas comparadas: la pestaña estaba oculta y Chrome los recorta;
+   no era un ciclo.)
+2. **`/admin/reports`:** carga el reporte, «Mes actual», «Personalizado», calendario (cambio de
+   mes, dos días) y «Generar reporte»: sin colgarse. Se vio un **desajuste de hidratación** en el
+   texto del período: el servidor está en hora simulada (30/09) y el navegador en la real (07/10),
+   así que «mes anterior» difiere. Es de la hora simulada, previo a este milestone.
+3. **Archivo de participante:** el PDF se sirve `inline` (`application/pdf`); uno de otro tipo,
+   como adjunto. De acá salió S1 bis.
+4. **Sondeo:** con la pestaña oculta, 136 s sin un solo pedido a `/api/maintenance` ni a
+   `/api/user/notifications`; al disparar `visibilitychange` con la pestaña «visible», uno de
+   cada uno.
+5. **Rate limit del ingreso:** con el contador de un correo inexistente en 10, un intento desde la
+   pantalla muestra «Demasiados intentos de ingreso. Esperá unos minutos y volvé a probar.»
