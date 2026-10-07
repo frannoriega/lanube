@@ -1,5 +1,8 @@
 import { apiCatch } from "@/lib/api/response";
-import { getParticipantByToken } from "@/lib/db/participants";
+import {
+  EDIT_LINK_GONE_MESSAGE,
+  getParticipantByToken,
+} from "@/lib/db/participants";
 import {
   handleParticipantUpload,
   participantUploadRateLimit,
@@ -19,10 +22,10 @@ export async function POST(
 
     const { token } = await params;
     const participant = await getParticipantByToken(token);
-    if (!participant) {
+    if (participant.state !== "ok") {
       return NextResponse.json(
-        { message: "Inscripción no encontrada" },
-        { status: 404 },
+        { message: EDIT_LINK_GONE_MESSAGE, code: "EDIT_LINK_GONE" },
+        { status: 410 },
       );
     }
     if (

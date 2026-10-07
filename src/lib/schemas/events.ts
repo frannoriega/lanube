@@ -264,3 +264,17 @@ export const participantDecisionSchema = z.object({
 export type ParticipantDecisionInput = z.infer<
   typeof participantDecisionSchema
 >;
+
+/**
+ * «Pedir un enlace nuevo» para gestionar una inscripción (milestone 25, S5). Captcha obligatorio,
+ * como el reseteo de contraseña: el endpoint manda correos a un destinatario que elige quien lo
+ * llama.
+ */
+export const editLinkRequestSchema = z.object({
+  email: registerEmailSchema,
+  captcha: z
+    .string()
+    .min(1, { message: "Por favor completá la verificación de seguridad" }),
+});
+
+export type EditLinkRequestInput = z.infer<typeof editLinkRequestSchema>;

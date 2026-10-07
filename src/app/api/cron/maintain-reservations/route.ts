@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getGlobalReadOnlyWindow } from "@/lib/maintenance/server";
 import { pruneExpiredOAuthRows } from "@/lib/oauth/server";
+import { pruneExpiredEditTokens } from "@/lib/db/participants";
 
 type MaintainRow = {
   deleted_past_ledger: bigint;
@@ -81,6 +82,10 @@ export async function GET(request: NextRequest) {
     // de una semana. Los grants revocados se conservan (historia chica).
     const oauth = await pruneExpiredOAuthRows();
 
+    // Enlaces de edición de inscripciones de eventos que ya terminaron (milestone 25, S5). Ya no
+    // sirven aunque sigan en la tabla (el vencimiento se calcula al usarlos): esto es limpieza.
+    const deletedEditTokens = await pruneExpiredEditTokens();
+
     const result = {
       deletedPastLedger: Number(row.deleted_past_ledger),
       rebuiltRecurring: Number(row.rebuilt_recurring),
@@ -92,6 +97,7 @@ export async function GET(request: NextRequest) {
       ),
       deletedOAuthCodes: oauth.codes,
       deletedOAuthTokens: oauth.tokens,
+      deletedEditTokens,
     };
     logger.info("cron/maintain-reservations done", result);
     return NextResponse.json(result);

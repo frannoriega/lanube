@@ -189,6 +189,12 @@ export function PublicForm({
     }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      if (res.status === 410) {
+        // El enlace venció mientras editaba (terminó el evento): la página muestra por qué y
+        // cómo seguir (milestone 25, S5).
+        router.refresh();
+        return;
+      }
       if (err.errors) {
         for (const [path, message] of Object.entries(err.errors)) {
           form.setError(`answers.${path}` as `answers.${string}`, {
@@ -213,6 +219,10 @@ export function PublicForm({
       const res = await fetch(`/api/forms/response/${token}`, {
         method: "DELETE",
       });
+      if (res.status === 410) {
+        router.refresh();
+        return;
+      }
       if (!res.ok) {
         toast.error("No se pudo cancelar la inscripción");
         return;

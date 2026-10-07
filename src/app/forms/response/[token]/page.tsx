@@ -1,6 +1,30 @@
 import { PublicForm } from "@/components/organisms/forms/public-form";
+import { Button } from "@/components/ui/button";
 import { getParticipantByToken } from "@/lib/db/participants";
 import { ParticipantStatus } from "@/types/prisma";
+import { Link2Off } from "lucide-react";
+import Link from "next/link";
+
+/** Pantalla para un enlace de edición que ya no sirve: ícono, título y cómo seguir. */
+function LinkProblem({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-4 py-6 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <Link2Off className="h-7 w-7" aria-hidden />
+      </span>
+      <h1 className="text-2xl font-bold">{title}</h1>
+      <div className="flex max-w-prose flex-col items-center gap-4 text-muted-foreground">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default async function ResponsePage({
   params,
@@ -10,12 +34,30 @@ export default async function ResponsePage({
   const { token } = await params;
   const participant = await getParticipantByToken(token);
 
-  if (!participant) {
+  // El enlace no existe (mal copiado) o venció porque el evento terminó (milestone 25, S5): una
+  // pantalla que explica qué pasó y cómo seguir, en vez de un «no encontrado» seco.
+  if (participant.state === "expired") {
     return (
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">Inscripción no encontrada</h1>
-        <p className="text-muted-foreground">El enlace no es válido.</p>
-      </div>
+      <LinkProblem title={participant.eventName}>
+        <p>
+          Este evento ya terminó, así que el enlace para gestionar la
+          inscripción dejó de funcionar.
+        </p>
+      </LinkProblem>
+    );
+  }
+  if (participant.state === "invalid") {
+    return (
+      <LinkProblem title="Este enlace no funciona">
+        <p>
+          Puede que se haya copiado incompleto, o que la inscripción ya no
+          exista. Si te inscribiste a un evento que todavía no terminó, te
+          mandamos un enlace nuevo a tu correo.
+        </p>
+        <Button asChild variant="brand">
+          <Link href="/forms/response/request-link">Pedir un enlace nuevo</Link>
+        </Button>
+      </LinkProblem>
     );
   }
 

@@ -73,7 +73,9 @@ erDiagram
   the public `slug` and the registration open/close window.
 - **EventParticipant**: one registration, unique per `(eventId, email)`
   (normalized). Carries `status` (`PENDING / APPROVED / REJECTED /
-CANCELLED`), an `editToken` for account-free self-service edit/cancel,
+CANCELLED`), edit links for account-free self-service edit/cancel
+  (`EventParticipantEditToken`: only the SHA-256 is stored, one per email
+  that carried a link, all valid until the event ends — milestone 25, S5),
   and optional `userId` if the registrant is also a platform user.
   `SPOT_HOLDING_STATUSES` (PENDING + APPROVED) is the one place "does this
   count toward capacity" is decided — see

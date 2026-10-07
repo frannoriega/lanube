@@ -15,6 +15,11 @@ import {
   mapUploadedFiles,
 } from "@/lib/events/form-files";
 import type { FormSchema, UploadedFile } from "@/lib/events/form-schema";
+import {
+  editLinkExpired,
+  generateEditToken,
+  hashEditToken,
+} from "@/lib/events/edit-token";
 import { verifyUploadedFile } from "@/lib/events/upload-signing";
 import { weekdaysFromRrule } from "@/lib/db/events";
 import { prisma } from "@/lib/prisma";
@@ -24,7 +29,6 @@ import {
   SPOT_HOLDING_STATUSES,
 } from "@/lib/constants/participants";
 import { ParticipantStatus } from "@/types/prisma";
-import { createId } from "@paralleldrive/cuid2";
 import { Prisma } from "@/generated/prisma/client";
 
 export type FormStatus =
@@ -313,7 +317,7 @@ export async function submitForm(
       ? ParticipantStatus.PENDING
       : ParticipantStatus.APPROVED;
 
-    const token = createId();
+    let participantId: string;
     if (existing) {
       // Reactiva una inscripción que la propia persona canceló (la única que llega acá).
       await tx.eventParticipant.update({
@@ -324,21 +328,25 @@ export async function submitForm(
           decidedAt: null,
           displayEmail,
           answers: cleaned as Prisma.InputJsonValue,
-          editToken: token,
         },
       });
+      participantId = existing.id;
     } else {
-      await tx.eventParticipant.create({
+      const created = await tx.eventParticipant.create({
         data: {
           eventId: eventForm.event.id,
           email,
           displayEmail,
-          editToken: token,
           status: initialStatus,
           answers: cleaned as Prisma.InputJsonValue,
         },
+        select: { id: true },
       });
+      participantId = created.id;
     }
+    // El enlace del correo de confirmación: en la misma transacción que la inscripción, así no
+    // queda una inscripción sin enlace ni un enlace sin inscripción.
+    const token = await issueEditToken(participantId, tx);
 
     return {
       ok: true,
@@ -349,10 +357,64 @@ export async function submitForm(
   });
 }
 
+/**
+ * Emite un enlace de edición nuevo para una inscripción y devuelve el token **en claro**, que
+ * solo debe ir al correo (milestone 25, S5). En la base queda únicamente su SHA-256. Los tokens
+ * anteriores siguen valiendo: cada correo con enlace llama a esto y ninguno invalida a otro.
+ */
+export async function issueEditToken(
+  participantId: string,
+  db: Pick<Prisma.TransactionClient, "eventParticipantEditToken"> = prisma,
+): Promise<string> {
+  const token = generateEditToken();
+  await db.eventParticipantEditToken.create({
+    data: { participantId, tokenHash: hashEditToken(token) },
+  });
+  return token;
+}
+
+/**
+ * Por qué un enlace de edición no sirve: `invalid` = no existe (mal copiado, o de antes de
+ * borrar la inscripción); `expired` = el evento ya terminó (vencen todos sus enlaces).
+ */
+export type EditLinkProblem =
+  | { state: "invalid" }
+  | { state: "expired"; eventName: string };
+
+/** Resuelve un token que llega en la URL a la inscripción, hasheándolo para buscarlo. */
+async function resolveEditToken(
+  token: string,
+): Promise<{ state: "ok"; participantId: string } | EditLinkProblem> {
+  const row = await prisma.eventParticipantEditToken.findUnique({
+    where: { tokenHash: hashEditToken(token) },
+    select: {
+      participantId: true,
+      participant: {
+        select: {
+          event: {
+            select: { name: true, endTime: true, recurrenceEnd: true },
+          },
+        },
+      },
+    },
+  });
+  if (!row) return { state: "invalid" };
+  const { event } = row.participant;
+  if (editLinkExpired(event, nowMs()))
+    return { state: "expired", eventName: event.name };
+  return { state: "ok", participantId: row.participantId };
+}
+
+/** Mensaje para la API cuando el enlace ya no sirve (la página muestra una pantalla propia). */
+export const EDIT_LINK_GONE_MESSAGE =
+  "Este enlace ya no es válido, o el evento ya terminó.";
+
 /** Participant registration loaded by its edit token, with the form to render. */
 export async function getParticipantByToken(token: string) {
-  const participant = await prisma.eventParticipant.findUnique({
-    where: { editToken: token },
+  const resolved = await resolveEditToken(token);
+  if (resolved.state !== "ok") return resolved;
+  const participant = await prisma.eventParticipant.findUniqueOrThrow({
+    where: { id: resolved.participantId },
     include: {
       event: {
         select: {
@@ -373,9 +435,9 @@ export async function getParticipantByToken(token: string) {
       },
     },
   });
-  if (!participant) return null;
   const instance = participant.event.form?.form;
   return {
+    state: "ok" as const,
     eventId: participant.eventId,
     eventName: participant.event.name,
     eventDescription: participant.event.description,
@@ -394,9 +456,18 @@ export async function getParticipantByToken(token: string) {
 export async function updateParticipantAnswers(
   token: string,
   answers: Record<string, unknown>,
-): Promise<{ ok: boolean; errors?: Record<string, string>; message?: string }> {
-  const participant = await prisma.eventParticipant.findUnique({
-    where: { editToken: token },
+): Promise<{
+  ok: boolean;
+  errors?: Record<string, string>;
+  message?: string;
+  /** El enlace no existe o venció: la ruta responde 410 y el formulario recarga la página. */
+  linkGone?: boolean;
+}> {
+  const resolved = await resolveEditToken(token);
+  if (resolved.state !== "ok")
+    return { ok: false, linkGone: true, message: EDIT_LINK_GONE_MESSAGE };
+  const participant = await prisma.eventParticipant.findUniqueOrThrow({
+    where: { id: resolved.participantId },
     include: {
       event: {
         select: {
@@ -414,7 +485,6 @@ export async function updateParticipantAnswers(
       },
     },
   });
-  if (!participant) return { ok: false, message: "No encontrado" };
   if (participant.status === ParticipantStatus.CANCELLED)
     return { ok: false, message: "Inscripción cancelada" };
   if (participant.status === ParticipantStatus.REJECTED)
@@ -436,7 +506,7 @@ export async function updateParticipantAnswers(
   if (!cleaned) return { ok: false, message: INVALID_FILE_MESSAGE };
 
   await prisma.eventParticipant.update({
-    where: { editToken: token },
+    where: { id: participant.id },
     data: { answers: cleaned as Prisma.InputJsonValue },
   });
   return { ok: true };
@@ -451,11 +521,13 @@ export async function updateParticipantAnswers(
  */
 export async function cancelParticipant(
   token: string,
-): Promise<{ ok: boolean; message?: string }> {
-  const participant = await prisma.eventParticipant.findUnique({
-    where: { editToken: token },
+): Promise<{ ok: boolean; message?: string; linkGone?: boolean }> {
+  const resolved = await resolveEditToken(token);
+  if (resolved.state !== "ok")
+    return { ok: false, linkGone: true, message: EDIT_LINK_GONE_MESSAGE };
+  const participant = await prisma.eventParticipant.findUniqueOrThrow({
+    where: { id: resolved.participantId },
   });
-  if (!participant) return { ok: false, message: "No encontrado" };
   if (participant.status === ParticipantStatus.CANCELLED) {
     return { ok: true };
   }
@@ -465,17 +537,70 @@ export async function cancelParticipant(
     return { ok: false, message: "Esta inscripción no está activa" };
   }
   await prisma.eventParticipant.update({
-    where: { editToken: token },
+    where: { id: participant.id },
     data: { status: ParticipantStatus.CANCELLED },
   });
   return { ok: true };
+}
+
+/**
+ * Inscripciones de un correo a las que todavía les sirve un enlace: ocupan un lugar
+ * (PENDING/APPROVED), el evento no está cancelado y no terminó. Es lo que manda «pedir un enlace
+ * nuevo» (milestone 25, S5). Una REJECTED/CANCELLED no se incluye: su enlace solo mostraría el
+ * estado, y mandarlo confirmaría a quien tipeó el correo que esa persona estaba inscripta.
+ */
+export async function listLinkableRegistrations(displayEmail: string) {
+  const email = await normalizeEmailForIdentityServer(displayEmail);
+  const rows = await prisma.eventParticipant.findMany({
+    where: {
+      email,
+      status: { in: SPOT_HOLDING_STATUSES },
+      event: { deletedAt: null },
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      email: true,
+      displayEmail: true,
+      event: { select: { name: true, endTime: true, recurrenceEnd: true } },
+    },
+  });
+  const now = nowMs();
+  return rows
+    .filter((r) => !editLinkExpired(r.event, now))
+    .map((r) => ({
+      id: r.id,
+      to: r.displayEmail ?? r.email,
+      eventName: r.event.name,
+    }));
+}
+
+/**
+ * Borra los enlaces de edición de eventos que ya terminaron (vencidos: `editLinkExpired`).
+ * Lo llama el cron diario; es solo limpieza — un enlace vencido ya no sirve aunque siga en la
+ * tabla, porque el vencimiento se calcula al usarlo.
+ */
+export async function pruneExpiredEditTokens(): Promise<number> {
+  const now = BigInt(nowMs());
+  const { count } = await prisma.eventParticipantEditToken.deleteMany({
+    where: {
+      participant: {
+        event: {
+          OR: [
+            { recurrenceEnd: { lt: now } },
+            { recurrenceEnd: null, endTime: { lt: now } },
+          ],
+        },
+      },
+    },
+  });
+  return count;
 }
 
 export interface DecidedParticipant {
   id: string;
   email: string;
   displayEmail: string | null;
-  editToken: string;
 }
 
 /**
@@ -514,7 +639,7 @@ export async function decideParticipants(
         eventId,
         status: { in: fromStatuses },
       },
-      select: { id: true, email: true, displayEmail: true, editToken: true },
+      select: { id: true, email: true, displayEmail: true },
     });
 
     if (affected.length > 0) {

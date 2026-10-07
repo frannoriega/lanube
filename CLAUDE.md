@@ -69,7 +69,8 @@ src/
 │   ├── .well-known/              # OAuth metadata (RFC 8414 + RFC 9728) for the MCP connector
 │   ├── forms/                    # Public, UNAUTHENTICATED event registration
 │   │   ├── [slug]/               # Submit a registration (+ /submitted confirmation)
-│   │   └── response/[token]/     # Edit/cancel via the participant's editToken
+│   │   └── response/[token]/     # Edit/cancel via one of the participant's edit links
+│   │       └── request-link/     # «Pedir un enlace nuevo» (milestone 25, S5)
 │   ├── (management)/             # Auth-gated section
 │   │   ├── auth/                 # Sign-in, sign-up, password reset, magic-link
 │   │   ├── user/                 # Logged-in user pages
@@ -232,8 +233,9 @@ src/
   registration open/close window, and `isPublished` flag (`@@unique` on both `eventId` and
   `formId`; `templateId` records the source template).
 - `EventParticipant`: A registration, keyed by **normalized email** per event
-  (`@@unique([eventId, email])`), with `displayEmail`, a tokenized `editToken` (edit/cancel
-  without an account), and a nullable `userId` linked if the participant later registers.
+  (`@@unique([eventId, email])`), with `displayEmail`, edit links (`EventParticipantEditToken`,
+  SHA-256 only — see "Edit links" below) and a nullable `userId` linked if the participant later
+  registers.
   A `ParticipantStatus` enum (PENDING/APPROVED/REJECTED/CANCELLED) drives the lifecycle
   (replaced the old `cancelled` boolean); `decisionReason`/`decidedAt` record an admin's
   approve/reject. See "Participant approval" below.
@@ -379,6 +381,19 @@ src/
   Participant email uses the same normalization + `displayEmail` rules as registration.
   Public pages show the **event** name + description + image (`EventHero`); the internal
   form name is never exposed (`getPublicForm` returns `eventName/eventDescription/eventImageUrl`).
+- **Edit links are hashed and never rotated** (milestone 25, S5; `src/lib/events/edit-token.ts`).
+  A `/forms/response/<token>` link is a bearer credential, so the DB keeps only its SHA-256 in
+  `event_participant_edit_tokens` (N per registration). Since a link can't be rebuilt from the
+  DB, **every email that carries one issues a fresh token** (`freshEditLinkUrl` in
+  `src/lib/email/edit-link.ts`, only when the email is really sent) and **older ones keep
+  working** — rotating was rejected because it broke the confirmation email's link on every
+  session change. All of a registration's links **expire when the event ends**
+  (`editLinkExpired`, computed at use; the daily cron prunes them). A dead or expired link
+  answers **410** `EDIT_LINK_GONE` and the page shows why, with «Pedir un enlace nuevo»
+  (`/forms/response/request-link` → `POST /api/forms/request-link`: captcha, per-IP and
+  per-email rate limit, same answer with or without registrations, sending runs in `after()` so
+  timing doesn't tell either). Never store or log a raw token; a new email with a link must go
+  through `freshEditLinkUrl`.
 - **Event image**: `Event.imageUrl`, uploaded via `POST /api/admin/events/upload`
   → `getStorage().upload()`. The reusable `ImageUpload` molecule drives it. **Required**
   at the schema layer (`eventInputSchema`) — same for a Noticia's `coverImageUrl`
