@@ -58,7 +58,7 @@ export function CalendarTemplateClient({
           <CardDescription>
             {isTouch
               ? "Tocá un horario libre para reservar"
-              : "Haz clic y arrastra para reservar"}
+              : "Hacé clic y arrastrá para reservar"}
           </CardDescription>
         </CardHeader>
         <CardContent>

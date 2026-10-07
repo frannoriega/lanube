@@ -11,13 +11,13 @@ import SignIn from "./signin";
 export default function Header() {
   return (
     <ScrollAwareHeader className="sticky z-50 top-0 w-full flex flex-row items-center justify-center lg:px-16">
-      <div className="glass-nav px-16 w-fit h-16 flex-row rounded-full my-4 hidden lg:flex">
-        <Container className="flex flex-row items-center justify-between gap-12">
+      <div className="glass-nav px-8 xl:px-16 w-fit h-16 flex-row rounded-full my-4 hidden lg:flex">
+        <Container className="flex flex-row items-center justify-between gap-8 xl:gap-12">
           <Link href="/" aria-label="Ir al inicio de La Nube">
             <LogoLaNube />
           </Link>
           <nav className="w-fit">
-            <ul className="flex flex-row gap-8 items-center justify-center">
+            <ul className="flex flex-row gap-6 xl:gap-8 items-center justify-center">
               {links.map((item) => (
                 <li
                   key={item.name}
@@ -25,7 +25,7 @@ export default function Header() {
                 >
                   <Link
                     href={item.href}
-                    className="relative pb-1 w-fit text-wrap text-center flex flex-col items-center"
+                    className="relative pb-1 w-fit whitespace-nowrap text-center flex flex-col items-center"
                   >
                     {item.name}
                     <span className="absolute left-0 bottom-0 w-full h-[2px] bg-black dark:bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out origin-center"></span>

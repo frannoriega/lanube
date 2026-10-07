@@ -400,8 +400,8 @@
     "semantic_hash": ""
   },
   "src/app/(public)/about/page.tsx": {
-    "mtime": 1791386708.9276202,
-    "ast_hash": "b641e2e223e543c5a8e8f861221da1b7",
+    "mtime": 1791152334.2610667,
+    "ast_hash": "4a6463ad8e9b408f8c2cb9a7d0c0d05b",
     "semantic_hash": ""
   },
   "src/app/(public)/events/[id]/page.tsx": {
@@ -820,8 +820,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/WeekCalendar.tsx": {
-    "mtime": 1791386771.8248405,
-    "ast_hash": "e2c9762f614ea34784856381fc716432",
+    "mtime": 1791381321.1381624,
+    "ast_hash": "059f93c1bcf083dbf661f9f5f3ebbd4d",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/index.ts": {
@@ -940,8 +940,8 @@
     "semantic_hash": ""
   },
   "src/components/templates/user/calendar-template-client.tsx": {
-    "mtime": 1791386767.4925025,
-    "ast_hash": "f57ea5cb37612a7fa3c3dc2b1dc186d7",
+    "mtime": 1790971835.5814915,
+    "ast_hash": "061014e753b3ca54c4a17118201efb05",
     "semantic_hash": ""
   },
   "src/components/ui/accordion.tsx": {
@@ -3690,8 +3690,8 @@
     "semantic_hash": ""
   },
   "src/components/templates/landing/stats/index.tsx": {
-    "mtime": 1791386754.302931,
-    "ast_hash": "09d869d30224e2570fefe34543982976",
+    "mtime": 1791139963.6070123,
+    "ast_hash": "445cbdad680d47a2c497de74b0f33a28",
     "semantic_hash": ""
   },
   "src/lib/constants/ecosystem-stats.ts": {
