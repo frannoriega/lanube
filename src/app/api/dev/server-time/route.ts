@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Dev-only: returns the server's idea of "now" (matches Docker faketime when enabled).
- * Handy for curl checks; the UI uses ServerTimeProvider from the root layout instead.
+ * Handy for curl checks; the UI uses ServerTimeProvider from `(management)/layout.tsx` instead.
  */
 export async function GET() {
   try {

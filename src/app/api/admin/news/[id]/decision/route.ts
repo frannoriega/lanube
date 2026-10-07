@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
@@ -52,6 +53,8 @@ export async function POST(
     await audit.commit(session, AUDIT_ACTIONS.newsDecide, {
       reason: parsed.data.reason ?? null,
     });
+    // Invalida la caché pública: el sitio público muestra las noticias publicadas (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.news);
 
     // A deleted-and-unreassigned author has no one to notify — SetNull leaves authorId
     // null rather than orphaning the decision.

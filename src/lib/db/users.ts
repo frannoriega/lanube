@@ -414,8 +414,8 @@ async function getUserByEmailAndPassword(
 }
 
 /*
- * `cache()` (React) deduplica la lectura dentro de **un mismo render de servidor**: el layout raíz,
- * el de `/admin` o `/user` y la página llaman `auth()` cada uno, y cada `auth()` corre el callback
+ * `cache()` (React) deduplica la lectura dentro de **un mismo render de servidor**: el layout de
+ * `(management)`, el de `/admin` o `/user` y la página llaman `auth()` cada uno, y cada `auth()` corre el callback
  * `jwt()`, que repetía estas consultas 2–4 veces por página (milestone 25, P3/DB2). No cambia la
  * frescura entre pedidos —cada pedido lee de nuevo— y fuera de un render (rutas de API) no
  * memoiza nada: ahí se llama una sola vez de todos modos.

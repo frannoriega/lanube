@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
@@ -70,6 +71,8 @@ export async function POST(request: NextRequest) {
         await audit.commit(session, AUDIT_ACTIONS.newsDelete, { requestId });
         result.done++;
       }
+      // Invalida la caché pública: el sitio público muestra las noticias (milestone 25, P2).
+      revalidatePublic(PUBLIC_TAGS.news);
       return apiSuccess(result);
     }
 
@@ -93,6 +96,8 @@ export async function POST(request: NextRequest) {
       await audits[i].commit(session, AUDIT_ACTIONS.newsUpdate, { requestId });
       result.done++;
     }
+    // Invalida la caché pública: el sitio público muestra las noticias (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.news);
     return apiSuccess(result);
   } catch (err) {
     return apiCatch("admin/news/bulk POST", err);

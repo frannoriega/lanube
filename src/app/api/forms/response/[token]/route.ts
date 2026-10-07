@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import {
   cancelParticipant,
@@ -83,6 +84,9 @@ export async function DELETE(
       }
       return apiError(result.message ?? "No encontrado", 404);
     }
+    // Se liberó un lugar: la tarjeta del evento puede dejar de estar «completa» (milestone 25,
+    // P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return apiSuccess({ ok: true });
   } catch (err) {
     return apiCatch("forms/response/[token] DELETE", err);

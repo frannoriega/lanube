@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
       before: { order: before },
       after: { order: after },
     });
+    // Invalida la caché pública: el sitio público muestra los eventos (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return apiSuccess({ ok: true });
   } catch (err) {
     return apiCatch("admin/events/featured-order POST", err);

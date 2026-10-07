@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Aligns the browser wall clock with the server on hydrate (see root `layout.tsx`).
+ * Aligns the browser wall clock with the server on hydrate (mounted in `(management)/layout.tsx`: since milestone 25, P2, the root layout cannot
+ * depend on the request; every consumer lives under that group).
  * Server code uses `@/lib/clock` instead; both follow the same Node/DB time under faketime.
  */
 

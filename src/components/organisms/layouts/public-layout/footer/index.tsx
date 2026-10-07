@@ -9,7 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getSiteConfig } from "@/lib/db/siteConfig";
+import { getPublicSiteConfig } from "@/lib/cache/public-reads";
 import { links } from "@/lib/constants/nav";
 import { POLICIES, POLICY_KEYS } from "@/lib/policies/registry";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
 export default async function Footer({ className }: { className?: string }) {
-  const contact = await getSiteConfig();
+  const contact = await getPublicSiteConfig();
   // Azul noche de marca (milestone 18) en vez de `slate-950`: el casi-negro neutro no
   // pertenecía a ninguna paleta del sitio; éste es el mismo fondo de la franja de cifras.
   const cns = cn(

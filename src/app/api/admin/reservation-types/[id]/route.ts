@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { beginAudit } from "@/lib/audit/emit";
@@ -34,6 +35,8 @@ export async function PUT(
   const audit = await beginAudit("ReservationType", id);
   const type = await updateReservationType(id, parsed.data);
   await audit.commit(session, AUDIT_ACTIONS.reservationTypeUpdate);
+  // Invalida la caché pública: las tarjetas de eventos muestran el nombre del tipo (milestone 25, P2).
+  revalidatePublic(PUBLIC_TAGS.events);
   return NextResponse.json(serializeJson(type));
 }
 
@@ -52,6 +55,8 @@ export async function DELETE(
     // FK RESTRICT on events/reservations blocks deleting a type in use.
     await deleteReservationType(id);
     await audit.commit(session, AUDIT_ACTIONS.reservationTypeDelete);
+    // Invalida la caché pública: las tarjetas de eventos muestran el nombre del tipo (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

@@ -1,6 +1,12 @@
 import PublicLayout from "@/components/organisms/layouts/public-layout";
+import { SessionProvider } from "@/components/providers/session";
 import { ThemeProvider } from "next-themes";
 
+/**
+ * Sitio público. Estático/ISR desde el milestone 25 (P2): nada de lo que se renderiza acá puede
+ * depender del pedido. La sesión (botón «Ingresar» / «Mi panel» del encabezado) se pide desde el
+ * navegador — `SessionProvider` sin `session`.
+ */
 export default function RootLayout({
   children,
 }: {
@@ -13,7 +19,9 @@ export default function RootLayout({
       enableSystem
       storageKey="la-nube-theme"
     >
-      <PublicLayout>{children}</PublicLayout>
+      <SessionProvider>
+        <PublicLayout>{children}</PublicLayout>
+      </SessionProvider>
     </ThemeProvider>
   );
 }

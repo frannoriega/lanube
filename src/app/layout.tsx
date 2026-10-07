@@ -1,12 +1,7 @@
 import { MaintenanceProvider } from "@/components/providers/maintenance";
-import { ServerTimeProvider } from "@/components/providers/server-time";
 import { WhatsAppFloatButton } from "@/components/molecules/whatsapp-float-button";
-import { auth } from "@/lib/auth";
-import { nowMs } from "@/lib/clock";
-import { getSiteConfig } from "@/lib/db/siteConfig";
-import { SessionProvider } from "@/components/providers/session";
+import { getPublicSiteConfig } from "@/lib/cache/public-reads";
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -27,15 +22,25 @@ export const metadata: Metadata = {
   description: 'Espacio de coworking e innovación "La Nube"',
 };
 
+/**
+ * Layout raíz. **No puede depender del pedido** (milestone 25, P2): antes hacía
+ * `connection()`, `auth()` y `getSiteConfig()`, y eso volvía dinámica cada página del sitio —
+ * ninguna se podía prerenderizar ni cachear. Lo que dependía del pedido se mudó:
+ *
+ * - la hora del servidor (`ServerTimeProvider`) y la sesión resuelta en el servidor, a
+ *   `(management)/layout.tsx` (sus únicos consumidores están ahí);
+ * - la sesión del sitio público, a `(public)/layout.tsx`, que la pide desde el navegador;
+ * - la configuración del sitio (teléfono del botón de WhatsApp), a una lectura cacheada con tag
+ *   (`getPublicSiteConfig`), que invalida el PUT de `/api/admin/site-config`.
+ *
+ * No agregar acá `auth()`, `cookies()`, `headers()`, `connection()` ni lecturas sin caché.
+ */
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await connection();
-  const serverNowMs = nowMs();
-  const session = await auth();
-  const siteConfig = await getSiteConfig();
+  const siteConfig = await getPublicSiteConfig();
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -51,11 +56,7 @@ export default async function RootLayout({
         >
           Saltar al contenido
         </a>
-        <ServerTimeProvider serverNowMs={serverNowMs}>
-          <SessionProvider session={session}>
-            <MaintenanceProvider>{children}</MaintenanceProvider>
-          </SessionProvider>
-        </ServerTimeProvider>
+        <MaintenanceProvider>{children}</MaintenanceProvider>
         <WhatsAppFloatButton phoneClickable={siteConfig.phoneClickable} />
       </body>
     </html>

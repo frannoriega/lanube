@@ -5,10 +5,10 @@ import { FeaturedCarousel } from "@/components/templates/landing/events/featured
 import { FeaturedEventCard } from "@/components/templates/landing/events/featured-event-card";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
-import { getUpcomingPublicEventsPage } from "@/lib/db/events";
+import { getPublicUpcomingEventsPage } from "@/lib/cache/public-reads";
 
 export default async function EventsSection() {
-  const { events, total } = await getUpcomingPublicEventsPage(1, 8);
+  const { events, total } = await getPublicUpcomingEventsPage(1, 8);
 
   if (total === 0) return null;
 

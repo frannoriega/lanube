@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { reorderSpaces } from "@/lib/db/spaces";
 import { NextRequest, NextResponse } from "next/server";
@@ -36,6 +37,8 @@ export async function POST(request: NextRequest) {
       before: { order: before },
       after: { order: after },
     });
+    // Invalida la caché pública: el sitio público muestra los espacios, y las tarjetas de eventos su nombre (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.spaces);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

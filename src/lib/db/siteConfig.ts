@@ -13,7 +13,8 @@ const SITE_CONFIG_ID = "site";
  * missing (migration seeds it, but this keeps a fresh/un-seeded DB working). Public callers
  * (footer, about) can rely on always getting a value.
  */
-// `cache()`: el layout raíz y el pie/«Quiénes somos» la leen en el mismo render (milestone 25).
+// `cache()`: deduplica dentro de un render. El sitio público no la llama directo sino por
+// `getPublicSiteConfig` (caché de datos con tag, `src/lib/cache/public-reads.ts`, milestone 25 P2).
 export const getSiteConfig = cache(async (): Promise<SiteConfig> => {
   const existing = await prisma.siteConfig.findUnique({
     where: { id: SITE_CONFIG_ID },

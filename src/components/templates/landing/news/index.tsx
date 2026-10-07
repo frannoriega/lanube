@@ -7,12 +7,12 @@ import {
   NewsCard,
   toNewsCardData,
 } from "@/components/templates/landing/news/news-card";
-import { getLandingNews } from "@/lib/db/news";
+import { getPublicLandingNews } from "@/lib/cache/public-reads";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default async function NewsSection() {
-  const posts = await getLandingNews(6);
+  const posts = await getPublicLandingNews(6);
   if (posts.length === 0) return null;
 
   const featured = posts.filter((p) => p.isFeatured);

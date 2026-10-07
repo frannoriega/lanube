@@ -62,6 +62,7 @@ FAKETIME='@2026-01-01 00:00:00' docker compose -f docker/docker-compose.yml -f d
 src/
 ├── app/                          # Next.js App Router (pages & API routes)
 │   ├── (public)/                 # Public pages (landing, about, spaces, news, events, policies)
+│   │                             #   STATIC/ISR since milestone 25 (P2): see §19
 │   │   └── news/[yyyy]/[mm]/[dd]/[slug]/  # Noticia detail. Public URLs are English:
 │   │                             #   "/noticias" 308-redirects here (next.config.ts)
 │   ├── (gate)/policies/accept/   # "Actualizamos nuestras políticas" gate (milestone 19)
@@ -71,7 +72,8 @@ src/
 │   │   ├── [slug]/               # Submit a registration (+ /submitted confirmation)
 │   │   └── response/[token]/     # Edit/cancel via one of the participant's edit links
 │   │       └── request-link/     # «Pedir un enlace nuevo» (milestone 25, S5)
-│   ├── (management)/             # Auth-gated section
+│   ├── (management)/             # Auth-gated section; its layout.tsx mounts ServerTimeProvider +
+│   │                             #   the server-resolved session (moved out of the root layout, §19)
 │   │   ├── auth/                 # Sign-in, sign-up, password reset, magic-link
 │   │   ├── user/                 # Logged-in user pages
 │   │   │   ├── dashboard/        # User dashboard with stats
@@ -970,6 +972,35 @@ spaces_kind_invariants` + triggers `reservations_reject_amenity` / `events_rejec
   returns `null` when empty). `/spaces` has two blocks (`#amenities`). Admin `/admin/spaces` has
   Espacios / Áreas comunes tabs, each reordered on its own (order compares only within a kind).
 - The MCP connector does **not** expose amenities (`list_spaces` = reservable only).
+
+### 19. Sitio público cacheable (milestone 25, P2)
+
+Full detail: `docs/milestones/milestones-25-performance-security-audit.md` (P2).
+
+- **The root layout must not depend on the request** — no `auth()`, `cookies()`, `headers()`,
+  `connection()` or uncached DB reads in `src/app/layout.tsx` or under `src/app/(public)/`
+  (`src/lib/cache/public-cache.test.ts` fails otherwise). Before, it did all three and **every**
+  page was dynamic. `ServerTimeProvider` and the server-resolved session now live in
+  `(management)/layout.tsx`; the public site gets the session in the browser
+  (`SessionProvider` without `session` in `(public)/layout.tsx` — `null` would mean "known
+  logged out" and never fetch).
+- **Public reads go through `src/lib/cache/public-reads.ts`**: `unstable_cache` + tags
+  (`PUBLIC_TAGS`: site-config, events, news, spaces, landing-themes) + a
+  `PUBLIC_REVALIDATE_SECONDS` (300 s) expiry for what depends on the clock (upcoming events,
+  registration phase, scheduled news, the day's theme). BigInt/Date survive via
+  `cache/serialize.ts`. A new public read is added there, never called from a page directly
+  (the test forbids `@/lib/db/*` value imports in public pages/sections/layout).
+- **Every admin write that changes what the public site shows calls
+  `revalidatePublic(PUBLIC_TAGS.x)`** right after its audit entry — events, news, spaces, themes,
+  site-config, reservation types (type names on event cards), the participant decision, and the
+  public register/cancel (the "completo" phase of a card). Enforced for `api/admin/{events,news,
+spaces,themes,site-config,reservation-types}` by the same test. Without it the site catches up
+  only when the 300 s expire.
+- Public pages export `revalidate = 300` (a literal — Next requires it; the test pins it to the
+  constant). `/`, `/about`, `/spaces` and the policies are prerendered at build time;
+  `/events/[id]` and news details are ISR on first visit (`generateStaticParams` → `[]`); `/news`
+  stays dynamic (`searchParams`) but its data comes from the cache. The build needs the DB
+  (it already does, for migrations).
 
 ## Testing & Seeding
 

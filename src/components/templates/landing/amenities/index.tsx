@@ -4,7 +4,7 @@ import { Reveal } from "@/components/molecules/reveal";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
 import { SpaceTile } from "@/components/templates/landing/spaces";
-import { getPublicAmenities } from "@/lib/db/spaces";
+import { getPublicSpacesByKind } from "@/lib/cache/public-reads";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -19,7 +19,7 @@ import Link from "next/link";
  * (ver `LANDING_SECTION_BG`).
  */
 export default async function AmenitiesSection() {
-  const amenities = await getPublicAmenities();
+  const amenities = await getPublicSpacesByKind("AMENITY");
 
   if (amenities.length === 0) return null;
 
