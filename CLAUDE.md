@@ -514,7 +514,9 @@ are auto-approved (default `false`) or filtered by an admin.
   **registrations**, not the final approved headcount. Don't reintroduce ad-hoc status filters —
   reuse `SPOT_HOLDING_STATUSES`.
 - **Registration (`submitForm`):** initial status is PENDING when `requiresApproval`, else
-  APPROVED. Re-registering a REJECTED/CANCELLED row reactivates it (clears the prior decision).
+  APPROVED. Re-registering a **CANCELLED** row reactivates it (clears the prior decision); a
+  **REJECTED** one is refused untouched with the same «Ya estás inscripto» message, so nobody can
+  learn who was rejected (`blocksReRegistration()`, milestone 25 S5).
   The confirmation email (`event-registration.ts`) has a manual-approval variant reinforcing
   "inscribirte no garantiza tu lugar"; the public form + submitted screen show the same notice.
 - **Admin decisions:** the participants table (`participants-table.tsx`) shows a status column;
@@ -527,7 +529,8 @@ are auto-approved (default `false`) or filtered by an admin.
   reason if given, else a neutral generic message. Same synchronous fan-out caveat as
   `notifyEventParticipantsBatch` (TODO(scale) at ~100+ recipients).
 - **Not supported yet:** re-approving a REJECTED participant in place (freeing→re-occupying a
-  spot needs a capacity recheck); they re-register instead.
+  spot needs a capacity recheck). Since milestone 25 they can't re-register either: a rejection
+  is final until that exists.
 
 ### Event card summary + featured
 

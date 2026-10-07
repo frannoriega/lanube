@@ -1195,8 +1195,8 @@
     "semantic_hash": ""
   },
   "src/lib/db/participants.ts": {
-    "mtime": 1791326353.7247684,
-    "ast_hash": "3c66eac0ddd19d5fc49d2bd81e5cf771",
+    "mtime": 1791332474.6891694,
+    "ast_hash": "824c1bb02495c0402f1565238969534d",
     "semantic_hash": ""
   },
   "src/lib/db/reservations.ts": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791331303.7947452,
-    "ast_hash": "09d11d6c8b6ae083029647e7fee7ad2e",
+    "mtime": 1791332489.8073988,
+    "ast_hash": "64c407963b288803c3b7028a41a7a1c5",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -2295,8 +2295,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants/participants.ts": {
-    "mtime": 1788562302.3600473,
-    "ast_hash": "1e89a8506220e1d18a0c6b7a65d87819",
+    "mtime": 1791332467.7827818,
+    "ast_hash": "ed14ca56d981c5d2d7d724eace5eb63f",
     "semantic_hash": ""
   },
   "src/lib/email/event-decision.ts": {
@@ -2770,8 +2770,8 @@
     "semantic_hash": ""
   },
   "docs/design/04-events-and-forms.md": {
-    "mtime": 1790971835.3654613,
-    "ast_hash": "006909dacf0387a72683af85ece52420",
+    "mtime": 1791332485.1725898,
+    "ast_hash": "89f20851f88cea79cfdb4aae648211fe",
     "semantic_hash": ""
   },
   "docs/design/05-resale-and-genericization.md": {
@@ -4415,8 +4415,13 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-25-performance-security-audit.md": {
-    "mtime": 1791331386.8705516,
-    "ast_hash": "a766c263d1c3dec5929247ef6dddcb5f",
+    "mtime": 1791332378.8199239,
+    "ast_hash": "38f33eddc414409425c3ca1fa7a16055",
+    "semantic_hash": ""
+  },
+  "src/lib/constants/participants.test.ts": {
+    "mtime": 1791332467.7851355,
+    "ast_hash": "91bde4b73fdcc012f4139a92654d0e24",
     "semantic_hash": ""
   }
 }
