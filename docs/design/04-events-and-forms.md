@@ -102,17 +102,23 @@ made.
   rather than an oversight. Don't reintroduce ad hoc status filters
   elsewhere; extend `SPOT_HOLDING_STATUSES` if the rule ever needs to
   change.
-- Re-registering after REJECTED/CANCELLED reactivates that same row
-  (clears the prior decision) rather than creating a duplicate — the
-  unique constraint is `(eventId, email)`.
+- Volver a enviar el formulario con un correo cuya inscripción está
+  **CANCELLED** (la canceló la propia persona) reactiva esa misma fila
+  (limpia la decisión previa) en vez de crear un duplicado — la clave única
+  es `(eventId, email)`. Una **REJECTED** no se reactiva (milestone 25, S5):
+  el envío se rechaza sin tocar la fila, con el **mismo mensaje** que una
+  inscripción activa («Ya estás inscripto con ese email»), para no revelar
+  quién fue rechazado. La regla es `blocksReRegistration()`
+  (`src/lib/constants/participants.ts`, con test).
 - Admin decisions are scoped and asymmetric: **approve only touches
   PENDING**, **reject touches PENDING + APPROVED** — so approving never
   re-emails someone already approved, but an admin can still walk back an
   approval.
 - **Not supported**: re-approving a REJECTED participant in place. Freeing
   and re-occupying a spot needs a fresh capacity check that the current
-  write path doesn't do; the workaround is the participant re-registering,
-  which does go through the normal capacity check.
+  write path doesn't do. Desde el milestone 25 la persona rechazada
+  tampoco puede reinscribirse sola: un rechazo es definitivo hasta que
+  exista esa re-aprobación.
 
 ## Notifications
 
