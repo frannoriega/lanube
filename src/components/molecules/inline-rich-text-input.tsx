@@ -111,7 +111,8 @@ export function InlineRichTextInput({
         {value.trim() ? (
           <InlineRichText
             text={value}
-            className="line-clamp-1 text-sm text-muted-foreground"
+            // `min-w-0`: es ítem flex; sin esto, su ancho mínimo es el de la palabra más larga.
+            className="line-clamp-1 min-w-0 text-sm text-muted-foreground"
           />
         ) : (
           <span className="text-xs italic text-muted-foreground">
