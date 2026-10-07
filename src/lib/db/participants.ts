@@ -18,7 +18,11 @@ import type { FormSchema, UploadedFile } from "@/lib/events/form-schema";
 import { verifyUploadedFile } from "@/lib/events/upload-signing";
 import { weekdaysFromRrule } from "@/lib/db/events";
 import { prisma } from "@/lib/prisma";
-import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
+import {
+  ALREADY_REGISTERED_MESSAGE,
+  blocksReRegistration,
+  SPOT_HOLDING_STATUSES,
+} from "@/lib/constants/participants";
 import { ParticipantStatus } from "@/types/prisma";
 import { createId } from "@paralleldrive/cuid2";
 import { Prisma } from "@/generated/prisma/client";
@@ -294,16 +298,14 @@ export async function submitForm(
       where: { eventId_email: { eventId: eventForm.event.id, email } },
     });
 
-    // A row that still holds a spot (PENDING or APPROVED) is an active registration.
+    // Una inscripción activa (PENDING/APPROVED) o rechazada por un admin frena el envío sin
+    // tocar la fila; solo una CANCELLED se reactiva. Mismo mensaje en los dos casos, para no
+    // revelar quién fue rechazado (milestone 25, S5).
     if (
       existing &&
-      (existing.status === ParticipantStatus.PENDING ||
-        existing.status === ParticipantStatus.APPROVED)
+      blocksReRegistration(existing.status as ParticipantStatus)
     ) {
-      return {
-        ok: false,
-        message: "Ya estás inscripto con ese email",
-      };
+      return { ok: false, message: ALREADY_REGISTERED_MESSAGE };
     }
 
     // Manual-approval events start registrations as PENDING; auto events approve immediately.
@@ -313,7 +315,7 @@ export async function submitForm(
 
     const token = createId();
     if (existing) {
-      // Re-activate a previously rejected/cancelled registration; clear any prior decision.
+      // Reactiva una inscripción que la propia persona canceló (la única que llega acá).
       await tx.eventParticipant.update({
         where: { id: existing.id },
         data: {
