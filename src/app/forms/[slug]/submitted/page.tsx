@@ -1,3 +1,4 @@
+import { FormMessageCard } from "@/components/organisms/forms/form-page";
 import { Button } from "@/components/ui/button";
 import { getPublicForm } from "@/lib/db/participants";
 import { CheckCircle2, Clock } from "lucide-react";
@@ -13,7 +14,7 @@ export default async function SubmittedPage({
   const requiresApproval = form?.requiresApproval ?? false;
 
   return (
-    <div className="flex flex-col items-center gap-4 py-6 text-center">
+    <FormMessageCard className="flex flex-col items-center gap-4 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-la-nube-accent text-la-nube-selected dark:bg-la-nube-selected/30 dark:text-la-nube-secondary">
         {requiresApproval ? (
           <Clock className="h-7 w-7" />
@@ -44,6 +45,6 @@ export default async function SubmittedPage({
       <Button asChild variant="outline" className="mt-2">
         <Link href="/">Volver al inicio</Link>
       </Button>
-    </div>
+    </FormMessageCard>
   );
 }

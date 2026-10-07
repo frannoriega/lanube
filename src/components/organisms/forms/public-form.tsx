@@ -2,10 +2,9 @@
 
 import { TimeSelect } from "@/components/molecules/time-select";
 import { DatePicker } from "@/components/molecules/date-picker";
-import { EventMeta } from "@/components/molecules/event-meta";
 import { AreaMaintenanceNotice } from "@/components/molecules/maintenance-notice";
 import { useAreaWriteBlock } from "@/components/providers/maintenance";
-import { EventHero } from "@/components/organisms/forms/event-hero";
+import { EventFormLayout } from "@/components/organisms/forms/form-page";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -76,7 +75,7 @@ interface PublicFormProps {
   eventName: string;
   eventDescription?: string | null;
   eventImageUrl?: string | null;
-  /** Event meta (type/weekdays/location). When all present, an EventMeta row shows under the hero. */
+  /** Event meta (type/weekdays/location). When all present, an EventMeta row shows under the title. */
   eventTypeName?: string;
   resourceName?: string;
   weekdays?: number[];
@@ -241,74 +240,72 @@ export function PublicForm({
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <EventHero
-          name={eventName}
-          description={eventDescription}
-          imageUrl={eventImageUrl}
-        />
-        {eventTypeName && resourceName && weekdays && (
-          <EventMeta
-            eventTypeName={eventTypeName}
-            resourceName={resourceName}
-            weekdays={weekdays}
-          />
-        )}
-        {notice}
+    <EventFormLayout
+      eventName={eventName}
+      eventDescription={eventDescription}
+      eventImageUrl={eventImageUrl}
+      eventTypeName={eventTypeName}
+      resourceName={resourceName}
+      weekdays={weekdays}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {notice}
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Email <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input type="email" disabled={mode === "edit"} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <UploadContext.Provider value={uploadUrl}>
-          <NodeList
-            nodes={schema.nodes}
+          <FormField
             control={form.control}
-            basePath="answers"
-            scopePath={[]}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Email <span className="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input type="email" disabled={mode === "edit"} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </UploadContext.Provider>
 
-        <AreaMaintenanceNotice area="events" />
-        <div className="flex justify-between gap-2">
-          {mode === "edit" ? (
+          <UploadContext.Provider value={uploadUrl}>
+            <NodeList
+              nodes={schema.nodes}
+              control={form.control}
+              basePath="answers"
+              scopePath={[]}
+            />
+          </UploadContext.Provider>
+
+          <AreaMaintenanceNotice area="events" />
+          <div className="flex justify-between gap-2">
+            {mode === "edit" ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleCancel}
+                disabled={cancelling || blockedByMaintenance}
+              >
+                Cancelar inscripción
+              </Button>
+            ) : (
+              <span />
+            )}
             <Button
-              type="button"
-              variant="destructive"
-              onClick={handleCancel}
-              disabled={cancelling || blockedByMaintenance}
+              type="submit"
+              variant="brand"
+              disabled={form.formState.isSubmitting || blockedByMaintenance}
             >
-              Cancelar inscripción
+              {form.formState.isSubmitting
+                ? "Enviando…"
+                : mode === "submit"
+                  ? "Inscribirme"
+                  : "Guardar cambios"}
             </Button>
-          ) : (
-            <span />
-          )}
-          <Button
-            type="submit"
-            disabled={form.formState.isSubmitting || blockedByMaintenance}
-          >
-            {form.formState.isSubmitting
-              ? "Enviando…"
-              : mode === "submit"
-                ? "Inscribirme"
-                : "Guardar cambios"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          </div>
+        </form>
+      </Form>
+    </EventFormLayout>
   );
 }
 
