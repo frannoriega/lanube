@@ -3,11 +3,30 @@ import { SectionHeading } from "@/components/templates/landing/shared/section-he
 import { nowMs } from "@/lib/clock";
 import { formatPolicyDate, splitPolicyTitle } from "@/lib/policies/format";
 import { currentVersion } from "@/lib/policies/pending";
-import { getPolicyBySlug } from "@/lib/policies/registry";
+import {
+  getPolicyBySlug,
+  POLICIES,
+  POLICY_KEYS,
+} from "@/lib/policies/registry";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+
+/**
+ * ISR (milestone 25, P2), en vez de renderizar en cada pedido con `connection()`. Qué versión
+ * está «vigente» depende del reloj: una versión desplegada con `effectiveAt` futuro aparece
+ * sola a lo sumo `revalidate` segundos después de esa hora (más la visita que dispara la
+ * regeneración), sin otro deploy. El texto vive en el código, así que no hay tag que invalidar:
+ * un deploy lo regenera todo. La aceptación obligatoria no depende de esta página (la decide
+ * `pendingPolicies()` en cada pedido del área logueada). `public-cache.test.ts` comprueba que el
+ * literal sea igual a PUBLIC_REVALIDATE_SECONDS.
+ */
+export const revalidate = 300;
+
+/** Todas las políticas del registro se generan en el build. */
+export function generateStaticParams() {
+  return POLICY_KEYS.map((key) => ({ slug: POLICIES[key].slug }));
+}
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -24,7 +43,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  * depender de que alguien actualice una constante a mano. Más nueva primero.
  */
 export default async function PolicyVersionsPage({ params }: Params) {
-  await connection();
   const found = getPolicyBySlug((await params).slug);
   if (!found) notFound();
   const { policy } = found;

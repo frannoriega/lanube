@@ -6,7 +6,17 @@ import { currentVersion } from "@/lib/policies/pending";
 import { POLICIES, POLICY_KEYS } from "@/lib/policies/registry";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { connection } from "next/server";
+
+/**
+ * ISR (milestone 25, P2), en vez de renderizar en cada pedido con `connection()`. Qué versión
+ * está «vigente» depende del reloj: una versión desplegada con `effectiveAt` futuro aparece
+ * sola a lo sumo `revalidate` segundos después de esa hora (más la visita que dispara la
+ * regeneración), sin otro deploy. El texto vive en el código, así que no hay tag que invalidar:
+ * un deploy lo regenera todo. La aceptación obligatoria no depende de esta página (la decide
+ * `pendingPolicies()` en cada pedido del área logueada). `public-cache.test.ts` comprueba que el
+ * literal sea igual a PUBLIC_REVALIDATE_SECONDS.
+ */
+export const revalidate = 300;
 
 export const metadata = {
   title: "Políticas | La Nube",
@@ -18,7 +28,6 @@ export const metadata = {
  * Sale del registro, así que una política nueva aparece acá sola.
  */
 export default async function PoliciesIndexPage() {
-  await connection();
   const now = nowMs();
   return (
     <Container className="h-fit">

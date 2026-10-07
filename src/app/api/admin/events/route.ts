@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { createEvent, listEvents } from "@/lib/db/events";
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
     await audit.commit(session, AUDIT_ACTIONS.eventCreate, {
       entityId: event.id,
     });
+    // Invalida la caché pública: el sitio público muestra los eventos (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return apiSuccess(event, { status: 201 });
   } catch (e) {
     return apiCatch("admin/events POST", e);

@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
@@ -86,6 +87,8 @@ export async function PUT(
     const audit = await beginAudit("NewsPost", id);
     const post = await updateNewsPost(id, parsed.data, canApprove);
     await audit.commit(session, AUDIT_ACTIONS.newsUpdate);
+    // Invalida la caché pública: el sitio público muestra las noticias publicadas (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.news);
     return apiSuccess(post);
   } catch (err) {
     return apiCatch("admin/news/[id] PUT", err);
@@ -124,6 +127,8 @@ export async function DELETE(
     const audit = await beginAudit("NewsPost", id);
     await deleteNewsPost(id);
     await audit.commit(session, AUDIT_ACTIONS.newsDelete);
+    // Invalida la caché pública: el sitio público muestra las noticias publicadas (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.news);
     return apiSuccess({ ok: true });
   } catch (err) {
     return apiCatch("admin/news/[id] DELETE", err);

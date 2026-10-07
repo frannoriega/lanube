@@ -11,15 +11,25 @@ import SpacesSection from "@/components/templates/landing/spaces";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
 import { BASE_KEYWORDS } from "@/lib/constants/hero";
-import { getActiveLandingTheme } from "@/lib/db/landingThemes";
+import { getPublicLandingThemes } from "@/lib/cache/public-reads";
 import {
   parseEmojiList,
+  resolveActiveTheme,
   resolveHeroKeywords,
 } from "@/lib/landing-themes/resolve";
 
+/**
+ * ISR (milestone 25, P2): se genera una vez y se regenera a lo sumo cada
+ * `PUBLIC_REVALIDATE_SECONDS`; las escrituras del panel la invalidan antes por tag (ver
+ * `src/lib/cache/public-reads.ts`). El tema del día y los eventos próximos dependen del reloj:
+ * los cubre ese vencimiento.
+ */
+// Next exige un literal: `public-cache.test.ts` comprueba que sea igual a PUBLIC_REVALIDATE_SECONDS.
+export const revalidate = 300;
+
 export default async function Home() {
   const now = nowMs();
-  const theme = await getActiveLandingTheme(now);
+  const theme = resolveActiveTheme(await getPublicLandingThemes(), now);
   const emojis = theme ? parseEmojiList(theme.emojiList) : [];
   const heroKeywords = theme
     ? resolveHeroKeywords(

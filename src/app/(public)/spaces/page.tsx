@@ -12,11 +12,19 @@ import { SectionHeading } from "@/components/templates/landing/shared/section-he
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getMetadataIcon, getSpaceIcon } from "@/lib/constants/spaces";
-import { getPublicSpaces, getSpaceFaqs, type Space } from "@/lib/db/spaces";
+import { getPublicSpacesCached } from "@/lib/cache/public-reads";
+import { getSpaceFaqs, type Space } from "@/lib/db/spaces";
 import type { SpaceMetadataItem } from "@/lib/types/spaces";
 import { cn } from "@/lib/utils";
 import { ArrowRight, type LucideIcon, Users } from "lucide-react";
 import Link from "next/link";
+
+/**
+ * ISR (milestone 25, P2): ver `src/lib/cache/public-reads.ts`. Las escrituras del panel la
+ * invalidan por tag; lo que depende del reloj lo cubre este vencimiento. Next exige un literal:
+ * `public-cache.test.ts` comprueba que sea igual a PUBLIC_REVALIDATE_SECONDS.
+ */
+export const revalidate = 300;
 
 export const metadata = {
   title: "Espacios | La Nube",
@@ -27,7 +35,7 @@ export const metadata = {
 export default async function SpacesPage() {
   // Una sola consulta y dos bloques (milestone 24): los espacios, que se reservan, y las
   // amenities, que solo se muestran. `getPublicSpaces` ya viene en el orden del panel.
-  const all = await getPublicSpaces();
+  const all = await getPublicSpacesCached();
   const spaces = all.filter((s) => s.kind === "SPACE");
   const amenities = all.filter((s) => s.kind === "AMENITY");
 

@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { decideParticipants } from "@/lib/db/participants";
@@ -47,6 +48,8 @@ export async function POST(
       },
       reason: reason?.trim() || null,
     });
+    // Invalida la caché pública: el sitio público muestra los eventos (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
 
     // Notify affected participants only after the write commits (mirrors session-change notices).
     const { sent, failed } = await notifyParticipantsDecision(

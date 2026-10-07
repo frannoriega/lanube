@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { createLandingTheme, listLandingThemes } from "@/lib/db/landingThemes";
 import { serializeJson } from "@/lib/json-bigint";
@@ -41,6 +42,8 @@ export async function POST(request: NextRequest) {
     await audit.commit(session, AUDIT_ACTIONS.themeCreate, {
       entityId: theme.id,
     });
+    // Invalida la caché pública: la landing muestra el tema del día (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.landingThemes);
     return NextResponse.json(serializeJson(theme), { status: 201 });
   } catch (err) {
     return apiServerError("admin/themes POST", err);

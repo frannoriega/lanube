@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiError, apiServerError, apiSuccess } from "@/lib/api/response";
 import { getSiteConfig, updateSiteConfig } from "@/lib/db/siteConfig";
@@ -33,6 +34,8 @@ export async function PUT(request: NextRequest) {
     const audit = await beginAudit("SiteConfig", "site");
     const config = await updateSiteConfig(parsed.data);
     await audit.commit(session, AUDIT_ACTIONS.siteConfigUpdate);
+    // Invalida la caché pública: el pie, la CTA y el botón de WhatsApp muestran estos datos (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.siteConfig);
     return apiSuccess(config);
   } catch (e) {
     return apiServerError("admin/site-config PUT", e);

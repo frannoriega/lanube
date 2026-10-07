@@ -18,6 +18,8 @@ const ALLOWED: Record<string, string> = {
     "la página pública muestra espacios y áreas comunes, en dos bloques",
   "src/app/api/admin/spaces/route.ts":
     "el listado del panel muestra ambos tipos (pestañas) y el picker de eventos filtra con ?reservable=1",
+  "src/lib/cache/public-reads.ts":
+    "la versión cacheada de la misma lectura, que solo usa la página pública /spaces (milestone 25, P2)",
 };
 
 function sourceFiles(dir: string): string[] {

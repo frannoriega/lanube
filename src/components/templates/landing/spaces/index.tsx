@@ -4,7 +4,8 @@ import { Reveal } from "@/components/molecules/reveal";
 import { LANDING_SECTION_BG } from "@/components/templates/landing/shared/section-bg";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
 import { getSpaceIcon } from "@/lib/constants/spaces";
-import { getSpacesByKind, type Space } from "@/lib/db/spaces";
+import { getPublicSpacesByKind } from "@/lib/cache/public-reads";
+import type { Space } from "@/lib/db/spaces";
 import { ArrowRight, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +22,7 @@ import Link from "next/link";
  */
 export default async function SpacesSection() {
   // Solo espacios: las áreas comunes («amenities») tienen su propia sección (milestone 24).
-  const spaces = await getSpacesByKind("SPACE");
+  const spaces = await getPublicSpacesByKind("SPACE");
 
   if (spaces.length === 0) return null;
 

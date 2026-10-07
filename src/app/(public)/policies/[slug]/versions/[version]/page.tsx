@@ -2,12 +2,36 @@ import { PolicyDocument } from "@/components/organisms/policies/policy-document"
 import { nowMs } from "@/lib/clock";
 import { formatPolicyDate } from "@/lib/policies/format";
 import { currentVersion } from "@/lib/policies/pending";
-import { getPolicyBySlug } from "@/lib/policies/registry";
+import {
+  getPolicyBySlug,
+  POLICIES,
+  POLICY_KEYS,
+} from "@/lib/policies/registry";
 import { Archive } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+
+/**
+ * ISR (milestone 25, P2), en vez de renderizar en cada pedido con `connection()`. Qué versión
+ * está «vigente» depende del reloj: una versión desplegada con `effectiveAt` futuro aparece
+ * sola a lo sumo `revalidate` segundos después de esa hora (más la visita que dispara la
+ * regeneración), sin otro deploy. El texto vive en el código, así que no hay tag que invalidar:
+ * un deploy lo regenera todo. La aceptación obligatoria no depende de esta página (la decide
+ * `pendingPolicies()` en cada pedido del área logueada). `public-cache.test.ts` comprueba que el
+ * literal sea igual a PUBLIC_REVALIDATE_SECONDS.
+ */
+export const revalidate = 300;
+
+/** Cada versión publicada de cada política se genera en el build. */
+export function generateStaticParams() {
+  return POLICY_KEYS.flatMap((key) =>
+    POLICIES[key].versions.map((v) => ({
+      slug: POLICIES[key].slug,
+      version: v.version,
+    })),
+  );
+}
 
 type Params = { params: Promise<{ slug: string; version: string }> };
 
@@ -33,7 +57,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  * `/policies/[slug]`: "vigente" depende del reloj.
  */
 export default async function PolicyVersionPage({ params }: Params) {
-  await connection();
   const { slug, version: versionId } = await params;
   const found = getPolicyBySlug(slug);
   if (!found) notFound();

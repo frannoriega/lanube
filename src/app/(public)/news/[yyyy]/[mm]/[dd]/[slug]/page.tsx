@@ -9,10 +9,10 @@ import {
 } from "@/components/templates/landing/news/news-card";
 import { ReadingProgress } from "@/components/templates/landing/news/reading-progress";
 import {
-  getOtherPublishedNews,
-  getPublishedNewsByRetiredSlug,
-  getPublishedNewsBySlug,
-} from "@/lib/db/news";
+  getPublicNewsByRetiredSlug,
+  getPublicNewsBySlug,
+  getPublicOtherNews,
+} from "@/lib/cache/public-reads";
 import { readingMinutes } from "@/lib/news/reading-time";
 import { authorDisplayName, newsDetailPath } from "@/lib/news/url";
 import type { Metadata } from "next";
@@ -27,6 +27,18 @@ interface NoticiaParams {
   slug: string;
 }
 
+/**
+ * ISR (milestone 25, P2): ningún slug se genera en el build (`generateStaticParams` vacío);
+ * cada uno se genera en su primera visita y queda cacheado, invalidado por tag desde el panel
+ * (`src/lib/cache/public-reads.ts`). Next exige un literal en `revalidate`:
+ * `public-cache.test.ts` comprueba que sea igual a PUBLIC_REVALIDATE_SECONDS.
+ */
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,8 +49,8 @@ export async function generateMetadata({
   // previsualizado en un chat o por un crawler igual muestra el título del artículo en lugar
   // de "no encontrada".
   const post =
-    (await getPublishedNewsBySlug(slug)) ??
-    (await getPublishedNewsByRetiredSlug(slug));
+    (await getPublicNewsBySlug(slug)) ??
+    (await getPublicNewsByRetiredSlug(slug));
   if (!post) return { title: "Noticia no encontrada — La Nube" };
   return {
     title: `${post.title} — La Nube`,
@@ -67,14 +79,14 @@ export default async function NoticiaDetailPage({
   params: Promise<NoticiaParams>;
 }) {
   const { yyyy, mm, dd, slug } = await params;
-  let post = await getPublishedNewsBySlug(slug);
+  let post = await getPublicNewsBySlug(slug);
 
   // ¿No es el slug actual? Puede ser uno con el que esta nota estuvo publicada antes — un
   // link compartido de antes de un renombre. Redirigir es mejor que dar 404 (milestone-12 D8);
   // los slugs retirados quedan reservados en `news_post_slugs`, así que esto nunca puede
   // resolver al artículo equivocado.
   if (!post) {
-    post = await getPublishedNewsByRetiredSlug(slug);
+    post = await getPublicNewsByRetiredSlug(slug);
   }
   if (!post) notFound();
 
@@ -86,9 +98,7 @@ export default async function NoticiaDetailPage({
     redirect(canonical);
   }
 
-  const others = (await getOtherPublishedNews(post.slug, 4)).map(
-    toNewsCardData,
-  );
+  const others = (await getPublicOtherNews(post.slug, 4)).map(toNewsCardData);
   const author = authorDisplayName(post.authorLabel);
   const publishedMs = Number(post.publishedAt ?? post.createdAt);
   const minutes = readingMinutes(post.body);

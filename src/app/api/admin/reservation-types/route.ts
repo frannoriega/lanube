@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { apiCatch } from "@/lib/api/response";
 import { requirePermission } from "@/lib/api-auth";
 import { createReservationType } from "@/lib/db/reservationTypes";
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
     await audit.commit(session, AUDIT_ACTIONS.reservationTypeCreate, {
       entityId: type.id,
     });
+    // Invalida la caché pública: las tarjetas de eventos muestran el nombre del tipo (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return NextResponse.json(serializeJson(type), { status: 201 });
   } catch (err) {
     return apiCatch("admin/reservation-types POST", err);

@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { apiCatch } from "@/lib/api/response";
 import { nowMs } from "@/lib/clock";
 import { getPublicForm, submitForm } from "@/lib/db/participants";
@@ -124,6 +125,8 @@ export async function POST(
       }
     }
 
+    // Un lugar menos: la tarjeta del evento puede pasar a «completo» (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
     return apiCatch("forms/[slug] POST", err);
