@@ -1,16 +1,16 @@
 # Graph Report - lanube  (2026-10-06)
 
 ## Corpus Check
-- 863 files · ~1,497,767 words
+- 863 files · ~1,497,797 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5166 nodes · 12829 edges · 435 communities (248 shown, 187 thin omitted)
+- 5166 nodes · 12829 edges · 434 communities (247 shown, 187 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 109 edges (avg confidence: 0.75)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2da9d950`
+- Built from commit: `d0534eba`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -392,7 +392,6 @@
 - [[_COMMUNITY_Milestone 3 — Seasonal  date-based landing themes|Milestone 3 — Seasonal / date-based landing themes]]
 - [[_COMMUNITY_🔄 Migration Path|🔄 Migration Path]]
 - [[_COMMUNITY_🎯 Success Metrics|🎯 Success Metrics]]
-- [[_COMMUNITY_Troubleshooting|Troubleshooting]]
 - [[_COMMUNITY_spaces.ts|spaces.ts]]
 - [[_COMMUNITY_Use case book a recurring space, then skip one week|Use case: book a recurring space, then skip one week]]
 - [[_COMMUNITY_UPDATE Operations|UPDATE Operations]]
@@ -468,11 +467,11 @@
 - 3-file cycle: `src/components/organisms/admin/admin-reservation-detail-sheet.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/admin-reservation-detail-sheet.tsx`
 - 3-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
 - 4-file cycle: `src/lib/db/events.ts -> src/lib/email/event-occurrence-update.ts -> src/lib/email/edit-link.ts -> src/lib/db/participants.ts -> src/lib/db/events.ts`
-- 4-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 - 4-file cycle: `src/components/organisms/admin/day-reservation-card.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx`
+- 4-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 - 5-file cycle: `src/components/organisms/admin/admin-service-day-timeline.tsx -> src/lib/admin/admin-timeline.ts -> src/components/templates/admin/dashboard-recent-reservations.tsx -> src/components/templates/admin/admin-reservations-cards-panel.tsx -> src/components/organisms/admin/day-reservation-card.tsx -> src/components/organisms/admin/admin-service-day-timeline.tsx`
 
-## Communities (435 total, 187 thin omitted)
+## Communities (434 total, 187 thin omitted)
 
 ### Community 0 - "Admin Pages & Check-In"
 Cohesion: 0.18
@@ -488,11 +487,11 @@ Nodes (64): dependencies, @auth/prisma-adapter, bcryptjs, class-variance-authori
 
 ### Community 3 - "Forms & Notification Layer"
 Cohesion: 0.06
-Nodes (63): POST(), POST(), POST(), POST(), assertOwnedOrPrivileged(), DELETE(), GET(), PUT() (+55 more)
+Nodes (66): POST(), POST(), POST(), assertOwnedOrPrivileged(), DELETE(), GET(), PUT(), GET() (+58 more)
 
 ### Community 4 - "Admin Dashboard & Reports"
-Cohesion: 0.08
-Nodes (38): POST(), GET(), POST(), GET(), POST(), POST(), POST(), reorderSchema (+30 more)
+Cohesion: 0.06
+Nodes (56): PATCH(), POST(), POST(), POST(), GET(), POST(), POST(), DELETE() (+48 more)
 
 ### Community 5 - "Resource Reservation API"
 Cohesion: 0.08
@@ -504,7 +503,7 @@ Nodes (21): husky.sh script, devDependencies, eslint, eslint-config-next, @eslin
 
 ### Community 7 - "Authentication Pages"
 Cohesion: 0.08
-Nodes (62): GET(), POST(), GET(), DELETE(), PUT(), roleUpdateSchema, GET(), POST() (+54 more)
+Nodes (63): GET(), POST(), DELETE(), GET(), PUT(), DELETE(), PUT(), roleUpdateSchema (+55 more)
 
 ### Community 8 - "CRUD API Endpoints"
 Cohesion: 0.14
@@ -547,8 +546,8 @@ Cohesion: 0.10
 Nodes (41): format(), BookingForm(), BookingFormValues, TIME_OPTIONS, BUSINESS_HOURS, firstBookableDayIndex(), firstBookableWeekStart(), fromUtcMs() (+33 more)
 
 ### Community 19 - "UI Card & Drawer Components"
-Cohesion: 0.14
-Nodes (24): POST(), PUT(), GET(), POST(), DELETE(), PUT(), GET(), POST() (+16 more)
+Cohesion: 0.16
+Nodes (22): POST(), PUT(), GET(), POST(), DELETE(), PUT(), GET(), POST() (+14 more)
 
 ### Community 20 - "Reservation Availability Logic"
 Cohesion: 0.23
@@ -1274,13 +1273,9 @@ Nodes (11): AuditDetailPanel(), AUDIT_ACTION_LABELS, auditActionLabel(), CASCADE
 Cohesion: 0.20
 Nodes (10): Get a Single Reservation, Get Expanded Resource Reservations, Get Expanded Upcoming Reservations, Get Expanded User Reservations, Get Resource Reservations, Get Upcoming Reservations, Get User Reservations, List Expanded Reservations (With Recurring Instances) (+2 more)
 
-### Community 386 - "Troubleshooting"
-Cohesion: 0.15
-Nodes (17): POST(), POST(), POST(), DELETE(), PUT(), PUBLIC_TAGS, setClosedDayStatus(), deleteEvent() (+9 more)
-
 ### Community 388 - "spaces.ts"
-Cohesion: 0.07
-Nodes (58): GET(), PATCH(), POST(), ALLOWED_TYPES, POST(), csvCell(), GET(), GET() (+50 more)
+Cohesion: 0.06
+Nodes (55): GET(), POST(), ALLOWED_TYPES, POST(), csvCell(), GET(), GET(), ALLOWED_TYPES (+47 more)
 
 ### Community 389 - "Use case: book a recurring space, then skip one week"
 Cohesion: 0.29
@@ -1428,10 +1423,10 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `cn()` connect `📚 Documentation Updates` to `Resource Reservation API`, `CREATE Operations`, `Admin Event & User Management`, `route.ts`, `User Settings & Theming`, `Prisma & Email Infrastructure`, `errors.ts`, `Incident Management`, `🔧 Technical Changes`, `Admin Reservations Query`, `admin-reservation-detail-sheet.tsx`, `Markdown Editing & Display`, `API Route Handlers`, `page-auth.ts`, `Check-In API Routes`, `🚀 How to Use`, `emoji-shower.tsx`, `page.tsx`, `Cron Jobs`, `user-layout.tsx`, `Privacy Policy & Legal`, `Municipalidad de Concepción del Uruguay`, `management-breadcrumbs.tsx`, `index.tsx`, `api.ts`, `management-breadcrumbs.tsx`, `Utility Functions`, `types.ts`, `🔧 How to Add New Resource Type`, `🔧 How to Add New Resource Type`, `index.tsx`, `Política de Privacidad de La Nube`, `📊 Performance`, `UPDATE Operations`?**
   _High betweenness centrality (0.049) - this node is a cross-community bridge._
-- **Why does `nowMs()` connect `scripts` to `Admin Pages & Check-In`, `Troubleshooting`, `Forms & Notification Layer`, `spaces.ts`, `Authentication Pages`, `🎯 Success Metrics`, `auditEventDef`, `UI Card & Drawer Components`, `errors.ts`, `Admin Reservations Query`, `event-decision.ts`, `layout.tsx`, `Navigation Header`, `📞 Support`, `now`, `Privacy Policy & Legal`, `La Nube — plataforma digital coworking público`, `Spaces Constants`, `📊 Performance`, `🔄 What Changed`, `Utility Functions`, `layout.tsx`, `🔧 How to Add New Resource Type`, `CREATE Operations`, `index.tsx`?**
+- **Why does `nowMs()` connect `scripts` to `Admin Pages & Check-In`, `Forms & Notification Layer`, `Admin Dashboard & Reports`, `spaces.ts`, `Authentication Pages`, `🎯 Success Metrics`, `auditEventDef`, `UI Card & Drawer Components`, `errors.ts`, `Admin Reservations Query`, `event-decision.ts`, `layout.tsx`, `Navigation Header`, `📞 Support`, `now`, `Privacy Policy & Legal`, `La Nube — plataforma digital coworking público`, `Spaces Constants`, `📊 Performance`, `🔄 What Changed`, `Utility Functions`, `layout.tsx`, `🔧 How to Add New Resource Type`, `CREATE Operations`, `index.tsx`?**
   _High betweenness centrality (0.036) - this node is a cross-community bridge._
 - **Why does `Button()` connect `api.ts` to `Resource Reservation API`, `Admin Event & User Management`, `Events System`, `User Settings & Theming`, `auditEventDef`, `occurrences.ts`, `Prisma & Email Infrastructure`, `Incident Management`, `errors.ts`, `route.ts`, `Admin Reservations Query`, `API Route Handlers`, `page-auth.ts`, `Check-In API Routes`, `🚀 How to Use`, `adminReservations.ts`, `Cron Jobs`, `Spaces Constants`, `index.tsx`, `📚 Documentation Updates`, `Utility Functions`, `types.ts`, `🔧 How to Add New Resource Type`, `getPublicSpaces`, `Política de Privacidad de La Nube`, `index.tsx`, `📊 Performance`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `cn()` (e.g. with `BreadcrumbEllipsis()` and `BreadcrumbItem()`) actually correct?**
   _`cn()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `husky.sh script`, `$schema`, `style` to the rest of the system?**

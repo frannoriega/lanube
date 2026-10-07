@@ -1001,6 +1001,9 @@ spaces,themes,site-config,reservation-types}` by the same test. Without it the s
   `/events/[id]` and news details are ISR on first visit (`generateStaticParams` → `[]`); `/news`
   stays dynamic (`searchParams`) but its data comes from the cache. The build needs the DB
   (it already does, for migrations).
+- **The global CSP in `next.config.ts` overrides route headers.** A route that needs its own CSP
+  must be excluded from the global rule's `source` (today only the participant-file proxy;
+  `src/lib/security-headers.test.ts`).
 
 ## Testing & Seeding
 
