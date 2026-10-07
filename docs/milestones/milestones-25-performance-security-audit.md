@@ -435,6 +435,37 @@ mano](#pendiente-de-verificar-a-mano).
 | C3            | **Abierto** | Decisión de producto: ver abajo.                                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                              |
 | S5            | **Abierto** | Reinscripción de rechazados y mensaje «Ya estás inscripto»: decisión de producto. `editToken` en claro: **postergado a propósito** — los correos de decisión y de cambios de sesión vuelven a mandar el link con el token guardado; hashearlo obliga a rotar el token en cada correo (los links viejos dejarían de andar).   | —                                                                                                                                                                                                                                              |
 
+### Decisiones del usuario (2026-10-07)
+
+Para lo que quedó abierto. Se implementa en una sesión nueva (esta quedó con el navegador
+bloqueado por el clasificador).
+
+1. **C3 — las recurrentes cuentan por ocurrencia.** Reportes, dashboards (usuario y admin) y los
+   listados por rango de `/admin/reservations` cuentan cada ocurrencia que cae en el período (con
+   sus excepciones), no la serie por su fecha de inicio. Fuente: el ledger (ya expandido y con
+   excepciones) agrupado por `(reservation_id, occurrence)` — ojo que está en buckets de 15 min —
+   o `get_user_reservations_window`/una función hermana para todos los usuarios. Con esto, los
+   conteos pasan a `GROUP BY` en SQL (cierra DB6). La retención del milestone 12 poda el ledger
+   pasado: para períodos viejos el reporte ya depende de los snapshots; revisar que esa costura
+   siga siendo explícita (`coverage`).
+2. **S5 — una inscripción rechazada no se reactiva.** Si el correo tiene una inscripción
+   `REJECTED` en ese evento, el envío se rechaza (sin tocar la fila ni rotar su token): si no,
+   quien fue rechazado puede reinscribirse sin fin y spamear al admin. Una `CANCELLED` (la canceló
+   la propia persona) sí puede volver a inscribirse. Para no revelar quién fue rechazado, el
+   rechazo usa el **mismo mensaje** que «ya inscripto».
+3. **P2 — sitio público cacheable.** Sacar del layout raíz lo que depende del pedido
+   (`connection()`, `auth()`, `getSiteConfig()`), y cachear las lecturas públicas (landing,
+   noticias, espacios, «Quiénes somos», políticas) con tags que invaliden las rutas admin que las
+   escriben. Verificar con `next build` qué rutas quedan estáticas/ISR.
+4. **`editToken` — se hashea** (buena práctica: un token portador de larga vida es una
+   credencial; se guarda solo su SHA-256, como los tokens de reseteo; con 256 bits aleatorios no
+   hace falta bcrypt). Consecuencia: el link no se puede volver a armar desde la base, así que
+   **cada correo que lleva link rota el token** (el anterior deja de andar), y se agrega «pedir un
+   enlace nuevo» (correo → se manda uno fresco, sin revelar si había inscripción, con rate limit).
+   Migración: hashear los tokens existentes en el lugar (los links ya enviados siguen andando,
+   porque la búsqueda hashea lo que llega). Un link viejo muestra una pantalla amable con el botón
+   para pedir uno nuevo.
+
 ### Pendiente de verificar a mano
 
 1. `/admin/spaces`: tocar «Eliminar» (y cancelar), cambiar a «Áreas comunes», «Reordenar» → la
