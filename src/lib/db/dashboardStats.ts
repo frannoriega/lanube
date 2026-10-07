@@ -1,5 +1,6 @@
 import { currentPeriodsInAdminTz } from "@/lib/admin/admin-timezone";
 import { now } from "@/lib/clock";
+import { approvedOccurrenceTotals, OPEN_END_MS } from "@/lib/db/occurrences";
 import { prisma } from "@/lib/prisma";
 import { dateToUnixMs } from "@/lib/unix-ms";
 
@@ -20,16 +21,9 @@ export interface DashboardStats {
 
 const HOURS_IN_MS = 1000 * 60 * 60;
 
-function toHours(
-  reservations: Array<{ startTime: bigint; endTime: bigint }>,
-): number {
-  const total = reservations.reduce((acc, reservation) => {
-    const duration =
-      Number(reservation.endTime) - Number(reservation.startTime);
-    return acc + Math.max(duration, 0);
-  }, 0);
-
-  return Math.round((total / HOURS_IN_MS) * 10) / 10;
+/** Milisegundos → horas con un decimal. */
+function toHours(totalMs: number): number {
+  return Math.round((totalMs / HOURS_IN_MS) * 10) / 10;
 }
 
 export async function getDashboardStatsByUserId(
@@ -41,52 +35,39 @@ export async function getDashboardStatsByUserId(
   // todas las reservas futuras.
   const { week, month } = currentPeriodsInAdminTz(Number(atMs));
   // `reservableType: "USER"` además de `reservableId`: el índice es
-  // `(reservable_type, reservable_id)` y Postgres no lo usa con la segunda columna sola — sin
-  // esto las cuatro consultas recorrían toda la tabla en cada carga del dashboard
+  // `(reservable_type, reservable_id)` y Postgres no lo usa con la segunda columna sola
   // (milestone 25, DB4). Y es lo correcto: el id es de un usuario.
   const mine = { reservableType: "USER", reservableId: userId } as const;
-  const approvedIn = (period: { startMs: number; endMs: number }) =>
-    prisma.reservation.findMany({
-      select: { startTime: true, endTime: true },
-      where: {
-        ...mine,
-        status: "APPROVED",
-        startTime: { gte: BigInt(period.startMs), lte: BigInt(period.endMs) },
-      },
-    });
 
-  const [
-    upcomingReservations,
-    reservationsThisWeek,
-    reservationsThisMonth,
-    recentReservations,
-  ] = await Promise.all([
-    prisma.reservation.count({
-      where: { ...mine, startTime: { gte: atMs }, status: "APPROVED" },
-    }),
-    approvedIn(week),
-    approvedIn(month),
-    prisma.reservation.findMany({
-      select: {
-        id: true,
-        space: { select: { name: true } },
-        startTime: true,
-        endTime: true,
-        status: true,
-        reason: true,
-      },
-      where: mine,
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 10,
-    }),
-  ]);
+  // Los tres números cuentan **ocurrencias** (milestone 25, C3): una reserva semanal suma cada
+  // semana que cae en el período, no una vez en la semana en que empezó la serie.
+  const [upcoming, thisWeek, thisMonth, recentReservations] = await Promise.all(
+    [
+      approvedOccurrenceTotals(Number(atMs), OPEN_END_MS, mine),
+      approvedOccurrenceTotals(week.startMs, week.endMs, mine),
+      approvedOccurrenceTotals(month.startMs, month.endMs, mine),
+      prisma.reservation.findMany({
+        select: {
+          id: true,
+          space: { select: { name: true } },
+          startTime: true,
+          endTime: true,
+          status: true,
+          reason: true,
+        },
+        where: mine,
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      }),
+    ],
+  );
 
   return {
-    upcomingReservations,
-    totalTimeThisWeek: toHours(reservationsThisWeek),
-    totalTimeThisMonth: toHours(reservationsThisMonth),
+    upcomingReservations: upcoming.count,
+    totalTimeThisWeek: toHours(thisWeek.totalMs),
+    totalTimeThisMonth: toHours(thisMonth.totalMs),
     recentReservations: recentReservations.map((reservation) => ({
       id: reservation.id,
       service: reservation.space?.name ?? "Servicio",

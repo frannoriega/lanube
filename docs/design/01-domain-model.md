@@ -38,7 +38,10 @@ Core entities and how they relate. For every column, see
   why).
 - **ReservationLedger**: the reservation's occurrences expanded into 15-min
   buckets. This is the thing capacity/availability checks actually query —
-  the RRULE itself is not re-expanded on every read.
+  the RRULE itself is not re-expanded on every read. Solo mira hacia adelante:
+  el cron diario borra los buckets ya pasados. Para contar el pasado (reportes,
+  tableros, listados por rango) se usa `reservation_occurrences()`, que expande
+  desde `reservations` con la misma regla — milestone 25, C3.
 - **ReservationException**: a saved override for a single occurrence of a
   recurring reservation (cancel one date, reschedule one date). Applied on
   top of the RRULE expansion at read time.

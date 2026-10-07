@@ -263,6 +263,10 @@ src/
    - `get_unavailable_slots()`: Returns busy time windows for a resource type
    - `get_user_next_reservations()`: Expands recurring reservations via `generate_series()`
    - `get_actor_size()`: Computes how many users are represented (1 for USER, count of members for TEAM/ORG)
+   - `reservation_occurrences(from, to, [type, id, space])` (milestone 25, C3): every occurrence of
+     every reservation whose effective start falls in the window, expanded with **the ledger's
+     rule** (RRULE step, 1-year cap, `effective_occurrence_window` for exceptions). It reads
+     `reservations`, not the ledger — the daily cron prunes past ledger buckets.
 
 **Timestamps**:
 
@@ -326,6 +330,15 @@ src/
 - Ledger entries created for each 15-min bucket of each occurrence
 - Expansion happens in two places: SQL functions (for availability) & client (for UI calendars)
 - ReservationException table allows overriding a single occurrence (cancel, reschedule, rescind)
+- **Counts are per occurrence** (milestone 25, C3): usage reports, the user and admin dashboards
+  and the date-range views of `/admin/reservations` count each occurrence in the period (with its
+  exceptions), never a series by its `start_time` (the series start: a weekly booking made months
+  ago used to vanish from "this week" and count once in a report). Go through
+  `reservation_occurrences()` — `src/lib/db/occurrences.ts`, `adminReports.ts`,
+  `adminReservations.ts` — and aggregate with `GROUP BY` in SQL. The pending/rejected counters
+  stay per series (a series is approved or rejected as a whole). Reports count reservations only
+  from the raw-retention boundary (`coverage.rawFromMs`), so the "not counted in the totals"
+  banner is literal; the rest lives in the monthly snapshots.
 
 ### 2. Reservation Approval Logic (in SQL)
 
@@ -374,8 +387,9 @@ src/
   Every admin reservation view — the list, the timeline, the per-day counts and the dashboard's
   pending/approved/rejected counters — filters `EXCLUDE_EVENT_RESERVATIONS`
   (`src/lib/db/adminReservations.ts`), and `PATCH /api/admin/reservations/[id]` answers 409 for
-  an `EVENT` reservation. A new admin reservation query must include that filter. Usage reports
-  (`adminReports.ts`) still count events on purpose.
+  an `EVENT` reservation. A new admin reservation query must include that filter (the SQL ones
+  over `reservation_occurrences()` say `r.reservable_type <> 'EVENT'`). Usage reports
+  (`adminReports.ts`) still count events on purpose — one per session since milestone 25.
 - **Public form flow**: unauthenticated routes under `/forms/[slug]` (submit) and
   `/forms/response/[token]` (edit/cancel); APIs under `/api/forms/*` (rate-limited).
   Participant email uses the same normalization + `displayEmail` rules as registration.
