@@ -1,5 +1,6 @@
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
 import {
+  ADMIN_TIMEZONE,
   dateKeyFromUnixMs,
   enumerateDateKeysInclusive,
 } from "@/lib/admin/admin-timezone";
@@ -432,6 +433,114 @@ const reservationAdminInclude = {
   },
 } as const;
 
+/**
+ * Una ocurrencia de reserva dentro de un rango (milestone 25, C3). Los listados por rango
+ * muestran **ocurrencias**, no series: una reserva semanal aparece en cada semana del rango, con
+ * el horario de esa ocurrencia (o el reprogramado, si tiene excepción). El `id` sigue siendo el de
+ * la reserva: aprobar o rechazar desde una ocurrencia decide la serie entera, como siempre.
+ */
+type OccurrenceRef = {
+  reservation_id: string;
+  occurrence_start_time: bigint;
+  occurrence_end_time: bigint;
+};
+
+interface OccurrenceFilter {
+  spaceId?: string;
+  status?: ReservationStatus;
+}
+
+/**
+ * Las ocurrencias de reservas de personas (sin eventos: `EXCLUDE_EVENT_RESERVATIONS`) cuyo
+ * inicio cae en [startMs, endMs], en orden cronológico, paginadas en la base (el total para la
+ * paginación lo da `countOccurrences`).
+ */
+async function listOccurrenceRefs(
+  startMs: number,
+  endMs: number,
+  filter: OccurrenceFilter,
+  page: { limit: number; offset: number },
+): Promise<OccurrenceRef[]> {
+  return prisma.$queryRaw<OccurrenceRef[]>`
+    SELECT o.reservation_id, o.occurrence_start_time, o.occurrence_end_time
+    FROM reservation_occurrences(
+      ${BigInt(startMs)}, ${BigInt(endMs)}, NULL, NULL, ${filter.spaceId ?? null}::text
+    ) o
+    JOIN reservations r ON r.id = o.reservation_id
+    WHERE r.reservable_type <> 'EVENT'
+      AND (${filter.status ?? null}::text IS NULL
+           OR r.status::text = ${filter.status ?? null}::text)
+    ORDER BY o.occurrence_start_time, o.reservation_id
+    LIMIT ${page.limit} OFFSET ${page.offset}`;
+}
+
+/** Total de ocurrencias que devolvería `listOccurrenceRefs` sin paginar. */
+async function countOccurrences(
+  startMs: number,
+  endMs: number,
+  filter: OccurrenceFilter,
+): Promise<number> {
+  const [row] = await prisma.$queryRaw<{ total: number }[]>`
+    SELECT COUNT(*)::int AS total
+    FROM reservation_occurrences(
+      ${BigInt(startMs)}, ${BigInt(endMs)}, NULL, NULL, ${filter.spaceId ?? null}::text
+    ) o
+    JOIN reservations r ON r.id = o.reservation_id
+    WHERE r.reservable_type <> 'EVENT'
+      AND (${filter.status ?? null}::text IS NULL
+           OR r.status::text = ${filter.status ?? null}::text)`;
+  return row?.total ?? 0;
+}
+
+/**
+ * Arma las filas del panel para una lista de ocurrencias: carga cada reserva una sola vez y
+ * repite su fila por ocurrencia, con el horario de la ocurrencia.
+ */
+async function occurrencesToAdminResults(
+  refs: OccurrenceRef[],
+): Promise<AdminReservationListResult[]> {
+  if (refs.length === 0) return [];
+  const ids = [...new Set(refs.map((r) => r.reservation_id))];
+  const rows = await prisma.reservation.findMany({
+    where: { id: { in: ids } },
+    include: reservationAdminInclude,
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const sizes = await actorSizeByReservationId(rows);
+  return refs.flatMap((ref) => {
+    const row = byId.get(ref.reservation_id);
+    if (!row) return [];
+    return [
+      {
+        ...toAdminReservationListResult(row, sizes.get(row.id) ?? 1),
+        startTime: Number(ref.occurrence_start_time),
+        endTime: Number(ref.occurrence_end_time),
+      },
+    ];
+  });
+}
+
+/** Ocurrencias por día (fecha en la hora del predio), contadas en la base (milestone 25, DB6). */
+async function occurrenceCountsByDay(
+  startMs: number,
+  endMs: number,
+  filter: OccurrenceFilter,
+): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<{ day: string; count: number }[]>`
+    SELECT to_char(to_timestamp(o.occurrence_start_time / 1000.0) AT TIME ZONE ${ADMIN_TIMEZONE},
+                   'YYYY-MM-DD') AS day,
+           COUNT(*)::int AS count
+    FROM reservation_occurrences(
+      ${BigInt(startMs)}, ${BigInt(endMs)}, NULL, NULL, ${filter.spaceId ?? null}::text
+    ) o
+    JOIN reservations r ON r.id = o.reservation_id
+    WHERE r.reservable_type <> 'EVENT'
+      AND (${filter.status ?? null}::text IS NULL
+           OR r.status::text = ${filter.status ?? null}::text)
+    GROUP BY 1`;
+  return new Map(rows.map((r) => [r.day, r.count]));
+}
+
 export async function listAdminReservationsBySpace(
   spaceId: string,
   options?: ListAdminReservationsOptions,
@@ -442,17 +551,24 @@ export async function listAdminReservationsBySpace(
     Math.max(1, options?.pageSize ?? 50),
   );
 
+  // Con rango: ocurrencias del rango (milestone 25, C3). Sin rango: la lista de reservas
+  // (series) del espacio, que no tiene período en el que expandirlas.
+  if (options?.startMs != null && options?.endMs != null) {
+    const filter = { spaceId, status: options.status };
+    const [refs, total] = await Promise.all([
+      listOccurrenceRefs(options.startMs, options.endMs, filter, {
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
+      countOccurrences(options.startMs, options.endMs, filter),
+    ]);
+    return { items: await occurrencesToAdminResults(refs), total };
+  }
+
   const where: Prisma.ReservationWhereInput = {
     spaceId,
     ...EXCLUDE_EVENT_RESERVATIONS,
   };
-
-  if (options?.startMs != null && options?.endMs != null) {
-    where.startTime = {
-      gte: BigInt(options.startMs),
-      lte: BigInt(options.endMs),
-    };
-  }
 
   if (options?.status) {
     where.status = options.status;
@@ -473,52 +589,38 @@ export async function listAdminReservationsBySpace(
   return { items, total };
 }
 
-/** All reservations for a space in [startMs, endMs], every status. */
+/**
+ * Todas las ocurrencias de un espacio en [startMs, endMs], de todo estado (hasta
+ * `RANGE_FETCH_MAX`). Por ocurrencia desde el milestone 25 (C3).
+ */
 export async function listAllAdminReservationsInDateRange(
   spaceId: string,
   startMs: number,
   endMs: number,
 ): Promise<AdminReservationListResult[]> {
-  const where: Prisma.ReservationWhereInput = {
-    spaceId,
-    ...EXCLUDE_EVENT_RESERVATIONS,
-    startTime: {
-      gte: BigInt(startMs),
-      lte: BigInt(endMs),
-    },
-  };
-
-  const rows = await prisma.reservation.findMany({
-    where,
-    include: reservationAdminInclude,
-    orderBy: { startTime: "asc" },
-    take: RANGE_FETCH_MAX,
-  });
-
-  return mapRowsToAdminResults(rows);
+  return occurrencesToAdminResults(
+    await listOccurrenceRefs(
+      startMs,
+      endMs,
+      { spaceId },
+      { limit: RANGE_FETCH_MAX, offset: 0 },
+    ),
+  );
 }
 
-/** All reservations in [startMs, endMs] across every space. */
+/** Todas las ocurrencias en [startMs, endMs], de todos los espacios (milestone 25, C3). */
 export async function listAllAdminReservationsAllServicesInDateRange(
   startMs: number,
   endMs: number,
 ): Promise<AdminReservationListResult[]> {
-  const where: Prisma.ReservationWhereInput = {
-    ...EXCLUDE_EVENT_RESERVATIONS,
-    startTime: {
-      gte: BigInt(startMs),
-      lte: BigInt(endMs),
-    },
-  };
-
-  const rows = await prisma.reservation.findMany({
-    where,
-    include: reservationAdminInclude,
-    orderBy: { startTime: "asc" },
-    take: RANGE_FETCH_MAX,
-  });
-
-  return mapRowsToAdminResults(rows);
+  return occurrencesToAdminResults(
+    await listOccurrenceRefs(
+      startMs,
+      endMs,
+      {},
+      { limit: RANGE_FETCH_MAX, offset: 0 },
+    ),
+  );
 }
 
 export async function listAdminReservationsAllServicesByRange(
@@ -532,30 +634,16 @@ export async function listAdminReservationsAllServicesByRange(
     Math.max(1, options?.pageSize ?? 50),
   );
 
-  const where: Prisma.ReservationWhereInput = {
-    ...EXCLUDE_EVENT_RESERVATIONS,
-    startTime: {
-      gte: BigInt(startMs),
-      lte: BigInt(endMs),
-    },
-  };
-  if (options?.status) {
-    where.status = options.status;
-  }
-
-  const [rows, total] = await Promise.all([
-    prisma.reservation.findMany({
-      where,
-      include: reservationAdminInclude,
-      orderBy: { startTime: "asc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+  // Ocurrencias del rango, paginadas en la base (milestone 25, C3).
+  const filter = { status: options?.status };
+  const [refs, total] = await Promise.all([
+    listOccurrenceRefs(startMs, endMs, filter, {
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
     }),
-    prisma.reservation.count({ where }),
+    countOccurrences(startMs, endMs, filter),
   ]);
-
-  const items = await mapRowsToAdminResults(rows);
-  return { items, total };
+  return { items: await occurrencesToAdminResults(refs), total };
 }
 
 export function groupAdminReservationsByDateKey(
@@ -601,24 +689,13 @@ export async function listReservationDayCountsInRange(
   const toKey = dateKeyFromUnixMs(endMs);
   const keys = enumerateDateKeysInclusive(fromKey, toKey);
 
-  const where: Prisma.ReservationWhereInput = {
+  // Ocurrencias por día, contadas en la base (milestone 25, C3 + DB6).
+  const byDay = await occurrenceCountsByDay(startMs, endMs, {
     spaceId,
-    ...EXCLUDE_EVENT_RESERVATIONS,
-    startTime: { gte: BigInt(startMs), lte: BigInt(endMs) },
-  };
-  if (status) where.status = status;
-
-  const rows = await prisma.reservation.findMany({
-    where,
-    select: { startTime: true },
+    status,
   });
-
   const counts: Record<string, number> = {};
-  for (const k of keys) counts[k] = 0;
-  for (const r of rows) {
-    const k = dateKeyFromUnixMs(Number(r.startTime));
-    if (k in counts) counts[k] += 1;
-  }
+  for (const k of keys) counts[k] = byDay.get(k) ?? 0;
 
   const items = keys.map((date) => ({ date, count: counts[date] }));
   return { items, total: items.length };
@@ -635,21 +712,10 @@ export async function listDaysWithPendingReservationsAllServices(
     Math.max(1, options?.pageSize ?? 50),
   );
 
-  const rows = await prisma.reservation.findMany({
-    where: {
-      status: "PENDING",
-      ...EXCLUDE_EVENT_RESERVATIONS,
-      startTime: { gte: BigInt(startMs), lte: BigInt(endMs) },
-    },
-    select: { startTime: true },
-    orderBy: { startTime: "asc" },
-  });
-
-  const byDay = rows.reduce<Record<string, number>>((acc, r) => {
-    const key = dateKeyFromUnixMs(Number(r.startTime));
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
+  // Días con ocurrencias pendientes, contadas en la base (milestone 25, C3 + DB6).
+  const byDay = Object.fromEntries(
+    await occurrenceCountsByDay(startMs, endMs, { status: "PENDING" }),
+  );
 
   const allDays = Object.entries(byDay)
     .map(([date, count]) => ({ date, count }))

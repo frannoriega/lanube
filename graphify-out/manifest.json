@@ -1160,23 +1160,23 @@
     "semantic_hash": ""
   },
   "src/lib/db/adminReports.ts": {
-    "mtime": 1791331182.5208106,
-    "ast_hash": "a52e6a973552222f62f4d2ee18a70407",
+    "mtime": 1791333755.6510136,
+    "ast_hash": "1c87e5e78a96c0a17f209fbcbe0cad2d",
     "semantic_hash": ""
   },
   "src/lib/db/adminReservations.ts": {
-    "mtime": 1791328196.018197,
-    "ast_hash": "8dac2a788d3e5cca656f18c94dc43bb2",
+    "mtime": 1791333890.6596413,
+    "ast_hash": "c43b9c9c5b153c1bf4a281c711a0840b",
     "semantic_hash": ""
   },
   "src/lib/db/adminStats.ts": {
-    "mtime": 1791331193.2650585,
-    "ast_hash": "398047c056d56003785d46b259b05481",
+    "mtime": 1791333876.8386052,
+    "ast_hash": "98b1954693784fd3fdd55f4badf8b5e5",
     "semantic_hash": ""
   },
   "src/lib/db/dashboardStats.ts": {
-    "mtime": 1791329741.2579014,
-    "ast_hash": "67b602dd127792533fb97b287e254814",
+    "mtime": 1791334010.4206955,
+    "ast_hash": "5583fd8e5f43273c5b13f4f72c403ef2",
     "semantic_hash": ""
   },
   "src/lib/db/events.test.ts": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791333442.1766753,
-    "ast_hash": "5861a02c773914630e8c764c1766164c",
+    "mtime": 1791334003.2896671,
+    "ast_hash": "a562d2e0977491a1ae5857843e088b10",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -2755,8 +2755,8 @@
     "semantic_hash": ""
   },
   "docs/design/01-domain-model.md": {
-    "mtime": 1791333442.176822,
-    "ast_hash": "c722d0ce70adf366622f4c765398bf83",
+    "mtime": 1791334009.6049159,
+    "ast_hash": "7098be16d21131c18b74131310fc3cb9",
     "semantic_hash": ""
   },
   "docs/design/02-architecture.md": {
@@ -4452,6 +4452,16 @@
   "src/lib/email/event-edit-links.ts": {
     "mtime": 1791333425.1566393,
     "ast_hash": "9b1c9e7937fa25663c9625315cd34931",
+    "semantic_hash": ""
+  },
+  "prisma/migrations/20261008110000_reservation_occurrences/migration.sql": {
+    "mtime": 1791333582.6985543,
+    "ast_hash": "b7e7c584e4d5dbb20af0120ebf08c7a4",
+    "semantic_hash": ""
+  },
+  "src/lib/db/occurrences.ts": {
+    "mtime": 1791333828.712644,
+    "ast_hash": "090279432f4d3ea739e73a0b4dd6761a",
     "semantic_hash": ""
   }
 }

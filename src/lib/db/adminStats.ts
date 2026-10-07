@@ -1,10 +1,10 @@
 import { currentPeriodsInAdminTz } from "@/lib/admin/admin-timezone";
 import { now, nowMs } from "@/lib/clock";
 import { EXCLUDE_EVENT_RESERVATIONS } from "@/lib/db/adminReservations";
+import { approvedOccurrenceTotals, OPEN_END_MS } from "@/lib/db/occurrences";
 import { getPermissionSetForUser } from "@/lib/db/roles";
 import { isAdminRole } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import { dateToUnixMs } from "@/lib/unix-ms";
 
 /**
  * Roles are data since milestone 9, so "is an admin" means "holds admin:access" rather
@@ -54,13 +54,10 @@ export async function getAdminAggregateStats() {
     prisma.reservation.count({
       where: { status: "PENDING", ...EXCLUDE_EVENT_RESERVATIONS },
     }),
-    prisma.reservation.count({
-      where: {
-        status: "APPROVED",
-        startTime: { gte: dateToUnixMs(at) },
-        ...EXCLUDE_EVENT_RESERVATIONS,
-      },
-    }),
+    // Ocurrencias aprobadas de acá en adelante (milestone 25, C3): una serie que empezó hace
+    // meses también cuenta sus próximas semanas. Pendientes y rechazadas siguen contando
+    // reservas (series): son la cola de decisiones, y una serie se aprueba o rechaza entera.
+    approvedOccurrenceTotals(at.getTime(), OPEN_END_MS).then((t) => t.count),
     prisma.reservation.count({
       where: { status: "REJECTED", ...EXCLUDE_EVENT_RESERVATIONS },
     }),
