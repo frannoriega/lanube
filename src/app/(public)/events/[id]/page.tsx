@@ -55,7 +55,6 @@ export default async function EventDetailPage({
           name={event.name}
           description={event.description}
           imageUrl={event.imageUrl}
-          size="page"
           // En teléfono la ficha se intercala entre el título y la descripción.
           afterTitle={
             <div className="lg:hidden">

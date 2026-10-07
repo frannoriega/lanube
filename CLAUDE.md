@@ -591,9 +591,12 @@ passed, newest start first. Featured events lead (see above); the section render
 the hero on the landing. The landing `EventsSection` (`templates/landing/events/`) renders
 them in a dependency-free scroll-snap `EventsCarousel`; the **section returns `null` when
 there are none** (no empty placeholder). Cards link to `/forms/[slug]` when registration is
-open. The public `/forms` shell (`app/forms/layout.tsx`) is its own branded, chrome-light
-layout (logo + theme, no nav) showing the **event** identity via `EventHero`. Shared event
-labels (type + weekday) live in `src/lib/constants/events.ts`.
+open. The public `/forms` pages (`app/forms/layout.tsx`) use the public site's header and footer
+(`PublicLayout`, like `(public)/`) but stay **outside** `(public)` because they read the DB per
+request. The form page is two columns from `lg` — the **event** identity (`EventHero` +
+`EventMeta`) left, the form in a card right — via `EventFormLayout`; short messages (submitted,
+dead link, request-link) use the narrow `FormMessageCard` (`organisms/forms/form-page.tsx`).
+Shared event labels (type + weekday) live in `src/lib/constants/events.ts`.
 
 ### 6. Prisma Config & Schema
 
@@ -692,8 +695,8 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   UI copy is Spanish. Renaming one means adding a permanent redirect from the old path in
   `next.config.ts` — shared links live forever (`/services` → `/spaces`,
   `/noticias` → `/news`).
-- **The logo is always a link to `/`** — public header (desktop + mobile drawer), the
-  `/forms` shell, the sign-in card, and both management sidebars. Sign-in additionally has
+- **The logo is always a link to `/`** — public header (desktop + mobile drawer, also
+  on `/forms`), the sign-in card, and both management sidebars. Sign-in additionally has
   an explicit "Volver al inicio", since **signing out lands there** (`signOut({ callbackUrl:
 "/auth/signin" })` in `user-profile`) and there may be no history to go back through.
 

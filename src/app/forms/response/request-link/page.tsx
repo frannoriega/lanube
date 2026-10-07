@@ -1,3 +1,4 @@
+import { FormMessageCard } from "@/components/organisms/forms/form-page";
 import { EditLinkRequestForm } from "@/components/organisms/forms/edit-link-request-form";
 import type { Metadata } from "next";
 
@@ -12,5 +13,9 @@ export const metadata: Metadata = {
  * así.
  */
 export default function RequestEditLinkPage() {
-  return <EditLinkRequestForm />;
+  return (
+    <FormMessageCard>
+      <EditLinkRequestForm />
+    </FormMessageCard>
+  );
 }
