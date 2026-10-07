@@ -1,6 +1,7 @@
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import {
   cancelParticipant,
+  EDIT_LINK_GONE_MESSAGE,
   getParticipantByToken,
   updateParticipantAnswers,
 } from "@/lib/db/participants";
@@ -8,7 +9,10 @@ import { participantEditSchema } from "@/lib/schemas/events";
 import { NextRequest } from "next/server";
 
 /**
- * Public registration edit/cancel, keyed by the participant's `editToken`.
+ * Public registration edit/cancel, keyed by one of the participant's edit tokens (milestone 25,
+ * S5: se guardan hasheados y vencen cuando termina el evento). Un enlace que no existe o venció
+ * responde **410** con `code: "EDIT_LINK_GONE"`: el formulario recarga la página, que muestra la
+ * pantalla «este enlace ya no sirve» con el botón para pedir uno nuevo.
  *
  * Milestone 10 / F1.5: none of these three handlers had a `try`/`catch`, so a Prisma
  * failure produced Next's default 500 and never reached `logger.error` — invisible in the
@@ -23,8 +27,8 @@ export async function GET(
   try {
     const { token } = await params;
     const participant = await getParticipantByToken(token);
-    if (!participant) {
-      return apiError("No encontrado", 404);
+    if (participant.state !== "ok") {
+      return apiError(EDIT_LINK_GONE_MESSAGE, 410, { code: "EDIT_LINK_GONE" });
     }
     return apiSuccess(participant);
   } catch (err) {
@@ -46,6 +50,11 @@ export async function PUT(
 
     const result = await updateParticipantAnswers(token, parsed.data.answers);
     if (!result.ok) {
+      if (result.linkGone) {
+        return apiError(EDIT_LINK_GONE_MESSAGE, 410, {
+          code: "EDIT_LINK_GONE",
+        });
+      }
       if (result.errors) {
         // Field-level errors ride alongside the message; the public form reads them
         // into react-hook-form via setError.
@@ -67,6 +76,11 @@ export async function DELETE(
     const { token } = await params;
     const result = await cancelParticipant(token);
     if (!result.ok) {
+      if (result.linkGone) {
+        return apiError(EDIT_LINK_GONE_MESSAGE, 410, {
+          code: "EDIT_LINK_GONE",
+        });
+      }
       return apiError(result.message ?? "No encontrado", 404);
     }
     return apiSuccess({ ok: true });

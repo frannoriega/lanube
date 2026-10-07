@@ -117,8 +117,6 @@ model EventParticipant {
   displayEmail   String?         @map("display_email")
   // Linked once/if the participant registers as a system user (matched by normalized email).
   userId         String?         @map("user_id")
-  // Tokenized link to edit/cancel the registration without an account.
-  editToken      String          @unique @map("edit_token")
   // Registration lifecycle. PENDING/APPROVED hold a spot; REJECTED/CANCELLED free it.
   status         ParticipantStatus @default(APPROVED)
   // Admin's optional reason when approving/rejecting (shown to the participant on rejection).
@@ -131,10 +129,29 @@ model EventParticipant {
   updatedAt      BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   event          Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registeredUser RegisteredUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Enlaces para editar/cancelar sin cuenta: uno por correo que los lleva, guardados hasheados
+  // (milestone 25, S5 — ver `src/lib/events/edit-token.ts`).
+  editTokens     EventParticipantEditToken[]
 
   @@unique([eventId, email])
   @@index([email])
   @@index([userId])
   @@index([eventId, status])
   @@map("event_participants")
+}
+
+/// Un enlace de edición de una inscripción (milestone 25, S5). Solo se guarda el SHA-256 del
+/// token; el token viaja únicamente en el correo. Cada correo con enlace agrega una fila y las
+/// anteriores siguen valiendo; todas vencen cuando termina el evento (se calcula al usarlas, en
+/// `editLinkExpired`). El cron diario poda las de eventos terminados.
+model EventParticipantEditToken {
+  id            String           @id @default(cuid())
+  participantId String           @map("participant_id")
+  /// SHA-256 en hex del token (`hashEditToken`).
+  tokenHash     String           @unique @map("token_hash")
+  createdAt     BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  participant   EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+  @@map("event_participant_edit_tokens")
 }

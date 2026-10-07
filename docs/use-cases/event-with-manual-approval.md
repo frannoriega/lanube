@@ -27,7 +27,7 @@ cancels, and someone else registers to take the freed spot.
    `POST /api/admin/events/[id]/participants/decision` →
    `decideParticipants()` (touches only PENDING rows) → approval emails
    sent after commit.
-5. One approved participant later self-cancels via their `editToken` link
+5. One approved participant later self-cancels via the edit link from any of their emails
    (`/forms/response/[token]`) → `status=CANCELLED`. Their seat is now free
    (CANCELLED isn't in `SPOT_HOLDING_STATUSES`).
 6. A new visitor registers with the same email the cancelled participant
