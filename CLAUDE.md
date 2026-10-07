@@ -129,8 +129,8 @@ src/
 │       ├── maintenance/          # GET público: ventanas vigentes/próximas (aviso + portero del middleware)
 │       ├── cron/
 │       │   ├── maintain-reservations/  # Daily 5am UTC (scheduled in vercel.json)
-│       │   └── report-snapshot/  # ⚠️ Endpoint exists but is NOT in vercel.json's
-│       │                         #   `crons` — it never fires on Vercel today
+│       │   ├── report-snapshot/  # Monthly, day 1 06:00 UTC (vercel.json): snapshot + retention
+│       │   └── sync-holidays/    # Monthly, day 1 07:00 UTC (vercel.json): proposes holidays
 │       └── dev/
 │           └── server-time/      # GET server time (dev only, checks faketime)
 │
@@ -276,13 +276,13 @@ src/
    - **Enlace vencido (24 h)**: `resendEmailConfirmationIfExpired()` (`db/verificationTokens.ts`) manda uno nuevo cuando una cuenta sin confirmar entra con credenciales correctas o pide un reset (sin perfil no hay reset). Solo si no queda ningún token vigente → como máximo 1 correo por cuenta cada 24 h (anti-spam SMTP). Nunca revelar al cliente si se envió.
    - **Sin SMTP no hay registro ni reseteo**: `/api/auth/register` y `POST /api/auth/reset` llaman primero a `assertMailerAvailable()` (`src/lib/email/transport.ts`, 503 si el correo no responde) — antes de crear la cuenta/el token y, en el reseteo, antes de saber si el correo existe (no revela cuentas). Si el envío falla igual, el token se borra (`discard*Token`) para no dejar un enlace que nadie recibió.
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
-4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`. Or **passkey** (milestone 17): `POST /api/auth/passkey/options` → browser → `signIn("passkey", …)`, a second `Credentials` provider whose `authorize` verifies the WebAuthn assertion (`src/lib/passkeys/server.ts`); same `jwt()` pipeline after that
+4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`. Rate-limited inside `authorize` (per IP and per normalized email, counted **before** bcrypt) and a missing account still runs a dummy `bcrypt.compare`, so timing doesn't reveal which emails exist (milestone 25, S3); the screen maps `code=rate_limited` to a toast. Or **passkey** (milestone 17): `POST /api/auth/passkey/options` → browser → `signIn("passkey", …)`, a second `Credentials` provider whose `authorize` verifies the WebAuthn assertion (`src/lib/passkeys/server.ts`); same `jwt()` pipeline after that
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status **and pending policies** (`policiesPending`, milestone 19) checked in `jwt()` callback
 6. **Role-based (RBAC)** — ⚠️ **roles are DATA, not an enum** (milestone 9). A role is a row in `roles` (`prisma/models/roles.prisma`); `RegisteredUser.roleId` replaced the old `UserRole` enum column, and **NULL means the base tier**. The permission _catalog_ stays code-defined in `src/lib/rbac.ts` (`PERMISSIONS`, `hasPermission()`, `isAdminRole()`) because each string maps to a real call site; _which_ of those a role carries is `Role.permissions`, edited by a superadmin at `/admin/roles` (`roles:manage`). Full rationale: `docs/design/03-auth-and-permissions.md`.
    - **Protected rows**: `Role.isSystem` blocks rename/delete/re-scope (403) — seeded on `USER` and `SUPERADMIN`. `Role.isSuperadmin` makes `hasPermission()` return true for _everything_, including permissions added in a later deploy; it can never be set from the UI (`createRole` hardcodes both flags false). Seeded roles: USER / ADMIN / SUPERADMIN / COMUNICADOR, with the exact permission sets they had pre-migration. COMUNICADOR is an admin-panel role scoped to authoring Noticias (`news:manage`) — it cannot approve its own posts.
    - **Middleware** (fast path, no DB): the JWT carries the _resolved_ permission list (`token.permissions` + `token.isSuperadmin`), not a role name. `/admin` needs `admin:access`; `ADMIN_PATH_PERMISSIONS` in `src/middleware.ts` additionally gates `/admin/spaces`, `/admin/resources`, `/admin/reservation-types`, `/admin/site`, `/admin/themes`, `/admin/roles`, `/admin/audit`, `/admin/maintenance` and `/admin/profile-requests` on their own permission. Keep that table, this list, and `configNavigation`'s per-child `permission` in sync.
-   - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) resolves fresh from the DB via `getPermissionSetForUser()` and returns 401/403. Authoritative — the JWT claim can lag by one request.
-   - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`); the admin/user layouts resolve the set and pass it into `UserProvider`, so client components call `hasPermission(user, "…")` on the user object directly (both `Session` and `CurrentUser` structurally _are_ a `PermissionSet`).
+   - **API routes**: `requirePermission()` (`src/lib/api-auth.ts`) checks the permissions on the session `auth()` returns and answers 401/403. Authoritative: `auth()` runs the `jwt()` callback on **every** call (verified in `@auth/core`), which re-reads the profile and role from the DB in that same request — so no second role read (milestone 25, DB1). Only the cookie the **middleware** reads can lag. The lookups `jwt()` makes are wrapped in React `cache()`, so the 2–4 `auth()` calls of one server render share them (DB2); keep new per-request reads in `jwt()` cached the same way.
+   - **Pages/layouts**: `requirePagePermission()` (`src/lib/page-auth.ts`, same session check); the admin/user layouts resolve the set and pass it into `UserProvider`, so client components call `hasPermission(user, "…")` on the user object directly (both `Session` and `CurrentUser` structurally _are_ a `PermissionSet`).
    - **Role cache**: `src/lib/db/roles.ts` keeps a module-scoped snapshot (30 s TTL) invalidated by every role write. Call `invalidateRoleCache()` if you add a new write path. It is the seam for a future Vercel Global Config provider (see `docs/OPEN_QUESTIONS.md`).
    - Assigning a role to a user is `users:roles:manage` (`PATCH /api/admin/users/[id]` takes `roleId`; never your own). _Defining_ what a role can do is `roles:manage` — a deliberate split. Seed superadmins: `sa1`/`sa2@lanube.local`.
    - ⚠️ The `jwt()` callback takes only `{ token }` — it deliberately ignores NextAuth's `trigger`/`session` arguments and recomputes `signedUp`/`banned`/`role`/`permissions` from the DB on every call. That is what makes a client-side `useSession().update({...})` unable to forge session state; don't "fix" it by merging the client-supplied session.
@@ -409,6 +409,20 @@ env (`vercel-blob` | `local`), defaulting to Vercel Blob when `BLOB_READ_WRITE_T
 else a `local` filesystem provider (writes `public/uploads`, dev only — not serverless-safe).
 Add a future S3/custom provider by implementing the interface + registering it in the factory;
 no call sites change. Allow new public image hosts in `next.config.ts` (`STORAGE_PUBLIC_HOST`).
+A provider also implements `privateKeyOf(url)` (canonical key or `null`; no `..`) — the admin
+file proxy uses it to require the participant-uploads prefix of the current environment.
+
+**Participant uploads are untrusted end to end** (milestone 25, S1/S2). The file descriptor
+`{ url, name, size, type }` comes back inside the form answers, i.e. from the client:
+
+- The **server** picks the MIME type from the extension (`contentTypeForName`); never store or
+  serve `file.type` or the answer's `type`. The admin proxy serves inline only PDF and raster
+  images (`isInlineSafe`), everything else as an attachment with `CSP: sandbox` — serving a
+  participant's `text/html` on our origin was a stored XSS against admins.
+- The upload signs the descriptor (`signUploadedFile`, HMAC with `NEXTAUTH_SECRET`, bound to the
+  event); submit/edit accept only signed descriptors or ones already stored on that registration
+  (`verifiedAnswerFiles` in `db/participants.ts`). A new path that stores answers must do the same.
+- Public upload routes call `participantUploadRateLimit()` **before** touching the DB.
 
 Reusable UI: `CopyField` (molecule) backs `CopyFormUrl` — generic copy-to-clipboard for any
 text (box or button variant).
@@ -705,7 +719,7 @@ labels (type + weekday) live in `src/lib/constants/events.ts`.
   by the pre-existing batched sender (see below).
 - **In-app channel** writes one `Notification` row per (event, recipient) via
   `src/lib/db/notifications.ts`; the bell UI (`NotificationBell`, in the shared
-  `ManagementLayout` header) polls `/api/user/notifications` every 60s.
+  `ManagementLayout` header) polls `/api/user/notifications` every 60s (`useApi`'s `refreshIntervalMs`, which pauses while the tab is hidden — milestone 25, P1).
 - **`event.sessionChanged` is additive, not a replacement**:
   `notifyEventParticipantsBatch` (`src/lib/email/event-occurrence-update.ts`) keeps its own
   bespoke **one email per participant covering a whole batch of changes** — a per-event
