@@ -679,6 +679,38 @@ sigue en `/:path*`. `src/lib/security-headers.test.ts` fija la regex. Verificado
 forjado como `text/html` → `attachment`, `octet-stream`, `CSP: sandbox`; el PDF → `inline` sin
 CSP (el visor de Chrome no abre con `sandbox`); la landing conserva la global.
 
+### Seguimiento: volver a aprobar a alguien rechazado
+
+Pedido del usuario después de S5: con la reinscripción cerrada, la vuelta natural de alguien
+rechazado es que un admin lo apruebe, y eso ocupa cupo. Decisiones (preguntadas): **re-aprobar si
+hay lugar, más un aviso al rechazar**; y si se eligen más de los que entran, **no se aprueba
+ninguno** (el admin elige a quién). La decisión masiva ya existía (casillas + «Aprobar/Rechazar»
+en la tabla de participantes, solo en eventos con aprobación manual); lo nuevo:
+
+- `DECISION_SOURCE_STATUSES` (`constants/participants.ts`): aprobar toma PENDING y REJECTED;
+  rechazar, PENDING y APPROVED. `reapprovalFits({capacity, taken, reapproving})`, pura y con
+  test (cupo 0 = sin límite; sobrecupo → 0 libres).
+- `decideParticipants`: toma el mismo advisory lock que `submitForm` (por el slug del
+  formulario) y, si hay rechazadas en el lote de aprobación, recuenta los lugares y lanza
+  `DomainError` 409 si no entran todas. Pendientes no ocupan lugar nuevo.
+- Tabla: las rechazadas se pueden seleccionar; cada botón se deshabilita si no aplica a nadie
+  de la selección; el diálogo lista solo a quiénes se aplica («N ya están en ese estado») y marca
+  las rechazadas. Al aprobar rechazadas muestra los lugares que quedan (en rojo y sin poder
+  confirmar si no entran). Al rechazar advierte: no van a poder reinscribirse; volver a
+  aprobarlas depende de que quede lugar.
+
+**Verificación** (evento E2E puesto temporalmente con aprobación manual y cupo 2, más una
+inscripción rechazada y una pendiente de prueba): por API, re-aprobar con el cupo lleno → 409;
+rechazar la pendiente libera un lugar; re-aprobar dos con un lugar → 409 y nada cambia;
+re-aprobar una → 200 y correo «Inscripción aprobada» en Mailpit. En el navegador: las
+rechazadas tienen casilla, «Rechazar» se deshabilita con solo rechazadas, el diálogo de aprobar
+avisa «quedan solo 1. No se aprueba ninguna», y el de rechazar (con una aprobada y dos
+rechazadas seleccionadas) lista solo a la aprobada, dice «2 ya están en ese estado» y muestra la
+advertencia. Todo se restauró después.
+
+**Visto y no tocado:** la columna «Inscripción» de esa tabla formatea la fecha con la zona del
+navegador sin fijarla, y difiere de la del servidor (desajuste de hidratación en dev).
+
 ### Verificación a mano (pendiente de la primera sesión)
 
 En Chrome contra la app de dev, como `sa1`:

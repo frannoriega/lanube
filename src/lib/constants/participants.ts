@@ -39,3 +39,44 @@ export const ALREADY_REGISTERED_MESSAGE = "Ya estás inscripto con ese email";
 export function blocksReRegistration(status: ParticipantStatus): boolean {
   return status !== ParticipantStatus.CANCELLED;
 }
+
+/**
+ * De qué estados sale cada decisión del admin (milestone 25, seguimiento de S5):
+ *
+ * - **Aprobar**: PENDING (ya ocupa un lugar, el cupo no cambia) y **REJECTED** (volver a aprobar
+ *   a alguien rechazado: como el rechazo es lo único que lo deja afuera —no puede reinscribirse,
+ *   ver {@link blocksReRegistration}—, esta es la única vuelta posible). Re-aprobar ocupa un lugar
+ *   de nuevo, así que pasa por {@link reapprovalFits}. Aprobar a un APPROVED es un no-op (no se
+ *   vuelve a mandar el correo).
+ * - **Rechazar**: PENDING y APPROVED (se puede revocar una aprobación).
+ *
+ * CANCELLED nunca: la canceló la propia persona, y ninguna decisión la resucita.
+ */
+export const DECISION_SOURCE_STATUSES: Record<
+  "approve" | "reject",
+  ParticipantStatus[]
+> = {
+  approve: [ParticipantStatus.PENDING, ParticipantStatus.REJECTED],
+  reject: [ParticipantStatus.PENDING, ParticipantStatus.APPROVED],
+};
+
+/**
+ * ¿Entran `reapproving` inscripciones rechazadas que se quieren volver a aprobar, con `taken`
+ * lugares ya ocupados (`SPOT_HOLDING_STATUSES`) y un cupo de `capacity` (0 = sin cupo)?
+ *
+ * Todo o nada (decisión del usuario): si no entran todas no se aprueba ninguna, y el admin elige
+ * a quién. `free` son los lugares que quedan, para el mensaje.
+ */
+export function reapprovalFits({
+  capacity,
+  taken,
+  reapproving,
+}: {
+  capacity: number;
+  taken: number;
+  reapproving: number;
+}): { fits: boolean; free: number | null } {
+  if (capacity <= 0) return { fits: true, free: null };
+  const free = Math.max(0, capacity - taken);
+  return { fits: reapproving <= free, free };
+}

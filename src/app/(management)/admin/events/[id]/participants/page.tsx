@@ -83,6 +83,8 @@ export default async function ParticipantsPage({
           columns={columns}
           rows={rows}
           requiresApproval={event.requiresApproval}
+          capacity={capacity}
+          spotsTaken={active.length}
         />
       )}
     </div>
