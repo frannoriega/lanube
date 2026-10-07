@@ -18,7 +18,7 @@ import {
   MINIMUM_NOTICE_MESSAGE,
 } from "@/lib/reservations/booking-window";
 import { toCapitalCase } from "@/lib/utils/string";
-import { addDays, addWeeks, format, isSameDay } from "date-fns";
+import { addDays, addWeeks, format, isSameDay, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -708,8 +708,17 @@ export function WeekCalendar({
           <div className="min-w-0 text-sm text-gray-600 dark:text-gray-400">
             {isNarrow ? (
               // En las vistas angostas el rango va corto ("5 – 9 oct") para dejar lugar a los botones.
+              // Si la semana cruza de mes, el primer día lleva su mes ("28 sept – 2 oct"): sin él
+              // se leía "28 – 2 oct", como si fuera del 28 de octubre.
               <>
-                {format(currentWeekStart, "d", { locale: es })} –{" "}
+                {format(
+                  currentWeekStart,
+                  isSameMonth(currentWeekStart, addDays(currentWeekStart, 4))
+                    ? "d"
+                    : "d MMM",
+                  { locale: es },
+                )}{" "}
+                –{" "}
                 {format(addDays(currentWeekStart, 4), "d MMM yyyy", {
                   locale: es,
                 })}

@@ -117,7 +117,11 @@ function SectionHeader({
 
 export default function AboutPage() {
   return (
-    <div className="flex flex-col w-full">
+    // Margen lateral: el `Container` del layout da 16 px, que en tablet y escritorio angosto
+    // (1024 px) dejaba el texto pegado al borde junto a un hero centrado. Desde `sm` se suman
+    // 16 px acá, y las franjas de ancho completo (`Breakout`) usan `sm:px-8` en su `Container`
+    // para quedar alineadas con el resto (16 + 16 = 32 px en ambos casos).
+    <div className="flex w-full flex-col sm:px-4">
       {/* Hero — transparent so the particle field shows through, like the landing. */}
       <section className="flex flex-col items-center gap-6 py-20 text-center md:py-28">
         <div className="animate-fade-up flex flex-wrap items-center justify-center gap-2">
@@ -168,7 +172,7 @@ export default function AboutPage() {
 
       {/* El desafío — the "why" (tinted feature). */}
       <Breakout className={TINT}>
-        <Container>
+        <Container className="sm:px-8">
           <section className="flex flex-col gap-6 py-16 md:py-20">
             <SectionHeader
               eyebrow="desafío"
@@ -197,7 +201,7 @@ export default function AboutPage() {
 
       {/* El origen — the official logo legend (tinted feature). */}
       <Breakout className={TINT}>
-        <Container>
+        <Container className="sm:px-8">
           <section className="flex animate-fade-up flex-col gap-8 py-16 md:py-24">
             <SectionHeader
               eyebrow="origen"
@@ -279,7 +283,7 @@ export default function AboutPage() {
 
       {/* Misión, Visión y Valores (tinted close). */}
       <Breakout className={TINT}>
-        <Container>
+        <Container className="sm:px-8">
           <section className="flex flex-col gap-8 py-16 md:py-24">
             <SectionHeader
               eyebrow="identidad"

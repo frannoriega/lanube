@@ -22,6 +22,8 @@ import { CountUp } from "./count-up";
  * `font-bold` como los títulos (antes `font-black` a 7xl, más pesado que todo lo demás).
  * Breakout → Container → section, igual que las demás secciones de "Quiénes somos", para que
  * el texto quede alineado con el de sus vecinas (antes llevaba el `px-8` de la landing).
+ * Por eso lleva el mismo `sm:px-8` que las franjas de esa página (ver el margen lateral en
+ * `app/(public)/about/page.tsx`).
  */
 export function StatsBand({
   eyebrow = "cifras",
@@ -32,7 +34,7 @@ export function StatsBand({
 }) {
   return (
     <Breakout>
-      <Container>
+      <Container className="sm:px-8">
         <section
           className="flex flex-col gap-10 py-16 md:py-20"
           aria-labelledby="ecosistema-en-numeros"
