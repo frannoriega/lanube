@@ -39,6 +39,8 @@ export async function getAdminAggregateStats() {
     pendingReservations,
     approvedReservations,
     rejectedReservations,
+    currentUsersRaw,
+    recentReservationsRaw,
   ] = await Promise.all([
     prisma.checkIn.count({
       where: { checkInTime: { gte: startOfDay } },
@@ -62,34 +64,34 @@ export async function getAdminAggregateStats() {
     prisma.reservation.count({
       where: { status: "REJECTED", ...EXCLUDE_EVENT_RESERVATIONS },
     }),
-  ]);
-
-  const currentUsersRaw = await prisma.checkIn.findMany({
-    where: {
-      checkOutTime: null,
-      checkInTime: { gte: startOfDay },
-    },
-    include: {
-      registeredUser: { select: { id: true, name: true, lastName: true } },
-      reservation: {
-        select: {
-          space: { select: { name: true } },
-          endTime: true,
+    // Las dos listas del tablero van en el mismo lote: antes corrían en serie después de él
+    // (milestone 25, DB7).
+    prisma.checkIn.findMany({
+      where: {
+        checkOutTime: null,
+        checkInTime: { gte: startOfDay },
+      },
+      include: {
+        registeredUser: { select: { id: true, name: true, lastName: true } },
+        reservation: {
+          select: {
+            space: { select: { name: true } },
+            endTime: true,
+          },
         },
       },
-    },
-    orderBy: { checkInTime: "desc" },
-  });
-
-  const recentReservationsRaw = await prisma.reservation.findMany({
-    where: { status: "PENDING", ...EXCLUDE_EVENT_RESERVATIONS },
-    include: {
-      registeredUser: { select: { name: true, lastName: true } },
-      space: { select: { name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  });
+      orderBy: { checkInTime: "desc" },
+    }),
+    prisma.reservation.findMany({
+      where: { status: "PENDING", ...EXCLUDE_EVENT_RESERVATIONS },
+      include: {
+        registeredUser: { select: { name: true, lastName: true } },
+        space: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
 
   return {
     todayUsers,

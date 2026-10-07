@@ -28,9 +28,16 @@ function durationStats(
   durations: number[],
 ): { total: number; min: number; avg: number; max: number } | null {
   if (!durations.length) return null;
-  const total = durations.reduce((a, b) => a + b, 0);
-  const min = Math.min(...durations);
-  const max = Math.max(...durations);
+  // Un solo recorrido en vez de `Math.min(...durations)`: el spread pasa cada elemento como
+  // argumento y revienta la pila con ~100k reservas (un reporte anual grande) — milestone 25, DB6.
+  let total = 0;
+  let min = Infinity;
+  let max = -Infinity;
+  for (const d of durations) {
+    total += d;
+    if (d < min) min = d;
+    if (d > max) max = d;
+  }
   const avg = total / durations.length;
   return {
     total: Math.round(total),
