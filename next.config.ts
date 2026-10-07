@@ -92,9 +92,18 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        // La CSP global va a todas las rutas MENOS al proxy de archivos de participantes, que
+        // pone la suya (`sandbox` para todo lo que no es PDF). Los headers de este archivo pisan
+        // los de la respuesta de la ruta, así que con `/:path*` la `sandbox` nunca llegaba al
+        // navegador (milestone 25: hallado al verificar S1 contra la app).
+        source: "/((?!api/admin/events/[^/]+/participants/file$).*)",
         headers: [
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
+        ],
+      },
+      {
+        source: "/:path*",
+        headers: [
           // Belt-and-braces with frame-ancestors, for browsers that predate CSP2.
           { key: "X-Frame-Options", value: "DENY" },
           // Stops MIME sniffing turning an uploaded file into executable script.
