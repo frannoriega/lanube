@@ -110,15 +110,17 @@ made.
   inscripción activa («Ya estás inscripto con ese email»), para no revelar
   quién fue rechazado. La regla es `blocksReRegistration()`
   (`src/lib/constants/participants.ts`, con test).
-- Admin decisions are scoped and asymmetric: **approve only touches
-  PENDING**, **reject touches PENDING + APPROVED** — so approving never
-  re-emails someone already approved, but an admin can still walk back an
-  approval.
-- **Not supported**: re-approving a REJECTED participant in place. Freeing
-  and re-occupying a spot needs a fresh capacity check that the current
-  write path doesn't do. Desde el milestone 25 la persona rechazada
-  tampoco puede reinscribirse sola: un rechazo es definitivo hasta que
-  exista esa re-aprobación.
+- Admin decisions are scoped and asymmetric (`DECISION_SOURCE_STATUSES`):
+  **approve touches PENDING + REJECTED**, **reject touches PENDING +
+  APPROVED** — so approving never re-emails someone already approved, but
+  an admin can still walk back an approval.
+- **Volver a aprobar a alguien rechazado** (milestone 25, seguimiento de
+  S5) es la única vuelta, porque la persona no puede reinscribirse. Ocupa
+  un lugar de nuevo: `decideParticipants` toma el mismo advisory lock que
+  `submitForm`, recuenta los lugares ocupados y aplica `reapprovalFits()`
+  **todo o nada** — si no entran todas, 409 y no cambia nada (el diálogo
+  lo avisa antes). El diálogo de rechazo advierte que rechazar es
+  definitivo salvo que más adelante quede lugar.
 
 ## Notifications
 

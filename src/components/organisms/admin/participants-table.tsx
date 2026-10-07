@@ -22,7 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToneBadge, type StatusTone } from "@/components/atoms/status-badge";
-import { PARTICIPANT_STATUS_LABEL } from "@/lib/constants/participants";
+import {
+  DECISION_SOURCE_STATUSES,
+  PARTICIPANT_STATUS_LABEL,
+  reapprovalFits,
+} from "@/lib/constants/participants";
 import {
   type ExportColumn,
   cellFiles,
@@ -70,6 +74,10 @@ interface ParticipantsTableProps {
   rows: ParticipantRow[];
   /** Manual-approval event → show selection checkboxes + approve/reject actions. */
   requiresApproval: boolean;
+  /** Cupo efectivo del evento (0 = sin cupo), para avisar antes de re-aprobar rechazados. */
+  capacity: number;
+  /** Lugares ocupados hoy (PENDING + APPROVED). */
+  spotsTaken: number;
 }
 
 const dateFmt = (ms: number) =>
@@ -79,11 +87,27 @@ const dateFmt = (ms: number) =>
     year: "numeric",
   });
 
-/** Statuses that can still be decided (hold a spot). */
+/**
+ * Estados que se pueden seleccionar para decidir: los que alguna decisión toma
+ * (`DECISION_SOURCE_STATUSES`). Desde el milestone 25 incluye REJECTED, para poder volver a
+ * aprobar a alguien rechazado si queda cupo. CANCELLED no: la canceló la propia persona.
+ */
 const DECIDABLE: ParticipantStatus[] = [
-  ParticipantStatus.PENDING,
-  ParticipantStatus.APPROVED,
+  ...new Set([
+    ...DECISION_SOURCE_STATUSES.approve,
+    ...DECISION_SOURCE_STATUSES.reject,
+  ]),
 ];
+
+/** Las filas seleccionadas a las que una decisión efectivamente se aplica. */
+function applicableTo(
+  decision: "approve" | "reject",
+  rows: ParticipantRow[],
+): ParticipantRow[] {
+  return rows.filter((r) =>
+    DECISION_SOURCE_STATUSES[decision].includes(r.status),
+  );
+}
 
 /**
  * Participant status → shared tone. This was a fifth light-only `bg-*-100 text-*-800`
@@ -166,6 +190,8 @@ export function ParticipantsTable({
   columns,
   rows,
   requiresApproval,
+  capacity,
+  spotsTaken,
 }: ParticipantsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -365,6 +391,7 @@ export function ParticipantsTable({
             <Button
               size="sm"
               className="bg-green-600 hover:bg-green-700"
+              disabled={applicableTo("approve", selectedRows).length === 0}
               onClick={() => setDecision("approve")}
             >
               <Check className="mr-1 h-4 w-4" />
@@ -373,6 +400,7 @@ export function ParticipantsTable({
             <Button
               size="sm"
               variant="destructive"
+              disabled={applicableTo("reject", selectedRows).length === 0}
               onClick={() => setDecision("reject")}
             >
               <X className="mr-1 h-4 w-4" />
@@ -396,6 +424,8 @@ export function ParticipantsTable({
         eventId={eventId}
         decision={decision}
         participants={selectedRows}
+        capacity={capacity}
+        spotsTaken={spotsTaken}
         onOpenChange={(open) => {
           if (!open) setDecision(null);
         }}
@@ -417,16 +447,34 @@ const CONFIRM_KEYWORD: Record<"approve" | "reject", string> = {
 function DecisionDialog({
   eventId,
   decision,
-  participants,
+  participants: selected,
+  capacity,
+  spotsTaken,
   onOpenChange,
   onDone,
 }: {
   eventId: string;
   decision: "approve" | "reject" | null;
   participants: ParticipantRow[];
+  capacity: number;
+  spotsTaken: number;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
 }) {
+  // Solo a quienes la decisión se aplica; el resto de la selección se informa y no se manda
+  // (p. ej. aprobar a alguien ya aprobado, o rechazar a alguien ya rechazado).
+  const participants = decision ? applicableTo(decision, selected) : [];
+  const skipped = selected.length - participants.length;
+  const reapproving =
+    decision === "approve"
+      ? participants.filter((p) => p.status === ParticipantStatus.REJECTED)
+          .length
+      : 0;
+  const capacityCheck = reapprovalFits({
+    capacity,
+    taken: spotsTaken,
+    reapproving,
+  });
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [confirmText, setConfirmText] = useState("");
@@ -435,7 +483,10 @@ function DecisionDialog({
   // Reset the typed fields whenever the dialog (re)opens for a decision.
   const open = decision !== null;
   const keyword = decision ? CONFIRM_KEYWORD[decision] : "";
-  const armed = confirmText.trim().toUpperCase() === keyword;
+  const armed =
+    confirmText.trim().toUpperCase() === keyword &&
+    participants.length > 0 &&
+    capacityCheck.fits;
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
@@ -498,15 +549,61 @@ function DecisionDialog({
         </ResponsiveDialogHeader>
 
         <div className="space-y-4">
+          {decision === "reject" && (
+            // Milestone 25 (seguimiento de S5): una persona rechazada no puede volver a
+            // inscribirse con ese correo; la única vuelta es que un admin la re-apruebe, y eso
+            // ocupa un lugar.
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+              <p className="font-medium">Pensalo antes de rechazar.</p>
+              <p className="mt-1 text-muted-foreground">
+                Estas personas no van a poder volver a inscribirse con ese
+                correo. Más adelante solo vas a poder volver a aprobarlas si
+                todavía queda lugar en el evento.
+              </p>
+            </div>
+          )}
+
+          {reapproving > 0 && (
+            <div
+              className={
+                capacityCheck.fits
+                  ? "rounded-md border p-3 text-sm"
+                  : "rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm"
+              }
+            >
+              <p className="font-medium">
+                {reapproving === 1
+                  ? "Vas a volver a aprobar a 1 persona rechazada."
+                  : `Vas a volver a aprobar a ${reapproving} personas rechazadas.`}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                {capacityCheck.free === null
+                  ? "Este evento no tiene cupo, así que entran todas."
+                  : capacityCheck.fits
+                    ? `Cada una ocupa un lugar: quedan ${capacityCheck.free}.`
+                    : `Cada una ocupa un lugar y ${
+                        capacityCheck.free === 0
+                          ? "el cupo está lleno"
+                          : `quedan solo ${capacityCheck.free}`
+                      }. No se aprueba ninguna: elegí a quién, o rechazá a otra persona antes.`}
+              </p>
+            </div>
+          )}
+
           <div className="rounded-md border">
             <div className="border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {participants.length} participante
               {participants.length === 1 ? "" : "s"}
+              {skipped > 0 &&
+                ` · ${skipped} ya ${skipped === 1 ? "está" : "están"} en ese estado`}
             </div>
             <ul className="max-h-40 overflow-y-auto px-3 py-2 text-sm">
               {participants.map((p) => (
                 <li key={p.id} className="truncate py-0.5">
                   {p.displayEmail ?? p.email}
+                  {p.status === ParticipantStatus.REJECTED && (
+                    <span className="text-muted-foreground"> · rechazada</span>
+                  )}
                 </li>
               ))}
             </ul>

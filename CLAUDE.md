@@ -554,14 +554,18 @@ are auto-approved (default `false`) or filtered by an admin.
   for manual events it adds row checkboxes + a bulk **Aprobar/Rechazar** bar → a confirm dialog
   (lists the selected people, optional shared reason, type-**APROBAR**/**RECHAZAR** to arm).
   `POST /api/admin/events/[id]/participants/decision` → `decideParticipants()` (scoped to the
-  event; approve touches only PENDING, reject touches PENDING+APPROVED — so approving never
-  re-emails the already-approved). **Emails send after the write commits** via
+  event; which statuses each decision takes is `DECISION_SOURCE_STATUSES`: approve takes
+  PENDING + **REJECTED**, reject takes PENDING + APPROVED — so approving never re-emails the
+  already-approved). The dialog lists only the rows the decision applies to and says how many
+  of the selection are skipped. **Emails send after the write commits** via
   `notifyParticipantsDecision` (`event-decision.ts`): approval = "you're in"; rejection = the
   reason if given, else a neutral generic message. Same synchronous fan-out caveat as
   `notifyEventParticipantsBatch` (TODO(scale) at ~100+ recipients).
-- **Not supported yet:** re-approving a REJECTED participant in place (freeing→re-occupying a
-  spot needs a capacity recheck). Since milestone 25 they can't re-register either: a rejection
-  is final until that exists.
+- **Re-approving a REJECTED participant** (milestone 25, follow-up to S5) is the only way back —
+  they can't re-register. It re-occupies a spot, so `decideParticipants` takes the same advisory
+  lock as `submitForm`, recounts `SPOT_HOLDING_STATUSES` and applies `reapprovalFits()`
+  **all-or-nothing** (user decision): if they don't all fit, 409 and nothing changes; the dialog
+  warns before that. The reject dialog warns that rejecting is final unless there's room later.
 
 ### Event card summary + featured
 

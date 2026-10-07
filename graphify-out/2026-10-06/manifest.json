@@ -2800,8 +2800,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1791331398.4700847,
-    "ast_hash": "6d9a2f35a595bc294b949ada15a625c5",
+    "mtime": 1791335962.5475721,
+    "ast_hash": "9a5eafee245d5f493d0d18d6bae7a603",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -4415,8 +4415,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-25-performance-security-audit.md": {
-    "mtime": 1791332378.8199239,
-    "ast_hash": "38f33eddc414409425c3ca1fa7a16055",
+    "mtime": 1791335963.2206748,
+    "ast_hash": "41a56c800d30c67c489ffbf1a6450e69",
     "semantic_hash": ""
   },
   "src/lib/constants/participants.test.ts": {

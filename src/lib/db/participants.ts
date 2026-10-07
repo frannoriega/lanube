@@ -26,6 +26,8 @@ import { prisma } from "@/lib/prisma";
 import {
   ALREADY_REGISTERED_MESSAGE,
   blocksReRegistration,
+  DECISION_SOURCE_STATUSES,
+  reapprovalFits,
   SPOT_HOLDING_STATUSES,
 } from "@/lib/constants/participants";
 import { ParticipantStatus } from "@/types/prisma";
@@ -604,10 +606,17 @@ export interface DecidedParticipant {
 }
 
 /**
- * Approves or rejects a batch of an event's registrations (admin bulk action). Scoped to the
- * event for safety and idempotent: only rows currently PENDING or APPROVED are touched (a
- * cancelled registration is never resurrected by a decision). Returns the affected rows so the
- * caller can email them **after** the write — mirroring the session-change notification pattern.
+ * Aprueba o rechaza un lote de inscripciones de un evento (acción masiva del admin). Acotado al
+ * evento e idempotente: solo toca las filas cuyo estado está en `DECISION_SOURCE_STATUSES` para
+ * esa decisión — aprobar toma PENDING y REJECTED, rechazar toma PENDING y APPROVED; una
+ * cancelada nunca se resucita. Devuelve las filas afectadas para que quien llama mande los
+ * correos **después** de la escritura (mismo patrón que los avisos de cambios de sesión).
+ *
+ * **Volver a aprobar a alguien rechazado ocupa un lugar** (milestone 25, seguimiento de S5): se
+ * chequea el cupo con la misma resolución que el formulario público y **todo o nada**
+ * (`reapprovalFits`) — si no entran todas, `DomainError` 409 y no se toca nada. Toma el mismo
+ * advisory lock que `submitForm`, así una inscripción concurrente no puede llevarse el último
+ * lugar entre el conteo y la escritura.
  */
 export async function decideParticipants(
   eventId: string,
@@ -619,19 +628,25 @@ export async function decideParticipants(
     decision === "approve"
       ? ParticipantStatus.APPROVED
       : ParticipantStatus.REJECTED;
-  // Approving only acts on still-pending rows (approving an already-approved one is a no-op and
-  // shouldn't re-email); rejecting can revoke a pending or an approved spot.
-  const fromStatuses =
-    decision === "approve"
-      ? [ParticipantStatus.PENDING]
-      : SPOT_HOLDING_STATUSES;
+  const fromStatuses = DECISION_SOURCE_STATUSES[decision];
 
   return prisma.$transaction(async (tx) => {
     const event = await tx.event.findUnique({
       where: { id: eventId },
-      select: { name: true },
+      select: {
+        name: true,
+        capacity: true,
+        space: { select: { capacity: true } },
+        form: { select: { slug: true } },
+      },
     });
     if (!event) throw new DomainError("Evento no encontrado", 404);
+
+    // Mismo lock que `submitForm` (por el slug del formulario): serializa el chequeo de cupo de
+    // abajo con las inscripciones nuevas.
+    if (event.form) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`event-form:${event.form.slug}`}, 0))`;
+    }
 
     const affected = await tx.eventParticipant.findMany({
       where: {
@@ -639,8 +654,32 @@ export async function decideParticipants(
         eventId,
         status: { in: fromStatuses },
       },
-      select: { id: true, email: true, displayEmail: true },
+      select: { id: true, email: true, displayEmail: true, status: true },
     });
+
+    if (decision === "approve") {
+      const reapproving = affected.filter(
+        (p) => p.status === ParticipantStatus.REJECTED,
+      ).length;
+      if (reapproving > 0) {
+        const taken = await tx.eventParticipant.count({
+          where: { eventId, status: { in: SPOT_HOLDING_STATUSES } },
+        });
+        const { fits, free } = reapprovalFits({
+          capacity: await resolveCapacity(event),
+          taken,
+          reapproving,
+        });
+        if (!fits) {
+          throw new DomainError(
+            `No hay lugar para volver a aprobar a ${reapproving} inscripción(es) rechazada(s): ` +
+              `${free === 0 ? "el cupo está lleno" : `quedan ${free} lugar(es)`}. ` +
+              "Elegí a quién aprobar o rechazá a otra persona antes.",
+            409,
+          );
+        }
+      }
+    }
 
     if (affected.length > 0) {
       await tx.eventParticipant.updateMany({
@@ -653,7 +692,14 @@ export async function decideParticipants(
       });
     }
 
-    return { eventName: event.name, participants: affected };
+    return {
+      eventName: event.name,
+      participants: affected.map(({ id, email, displayEmail }) => ({
+        id,
+        email,
+        displayEmail,
+      })),
+    };
   });
 }
 
