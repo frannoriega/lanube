@@ -20,7 +20,8 @@ const HIDDEN_PREFIXES = ["/admin", "/user", "/policies/accept"];
  * there is only one place to update it. wa.me wants just digits, no "+" or spaces.
  *
  * Es client component solo para leer la ruta actual (`usePathname`) y ocultarse en el área
- * de management; sigue montado una única vez desde el layout raíz.
+ * de management; sigue montado una única vez desde el layout raíz, con el teléfono de una lectura cacheada
+ * (`getPublicSiteConfig`, milestone 25 P2).
  */
 export function WhatsAppFloatButton({
   phoneClickable,

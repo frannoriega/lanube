@@ -1,7 +1,7 @@
 import { EventHero } from "@/components/organisms/forms/event-hero";
 import { RegistrationCta } from "@/components/molecules/registration-cta";
 import type { RegistrationPhase } from "@/lib/db/events";
-import { getPublicEventDetail } from "@/lib/db/events";
+import { getPublicEventDetailCached } from "@/lib/cache/public-reads";
 import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { nowMs } from "@/lib/clock";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,18 @@ import { notFound } from "next/navigation";
 import { Fact } from "./event-fact";
 import { EventScheduleFacts, EventSessionList } from "./event-schedule";
 import { ScrollToTop } from "./scroll-to-top";
+
+/**
+ * ISR (milestone 25, P2): ningún evento se genera en el build (`generateStaticParams` vacío);
+ * cada uno se genera en su primera visita y queda cacheado, invalidado por tag desde el panel
+ * (`src/lib/cache/public-reads.ts`). Next exige un literal en `revalidate`:
+ * `public-cache.test.ts` comprueba que sea igual a PUBLIC_REVALIDATE_SECONDS.
+ */
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return [];
+}
 
 /**
  * Página pública de un evento (rediseño del milestone 18).
@@ -28,7 +40,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = await getPublicEventDetail(id);
+  const event = await getPublicEventDetailCached(id);
   if (!event) notFound();
 
   const now = nowMs();
@@ -78,7 +90,7 @@ export default async function EventDetailPage({
 }
 
 type EventDetail = NonNullable<
-  Awaited<ReturnType<typeof getPublicEventDetail>>
+  Awaited<ReturnType<typeof getPublicEventDetailCached>>
 >;
 
 /** La ficha: tipo, horario, fechas, lugar y el bloque de inscripción. */

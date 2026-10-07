@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import { apiError, apiServerError, apiSuccess } from "@/lib/api/response";
 import { createSpace, getPublicSpaces } from "@/lib/db/spaces";
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
     await audit.commit(session, AUDIT_ACTIONS.spaceCreate, {
       entityId: space.id,
     });
+    // Invalida la caché pública: el sitio público muestra los espacios, y las tarjetas de eventos su nombre (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.spaces);
     return apiSuccess(space, { status: 201 });
   } catch (e) {
     if (isUniqueViolation(e)) {

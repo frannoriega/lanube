@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import {
   deleteEvent,
@@ -83,6 +84,8 @@ export async function PUT(
         : undefined,
       reason: sessionReason || null,
     });
+    // Invalida la caché pública: el sitio público muestra los eventos (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return apiSuccess(event);
   } catch (e) {
     // Edit would drop per-session changes → ask the admin to confirm (frontend resends force).
@@ -113,6 +116,8 @@ export async function DELETE(
     await deleteEvent(id);
     // Soft delete: the event, its form and participant history survive.
     await audit.commit(session, AUDIT_ACTIONS.eventDelete);
+    // Invalida la caché pública: el sitio público muestra los eventos (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.events);
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/events/[id] DELETE", e);

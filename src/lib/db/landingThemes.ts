@@ -137,12 +137,23 @@ export async function deleteLandingTheme(id: string): Promise<void> {
   await prisma.landingTheme.delete({ where: { id } });
 }
 
+/**
+ * Los temas habilitados, sin resolver cuál aplica hoy. Separado de `getActiveLandingTheme` para
+ * que la landing pueda cachear esta lectura (no depende del reloj) y resolver el tema del día al
+ * renderizar (milestone 25, P2).
+ */
+export async function listEnabledLandingThemes(): Promise<
+  LandingThemeRecord[]
+> {
+  const themes = await prisma.landingTheme.findMany({
+    where: { isEnabled: true },
+  });
+  return themes.map(toRecord);
+}
+
 /** The theme active right now (public, auth-free), or `null` if none applies. */
 export async function getActiveLandingTheme(
   nowMs: number,
 ): Promise<LandingThemeRecord | null> {
-  const themes = await prisma.landingTheme.findMany({
-    where: { isEnabled: true },
-  });
-  return resolveActiveTheme(themes.map(toRecord), nowMs);
+  return resolveActiveTheme(await listEnabledLandingThemes(), nowMs);
 }

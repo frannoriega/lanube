@@ -1,3 +1,4 @@
+import { PUBLIC_TAGS, revalidatePublic } from "@/lib/cache/public-reads";
 import { requirePermission } from "@/lib/api-auth";
 import {
   apiCatch,
@@ -34,6 +35,8 @@ export async function PUT(
     const audit = await beginAudit("Space", id);
     const space = await updateSpace(id, parsed.data);
     await audit.commit(session, AUDIT_ACTIONS.spaceUpdate);
+    // Invalida la caché pública: el sitio público muestra los espacios, y las tarjetas de eventos su nombre (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.spaces);
     return apiSuccess(space);
   } catch (e) {
     if (
@@ -58,6 +61,8 @@ export async function DELETE(
     const audit = await beginAudit("Space", id);
     await deleteSpace(id);
     await audit.commit(session, AUDIT_ACTIONS.spaceDelete);
+    // Invalida la caché pública: el sitio público muestra los espacios, y las tarjetas de eventos su nombre (milestone 25, P2).
+    revalidatePublic(PUBLIC_TAGS.spaces);
     return apiSuccess({ ok: true });
   } catch (e) {
     return apiCatch("admin/spaces/[id] DELETE", e);

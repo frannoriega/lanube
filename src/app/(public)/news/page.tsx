@@ -8,7 +8,7 @@ import {
 } from "@/components/templates/landing/news/news-card";
 import { NewsFilters } from "@/components/templates/landing/news/news-filters";
 import { startOfDateKeyMs, endOfDateKeyMs } from "@/lib/admin/admin-timezone";
-import { searchPublishedNews } from "@/lib/db/news";
+import { getPublicNewsSearch } from "@/lib/cache/public-reads";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -39,7 +39,7 @@ export default async function NoticiasIndexPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const { items, total } = await searchPublishedNews({
+  const { items, total } = await getPublicNewsSearch({
     query: sp.q,
     fromMs: sp.from ? startOfDateKeyMs(sp.from) : undefined,
     toMs: sp.to ? endOfDateKeyMs(sp.to) : undefined,

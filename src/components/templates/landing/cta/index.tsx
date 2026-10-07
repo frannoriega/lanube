@@ -1,7 +1,7 @@
 import Container from "@/components/atoms/container";
 import { Reveal } from "@/components/molecules/reveal";
 import { Button } from "@/components/ui/button";
-import { getSiteConfig } from "@/lib/db/siteConfig";
+import { getPublicSiteConfig } from "@/lib/cache/public-reads";
 import { ArrowRight, Mail } from "lucide-react";
 import Link from "next/link";
 
@@ -14,7 +14,7 @@ import Link from "next/link";
  * el mismo que muestra el footer.
  */
 export default async function ClosingCta() {
-  const { email } = await getSiteConfig();
+  const { email } = await getPublicSiteConfig();
 
   return (
     <section aria-labelledby="sumate" className="w-full">
