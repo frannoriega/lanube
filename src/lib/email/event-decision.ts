@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@/lib/logger";
 import { areEventEmailsSuspended } from "@/lib/maintenance/server";
+import { editLinkFootnoteHtml, freshEditLinkUrl } from "@/lib/email/edit-link";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -21,9 +22,10 @@ const LOGO_URL =
   "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
 export interface DecisionRecipient {
+  /** Id de la inscripción: la aprobación emite con él un enlace de edición nuevo. */
+  id: string;
   email: string;
   displayEmail: string | null;
-  editToken: string;
 }
 
 /** Escapes text interpolated into the email HTML (admin-authored reason). */
@@ -51,6 +53,7 @@ function approvedHtml(eventName: string, editLink: string): string {
           Ver mi inscripción
         </a>
       </div>
+      ${editLinkFootnoteHtml()}
     </div>
   </div>`;
 }
@@ -99,11 +102,6 @@ export async function notifyParticipantsDecision(
     return { sent: 0, failed: 0 };
   }
 
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    process.env.VERCEL_URL ??
-    "http://localhost:3000";
-
   const subject =
     decision === "approve"
       ? `Inscripción aprobada: ${eventName} - La Nube`
@@ -113,12 +111,13 @@ export async function notifyParticipantsDecision(
   let failed = 0;
   for (const r of recipients) {
     const to = r.displayEmail ?? r.email;
-    const editLink = `${baseUrl}/forms/response/${encodeURIComponent(r.editToken)}`;
-    const html =
-      decision === "approve"
-        ? approvedHtml(eventName, editLink)
-        : rejectedHtml(eventName, reason);
     try {
+      // Solo la aprobación lleva enlace, y por eso solo ella emite un token nuevo (el rechazo no
+      // tiene nada que editar). Dentro del try: si falla la base, cuenta como envío fallido.
+      const html =
+        decision === "approve"
+          ? approvedHtml(eventName, await freshEditLinkUrl(r.id))
+          : rejectedHtml(eventName, reason);
       const info = await transporter.sendMail({
         from: FROM_EMAIL,
         to: [to],

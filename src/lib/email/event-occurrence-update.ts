@@ -4,6 +4,7 @@ import { SPOT_HOLDING_STATUSES } from "@/lib/constants/participants";
 import { listEventParticipants } from "@/lib/db/participants";
 import { logger } from "@/lib/logger";
 import { areEventEmailsSuspended } from "@/lib/maintenance/server";
+import { editLinkFootnoteHtml, freshEditLinkUrl } from "@/lib/email/edit-link";
 import { notify } from "@/lib/notifications/dispatch";
 import type { EventSessionChangedData } from "@/lib/notifications/types";
 import { ParticipantStatus } from "@/types/prisma";
@@ -96,11 +97,6 @@ export async function notifyEventParticipantsBatch(
   const participants = (await listEventParticipants(eventId)).filter((p) =>
     SPOT_HOLDING_STATUSES.includes(p.status as ParticipantStatus),
   );
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    process.env.VERCEL_URL ??
-    "http://localhost:3000";
-
   // Chronological, so the list reads in calendar order regardless of edit order.
   const changes = [...payload.changes].sort(
     (a, b) => a.originalStartMs - b.originalStartMs,
@@ -148,8 +144,10 @@ export async function notifyEventParticipantsBatch(
   let failed = 0;
   for (const p of emailsSuspended ? [] : participants) {
     const to = p.displayEmail ?? p.email;
-    const editLink = `${baseUrl}/forms/response/${encodeURIComponent(p.editToken)}`;
     try {
+      // Cada correo emite su propio enlace (el token se guarda hasheado, no se puede reusar el de
+      // la inscripción); los anteriores siguen valiendo. Ver `email/edit-link.ts`.
+      const editLink = await freshEditLinkUrl(p.id);
       const info = await transporter.sendMail({
         from: FROM_EMAIL,
         to: [to],
@@ -169,6 +167,7 @@ export async function notifyEventParticipantsBatch(
               Ver mi inscripción
             </a>
           </div>
+          ${editLinkFootnoteHtml()}
         </div>
       </div>`,
       });

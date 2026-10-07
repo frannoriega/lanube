@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@/lib/logger";
 import { areEventEmailsSuspended } from "@/lib/maintenance/server";
+import { editLinkFootnoteHtml, editLinkUrl } from "@/lib/email/edit-link";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -30,11 +31,7 @@ export async function sendEventRegistrationEmail(
     logger.info("event registration email skipped (maintenance)");
     return { success: true };
   }
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    process.env.VERCEL_URL ??
-    "http://localhost:3000";
-  const editLink = `${baseUrl}/forms/response/${encodeURIComponent(editToken)}`;
+  const editLink = editLinkUrl(editToken);
   const logoUrl =
     "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
@@ -81,6 +78,7 @@ export async function sendEventRegistrationEmail(
             Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
             <a href="${editLink}" style="color: #4E87C2;">${editLink}</a>
           </p>
+          ${editLinkFootnoteHtml()}
         </div>
 
         <div style="text-align: center; color: #999; font-size: 12px;">

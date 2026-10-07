@@ -2,17 +2,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Capture every sendMail call so we can assert the batch fans out to ONE email per participant.
 // vi.hoisted so the fns exist when the (hoisted) vi.mock factories run.
-const { sendMail, listEventParticipants, notify } = vi.hoisted(() => ({
-  sendMail: vi.fn(),
-  listEventParticipants: vi.fn(),
-  notify: vi.fn(),
-}));
+const { sendMail, listEventParticipants, issueEditToken, notify } = vi.hoisted(
+  () => ({
+    sendMail: vi.fn(),
+    listEventParticipants: vi.fn(),
+    issueEditToken: vi.fn(),
+    notify: vi.fn(),
+  }),
+);
 // El módulo es `server-only` (no un Server Action): ver `server-only.test.ts`.
 vi.mock("server-only", () => ({}));
 vi.mock("nodemailer", () => ({
   default: { createTransport: () => ({ sendMail }) },
 }));
-vi.mock("@/lib/db/participants", () => ({ listEventParticipants }));
+vi.mock("@/lib/db/participants", () => ({
+  listEventParticipants,
+  issueEditToken,
+}));
 // Mantenimiento (milestone 22): por defecto los correos de eventos están habilitados.
 const { areEventEmailsSuspended } = vi.hoisted(() => ({
   areEventEmailsSuspended: vi.fn(),
@@ -32,6 +38,10 @@ beforeEach(() => {
   sendMail.mockReset();
   sendMail.mockResolvedValue({ rejected: [] });
   listEventParticipants.mockReset();
+  issueEditToken.mockReset();
+  // Cada llamada emite un token distinto, como `generateEditToken()`.
+  let n = 0;
+  issueEditToken.mockImplementation(async (id: string) => `tok-${id}-${++n}`);
   notify.mockReset();
   notify.mockResolvedValue(undefined);
   areEventEmailsSuspended.mockReset();
@@ -44,19 +54,19 @@ describe("notifyEventParticipantsBatch", () => {
       {
         email: "a@x.com",
         displayEmail: "a@x.com",
-        editToken: "t1",
+        id: "p1",
         status: "APPROVED",
       },
       {
         email: "b@x.com",
         displayEmail: "b@x.com",
-        editToken: "t2",
+        id: "p2",
         status: "PENDING",
       },
       {
         email: "c@x.com",
         displayEmail: "c@x.com",
-        editToken: "t3",
+        id: "p3",
         status: "CANCELLED",
       },
     ]);
@@ -90,6 +100,15 @@ describe("notifyEventParticipantsBatch", () => {
     expect(html).toContain("Vacaciones del docente");
     // Both sessions listed in one email.
     expect((html.match(/<li/g) ?? []).length).toBe(2);
+
+    // Milestone 25, S5: cada correo lleva un enlace recién emitido para SU inscripción (el token
+    // se guarda hasheado, no se puede reusar el de la inscripción). La cancelada no recibe nada.
+    expect(issueEditToken.mock.calls.map((c) => c[0])).toEqual(["p1", "p2"]);
+    expect(html).toContain("/forms/response/tok-p1-1");
+    expect(sendMail.mock.calls[1][0].html).toContain(
+      "/forms/response/tok-p2-2",
+    );
+    expect(html).toContain("/forms/response/request-link");
   });
 
   it("no-ops when there are no changes", async () => {
@@ -108,7 +127,7 @@ describe("notifyEventParticipantsBatch", () => {
       {
         email: "a@x.com",
         displayEmail: "a@x.com",
-        editToken: "t1",
+        id: "p1",
         status: "APPROVED",
         userId: null,
       },
@@ -116,7 +135,7 @@ describe("notifyEventParticipantsBatch", () => {
       {
         email: "b@x.com",
         displayEmail: "b@x.com",
-        editToken: "t2",
+        id: "p2",
         status: "APPROVED",
         userId: "ru_b",
       },
@@ -152,7 +171,7 @@ describe("notifyEventParticipantsBatch", () => {
       {
         email: "a@x.com",
         displayEmail: "a@x.com",
-        editToken: "t1",
+        id: "p1",
         status: "APPROVED",
         userId: "u1",
       },
@@ -170,6 +189,8 @@ describe("notifyEventParticipantsBatch", () => {
     });
 
     expect(sendMail).not.toHaveBeenCalled();
+    // Sin correo no se emite enlace: no se siembran tokens que no recibe nadie.
+    expect(issueEditToken).not.toHaveBeenCalled();
     expect(res).toEqual({ sent: 0, failed: 0 });
     expect(notify).toHaveBeenCalledTimes(1);
   });
