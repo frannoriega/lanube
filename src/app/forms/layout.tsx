@@ -1,12 +1,18 @@
-import Logo from "@/components/atoms/logos/lanube";
-import { MaintenanceBanner } from "@/components/organisms/maintenance/maintenance-banner";
+import PublicLayout from "@/components/organisms/layouts/public-layout";
+import { SessionProvider } from "@/components/providers/session";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
-import Link from "next/link";
 
 /**
- * Focused, branded shell for the public registration pages. Intentionally chrome-light
- * (logo only, no nav) so a participant who follows the link has a single job: register.
+ * Páginas públicas de inscripción. Usan el mismo encabezado y pie que el sitio público
+ * (`PublicLayout`, igual que `app/(public)/layout.tsx`): quien llega desde un link compartido
+ * ve que está en el sitio de La Nube y tiene a mano el resto del sitio, como en una noticia.
+ * Antes era una cáscara mínima (solo el logo) con todo en una tarjeta de 672 px, que en
+ * escritorio se veía como la versión de teléfono.
+ *
+ * No está dentro de `(public)` a propósito: estas páginas leen la base en cada pedido
+ * (cupos, estado del enlace) y `(public)` es estático/ISR (§19 de CLAUDE.md). El ancho de cada
+ * página lo deciden `EventFormLayout` / `FormMessageCard` (`organisms/forms/form-page.tsx`).
  */
 export default function FormsLayout({
   children,
@@ -20,29 +26,11 @@ export default function FormsLayout({
       enableSystem
       storageKey="la-nube-theme"
     >
-      <div className="flex min-h-[100svh] flex-col bg-background bg-gradient-to-b from-la-nube-accent/40 to-transparent dark:from-la-nube-selected/10">
-        <header className="mx-auto flex w-full max-w-2xl items-center px-4 py-6">
-          <Link href="/" aria-label="Ir al inicio de La Nube">
-            <Logo size={110} />
-          </Link>
-        </header>
-
-        <main
-          id="main-content"
-          className="mx-auto w-full max-w-2xl flex-1 px-4 pb-16"
-        >
-          <MaintenanceBanner className="mb-4" />
-          <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
-            {children}
-          </div>
-        </main>
-
-        <footer className="mx-auto w-full max-w-2xl px-4 pb-8">
-          <p className="font-mono text-xs text-muted-foreground">
-            ~/ la nube · polo tecnológico
-          </p>
-        </footer>
-      </div>
+      <SessionProvider>
+        <PublicLayout>
+          <div className="px-4 py-10 sm:px-8 sm:py-12">{children}</div>
+        </PublicLayout>
+      </SessionProvider>
       <Toaster />
     </ThemeProvider>
   );

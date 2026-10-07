@@ -172,8 +172,11 @@ export default function HeroSection({
                     {/* La palabra que se escribe sola va en una celda tan ancha como la palabra
                         más larga (todas apiladas, invisibles, en la misma celda de la grilla).
                         Así el renglón corta siempre en el mismo lugar: antes, cuando una palabra
-                        larga no entraba, saltaba de renglón y empujaba todo el bloque. */}
-                    <span className="inline-grid justify-items-center align-bottom lg:justify-items-start">
+                        larga no entraba, saltaba de renglón y empujaba todo el bloque.
+                        La palabra va SIEMPRE pegada al inicio de la celda, también en teléfono
+                        (donde el bloque está centrado): centrada dentro de la celda, mientras se
+                        escribía quedaba flotando lejos del «de» y crecía hacia los dos lados. */}
+                    <span className="inline-grid justify-items-start align-bottom">
                       {keywords.map((k) => (
                         <span
                           key={k}

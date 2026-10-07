@@ -1,3 +1,4 @@
+import { FormMessageCard } from "@/components/organisms/forms/form-page";
 import { PublicForm } from "@/components/organisms/forms/public-form";
 import { Button } from "@/components/ui/button";
 import { getParticipantByToken } from "@/lib/db/participants";
@@ -14,7 +15,7 @@ function LinkProblem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 py-6 text-center">
+    <FormMessageCard className="flex flex-col items-center gap-4 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <Link2Off className="h-7 w-7" aria-hidden />
       </span>
@@ -22,7 +23,7 @@ function LinkProblem({
       <div className="flex max-w-prose flex-col items-center gap-4 text-muted-foreground">
         {children}
       </div>
-    </div>
+    </FormMessageCard>
   );
 }
 
@@ -64,18 +65,18 @@ export default async function ResponsePage({
   // Terminal states can't be edited — show a status message instead of the form.
   if (participant.status === ParticipantStatus.CANCELLED) {
     return (
-      <div className="text-center space-y-2">
+      <FormMessageCard className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">{participant.eventName}</h1>
         <p className="text-muted-foreground">
           Tu inscripción a este evento fue cancelada.
         </p>
-      </div>
+      </FormMessageCard>
     );
   }
 
   if (participant.status === ParticipantStatus.REJECTED) {
     return (
-      <div className="text-center space-y-2">
+      <FormMessageCard className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">{participant.eventName}</h1>
         <p className="text-muted-foreground">
           Lamentablemente no pudimos confirmar tu lugar en este evento.
@@ -85,29 +86,30 @@ export default async function ResponsePage({
             <strong>Motivo:</strong> {participant.decisionReason}
           </p>
         )}
-      </div>
+      </FormMessageCard>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {participant.status === ParticipantStatus.PENDING && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
-          Tu inscripción está <strong>pendiente de aprobación</strong>.
-          Inscribirte no garantiza tu lugar; te avisaremos por email cuando sea
-          revisada.
-        </div>
-      )}
-      <PublicForm
-        mode="edit"
-        token={token}
-        eventName={participant.eventName}
-        eventDescription={participant.eventDescription}
-        eventImageUrl={participant.eventImageUrl}
-        schema={participant.schema}
-        initialEmail={participant.displayEmail ?? ""}
-        initialAnswers={participant.answers}
-      />
-    </div>
+    <PublicForm
+      // El aviso de «pendiente» va dentro de la tarjeta del formulario, arriba de los campos.
+      notice={
+        participant.status === ParticipantStatus.PENDING ? (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+            Tu inscripción está <strong>pendiente de aprobación</strong>.
+            Inscribirte no garantiza tu lugar; te avisaremos por email cuando
+            sea revisada.
+          </div>
+        ) : undefined
+      }
+      mode="edit"
+      token={token}
+      eventName={participant.eventName}
+      eventDescription={participant.eventDescription}
+      eventImageUrl={participant.eventImageUrl}
+      schema={participant.schema}
+      initialEmail={participant.displayEmail ?? ""}
+      initialAnswers={participant.answers}
+    />
   );
 }
