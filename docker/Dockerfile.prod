@@ -1,0 +1,72 @@
+# Imagen de producción (VPS, milestone 26). Dos targets que comparten el tag (el SHA del commit):
+#
+#   runner    la app: `.next/standalone` + estáticos. Lo que corre todo el tiempo.
+#   migrator  `prisma migrate deploy` + los archivos de operación (/ops: compose, Caddyfile,
+#             scripts de deploy y units de systemd). Corre una vez por deploy y es de donde el
+#             VPS saca la versión de la infraestructura que corresponde a ese SHA.
+#
+# El Dockerfile NO compila: empaqueta lo que ya compiló CI (`NEXT_OUTPUT=standalone npm run
+# build:next`), porque el build prerenderiza leyendo una base y la del job de CI no es alcanzable
+# desde un `docker build` aislado. Por eso `.dockerignore` deja pasar `.next/standalone` y
+# `.next/static`. Para armarlo a mano: ver deploy/README.md.
+#
+#   docker build -f docker/Dockerfile.prod --target runner   -t lanube:<sha> .
+#   docker build -f docker/Dockerfile.prod --target migrator -t lanube-migrator:<sha> .
+
+ARG NODE_VERSION=24
+
+# ---------------------------------------------------------------- runner
+FROM node:${NODE_VERSION}-bookworm-slim AS runner
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+WORKDIR /app
+
+# `.next/standalone` ya trae su propio node_modules (lo que el trace encontró) y server.js. La
+# caché de ISR se escribe en .next/ en runtime: tiene que ser del usuario que corre.
+COPY --chown=node:node .next/standalone ./
+COPY --chown=node:node .next/static ./.next/static
+COPY --chown=node:node public ./public
+RUN mkdir -p /app/.next/cache && chown -R node:node /app/.next
+
+USER node
+EXPOSE 3000
+# /api/maintenance responde 200 solo si la app Y la base responden (lee MaintenanceWindow).
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/api/maintenance').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "server.js"]
+
+# -------------------------------------------------------------- migrator
+FROM node:${NODE_VERSION}-bookworm-slim AS migrator
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+WORKDIR /migrator
+
+# Solo `prisma` y `dotenv` (lo que importa prisma.config.ts), con la versión EXACTA del lockfile:
+# un `npm ci` completo traería Next, React, etc. (~1 GB) para correr un comando.
+COPY package.json package-lock.json /tmp/
+RUN node -e '\
+  const lock = require("/tmp/package-lock.json").packages;\
+  const v = (n) => lock["node_modules/" + n].version;\
+  require("fs").writeFileSync("package.json", JSON.stringify({\
+    private: true,\
+    dependencies: { prisma: v("prisma"), dotenv: v("dotenv") }\
+  }));' \
+  && npm install --omit=dev --no-audit --no-fund \
+  && npm cache clean --force \
+  && rm /tmp/package.json /tmp/package-lock.json
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+
+# Archivos de operación de esta versión (el bootstrap del VPS los extrae con `docker cp`).
+COPY docker/docker-compose.prod.yml /ops/compose.yml
+COPY docker/Caddyfile /ops/Caddyfile
+COPY deploy /ops/deploy
+
+USER node
+# Si algún día prisma.config.ts pide DATABASE_URL vacío, falla acá con un mensaje claro.
+CMD ["npx", "prisma", "migrate", "deploy"]

@@ -1,0 +1,23 @@
+# Proxy de producción (milestone 26). El dominio sale de APP_DOMAIN en /opt/lanube/.env.
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy app:3000 {
+		# ⚠️ CRÍTICO: la app confía en estos dos headers para el rate limit (getClientIp,
+		# src/lib/request-ip.ts). Hay que PISARLOS con la IP real del cliente; si el proxy deja
+		# pasar los que mande el cliente, todo rate limit (ingreso, registro, reseteo, subidas)
+		# queda evadible. `header_up Name value` reemplaza, no agrega.
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+
+		# Durante un redeploy el contenedor se recrea (~10-20 s): Caddy retiene los pedidos y
+		# reintenta en vez de devolver 502 de inmediato.
+		lb_try_duration 30s
+		lb_try_interval 500ms
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

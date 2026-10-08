@@ -1,0 +1,115 @@
+# Producción en el VPS (milestone 26). NO es el compose de desarrollo (docker-compose.yml).
+#
+# Vive en /opt/lanube/compose.yml (lo copia deploy/run.sh desde el release) y se usa siempre con
+#   docker compose -p lanube -f /opt/lanube/compose.yml --env-file /opt/lanube/.env <comando>
+# Lo normal es no tocarlo a mano: lo maneja `lanube-deploy`.
+#
+# Variables (todas en /opt/lanube/.env; ver env.example, sección «Producción en VPS»):
+#   APP_TAG            tag de las imágenes a correr (lo fija deploy.sh)
+#   APP_IMAGE          imagen de la app          (default ghcr.io/frannoriega/lanube)
+#   MIGRATOR_IMAGE     imagen del migrador       (default ghcr.io/frannoriega/lanube-migrator)
+#   APP_DOMAIN         dominio público (Caddy lo usa para el certificado)
+#   POSTGRES_PASSWORD  contraseña de la base (sin caracteres que haya que escapar en una URL:
+#                      generarla con `openssl rand -hex 24`)
+#   LANUBE_DATA        raíz de los datos (default /srv/lanube): pgdata, backups
+#   LANUBE_ROOT        raíz de operación (default /opt/lanube): Caddyfile
+#   APP_LOCAL_PORT     puerto del loopback para cron/smoke (default 3000)
+
+name: lanube
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: lanube
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?definir POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: lanube
+    # Ajustes para 4 GB compartidos con la app (ver milestone 26 §5.1).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=50
+    volumes:
+      - ${LANUBE_DATA:-/srv/lanube}/pgdata:/var/lib/postgresql/data
+    mem_limit: 1g
+    # Si el kernel se queda sin memoria, que mate a la app antes que a la base.
+    oom_score_adj: -500
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lanube -d lanube"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    # Sin `ports`: la base solo es alcanzable desde la red interna del compose.
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/frannoriega/lanube}:${APP_TAG:?APP_TAG lo fija deploy.sh}
+    restart: unless-stopped
+    logging: *logging
+    init: true
+    stop_grace_period: 30s
+    env_file: ${LANUBE_ROOT:-/opt/lanube}/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://lanube:${POSTGRES_PASSWORD}@postgres:5432/lanube?schema=public
+      # NextAuth v5 detrás de un proxy propio rechaza el host sin esto (UntrustedHost).
+      AUTH_TRUST_HOST: "true"
+      # El portero de mantenimiento consulta a la propia app en un origen fijo, no al Host.
+      MAINTENANCE_PROBE_ORIGIN: http://127.0.0.1:3000
+      NODE_OPTIONS: --max-old-space-size=1024
+    ports:
+      # Solo loopback: lo usan los timers de cron y el smoke test; el público entra por Caddy.
+      - "127.0.0.1:${APP_LOCAL_PORT:-3000}:3000"
+    mem_limit: 1536m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?definir APP_DOMAIN en .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ${LANUBE_ROOT:-/opt/lanube}/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  # Migraciones: `docker compose run --rm migrate`. Nunca corre el seed (crea usuarios de
+  # ejemplo con una contraseña conocida): en producción solo `migrate deploy`.
+  migrate:
+    image: ${MIGRATOR_IMAGE:-ghcr.io/frannoriega/lanube-migrator}:${APP_TAG:?APP_TAG lo fija deploy.sh}
+    profiles: ["tools"]
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://lanube:${POSTGRES_PASSWORD}@postgres:5432/lanube?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  # Certificados y estado de Caddy: si se pierde, vuelve a pedirlos (con límites de Let's Encrypt).
+  caddy_data:
+  caddy_config:

@@ -1,4 +1,16 @@
-node_modules
-.next
+# Contexto de build de docker/Dockerfile.prod (milestone 26).
+# El Dockerfile empaqueta lo ya compilado en CI: de .next solo entran standalone y static.
 .git
-.env*.local
+node_modules
+.env*
+.next/*
+!.next/standalone
+!.next/static
+public/uploads
+.private-uploads
+.mobile-shots
+graphify-out
+docs
+logos*
+coverage
+*.tsbuildinfo

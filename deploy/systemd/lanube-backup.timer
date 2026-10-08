@@ -1,0 +1,9 @@
+[Unit]
+Description=La Nube — backup diario (06:30 UTC = 03:30 en Argentina)
+
+[Timer]
+OnCalendar=*-*-* 06:30:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

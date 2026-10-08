@@ -258,6 +258,10 @@ Con el proyecto enlazado en Vercel (Git), cada push dispara el build en la nube 
 npx vercel --prod
 ```
 
+## Deploy en un VPS
+
+El destino de producción previsto es un VPS con Ubuntu Server 26.04 (Docker Compose + Caddy + PostgreSQL 17); Vercel sigue funcionando mientras los dos destinos convivan. Cada push firmado a `main` construye las imágenes en GitHub Actions y las despliega por SSH, con backup previo, migraciones, verificación y vuelta atrás automática. Guía operativa: [`deploy/README.md`](deploy/README.md). Diseño y decisiones: [`docs/milestones/milestones-26-vps-deployment.md`](docs/milestones/milestones-26-vps-deployment.md).
+
 ## Estructura del Proyecto
 
 ```

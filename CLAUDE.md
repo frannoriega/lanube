@@ -356,10 +356,14 @@ src/
 - Server (`identity-server.ts`): applies Gmail dot-stripping deterministically, no MX
 - Same canonical email must be used for sign-in & registration (normalize on input)
 
-### 4. Cron Job (Vercel)
+### 4. Cron Job (Vercel / VPS)
 
 - `/api/cron/maintain-reservations` scheduled daily at 5am UTC
-- Vercel injects `Authorization: Bearer <CRON_SECRET>` automatically
+- Vercel injects `Authorization: Bearer <CRON_SECRET>` automatically. **On the VPS** (milestone 26) the
+  same three crons are systemd timers (`deploy/systemd/`, `Persistent=true`) that call
+  `deploy/cron-call.sh` → `curl` with that header against `127.0.0.1`; a heartbeat URL per cron
+  (`HEALTHCHECK_URL_*`) warns if one stops running. `GET /api/cron/revalidate-public` (same auth) is
+  called by every deploy to invalidate the public cache.
 - **Correctness requirement, not just cleanup**: if it misses, recurring reservations stop being materialized forward and conflict checks silently fail
 
 ### 5. Events & Custom Forms
@@ -1049,6 +1053,23 @@ spaces,themes,site-config,reservation-types}` by the same test. Without it the s
 - Env vars: DATABASE*URL, NEXTAUTH_SECRET, NEXTAUTH_URL, SMTP*\_, TURNSTILE\_\_, CRON_SECRET
 - Database must be reachable from Vercel runners (migrations run at build time)
 - Preview deployments can use separate DB or shared (must handle concurrent migrations)
+
+**VPS Deploy** (milestone 26 — Ubuntu Server 26.04, one box: app + Postgres 17 + Caddy). Operating guide:
+`deploy/README.md`; design/decisions: `docs/milestones/milestones-26-vps-deployment.md`.
+
+- Push to `main` (signed) → `.github/workflows/deploy.yml`: verify (lint, format, tests, **all migrations from
+  scratch**), `NEXT_OUTPUT=standalone npm run build:next` against an ephemeral Postgres, images to GHCR
+  (`docker/Dockerfile.prod`: `runner` + `migrator`, which also carries `/ops` = compose, Caddyfile and the
+  deploy scripts of that commit), then SSH → `lanube-deploy <sha>` → `deploy/run.sh`.
+- `run.sh`: pre-flight → pull → **backup** → `prisma migrate deploy` **with the old app still serving** →
+  recreate the app (Caddy holds requests) → smoke → invalidate + warm the public cache → record; any failure
+  after the migration **auto-rolls back to the previous image**. Rollback is image-only, so **a migration must
+  work with the previous release's code** (expand/contract; see §8.1 of the milestone doc). The seed NEVER runs
+  in production.
+- ⚠️ The proxy must **overwrite** `X-Real-IP` / `X-Forwarded-For` (`docker/Caddyfile` does; verified): `getClientIp()`
+  trusts them. `AUTH_TRUST_HOST=true` is needed behind a proxy. `STORAGE_ENV_ROOT=prod` replaces `VERCEL_ENV`
+  for storage keys. `NEXT_OUTPUT=standalone` is opt-in so Vercel builds and `npm start` are unaffected.
+- One app instance only: ISR / `unstable_cache` live on local disk and memory.
 
 **Docker Stack** (`docker/docker-compose.yml`):
 

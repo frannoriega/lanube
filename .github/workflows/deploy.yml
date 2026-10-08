@@ -1,0 +1,160 @@
+# CI/CD de producción en el VPS (milestone 26).
+#
+#   push a main  →  signed (solo commits verificados) → build (verifica, arma imágenes, GHCR)
+#                →  deploy (SSH al VPS: lanube-deploy <sha>)
+#
+# `main` exige PR y commits firmados (branch protection); el job `signed` lo vuelve a comprobar
+# para que un push sin firma nunca llegue a producción aunque la protección se relaje.
+#
+# Redeploy o vuelta atrás de una versión que ya está en GHCR: "Run workflow" con `redeploy_tag`
+# (saltea el build). Para volver a la anterior sin CI: `ssh deploy@host --rollback` o, en el
+# servidor, `/opt/lanube/bin/lanube-deploy --rollback`.
+#
+# Secretos del repo:      DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (llave de CI), DEPLOY_KNOWN_HOSTS
+# Variables del repo:     NEXT_PUBLIC_TURNSTILE_SITEKEY (la real; se hornea en el build)
+# Entorno `production`:   se le puede exigir aprobación manual antes del job `deploy`.
+name: Deploy (VPS)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      redeploy_tag:
+        description: "Tag (SHA) ya publicado en GHCR para volver a desplegar, sin build"
+        required: false
+        default: ""
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  APP_IMAGE: ghcr.io/frannoriega/lanube
+  MIGRATOR_IMAGE: ghcr.io/frannoriega/lanube-migrator
+
+jobs:
+  signed:
+    name: Commit firmado
+    if: ${{ inputs.redeploy_tag == '' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Exigir commit verificado por GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          verified="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.verification.verified')"
+          reason="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}" --jq '.commit.verification.reason')"
+          echo "verified=${verified} reason=${reason}"
+          [ "${verified}" = "true" ] || { echo "::error::El commit ${GITHUB_SHA} no está verificado; no se despliega."; exit 1; }
+
+  build:
+    name: Verificar y construir
+    needs: signed
+    if: ${{ inputs.redeploy_tag == '' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      # Base efímera del job: migraciones + seed + prerender del build. NO es la de producción:
+      # el deploy invalida y recalienta el caché público al terminar (ver /api/cron/revalidate-public).
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-only-secret-not-used-in-production
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      NEXT_PUBLIC_TURNSTILE_SITEKEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+      NEXT_OUTPUT: standalone
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Falta la sitekey de producción
+        run: |
+          [ -n "${NEXT_PUBLIC_TURNSTILE_SITEKEY}" ] || { echo "::error::Definí la variable del repo NEXT_PUBLIC_TURNSTILE_SITEKEY (se hornea en el build)."; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+
+      # Aplica TODAS las migraciones desde cero: una migración rota no llega al VPS.
+      - run: npx prisma migrate deploy
+      - run: npm run db:seed
+
+      # Typecheck incluido. Prerenderiza leyendo la base de arriba.
+      - run: npm run build:next
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Imagen de la app (runner)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.prod
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.APP_IMAGE }}:${{ github.sha }}
+
+      - name: Imagen del migrador (+ archivos de operación)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.prod
+          target: migrator
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.MIGRATOR_IMAGE }}:${{ github.sha }}
+
+  deploy:
+    name: Desplegar en el VPS
+    needs: build
+    # build puede estar salteado (redeploy de un tag existente), pero no fallado.
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - name: Llave SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${DEPLOY_SSH_KEY}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "${DEPLOY_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+
+      - name: Desplegar
+        env:
+          TAG: ${{ inputs.redeploy_tag || github.sha }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          # La llave del VPS está forzada a `lanube-deploy`: este argumento es lo único que ejecuta.
+          ssh -i ~/.ssh/id_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "${TAG}"

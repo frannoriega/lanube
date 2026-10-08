@@ -1,0 +1,12 @@
+[Unit]
+Description=La Nube — snapshot mensual de reportes (día 1, 06:00 UTC)
+
+[Timer]
+OnCalendar=*-*-01 06:00:00 UTC
+# Si el servidor estaba apagado a esa hora, corre al volver (maintain-reservations es un
+# requisito de correctitud: ver CLAUDE.md §4).
+Persistent=true
+Unit=lanube-cron@report-snapshot.service
+
+[Install]
+WantedBy=timers.target

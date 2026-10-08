@@ -97,8 +97,15 @@ export function safeSegment(segment: string): string {
  * Root folder isolating one deploy environment from another inside a single (shared) store.
  * Vercel Blob has one store per project across all environments, so prod and preview would
  * otherwise collide — this keeps them in separate top-level folders.
+ *
+ * Fuera de Vercel (un VPS) no existe `VERCEL_ENV` y todo caería en `dev`: las subidas nuevas irían
+ * a `dev/…` y el proxy de admin rechazaría los archivos de participantes ya guardados en `prod/…`
+ * (exige el prefijo de este entorno, milestone 25 S2). `STORAGE_ENV_ROOT` lo fija a mano
+ * (`prod`, en producción); gana sobre `VERCEL_ENV`. Solo acepta un segmento seguro.
  */
 export function storageEnvRoot(): string {
+  const override = process.env.STORAGE_ENV_ROOT?.trim();
+  if (override && /^[a-zA-Z0-9_-]+$/.test(override)) return override;
   switch (process.env.VERCEL_ENV) {
     case "production":
       return "prod";

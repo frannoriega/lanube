@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Launcher de despliegue (milestone 26). Se instala UNA vez en /opt/lanube/bin/lanube-deploy y casi
+# nunca cambia: lo único que hace es traer la infraestructura del tag pedido y ejecutar su
+# deploy/run.sh. Así el compose, el Caddyfile y la lógica de deploy van versionados con el código
+# de cada commit, y este archivo no se pisa a sí mismo mientras corre.
+#
+# Uso (en el VPS, o por SSH con la llave forzada `command="/opt/lanube/bin/lanube-deploy"`):
+#   lanube-deploy <tag>                  despliega ese tag (el SHA del commit)
+#   lanube-deploy <tag> --maintenance    igual, dentro de una ventana de solo lectura
+#   lanube-deploy --rollback             vuelve al tag anterior (sin migrar)
+#
+# Con la llave forzada, los argumentos llegan en $SSH_ORIGINAL_COMMAND y se validan acá: no hay
+# forma de ejecutar otra cosa que un deploy.
+set -Eeuo pipefail
+
+ROOT="${LANUBE_ROOT:-/opt/lanube}"
+MIGRATOR_IMAGE="${MIGRATOR_IMAGE:-ghcr.io/frannoriega/lanube-migrator}"
+
+if [ "$#" -eq 0 ] && [ -n "${SSH_ORIGINAL_COMMAND:-}" ]; then
+  # shellcheck disable=SC2086 # separar por espacios es justo lo que se quiere
+  set -- $SSH_ORIGINAL_COMMAND
+fi
+
+TAG=""
+MAINTENANCE=0
+ROLLBACK=0
+for arg in "$@"; do
+  case "$arg" in
+    --rollback) ROLLBACK=1 ;;
+    --maintenance) MAINTENANCE=1 ;;
+    -*) echo "lanube-deploy: opción desconocida: $arg" >&2; exit 64 ;;
+    *)
+      [ -z "$TAG" ] || { echo "lanube-deploy: más de un tag" >&2; exit 64; }
+      # Solo caracteres de un tag de imagen: nada que pueda salirse del comando.
+      [[ "$arg" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]] \
+        || { echo "lanube-deploy: tag inválido" >&2; exit 64; }
+      TAG="$arg"
+      ;;
+  esac
+done
+
+if [ "$ROLLBACK" = 1 ]; then
+  [ -z "$TAG" ] || { echo "lanube-deploy: --rollback no lleva tag" >&2; exit 64; }
+  [ -s "$ROOT/state/previous" ] || { echo "lanube-deploy: no hay versión anterior registrada" >&2; exit 1; }
+  TAG="$(cat "$ROOT/state/previous")"
+fi
+[ -n "$TAG" ] || { echo "uso: lanube-deploy <tag> [--maintenance] | --rollback" >&2; exit 64; }
+
+REL="$ROOT/releases/$TAG"
+if [ "${LANUBE_SKIP_PULL:-0}" != 1 ]; then
+  docker pull "$MIGRATOR_IMAGE:$TAG" >/dev/null
+fi
+
+# Extrae /ops de la imagen del migrador (compose, Caddyfile, deploy/…) a releases/<tag>/.
+mkdir -p "$REL"
+cid="$(docker create "$MIGRATOR_IMAGE:$TAG")"
+# (sin trap: el `exec` de abajo reemplaza al shell y un trap EXIT no correría)
+docker cp "$cid:/ops/." "$REL/" || { docker rm -f "$cid" >/dev/null 2>&1; exit 1; }
+docker rm -f "$cid" >/dev/null 2>&1 || true
+chmod +x "$REL"/deploy/*.sh
+
+EXTRA=()
+[ "$ROLLBACK" = 1 ] && EXTRA+=(--rollback)
+[ "$MAINTENANCE" = 1 ] && EXTRA+=(--maintenance)
+exec "$REL/deploy/run.sh" "$TAG" "${EXTRA[@]}"

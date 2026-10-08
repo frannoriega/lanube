@@ -1,0 +1,12 @@
+[Unit]
+Description=La Nube — sincronización mensual de feriados (día 1, 07:00 UTC)
+
+[Timer]
+OnCalendar=*-*-01 07:00:00 UTC
+# Si el servidor estaba apagado a esa hora, corre al volver (maintain-reservations es un
+# requisito de correctitud: ver CLAUDE.md §4).
+Persistent=true
+Unit=lanube-cron@sync-holidays.service
+
+[Install]
+WantedBy=timers.target

@@ -1,81 +1,81 @@
 {
   ".husky/_/applypatch-msg": {
-    "mtime": 1791204336.9547122,
+    "mtime": 1791492250.9490056,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/commit-msg": {
-    "mtime": 1791204336.9534955,
+    "mtime": 1791492250.9444072,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/h": {
-    "mtime": 1791204336.951121,
+    "mtime": 1791492250.9407933,
     "ast_hash": "15239a01c5554e56ff745570fb583a91",
     "semantic_hash": "15239a01c5554e56ff745570fb583a91"
   },
   ".husky/_/husky.sh": {
-    "mtime": 1791204336.9609718,
+    "mtime": 1791492250.9589584,
     "ast_hash": "13871d2ab13e8423790ecb2c01c78c18",
     "semantic_hash": "13871d2ab13e8423790ecb2c01c78c18"
   },
   ".husky/_/post-applypatch": {
-    "mtime": 1791204336.9565473,
+    "mtime": 1791492250.9520488,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-checkout": {
-    "mtime": 1791204336.9582076,
+    "mtime": 1791492250.957961,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-commit": {
-    "mtime": 1791204336.9539697,
+    "mtime": 1791492250.9459777,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-merge": {
-    "mtime": 1791204336.9589646,
+    "mtime": 1791492250.9581676,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-rewrite": {
-    "mtime": 1791204336.9575496,
+    "mtime": 1791492250.956144,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-applypatch": {
-    "mtime": 1791204336.9558377,
+    "mtime": 1791492250.950717,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-auto-gc": {
-    "mtime": 1791204336.9600813,
+    "mtime": 1791492250.9586716,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-commit": {
-    "mtime": 1791204336.9516463,
+    "mtime": 1791492250.9422696,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-merge-commit": {
-    "mtime": 1791204336.952025,
+    "mtime": 1791492250.9425318,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-push": {
-    "mtime": 1791204336.9594886,
+    "mtime": 1791492250.958437,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-rebase": {
-    "mtime": 1791204336.9569533,
+    "mtime": 1791492250.9543715,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/prepare-commit-msg": {
-    "mtime": 1791204336.952925,
+    "mtime": 1791492250.9441214,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
@@ -135,8 +135,8 @@
     "semantic_hash": "c10b187227a81f041b9145ae8937a3bb"
   },
   "next.config.ts": {
-    "mtime": 1791381321.101962,
-    "ast_hash": "8bab0c3794f3ce064e3b1f5d86331760",
+    "mtime": 1791491830.110732,
+    "ast_hash": "2b5f63195257861c31dac4d3ac06b428",
     "semantic_hash": ""
   },
   "package.json": {
@@ -400,7 +400,7 @@
     "semantic_hash": ""
   },
   "src/app/(public)/about/page.tsx": {
-    "mtime": 1791386708.9276202,
+    "mtime": 1791387548.4702735,
     "ast_hash": "b641e2e223e543c5a8e8f861221da1b7",
     "semantic_hash": ""
   },
@@ -820,7 +820,7 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/WeekCalendar.tsx": {
-    "mtime": 1791386771.8248405,
+    "mtime": 1791387548.4718616,
     "ast_hash": "e2c9762f614ea34784856381fc716432",
     "semantic_hash": ""
   },
@@ -850,7 +850,7 @@
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/index.tsx": {
-    "mtime": 1791386410.432699,
+    "mtime": 1791387548.4732687,
     "ast_hash": "f60deac241feb4397d2859c271d6b04a",
     "semantic_hash": ""
   },
@@ -940,7 +940,7 @@
     "semantic_hash": ""
   },
   "src/components/templates/user/calendar-template-client.tsx": {
-    "mtime": 1791386767.4925025,
+    "mtime": 1791387548.4752874,
     "ast_hash": "f57ea5cb37612a7fa3c3dc2b1dc186d7",
     "semantic_hash": ""
   },
@@ -1360,8 +1360,8 @@
     "semantic_hash": ""
   },
   "src/lib/storage/types.ts": {
-    "mtime": 1791381321.169321,
-    "ast_hash": "0b8dc5e6a12fad12c34e86a4e60d34b4",
+    "mtime": 1791491822.780324,
+    "ast_hash": "932491ebd7e21cd1ccab0e332f044e0b",
     "semantic_hash": ""
   },
   "src/lib/storage/vercel-blob.ts": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1791386482.756442,
-    "ast_hash": "46c9bceff97db323489707e91258825b",
+    "mtime": 1791493518.9739492,
+    "ast_hash": "4bdceb5a61119e0d8a7f540bf7e51d22",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -1620,8 +1620,8 @@
     "semantic_hash": "0b71fff1f619c7af28ba13eca88c6859"
   },
   "README.md": {
-    "mtime": 1791322204.092163,
-    "ast_hash": "f5d0868b5c847f9dc45847a043e72a84",
+    "mtime": 1791493518.9743042,
+    "ast_hash": "24c306382b365dcca819c7e8532c4e89",
     "semantic_hash": ""
   },
   "TRADUCCION_COMPLETA.md": {
@@ -2800,8 +2800,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1791381321.0396733,
-    "ast_hash": "9a5eafee245d5f493d0d18d6bae7a603",
+    "mtime": 1791493579.0658197,
+    "ast_hash": "3018eb9d29d7f5c4993c4c96e10e2013",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -3690,7 +3690,7 @@
     "semantic_hash": ""
   },
   "src/components/templates/landing/stats/index.tsx": {
-    "mtime": 1791386754.302931,
+    "mtime": 1791387548.474819,
     "ast_hash": "09d869d30224e2570fefe34543982976",
     "semantic_hash": ""
   },
@@ -4497,6 +4497,81 @@
   "src/components/organisms/forms/form-page.tsx": {
     "mtime": 1791386482.7557514,
     "ast_hash": "9dc8410a8f65018056253c3c6d6e5a2d",
+    "semantic_hash": ""
+  },
+  "deploy/backup.sh": {
+    "mtime": 1791491935.7486224,
+    "ast_hash": "7d05cbe7aa9e5bb4bd84fb1c5017dafb",
+    "semantic_hash": ""
+  },
+  "deploy/bootstrap/lanube-deploy": {
+    "mtime": 1791491935.7480466,
+    "ast_hash": "4fa2bb3e98b4f0d75852ff68afa8e53d",
+    "semantic_hash": ""
+  },
+  "deploy/cron-call.sh": {
+    "mtime": 1791491912.1589525,
+    "ast_hash": "152449c55c550c3db0cda9dbd1072143",
+    "semantic_hash": ""
+  },
+  "deploy/provision.sh": {
+    "mtime": 1791491973.0771453,
+    "ast_hash": "fd41e228be45c8361b20b0a9183fd090",
+    "semantic_hash": ""
+  },
+  "deploy/run.sh": {
+    "mtime": 1791492440.5142872,
+    "ast_hash": "bd680c50d808434bb5fef7c4b54c634d",
+    "semantic_hash": ""
+  },
+  "src/app/api/cron/revalidate-public/route.test.ts": {
+    "mtime": 1791491823.3404298,
+    "ast_hash": "9ab254e6800b58676f564a5483d409b1",
+    "semantic_hash": ""
+  },
+  "src/app/api/cron/revalidate-public/route.ts": {
+    "mtime": 1791491823.1694944,
+    "ast_hash": "5169cb33dab5b5bebed33d3ec5975dc9",
+    "semantic_hash": ""
+  },
+  "src/lib/storage/env-root.test.ts": {
+    "mtime": 1791491823.0091026,
+    "ast_hash": "b30af930a0428a25eb10d1c192e97450",
+    "semantic_hash": ""
+  },
+  ".github/workflows/deploy.yml": {
+    "mtime": 1791492003.2108583,
+    "ast_hash": "e32a6c742c54d12f167846f3a4c781df",
+    "semantic_hash": ""
+  },
+  "deploy/README.md": {
+    "mtime": 1791493503.2490745,
+    "ast_hash": "96e03911ef4ecc8e63b2c6d472ae2cfb",
+    "semantic_hash": ""
+  },
+  "docker/docker-compose.prod.yml": {
+    "mtime": 1791492440.5139658,
+    "ast_hash": "0eb4eeec052659b6b45597f8f1f9f782",
+    "semantic_hash": ""
+  },
+  "docs/milestones/milestones-26-vps-deployment.md": {
+    "mtime": 1791493579.0651038,
+    "ast_hash": "35c698ff6e8fbb727e6d907784c84aaf",
+    "semantic_hash": ""
+  },
+  "logos muni SVG/10.svg": {
+    "mtime": 1791381288.0,
+    "ast_hash": "8f1b14b589398a498b53b1d4b627b415",
+    "semantic_hash": ""
+  },
+  "logos muni SVG/11.svg": {
+    "mtime": 1791381288.0,
+    "ast_hash": "39b4d4d3eb365a7d9d9d5a22aa7b1247",
+    "semantic_hash": ""
+  },
+  "logos muni SVG/9.svg": {
+    "mtime": 1791381288.0,
+    "ast_hash": "0d9a7acd8426ad5879570cb1a5a81566",
     "semantic_hash": ""
   }
 }

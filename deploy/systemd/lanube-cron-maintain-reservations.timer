@@ -1,0 +1,12 @@
+[Unit]
+Description=La Nube — mantenimiento diario de reservas (05:00 UTC)
+
+[Timer]
+OnCalendar=*-*-* 05:00:00 UTC
+# Si el servidor estaba apagado a esa hora, corre al volver (maintain-reservations es un
+# requisito de correctitud: ver CLAUDE.md §4).
+Persistent=true
+Unit=lanube-cron@maintain-reservations.service
+
+[Install]
+WantedBy=timers.target
