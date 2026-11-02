@@ -60,6 +60,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        with:
+          # `network: host` en los builds es ignorado por el driver docker-container salvo que se
+          # habilite este permiso: sin él, 127.0.0.1 es el del build y no el del Postgres del servicio.
+          buildkitd-flags: --allow-insecure-entitlement network.host
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
@@ -75,6 +79,7 @@ jobs:
           push: true
           tags: ${{ env.IMAGE }}:${{ github.sha }}
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          allow: network.host
           network: host # el build prerenderiza páginas y necesita el Postgres del servicio
           build-args: |
             DATABASE_URL=${{ env.CI_DATABASE_URL }}
@@ -91,6 +96,7 @@ jobs:
           push: true
           tags: ${{ env.IMAGE }}:${{ github.sha }}-migrate
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          allow: network.host
           network: host
           build-args: |
             DATABASE_URL=${{ env.CI_DATABASE_URL }}
