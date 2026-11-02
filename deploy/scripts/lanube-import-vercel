@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Reemplaza TODA la base del VPS por una copia de la de Vercel y reescribe las URLs de Vercel Blob
+# a las locales. Se puede (y se debe) repetir: la prueba y el corte final usan este mismo comando.
+# ⚠️ Destructivo para la base del VPS (hace un backup antes). No toca la de origen: solo la lee.
+#
+#   export SRC_DATABASE_URL='postgresql://…?sslmode=require'     # la de Vercel (vercel env pull)
+#   sudo -E lanube-import-vercel                                   # -E conserva la variable
+#
+# Reescritura (sobre el volcado, así cubre columnas, markdown y JSON de respuestas por igual):
+#   https://<store>.public.blob.vercel-storage.com/<clave>   →  /uploads/<clave>
+#   https://<store>.private.blob.vercel-storage.com/<clave>  →  local-private:<clave>
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "Correr como root (sudo -E)"; exit 1; }
+: "${SRC_DATABASE_URL:?falta SRC_DATABASE_URL (la base de Vercel)}"
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+cd "$APP_DIR"
+TS="$(date -u +%Y%m%dT%H%M%SZ)"
+RAW="/var/backups/lanube/vercel-source-$TS.sql"
+umask 077
+export SRC_DATABASE_URL
+
+# Conteo exacto por tabla (solo lectura), para comparar origen y destino a ojo.
+COUNTS_SQL="SELECT table_name||' '||(xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', table_schema, table_name), false, true, '')))[1]::text FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY 1"
+
+echo "== Postgres arriba y copia de lo que hay ahora"
+docker compose up -d --wait postgres
+/usr/local/bin/lanube-backup db "pre-import-$TS"
+
+echo "== Volcado de la base de origen (solo lectura) → $RAW"
+docker compose exec -T -e SRC_DATABASE_URL postgres sh -c \
+  'pg_dump "$SRC_DATABASE_URL" --schema=public --no-owner --no-acl --format=plain' >"$RAW"
+[ -s "$RAW" ] || { echo "Volcado vacío"; exit 1; }
+
+echo "== Frenando la app y restaurando (una sola transacción: o queda todo o no cambia nada)"
+docker compose stop app
+{
+  echo 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+  # El volcado trae su propio `CREATE SCHEMA public;`: se lo quita para no chocar con el de arriba.
+  sed -E \
+    -e '/^CREATE SCHEMA public;$/d' \
+    -e 's#https://[a-z0-9-]+\.public\.blob\.vercel-storage\.com/#/uploads/#g' \
+    -e 's#https://[a-z0-9-]+\.private\.blob\.vercel-storage\.com/#local-private:#g' "$RAW"
+} | docker compose exec -T postgres sh -c \
+  'psql -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 --single-transaction -f -'
+
+echo "== Migraciones pendientes (si la base de Vercel iba atrás de esta imagen)"
+docker compose --profile tools run --rm migrate
+
+echo "== Comparación (filas aprox., origen vs. VPS)"
+echo "-- origen:"; echo "$COUNTS_SQL" | docker compose exec -T -e SRC_DATABASE_URL postgres sh -c 'psql "$SRC_DATABASE_URL" -At' >"$RAW.counts"
+echo "$COUNTS_SQL" | docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' >"$RAW.counts.vps"
+if diff -q "$RAW.counts" "$RAW.counts.vps" >/dev/null; then
+  echo "OK: las $(wc -l <"$RAW.counts") tablas tienen exactamente las mismas filas que el origen."
+else
+  echo "DIFERENCIAS (< origen, > VPS) — puede ser normal si el origen recibió escrituras durante el volcado:"
+  diff "$RAW.counts" "$RAW.counts.vps" || true
+fi
+rm -f "$RAW.counts" "$RAW.counts.vps"
+
+echo "== Levantando la app"
+docker compose up -d --wait --wait-timeout 120 app
+echo "Importado. Ahora:  sudo lanube-verify-uploads"
+echo "(El volcado crudo quedó en $RAW, 0600; contiene datos personales: borralo cuando ya no lo necesites.)"

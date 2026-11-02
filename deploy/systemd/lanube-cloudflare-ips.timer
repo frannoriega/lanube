@@ -1,0 +1,9 @@
+[Unit]
+Description=Sincronización semanal de IPs de Cloudflare
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

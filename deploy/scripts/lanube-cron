@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Reemplaza a Vercel Crons: llama a un endpoint /api/cron/<nombre> de la app local con el secreto.
+# Lo corren los timers de systemd (deploy/systemd). El secreto va por stdin de curl (-K -), no por
+# argumentos: así no aparece en `ps`.
+set -euo pipefail
+NAME="${1:?uso: lanube-cron <maintain-reservations|report-snapshot|sync-holidays>}"
+case "$NAME" in maintain-reservations|report-snapshot|sync-holidays) ;; *) echo "cron desconocido"; exit 2;; esac
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+SECRET="$(grep '^CRON_SECRET=' "$APP_DIR/lanube.env" | cut -d= -f2-)"
+[ -n "$SECRET" ] || { echo "CRON_SECRET vacío"; exit 1; }
+printf 'header = "Authorization: Bearer %s"\n' "$SECRET" \
+  | curl -fsS --max-time 280 --retry 3 --retry-delay 20 --retry-connrefused -K - \
+      "http://127.0.0.1:3000/api/cron/$NAME"
+echo

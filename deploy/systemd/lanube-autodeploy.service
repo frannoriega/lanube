@@ -1,0 +1,10 @@
+[Unit]
+Description=La Nube: deploy por pull (mira el tag production de GitHub; lo dispara el timer lun-jue 20:00 ART)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lanube-autodeploy
+# Un deploy puede llevar varios minutos (pull + migraciones + healthcheck).
+TimeoutStartSec=900

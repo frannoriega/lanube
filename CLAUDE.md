@@ -1012,6 +1012,36 @@ spaces,themes,site-config,reservation-types}` by the same test. Without it the s
   must be excluded from the global rule's `source` (today only the participant-file proxy;
   `src/lib/security-headers.test.ts`).
 
+### 20. Deploy en un VPS (`deploy/`)
+
+Runbook completo y decisiones: `deploy/README.md`. Migración desde Vercel (base + Blob → disco, prueba por
+túnel, corte y vuelta atrás): `deploy/MIGRATION.md`; `lanube-import-vercel` reescribe las URLs de Blob sobre el volcado.
+Caddy tiene un listener solo de loopback (`127.0.0.1:8080`) porque, sin `X-Forwarded-For`, `getClientIp()` es `null` y los
+endpoints con rate limit rechazan: nunca probar la app pegándole directo al puerto 3000.
+
+- **Caddy corre en el host, nunca en Docker**: Docker publica puertos salteándose UFW. La app solo
+  se enlaza a `127.0.0.1:3000`; Postgres no publica nada. No agregar `ports:` públicos a `compose.yml`.
+- **Detrás de Cloudflare**: UFW abre 443 solo a los rangos de Cloudflare (`update-cloudflare-ips`,
+  timer semanal), Caddy exige el certificado de cliente de Authenticated Origin Pulls **y** un header secreto
+  `X-Origin-Token` que Cloudflare agrega solo en nuestra zona (las IPs y ese certificado los comparten todos los clientes
+  de Cloudflare: no prueban que el pedido venga de NUESTRA zona). Eso es lo
+  que hace seguro `TRUST_CF_CONNECTING_IP=true` (§Rate limiting / `request-ip.ts`).
+- **Imagen** (`deploy/Dockerfile`): `runner` (Next standalone, activado con `NEXT_OUTPUT=standalone`)
+  y `migrator` (CLI de Prisma). El build necesita un Postgres migrado (prerender, §19): CI levanta uno
+  descartable. `NEXT_PUBLIC_*` se incrusta en el build (variable del repo en GitHub, no el `.env` del servidor).
+  El `.npmrc` (`legacy-peer-deps`) tiene que llegar a `npm ci`: `@tsparticles/react` declara un peer `workspace:^`.
+- **Archivos subidos en disco**: `STORAGE_PROVIDER=local` + `STORAGE_LOCAL_DIR` (volumen) +
+  `STORAGE_ENV_ROOT=prod` (no hay `VERCEL_ENV`). Los públicos los sirve `src/app/uploads/[...key]/route.ts`
+  (solo imágenes ráster por extensión, claves canónicas); los privados siguen yendo por el proxy de admin.
+- **Deploy por pull** (GitHub no entra al servidor por SSH: no hay clave de CI con acceso):
+  push a `main` → `.github/workflows/deploy.yml` construye y sube las imágenes a GHCR y **mueve el tag `production`** →
+  `lanube-autodeploy` (timer lun-jue 20:00 ART, **nunca viernes**: la guarda está en el script además del timer; solo salida HTTPS, ETag condicional) lo ve y corre `lanube-deploy`: backup, migrar,
+  recrear, healthcheck, rollback de imagen (las migraciones **no** se revierten: escribirlas compatibles hacia atrás).
+  Deploy manual a cualquier hora: `sudo lanube-autodeploy --now` o `sudo lanube-deploy deploy <sha>` (README «Deploy manual»).
+  SSH al servidor es solo del admin y, con `SSH_ALLOW_FROM`, solo desde los orígenes indicados.
+- **Crons**: los reemplazan timers de systemd (`deploy/systemd`, mismos horarios que `vercel.json`).
+  Si se agrega un cron a `vercel.json`, agregarlo también a `deploy/systemd` y a la lista de `lanube-cron`.
+
 ## Testing & Seeding
 
 **Vitest Configuration** (`vitest.config.ts`):

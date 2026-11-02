@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Despliega un commit: pull → backup → migraciones → recreate → healthcheck → rollback si falla.
+# Uso (root):  lanube-deploy deploy <sha40>      — también sirve para volver a un sha anterior.
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "Correr como root (sudo)"; exit 1; }
+[ "${1:-}" = "deploy" ] && [[ "${2:-}" =~ ^[0-9a-f]{40}$ ]] || { echo "uso: lanube-deploy deploy <sha40>"; exit 2; }
+TAG="$2"
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+cd "$APP_DIR"
+
+exec 9>/var/lock/lanube-deploy
+flock -n 9 || { echo "Ya hay un deploy en curso"; exit 1; }
+
+set_tag() { sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$1/" "$APP_DIR/.env"; }
+PREV="$(grep '^IMAGE_TAG=' "$APP_DIR/.env" | cut -d= -f2)"
+echo "== Deploy $TAG (anterior: $PREV)"
+
+docker pull "$IMAGE_REPO:$TAG"
+docker pull "$IMAGE_REPO:$TAG-migrate"
+
+# Copia de la base ANTES de tocar el esquema: una migración mala no se deshace con el rollback
+# de la imagen, se deshace restaurando esto (README, «Restaurar»).
+if docker compose ps --status running --services 2>/dev/null | grep -qx postgres; then
+  /usr/local/bin/lanube-backup db "predeploy-$TAG"
+fi
+docker compose up -d --wait postgres
+
+set_tag "$TAG"
+echo "== Migraciones"
+if ! docker compose --profile tools run --rm migrate; then
+  echo "!! Migración fallida: la app anterior sigue corriendo, sin cambios."
+  set_tag "$PREV"
+  exit 1
+fi
+
+echo "== Recreando la app"
+if ! docker compose up -d --wait --wait-timeout 120 app; then
+  echo "!! La app nueva no quedó sana."
+  if [ "$PREV" != "none" ]; then
+    echo "== Rollback a $PREV (las migraciones NO se revierten: ver README)"
+    set_tag "$PREV"
+    docker compose up -d --wait --wait-timeout 120 app || true
+  fi
+  exit 1
+fi
+
+docker image prune -af --filter "until=168h" >/dev/null
+echo "== Deploy OK: $TAG"

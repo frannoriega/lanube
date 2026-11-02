@@ -1,0 +1,59 @@
+# Stack de producción del VPS. Vive en /srv/lanube/compose.yml.
+# Variables de interpolación (IMAGE_REPO, IMAGE_TAG, DATA_DIR) salen de /srv/lanube/.env, que
+# escribe bootstrap y actualiza `lanube-deploy`. Las del contenedor, de /srv/lanube/lanube.env.
+#
+# Ningún servicio publica puertos al exterior: Docker saltea UFW al publicar, así que la app solo
+# se enlaza a 127.0.0.1 (Caddy, que corre en el host, le habla ahí) y Postgres no se publica.
+name: lanube
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    # Archivo propio: Postgres no tiene por qué ver NEXTAUTH_SECRET ni las credenciales SMTP.
+    env_file: postgres.env
+    volumes:
+      - ${DATA_DIR}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    shm_size: 256mb
+
+  app:
+    image: ${IMAGE_REPO}:${IMAGE_TAG}
+    restart: unless-stopped
+    env_file: lanube.env
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ${DATA_DIR}/uploads:/data/uploads
+      - next_cache:/app/.next/cache
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    # La app no necesita llegar a nada interno salvo Postgres; sale a internet por SMTP,
+    # Turnstile y Blob. No hay reglas de egreso por contenedor acá (ver README, "Qué falta").
+
+  # One-shot: `docker compose run --rm migrate`. Usa la imagen de migraciones del MISMO commit.
+  migrate:
+    image: ${IMAGE_REPO}:${IMAGE_TAG}-migrate
+    profiles: ["tools"]
+    env_file: lanube.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+volumes:
+  next_cache:

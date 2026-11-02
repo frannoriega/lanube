@@ -1,0 +1,29 @@
+# /etc/caddy/Caddyfile (bootstrap reemplaza __DOMAIN__). Caddy corre en el HOST, no en Docker,
+# para que UFW gobierne su puerto.
+#
+# Cloudflare → origen por 443 con certificado de origen de Cloudflare (sin Let's Encrypt, sin
+# puerto 80). Capas, de afuera hacia adentro: UFW (solo IPs de Cloudflare), certificado de cliente de
+# «Authenticated Origin Pulls» y, la que de verdad identifica a NUESTRA zona, el header secreto
+# X-Origin-Token (ver caddy/public.caddy). Las dos primeras las comparten todos los clientes de
+# Cloudflare, así que por sí solas no impiden que otra cuenta de Cloudflare apunte a esta IP.
+{
+	auto_https off
+	servers {
+		# /etc/caddy/cloudflare-proxies.conf lo genera deploy/scripts/update-cloudflare-ips.sh
+		import /etc/caddy/cloudflare-proxies.conf
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+(origin_tls) {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key {
+		client_auth {
+			mode require_and_verify
+			trust_pool file /etc/caddy/certs/cloudflare-origin-pull-ca.pem
+		}
+	}
+}
+
+# Los sitios viven en /etc/caddy/sites/*: el de pruebas (loopback) siempre; el público solo cuando
+# existen los certificados de origen (scripts/enable-public-site lo activa).
+import /etc/caddy/sites/*.caddy

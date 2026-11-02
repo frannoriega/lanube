@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Sincroniza con los rangos publicados por Cloudflare: (1) reglas de UFW para 443 solo desde ellos,
+# (2) el include de Caddy con los proxies de confianza. Idempotente; lo corre un timer semanal.
+# El origen NO acepta a nadie más: por eso la app puede confiar en `cf-connecting-ip`.
+set -euo pipefail
+TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
+curl -fsS https://www.cloudflare.com/ips-v4 >"$TMP"; echo >>"$TMP"
+curl -fsS https://www.cloudflare.com/ips-v6 >>"$TMP"
+mapfile -t RANGES < <(grep -E '^[0-9a-fA-F:.]+/[0-9]+$' "$TMP")
+# Si Cloudflare devolviera algo roto, mejor no tocar nada que cerrar el sitio.
+[ "${#RANGES[@]}" -ge 10 ] || { echo "lista de IPs sospechosa (${#RANGES[@]}), abortado"; exit 1; }
+
+# Cloudflare publica rangos /13 a /22 (v4) y /29 a /32 (v6). Una lista con un /0 o un /8 abriría
+# el 443 a medio internet: si aparece algo así, se prefiere no tocar nada.
+for r in "${RANGES[@]}"; do
+  bits="${r#*/}"
+  if [[ "$r" == *:* ]]; then [ "$bits" -ge 24 ] || { echo "rango v6 sospechoso: $r, abortado"; exit 1; }
+  else [ "$bits" -ge 12 ] || { echo "rango v4 sospechoso: $r, abortado"; exit 1; }; fi
+done
+
+# Primero se agregan las nuevas (ufw ignora las repetidas) y recién después se borran las viejas.
+for r in "${RANGES[@]}"; do
+  ufw allow from "$r" to any port 443 proto tcp comment 'cloudflare-443' >/dev/null
+done
+# Borrar las que ya no están (de atrás para adelante, para que no cambien los números).
+# `|| true`: con UFW inactivo (primera corrida) `status numbered` no lista reglas, grep no
+# encuentra nada y, con `pipefail`, eso abortaba el script entero.
+{ ufw status numbered | grep 'cloudflare-443' || true; } | while read -r line; do
+  num="$(sed -E 's/^\[ *([0-9]+)\].*/\1/' <<<"$line")"
+  src="$(grep -oE '[0-9a-fA-F:.]+/[0-9]+' <<<"$line" | grep -vE '^443/' | tail -n1)"
+  printf '%s %s\n' "$num" "$src"
+done | sort -rn | while read -r num src; do
+  printf '%s\n' "${RANGES[@]}" | grep -qxF "$src" || ufw --force delete "$num" >/dev/null
+done
+
+echo "trusted_proxies static ${RANGES[*]}" >/etc/caddy/cloudflare-proxies.conf
+# Caddy solo se recarga si ya hay certificados de origen: sin ellos la config no carga y un
+# fallo acá no debe tumbar este script (ni el bootstrap que lo llama).
+if systemctl is-active --quiet caddy; then
+  systemctl reload caddy || echo "AVISO: Caddy no pudo recargar; revisá: journalctl -xeu caddy"
+fi
+echo "Cloudflare IPs al día (${#RANGES[@]} rangos)"

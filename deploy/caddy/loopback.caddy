@@ -1,0 +1,9 @@
+# Listener SOLO de loopback para probar la app antes de apuntar el DNS (y para diagnosticar).
+# Se llega únicamente por túnel SSH del usuario admin (ver 02-lock-ssh.sh: PermitOpen a este
+# puerto):   ssh -L 8080:127.0.0.1:8080 admin@VPS   y abrir http://localhost:8080
+# Existe en vez de ir directo a la app (:3000) porque Caddy agrega X-Forwarded-For, y sin ese
+# header `getClientIp()` devuelve null y registro/reseteo/inscripciones rechazan (rate limit).
+http://127.0.0.1:8080 {
+	bind 127.0.0.1
+	reverse_proxy 127.0.0.1:3000
+}
