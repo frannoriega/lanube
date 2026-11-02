@@ -1,0 +1,9 @@
+[Unit]
+Description=La Nube: backup de base de datos y archivos
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lanube-backup all
+Nice=10
+IOSchedulingClass=idle

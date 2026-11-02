@@ -67,6 +67,9 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Imagen Docker del VPS (deploy/): `server.js` autocontenido. Se activa por variable para no
+  // alterar el build de Vercel.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   // La pantalla de aceptación de políticas (milestone 19) lee el texto fuente de dos versiones
   // con `fs` para mostrar el diff "Ver qué cambió". Sin esto, el bundle serverless de Vercel no

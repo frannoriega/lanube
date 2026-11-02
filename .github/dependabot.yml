@@ -1,0 +1,9 @@
+# Mantiene al día las acciones de GitHub, que están fijadas por SHA (un tag de acción es mutable:
+# en 2025 el de una acción muy usada fue reapuntado a código malicioso). Dependabot propone el
+# nuevo SHA en un PR; se revisa y se acepta.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Copias locales. Uso:  lanube-backup [all|db|uploads] [etiqueta]     (root)
+#   db      -> pg_dump -Fc comprimido en /var/backups/lanube/db-<etiqueta>.dump (retención 14 días)
+#   uploads -> instantánea rsync con hardlinks (retención 7)
+# ⚠️ Esto vive en el MISMO servidor: protege de un error o una migración mala, no de perder el VPS.
+# Para eso, dejar un script ejecutable en /etc/lanube/offsite.sh: se lo invoca al final con el
+# directorio de backups como argumento (rclone/restic/scp… lo que elijas).
+set -euo pipefail
+MODE="${1:-all}"
+LABEL="${2:-$(date -u +%Y%m%dT%H%M%SZ)}"
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+DATA_DIR="$(grep '^DATA_DIR=' "$APP_DIR/.env" | cut -d= -f2)"
+OUT=/var/backups/lanube
+umask 077
+cd "$APP_DIR"
+
+if [ "$MODE" = all ] || [ "$MODE" = db ]; then
+  # El usuario y la base salen del contenedor, no de acá (pg_dump corre adentro).
+  docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' \
+    >"$OUT/db-$LABEL.dump.partial"
+  mv "$OUT/db-$LABEL.dump.partial" "$OUT/db-$LABEL.dump"
+  find "$OUT" -maxdepth 1 -name 'db-*.dump' -mtime +14 -delete
+fi
+
+if [ "$MODE" = all ] || [ "$MODE" = uploads ]; then
+  mkdir -p "$OUT/uploads"
+  prev="$(ls -1d "$OUT"/uploads/*/ 2>/dev/null | tail -n1 || true)"
+  rsync -a ${prev:+--link-dest="$prev"} "$DATA_DIR/uploads/" "$OUT/uploads/$LABEL/"
+  ls -1d "$OUT"/uploads/*/ | head -n -7 | xargs -r rm -rf
+fi
+
+[ -x /etc/lanube/offsite.sh ] && /etc/lanube/offsite.sh "$OUT" || true
+echo "Backup $MODE/$LABEL OK"

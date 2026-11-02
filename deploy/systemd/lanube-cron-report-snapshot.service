@@ -1,0 +1,8 @@
+[Unit]
+Description=La Nube cron: report-snapshot
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lanube-cron report-snapshot

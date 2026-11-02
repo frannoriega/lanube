@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Comprueba que CADA archivo subido que la base referencia exista en disco. Es la red de seguridad
+# de la migración desde Vercel Blob: lo que falle acá es una imagen rota o un adjunto perdido.
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "Correr como root (sudo)"; exit 1; }
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+cd "$APP_DIR"
+DATA_DIR="$(grep '^DATA_DIR=' "$APP_DIR/.env" | cut -d= -f2)"
+
+refs="$(docker compose exec -T postgres sh -c \
+  'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --schema=public --data-only --no-owner' \
+  | grep -oE '(/uploads/|local-private:)[A-Za-z0-9._/-]+' | sort -u)"
+total=0; missing=0
+while IFS= read -r ref; do
+  [ -n "$ref" ] || continue
+  total=$((total + 1))
+  case "$ref" in
+    /uploads/*)      f="$DATA_DIR/uploads/public/${ref#/uploads/}" ;;
+    local-private:*) f="$DATA_DIR/uploads/private/${ref#local-private:}" ;;
+  esac
+  if [ ! -f "$f" ]; then
+    missing=$((missing + 1))
+    [ "$missing" -le 25 ] && echo "FALTA: $ref"
+  fi
+done <<<"$refs"
+echo "Referencias a archivos en la base: $total — faltantes: $missing"
+[ "$missing" -eq 0 ]

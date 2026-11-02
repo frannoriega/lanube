@@ -1,4 +1,23 @@
+# Nunca al contexto de build: secretos, dependencias, salidas y material que no hace falta
+.git
+.github
 node_modules
 .next
-.git
-.env*.local
+.env
+.env.*
+!deploy/*.example
+*.pem
+*.key
+.private-uploads
+public/uploads
+.mobile-shots
+graphify-out
+docs
+assets
+"logos muni SVG"
+coverage
+*.tsbuildinfo
+blob-export
+blob-import
+*.dump
+*.sql
