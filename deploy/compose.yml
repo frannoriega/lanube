@@ -48,7 +48,9 @@ services:
   migrate:
     image: ${IMAGE_REPO}:${IMAGE_TAG}-migrate
     profiles: ["tools"]
-    env_file: lanube.env
+    # Credenciales de lanube_owner (DDL) en un archivo APARTE: la app corre como lanube_app, que no
+    # puede alterar el esquema, y el migrador no necesita ver NEXTAUTH_SECRET ni el SMTP.
+    env_file: migrator.env
     depends_on:
       postgres:
         condition: service_healthy

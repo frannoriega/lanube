@@ -23,7 +23,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 # Copia incompleta de deploy/ (p. ej. solo scripts/): mejor fallar acá que a mitad de la instalación.
 for f in Caddyfile compose.yml caddy/loopback.caddy caddy/public.caddy lanube.env.example \
-  postgres.env.example systemd/lanube-autodeploy.timer scripts/lanube-deploy scripts/lanube-autodeploy \
+  migrator.env.example postgres/roles.sql scripts/lanube-db-roles postgres.env.example systemd/lanube-autodeploy.timer scripts/lanube-deploy scripts/lanube-autodeploy \
   scripts/enable-public-site scripts/lanube-import-vercel scripts/lanube-verify-uploads; do
   [ -e "$HERE/$f" ] || { echo "Falta $HERE/$f: copiá la carpeta deploy/ ENTERA (rsync -a --delete deploy/ usuario@VPS:~/deploy/)"; exit 1; }
 done
@@ -139,6 +139,9 @@ install -d -m 755 "$DATA_DIR/uploads"
 chown -R 1000:1000 "$DATA_DIR/uploads"       # uid de `node` dentro de la imagen
 install -m 644 "$HERE/compose.yml" "$APP_DIR/compose.yml"
 [ -f "$APP_DIR/lanube.env" ] || { install -m 600 "$HERE/lanube.env.example" "$APP_DIR/lanube.env"; NEED_ENV=1; }
+[ -f "$APP_DIR/migrator.env" ] || { install -m 600 "$HERE/migrator.env.example" "$APP_DIR/migrator.env"; NEED_ENV=1; }
+install -d /usr/local/share/lanube/postgres
+install -m 644 "$HERE/postgres/roles.sql" /usr/local/share/lanube/postgres/roles.sql
 [ -f "$APP_DIR/postgres.env" ] || { install -m 600 "$HERE/postgres.env.example" "$APP_DIR/postgres.env"; NEED_ENV=1; }
 # Variables de interpolación de compose; `lanube-deploy` actualiza IMAGE_TAG.
 [ -f "$APP_DIR/.env" ] || printf 'IMAGE_REPO=%s\nIMAGE_TAG=none\nDATA_DIR=%s\n' "$IMAGE_REPO" "$DATA_DIR" >"$APP_DIR/.env"
@@ -147,7 +150,7 @@ printf 'APP_DIR=%s\nIMAGE_REPO=%s\n' "$APP_DIR" "$IMAGE_REPO" >/etc/lanube/deplo
 
 # ---------------------------------------------------------------------------------------------
 log "Scripts de operación"
-for s in lanube-deploy lanube-autodeploy lanube-backup lanube-cron update-cloudflare-ips enable-public-site lanube-import-vercel lanube-verify-uploads; do
+for s in lanube-deploy lanube-autodeploy lanube-backup lanube-cron update-cloudflare-ips enable-public-site lanube-import-vercel lanube-verify-uploads lanube-db-roles; do
   install -m 755 -o root -g root "$HERE/scripts/$s" "/usr/local/bin/$s"
 done
 # ---------------------------------------------------------------------------------------------
@@ -256,7 +259,7 @@ Listo. Faltan pasos MANUALES (ver deploy/README.md, secciones 3 a 6):
 
  1. En OTRA terminal, comprobá:  ssh $ADMIN_USER@<ip>   (con tu clave) y  sudo -v
  2. Recién ahí:  sudo ADMIN_USER=$ADMIN_USER bash $HERE/scripts/02-lock-ssh.sh   (cierra root y contraseñas)
- 3. Completar $APP_DIR/lanube.env y $APP_DIR/postgres.env (misma contraseña de Postgres en ambos).
+ 3. Completar $APP_DIR/postgres.env, lanube.env y migrator.env (cada contraseña de rol, en su archivo: ver README «Roles de la base»).
  4. Cuando tengas el certificado de origen de Cloudflare: /etc/caddy/certs/origin.pem y origin.key
     (root:caddy, 640) y luego:  sudo enable-public-site $DOMAIN
  5. docker login ghcr.io   (como root, con un token de solo lectura: read:packages)
@@ -264,4 +267,4 @@ Listo. Faltan pasos MANUALES (ver deploy/README.md, secciones 3 a 6):
     o ya mismo:  sudo lanube-autodeploy --now   (o: sudo lanube-deploy deploy <sha>).
 ======================================================================
 MSG
-[ -z "${NEED_ENV:-}" ] || echo "(Se crearon lanube.env y postgres.env con valores CAMBIAR.)"
+[ -z "${NEED_ENV:-}" ] || echo "(Se crearon lanube.env, migrator.env y postgres.env con valores CAMBIAR.)"

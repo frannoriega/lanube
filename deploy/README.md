@@ -74,10 +74,13 @@ sesión original abierta hasta verificar una segunda conexión.
 
 ## 4. Configuración del servidor
 
-1. `sudo nano /srv/lanube/postgres.env` y `/srv/lanube/lanube.env` (plantillas con `CAMBIAR`).
-   La contraseña de Postgres va en **ambos** (hex: `openssl rand -hex 24`). Secretos nuevos para
-   `NEXTAUTH_SECRET` y `CRON_SECRET`. Cambiá la contraseña de la base **antes** del primer deploy:
-   Postgres la fija al inicializar el volumen.
+1. `sudo nano /srv/lanube/postgres.env`, `lanube.env` y `migrator.env` (plantillas con `CAMBIAR`).
+   Son **tres** contraseñas distintas, todas hex (`openssl rand -hex 24`): `POSTGRES_PASSWORD`
+   (superusuario, solo en `postgres.env`), `LANUBE_OWNER_PASSWORD` (en `postgres.env` y en la URL de
+   `migrator.env`) y `LANUBE_APP_PASSWORD` (en `postgres.env` y en la URL de `lanube.env`). Secretos
+   nuevos para `NEXTAUTH_SECRET` y `CRON_SECRET`. Poné `POSTGRES_PASSWORD` **antes** del primer
+   deploy: Postgres la fija al inicializar el volumen (las otras dos se aplican en cada deploy).
+   Ver «Roles de la base» más abajo.
 2. Certificado de origen: pegar en `/etc/caddy/certs/origin.pem` y `origin.key`
    (`chown root:caddy`, `chmod 640`), luego `sudo enable-public-site TU.DOMINIO` (valida la config
    y recién ahí activa el sitio público; hasta entonces Caddy solo tiene el listener de pruebas
@@ -171,13 +174,43 @@ sudo ls /var/lib/lanube/autodeploy ; sudo cat /var/lib/lanube/autodeploy/last-se
 
 ```bash
 cd /srv/lanube && sudo docker compose stop app
+sudo lanube-db-roles   # los roles tienen que existir antes (el volcado trae dueños y permisos)
 sudo docker compose exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' \
   < /var/backups/lanube/db-<etiqueta>.dump
+sudo lanube-db-roles   # y de nuevo, por si el volcado era de antes de la separación
 sudo lanube-deploy deploy <sha-que-andaba>   # o: docker compose up -d app
 ```
 
 **Emergencia de mantenimiento**: las funciones SQL `maintenance_*` (CLAUDE.md §17) siguen
 funcionando con `docker compose exec postgres psql`.
+
+### Roles de la base
+
+Tres roles, definidos en `deploy/postgres/roles.sql` y aplicados en cada deploy por `lanube-db-roles`
+(idempotente; también lo corren la importación de Vercel y, a mano, la restauración):
+
+| Rol                            | Para qué                                                                                                                                                                          | Dónde está su contraseña               |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `POSTGRES_USER` (superusuario) | Solo administración: backups, restauración, aplicar los roles. Ninguna variable de la app lo tiene.                                                                               | `postgres.env`                         |
+| `lanube_owner`                 | Dueño del esquema y los objetos. Lo usa **solo** el migrador (DDL). Sin superusuario.                                                                                             | `postgres.env` + URL en `migrator.env` |
+| `lanube_app`                   | La app en runtime: `SELECT/INSERT/UPDATE/DELETE`, secuencias y funciones. No puede crear, borrar ni alterar objetos, ni tocar `_prisma_migrations`, ni crear roles o extensiones. | `postgres.env` + URL en `lanube.env`   |
+
+- Una tabla o función nueva creada por una migración le llega a la app sola (permisos por defecto del
+  dueño); `lanube-db-roles` corre igual después de migrar, por si acaso.
+- Si una migración futura necesita algo de superusuario (`CREATE EXTENSION`, por ejemplo), va a fallar
+  como `lanube_owner`: se aplica a mano una vez como superusuario
+  (`sudo docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE EXTENSION …"'`)
+  y la migración queda sin efecto. Hoy ninguna lo necesita.
+- `roles.sql` se instala con el bootstrap (`/usr/local/share/lanube/postgres/`): si cambia en el repo,
+  copiá `deploy/` y volvé a correr el bootstrap.
+- **Probarlo sin tocar el servidor**, desde tu máquina (necesita Docker y `npm ci`; ~1 minuto):
+  `bash deploy/tests/db-roles.sh`. Levanta un Postgres descartable, aplica los roles, migra como
+  `lanube_owner`, corre el seed completo como `lanube_app` y comprueba ~40 permisos (lo que la app
+  puede y lo que no). También corre en CI (job `db-roles`) y bloquea el deploy si falla.
+- **Migrar un servidor que ya estaba andando con el superusuario**: poné las dos contraseñas nuevas en
+  `postgres.env`, creá `migrator.env`, cambiá la URL de `lanube.env` a `lanube_app`, corré
+  `sudo lanube-db-roles` y reiniciá la app (`docker compose up -d app`). Volver atrás: poné de nuevo
+  la URL del superusuario en `lanube.env`.
 
 ### Mantenimiento mensual (a mano, a propósito)
 
@@ -212,10 +245,9 @@ ningún backup, y sin ellos reconstruir el servidor significa rotar todos los se
   (`docker run -v /:/h …`), y también da acceso a todos los secretos (`docker inspect`). Si tu usuario
   está en ese grupo, la contraseña de `sudo` no protege nada; sacalo (`sudo gpasswd -d <admin> docker`)
   si no lo necesitás, y usá `sudo docker …`.
-- **La app se conecta a Postgres como superusuario del contenedor.** Una vulnerabilidad en la app que
-  llegue a ejecutar SQL podría leer archivos del contenedor de la base o ejecutar comandos allí
-  (no en el host). Separar un rol de aplicación con permisos mínimos de otro dueño del esquema
-  (para migraciones) es un trabajo aparte porque las migraciones crean funciones y triggers.
+- **Roles de Postgres separados** (ver «Roles de la base»): la app no es superusuaria ni dueña del
+  esquema. Lo que sigue pudiendo una app comprometida es leer y escribir los **datos** (es lo que
+  hace normalmente); no puede alterar el esquema, leer archivos ni ejecutar comandos en el contenedor.
 - **Las imágenes se identifican por tag (`:<sha>`), que en un registro es mutable**: quien pueda
   empujar a GHCR podría reemplazar la imagen de un commit. Es el mismo grupo que puede empujar a `main`,
   por eso importa proteger la rama y las cuentas con acceso de escritura (activá 2FA). Fijar por

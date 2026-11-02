@@ -59,7 +59,7 @@ sudo -E lanube-import-vercel
 ```
 
 Hace: backup de lo que haya → volcado crudo en `/var/backups/lanube/vercel-source-*.sql` (0600,
-**datos personales**: borralo al terminar) → restauración → migraciones → comparación de filas por
+**datos personales**: borralo al terminar) → restauración → roles de la base (`lanube-db-roles`) → migraciones → comparación de filas por
 tabla → levanta la app. Las diferencias de conteo en tablas nuevas de migraciones recientes son
 normales; en el resto no.
 

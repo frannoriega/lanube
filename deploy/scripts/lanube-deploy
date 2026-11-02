@@ -25,6 +25,8 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx postgres
   /usr/local/bin/lanube-backup db "predeploy-$TAG"
 fi
 docker compose up -d --wait postgres
+# Roles de la base (idempotente): antes de migrar, porque el migrador corre como lanube_owner.
+/usr/local/bin/lanube-db-roles
 
 set_tag "$TAG"
 echo "== Migraciones"
@@ -34,6 +36,7 @@ if ! docker compose --profile tools run --rm migrate; then
   exit 1
 fi
 
+/usr/local/bin/lanube-db-roles   # permisos al día tras las migraciones (una función/tabla nueva)
 echo "== Recreando la app"
 if ! docker compose up -d --wait --wait-timeout 120 app; then
   echo "!! La app nueva no quedó sana."

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Aplica deploy/postgres/roles.sql (roles de la base) con el superusuario del contenedor.
+# Idempotente. Lo corren lanube-deploy (antes y después de migrar) y lanube-import-vercel.
+# Uso (root):  lanube-db-roles
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "Correr como root (sudo)"; exit 1; }
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+cd "$APP_DIR"
+docker compose up -d --wait postgres >/dev/null
+docker compose exec -T postgres sh -c 'psql -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f -' \
+  </usr/local/share/lanube/postgres/roles.sql

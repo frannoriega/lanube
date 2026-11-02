@@ -44,6 +44,9 @@ docker compose stop app
 } | docker compose exec -T postgres sh -c \
   'psql -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 --single-transaction -f -'
 
+echo "== Roles de la base (la restauración dejó el esquema a nombre del superusuario)"
+/usr/local/bin/lanube-db-roles
+
 echo "== Migraciones pendientes (si la base de Vercel iba atrás de esta imagen)"
 docker compose --profile tools run --rm migrate
 

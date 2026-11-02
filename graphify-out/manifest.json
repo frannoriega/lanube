@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1793655308.1059654,
-    "ast_hash": "eb2f7ae3d7d823dd286f87949a2cee4c",
+    "mtime": 1793655927.7991064,
+    "ast_hash": "8d5e3cbba4d38e10ba50080377b9ee14",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -4500,8 +4500,8 @@
     "semantic_hash": ""
   },
   "deploy/scripts/01-bootstrap.sh": {
-    "mtime": 1793655308.1039472,
-    "ast_hash": "c4cea86072c42a18bd58fe0a2b441353",
+    "mtime": 1793655902.865876,
+    "ast_hash": "f4e9dff4fb6ae4fadae71e037eba1ef3",
     "semantic_hash": ""
   },
   "deploy/scripts/02-lock-ssh.sh": {
@@ -4520,8 +4520,8 @@
     "semantic_hash": ""
   },
   "deploy/scripts/lanube-deploy": {
-    "mtime": 1793644752.3785896,
-    "ast_hash": "b89543d704af8fa9bce91c3f86149aec",
+    "mtime": 1793655902.8662617,
+    "ast_hash": "bd225c5ba73b01870d28dd6de676b43b",
     "semantic_hash": ""
   },
   "deploy/scripts/update-cloudflare-ips": {
@@ -4535,18 +4535,18 @@
     "semantic_hash": ""
   },
   ".github/workflows/deploy.yml": {
-    "mtime": 1793655308.1052108,
-    "ast_hash": "a3064e3aa666712152a28bc4cb17a6b7",
+    "mtime": 1793655902.8674157,
+    "ast_hash": "42612142a0c126c8891af127a1ee2643",
     "semantic_hash": ""
   },
   "deploy/README.md": {
-    "mtime": 1793655312.9015436,
-    "ast_hash": "b2b938aaa420f7a182743c78d8ec8f03",
+    "mtime": 1793655928.4176412,
+    "ast_hash": "b9baa2380037d744738f0d2e91ae51dd",
     "semantic_hash": ""
   },
   "deploy/compose.yml": {
-    "mtime": 1793644672.129537,
-    "ast_hash": "bc70b16cbfba1e781dc3991d38c0a538",
+    "mtime": 1793655902.8640637,
+    "ast_hash": "6e2b854299f99346f843599261a12126",
     "semantic_hash": ""
   },
   "logos muni SVG/10.svg": {
@@ -4570,8 +4570,8 @@
     "semantic_hash": ""
   },
   "deploy/scripts/lanube-import-vercel": {
-    "mtime": 1793649467.4850073,
-    "ast_hash": "0e3a1dee37a4c535dfe1a41865ae8c06",
+    "mtime": 1793655902.866953,
+    "ast_hash": "83eba18c6a2143210475ce446fa91a3a",
     "semantic_hash": ""
   },
   "deploy/scripts/lanube-verify-uploads": {
@@ -4585,8 +4585,8 @@
     "semantic_hash": ""
   },
   "deploy/MIGRATION.md": {
-    "mtime": 1793651704.6385822,
-    "ast_hash": "c89d638d34ead35b25e9c753416e7c7f",
+    "mtime": 1793655927.7995293,
+    "ast_hash": "defb8e76f622d61f667462462182adfc",
     "semantic_hash": ""
   },
   "deploy/scripts/lanube-autodeploy": {
@@ -4597,6 +4597,21 @@
   ".github/dependabot.yml": {
     "mtime": 1793651646.8237574,
     "ast_hash": "b08ae0ad9d0cc0f9540e5c1cbe168298",
+    "semantic_hash": ""
+  },
+  "deploy/postgres/roles.sql": {
+    "mtime": 1793655800.143546,
+    "ast_hash": "da262603f9c30e20d399e16a9724c172",
+    "semantic_hash": ""
+  },
+  "deploy/scripts/lanube-db-roles": {
+    "mtime": 1793655684.7047338,
+    "ast_hash": "8b1f6e043249496b6c32faac84a32067",
+    "semantic_hash": ""
+  },
+  "deploy/tests/db-roles.sh": {
+    "mtime": 1793655884.4336278,
+    "ast_hash": "ca381d85f119ba14b6adebade00790aa",
     "semantic_hash": ""
   }
 }

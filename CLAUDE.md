@@ -1039,6 +1039,10 @@ endpoints con rate limit rechazan: nunca probar la app pegándole directo al pue
   recrear, healthcheck, rollback de imagen (las migraciones **no** se revierten: escribirlas compatibles hacia atrás).
   Deploy manual a cualquier hora: `sudo lanube-autodeploy --now` o `sudo lanube-deploy deploy <sha>` (README «Deploy manual»).
   SSH al servidor es solo del admin y, con `SSH_ALLOW_FROM`, solo desde los orígenes indicados.
+- **Roles de Postgres** (`deploy/postgres/roles.sql`, aplicado por `lanube-db-roles` en cada deploy): la app corre como
+  `lanube_app` (solo DML), el migrador como `lanube_owner` (dueño del esquema, `deploy/migrator.env`) y el superusuario
+  del contenedor queda para administración. Una migración que necesite superusuario (extensiones) falla como owner: ver
+  README «Roles de la base». Prueba: `bash deploy/tests/db-roles.sh` (también en CI, job `db-roles`).
 - **Crons**: los reemplazan timers de systemd (`deploy/systemd`, mismos horarios que `vercel.json`).
   Si se agrega un cron a `vercel.json`, agregarlo también a `deploy/systemd` y a la lista de `lanube-cron`.
 

@@ -42,8 +42,19 @@ jobs:
       - run: npx prisma migrate deploy
       - run: npm test
 
+  # Roles de Postgres (deploy/postgres/roles.sql): migra como dueño y corre el seed y las
+  # comprobaciones de permisos como el rol restringido de la app, contra un Postgres descartable.
+  db-roles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: bash deploy/tests/db-roles.sh
+
   build-and-deploy:
-    needs: test
+    needs: [test, db-roles]
     runs-on: ubuntu-latest
     # Entorno con aprobación opcional: Settings → Environments → production → Required reviewers.
     environment: production
