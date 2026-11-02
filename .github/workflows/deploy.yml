@@ -66,7 +66,7 @@ jobs:
           buildkitd-flags: --allow-insecure-entitlement network.host
           # El «host» de `network: host` es el del contenedor de BuildKit: tiene que compartir la red del
           # runner para ver el Postgres del servicio publicado en 127.0.0.1:5432.
-          driver-opt: network=host
+          driver-opts: network=host
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
