@@ -1,0 +1,55 @@
+__DOMAIN__:443 {
+	import origin_tls
+
+	# Prueba de que el pedido pasó por NUESTRA zona de Cloudflare. El certificado de cliente de
+	# «Authenticated Origin Pulls» y los rangos de IP los comparten TODOS los clientes de Cloudflare:
+	# cualquiera con una cuenta gratis puede apuntar un registro DNS a la IP del VPS y pasar ambos.
+	# Una regla de Cloudflare (Transform Rule → Modify Request Header) agrega este header solo en
+	# nuestra zona; sin él no se responde. El token lo genera `enable-public-site`.
+	@fuera_de_nuestra_zona not header X-Origin-Token {file./etc/caddy/origin-token}
+	abort @fuera_de_nuestra_zona
+
+	# Los crons los llama el timer del propio servidor directo a 127.0.0.1:3000 (lanube-cron),
+	# nunca desde internet: por acá no hay motivo para que sean alcanzables.
+	@cron path /api/cron /api/cron/*
+	respond @cron 404
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	# Subidas de eventos/participantes: tope del lado del proxy, antes de que lleguen a Node.
+	request_body {
+		max_size 25MB
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		# Timeouts razonables: una app colgada no tiene por qué retener conexiones para siempre.
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 60s
+		}
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 50MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		# El token no va al log (el resto de los headers sensibles ya los redacta Caddy).
+		format filter {
+			wrap json
+			request>headers>X-Origin-Token delete
+		}
+	}
+}
+
+# Cualquier otro nombre que llegue al origen: se corta la conexión sin responder.
+:443 {
+	import origin_tls
+	abort
+}

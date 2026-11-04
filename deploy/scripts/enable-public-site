@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Activa el sitio público de Caddy (443 detrás de Cloudflare). Correr como root DESPUÉS de dejar
+# /etc/caddy/certs/origin.pem y origin.key. Valida la config antes de aplicarla.
+#   sudo enable-public-site <dominio>
+set -euo pipefail
+DOMAIN="${1:?uso: enable-public-site <dominio>}"
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+# Se interpola en la config de Caddy: solo un nombre de host válido, nada de /, espacios ni llaves.
+[[ "$DOMAIN" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]] \
+  || { echo "Dominio inválido: $DOMAIN"; exit 1; }
+[ -s /etc/caddy/certs/origin.pem ] && [ -s /etc/caddy/certs/origin.key ] \
+  || { echo "Faltan /etc/caddy/certs/origin.pem y origin.key"; exit 1; }
+install -d /etc/caddy/sites
+# Token de zona: Cloudflare debe mandarlo en el header X-Origin-Token (ver README §2). Se genera una
+# vez y se conserva; SIN salto de línea final, para que coincida exacto con el valor de la regla.
+if [ ! -s /etc/caddy/origin-token ]; then
+  umask 077
+  head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' >/etc/caddy/origin-token
+  NEW_TOKEN=1
+fi
+chown root:caddy /etc/caddy/origin-token
+chmod 640 /etc/caddy/origin-token
+sed "s/__DOMAIN__/$DOMAIN/g" "$SCRIPT_DIR/caddy/public.caddy" >/etc/caddy/sites/10-public.caddy
+if ! caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1; then
+  rm -f /etc/caddy/sites/10-public.caddy
+  caddy validate --config /etc/caddy/Caddyfile || true
+  echo "Config inválida: se quitó el sitio público, Caddy sigue como estaba."
+  exit 1
+fi
+# `caddy validate` corre como root y, al abrir el log de acceso, lo CREA con dueño root: el servicio
+# (usuario caddy) ya no podía abrirlo y el reload fallaba con «permission denied». Se devuelve a caddy.
+install -d -m 750 -o caddy -g caddy /var/log/caddy
+chown -R caddy:caddy /var/log/caddy
+systemctl enable caddy
+systemctl reload-or-restart caddy
+echo "Sitio público activo para $DOMAIN"
+echo
+echo "IMPORTANTE: el sitio rechaza todo pedido que no traiga el header  X-Origin-Token  con este valor."
+echo "Hay que crear en Cloudflare una regla (Rules → Transform Rules → Modify Request Header →"
+echo "Set static: nombre X-Origin-Token, valor el de abajo, para todo el hostname $DOMAIN):"
+echo
+echo "    $(cat /etc/caddy/origin-token)"
+echo
+[ -z "${NEW_TOKEN:-}" ] || echo "(Token recién generado. Pasalo por un canal privado; para volver a verlo: sudo cat /etc/caddy/origin-token)"

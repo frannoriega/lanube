@@ -1,0 +1,11 @@
+[Unit]
+Description=La Nube cron: maintain (diario 05:00 UTC, igual que vercel.json)
+
+[Timer]
+OnCalendar=*-*-* 05:00:00 UTC
+# Si el servidor estaba apagado a esa hora, corre al volver a arrancar.
+Persistent=true
+RandomizedDelaySec=0
+
+[Install]
+WantedBy=timers.target

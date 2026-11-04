@@ -1,0 +1,14 @@
+[Unit]
+Description=La Nube: deploy automático (lun-jue 20:00, hora de Argentina)
+
+[Timer]
+# Una vez por día, de lunes a jueves a las 20:00 de Buenos Aires: nunca viernes, sábado ni domingo,
+# para no dejar un cambio recién salido sin gente cerca el fin de semana.
+OnCalendar=Mon..Thu *-*-* 20:00:00 America/Argentina/Buenos_Aires
+# SIN Persistent=true a propósito: si el servidor estaba apagado a esa hora, la corrida perdida NO
+# se recupera al arrancar (podría caer en viernes). Se despliega en la próxima noche válida.
+Persistent=false
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

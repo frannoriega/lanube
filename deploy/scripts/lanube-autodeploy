@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Deploy por PULL: el servidor pregunta a GitHub (solo salida HTTPS, ningún puerto entrante) si el
+# tag `production` del repo apunta a un commit nuevo; si es así, corre `lanube-deploy` con él.
+# CI mueve ese tag recién DESPUÉS de construir y subir las dos imágenes del commit, así que si el
+# tag cambió las imágenes ya existen. Corre por timer (lanube-autodeploy.timer): una vez por día, lun-jue 20:00 hora de Argentina.
+# Uso manual:  sudo lanube-autodeploy --now   (mira el tag YA y despliega, sin esperar a la noche).
+#
+# - Un deploy manual (`lanube-deploy deploy <sha viejo>`, p. ej. un rollback) NO se pisa: acá solo
+#   se mira si el tag cambió respecto del último que se vio, no si coincide con lo desplegado.
+# - Un sha que falla se reintenta hasta 3 veces (cada intento es una noche; si hace falta antes, `--now`) y después se deja:
+#   se ve con `journalctl -u lanube-autodeploy`.
+set -euo pipefail
+# Nunca viernes, sábado ni domingo, aunque algo dispare el servicio (p. ej. `systemctl start`):
+# el timer ya cumple esto, pero la guarda lo hace independiente de cómo se lo invoque. `--now` es
+# una orden explícita de una persona y la saltea.
+if [ "${1:-}" != "--now" ]; then
+  dow="$(TZ=America/Argentina/Buenos_Aires date +%u)"   # 1=lunes … 7=domingo
+  [ "$dow" -le 4 ] || { echo "Hoy no se despliega automáticamente (solo lun-jue). Usá --now o lanube-deploy."; exit 0; }
+fi
+# shellcheck disable=SC1091
+. /etc/lanube/deploy.conf
+REPO="${IMAGE_REPO#ghcr.io/}"            # ghcr.io/owner/repo -> owner/repo
+STATE="$DATA_DIR/autodeploy"
+mkdir -p "$STATE"
+exec 8>"$STATE/.lock"; flock -n 8 || exit 0
+
+ETAG="$(cat "$STATE/etag" 2>/dev/null || true)"
+# ETag condicional: un 304 no cuenta contra el límite de la API anónima (60/h por IP).
+code="$(curl -sS --max-time 20 -o "$STATE/ref.json" -w '%{http_code}' \
+  -H 'Accept: application/vnd.github+json' \
+  ${ETAG:+-H "If-None-Match: $ETAG"} \
+  -D "$STATE/headers" "https://api.github.com/repos/$REPO/git/ref/tags/production" || echo 000)"
+[ "$code" = 304 ] && exit 0
+if [ "$code" = 404 ]; then exit 0; fi       # todavía no hubo ningún deploy
+[ "$code" = 200 ] || { echo "GitHub respondió $code; reintento en el próximo ciclo"; exit 0; }
+# El ETag se guarda recién cuando el commit quedó resuelto (desplegado o abandonado): si el deploy
+# falla y ya hubiéramos guardado el ETag, el próximo ciclo recibiría 304 y nunca reintentaría.
+NEWETAG="$(grep -i '^etag:' "$STATE/headers" | head -n1 | sed -E 's/^[Ee][Tt][Aa][Gg]: *//; s/\r$//' || true)"
+save_etag() { [ -z "$NEWETAG" ] || printf '%s' "$NEWETAG" >"$STATE/etag"; }
+rm -f "$STATE/etag"
+sha="$(jq -r '.object.sha // empty' "$STATE/ref.json")"
+[[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "respuesta inesperada de GitHub"; exit 0; }
+
+# Ya visto, o ya desplegado a mano (`lanube-deploy deploy <sha>`): no hay nada que hacer.
+current="$(grep '^IMAGE_TAG=' "$APP_DIR/.env" | cut -d= -f2)"
+if [ "$sha" = "$(cat "$STATE/last-seen" 2>/dev/null || true)" ] || [ "$sha" = "$current" ]; then
+  echo "$sha" >"$STATE/last-seen"; save_etag; exit 0
+fi
+
+tries="$(cat "$STATE/tries-$sha" 2>/dev/null || echo 0)"
+[ "$tries" -lt 3 ] || { echo "Se abandonó $sha tras 3 intentos fallidos"; echo "$sha" >"$STATE/last-seen"; save_etag; exit 0; }
+echo $((tries + 1)) >"$STATE/tries-$sha"
+
+echo "== Nuevo commit en producción: $sha (intento $((tries + 1)))"
+if /usr/local/bin/lanube-deploy deploy "$sha"; then
+  echo "$sha" >"$STATE/last-seen"
+  rm -f "$STATE"/tries-*
+  save_etag
+else
+  echo "!! El deploy de $sha falló (ver arriba)"; exit 1
+fi

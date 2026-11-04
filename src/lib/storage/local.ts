@@ -11,10 +11,24 @@ import {
   isCanonicalKey,
 } from "@/lib/storage/types";
 
-const PUBLIC_ROOT = path.join(process.cwd(), "public", "uploads");
+/**
+ * Raíces de almacenamiento. En desarrollo (sin `STORAGE_LOCAL_DIR`) son `public/uploads` y
+ * `.private-uploads`, como siempre. En un VPS se fija `STORAGE_LOCAL_DIR` al volumen persistente
+ * (p. ej. `/data/uploads`): ahí van `public/` y `private/`, fuera de la imagen y del repo, y los
+ * públicos los sirve la ruta `/uploads/[...key]` (`next start` no sirve de forma fiable lo que
+ * aparece en `public/` después del build).
+ */
+const LOCAL_DIR = process.env.STORAGE_LOCAL_DIR
+  ? path.resolve(process.env.STORAGE_LOCAL_DIR)
+  : null;
+export const PUBLIC_ROOT = LOCAL_DIR
+  ? path.join(LOCAL_DIR, "public")
+  : path.join(process.cwd(), "public", "uploads");
 // Private assets live outside public/ so they're never served statically; they're read back only
 // through fetchPrivate (behind an authenticated route). Keyed by the "local-private:" url scheme.
-const PRIVATE_ROOT = path.join(process.cwd(), ".private-uploads");
+const PRIVATE_ROOT = LOCAL_DIR
+  ? path.join(LOCAL_DIR, "private")
+  : path.join(process.cwd(), ".private-uploads");
 const PRIVATE_SCHEME = "local-private:";
 
 // Minimal extension → MIME map for private reads (the browser's reported type isn't stored here).

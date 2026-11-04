@@ -1,0 +1,124 @@
+# CI/CD hacia el VPS (ver deploy/README.md). En cada push a main: pruebas → imagen → deploy.
+# Secretos/variables del repositorio (Settings → Secrets and variables → Actions):
+#   vars.NEXT_PUBLIC_TURNSTILE_SITEKEY      (no hay secretos: el deploy es por pull, ver abajo)
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # nunca cortar un deploy a la mitad
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+  # Base descartable solo para tests y para el build (prerender). Sin datos ni secretos reales.
+  CI_DATABASE_URL: postgresql://postgres:ci@127.0.0.1:5432/ci?schema=public
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: ci }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:ci@127.0.0.1:5432/ci?schema=public
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npx prisma migrate deploy
+      - run: npm test
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    # Entorno con aprobación opcional: Settings → Environments → production → Required reviewers.
+    environment: production
+    permissions:
+      contents: write # mover el tag `production`
+      packages: write
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: ci }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        with:
+          # `network: host` en los builds es ignorado por el driver docker-container salvo que se
+          # habilite este permiso: sin él, 127.0.0.1 es el del build y no el del Postgres del servicio.
+          buildkitd-flags: --allow-insecure-entitlement network.host
+          # El «host» de `network: host` es el del contenedor de BuildKit: tiene que compartir la red del
+          # runner para ver el Postgres del servicio publicado en 127.0.0.1:5432.
+          driver-opts: network=host
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Imagen de la app
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          target: runner
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          allow: network.host
+          network: host # el build prerenderiza páginas y necesita el Postgres del servicio
+          build-args: |
+            DATABASE_URL=${{ env.CI_DATABASE_URL }}
+            NEXT_PUBLIC_TURNSTILE_SITEKEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Imagen de migraciones
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          target: migrator
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.sha }}-migrate
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          allow: network.host
+          network: host
+          build-args: |
+            DATABASE_URL=${{ env.CI_DATABASE_URL }}
+            NEXT_PUBLIC_TURNSTILE_SITEKEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+          cache-from: type=gha
+
+      # Deploy por PULL: acá solo se «publica» el commit moviendo el tag `production`. El VPS (sin SSH desde
+      # CI) lo mira una vez por día, lun-jue 20:00 ART, y despliega solo (lanube-autodeploy). Esto va al
+      # final a propósito: el tag no se mueve si algún build falló, así que el servidor nunca ve un
+      # commit sin imágenes.
+      - name: Publicar el commit (mover el tag production)
+        # Solo desde main: una corrida manual sobre otra rama construye las imágenes pero NO las
+        # publica, así que ninguna rama sin revisar llega sola a producción. (Además, el entorno
+        # `production` debería permitir solo main: ver deploy/README.md §5.)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/production" \
+            -f sha="$GITHUB_SHA" -F force=true \
+          || gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref=refs/tags/production -f sha="$GITHUB_SHA"

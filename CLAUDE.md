@@ -129,7 +129,7 @@ src/
 │       ├── session/              # GET current session (session validation)
 │       ├── mcp/                  # MCP endpoint (milestones 20–21): Bearer-token; tools in src/lib/mcp/tools/
 │       ├── oauth/                # OAuth 2.1 AS: register (DCR), token, revoke, authorize (consent decision)
-│       ├── maintenance/          # GET público: ventanas vigentes/próximas (aviso + portero del middleware)
+│       ├── maintenance/          # Public GET: current/upcoming windows (notice + the middleware gate)
 │       ├── cron/
 │       │   ├── maintain-reservations/  # Daily 5am UTC (scheduled in vercel.json)
 │       │   ├── report-snapshot/  # Monthly, day 1 06:00 UTC (vercel.json): snapshot + retention
@@ -219,7 +219,7 @@ src/
 - `OAuthClient`, `OAuthGrant` (→ `User`), `OAuthAuthorizationCode`, `OAuthToken`: the MCP
   connector's OAuth server (milestone 20, see §16). `Reservation.origin` (`WEB`/`ASSISTANT`)
   marks reservations requested by an assistant.
-- `MaintenanceWindow`: una ventana de mantenimiento (título, motivo markdown, modo, áreas, inicio/fin opcionales, `endedAt`); nunca se borra, queda de historial (milestone 22, §17).
+- `MaintenanceWindow`: a maintenance window (title, markdown reason, mode, areas, optional start/end, `endedAt`); never deleted, kept as history (milestone 22, §17).
 - `PolicyAcceptance` (→ `User`): append-only evidence that an account accepted one version of one policy (milestone 19, see §15). A trigger rejects every `UPDATE`.
 
 **Features** (expanding):
@@ -281,8 +281,8 @@ src/
 
 1. **Sign-up**: `/auth/signup` → POST `/api/auth/register` → email + password hashed (bcryptjs, 12 rounds)
 2. **Email Verification**: GET `/api/auth/confirm-email?token=...` → marks `emailVerified`
-   - **Enlace vencido (24 h)**: `resendEmailConfirmationIfExpired()` (`db/verificationTokens.ts`) manda uno nuevo cuando una cuenta sin confirmar entra con credenciales correctas o pide un reset (sin perfil no hay reset). Solo si no queda ningún token vigente → como máximo 1 correo por cuenta cada 24 h (anti-spam SMTP). Nunca revelar al cliente si se envió.
-   - **Sin SMTP no hay registro ni reseteo**: `/api/auth/register` y `POST /api/auth/reset` llaman primero a `assertMailerAvailable()` (`src/lib/email/transport.ts`, 503 si el correo no responde) — antes de crear la cuenta/el token y, en el reseteo, antes de saber si el correo existe (no revela cuentas). Si el envío falla igual, el token se borra (`discard*Token`) para no dejar un enlace que nadie recibió.
+   - **Expired link (24 h)**: `resendEmailConfirmationIfExpired()` (`db/verificationTokens.ts`) sends a new one when an unconfirmed account signs in with the right credentials or asks for a reset (without a profile there is no reset). Only if no valid token is left → at most 1 email per account every 24 h (SMTP anti-spam). Never reveal to the client whether it was sent.
+   - **No SMTP, no sign-up or reset**: `/api/auth/register` and `POST /api/auth/reset` first call `assertMailerAvailable()` (`src/lib/email/transport.ts`, 503 if the mailer doesn't respond) — before creating the account/token and, on reset, before knowing whether the email exists (it doesn't reveal accounts). If sending fails anyway, the token is deleted (`discard*Token`) so no link nobody received is left behind.
 3. **Profile Completion**: POST `/api/auth/signup` → creates `RegisteredUser` (name, DNI, institution, reason)
 4. **Sign-In**: POST `/api/auth/signin` → Credentials provider validates email + password, checks `emailVerified`. Rate-limited inside `authorize` (per IP and per normalized email, counted **before** bcrypt) and a missing account still runs a dummy `bcrypt.compare`, so timing doesn't reveal which emails exist (milestone 25, S3); the screen maps `code=rate_limited` to a toast. Or **passkey** (milestone 17): `POST /api/auth/passkey/options` → browser → `signIn("passkey", …)`, a second `Credentials` provider whose `authorize` verifies the WebAuthn assertion (`src/lib/passkeys/server.ts`); same `jwt()` pipeline after that
 5. **Session**: NextAuth JWT strategy (7-day expiration); ban status **and pending policies** (`policiesPending`, milestone 19) checked in `jwt()` callback
@@ -948,20 +948,20 @@ Full design + what was built: `docs/milestones/milestones-20-mcp-connector.md`.
 - Users connect/disconnect in Configuración → Seguridad → «Asistentes de IA»; admins see a
   «Vía asistente» chip on the reservation detail.
 
-### 17. Modo mantenimiento (milestone 22)
+### 17. Maintenance mode (milestone 22)
 
-Full design, runbook de migración + alternativas descartadas: `docs/milestones/milestones-22-maintenance-mode.md`.
+Full design, migration runbook and discarded alternatives: `docs/milestones/milestones-22-maintenance-mode.md`.
 
-- **El middleware ahora también corre para `/api/**`** (`apiGate`en`src/middleware.ts`): sin tocar ninguna ruta, responde 503 `{ code: "MAINTENANCE" }`si una ventana vigente frena el pedido. Lo decide`src/lib/maintenance/gate.ts`con las reglas puras de`evaluate.ts`. No hay base de datos en el middleware (edge): lee las ventanas con un `fetch`al propio`GET /api/maintenance?fresh=1`, caché de 15 s, **falla abierto**.
-- **Falla del lado seguro**: la solo lectura global frena todo método que escribe salvo `READ_ONLY_EXEMPT_PREFIXES` (`areas.ts`: ingreso/NextAuth, passkey options, token OAuth, políticas, cron, mcp, el propio panel, campanita). **Una ruta nueva que escribe queda bloqueada sola**; si debe seguir andando en solo lectura, se agrega a esa lista con su motivo.
-- **Áreas** (`MAINTENANCE_AREAS`): se definen por prefijos de ruta (`paths`) o `effect: "code"` (`event-emails`: los senders de correo de eventos consultan `areEventEmailsSuspended()` y omiten el envío; la campanita sigue). Sumar un área = una entrada en el catálogo.
-- **Lo que se protege adentro** porque el middleware no lo ve: el cron `maintain-reservations` se saltea con solo lectura global (idempotente, recupera al día siguiente) y las tools de escritura del conector MCP (`defineTool`, `/api/mcp` es siempre POST).
-- **UI**: `MaintenanceProvider` (layout raíz) → `MaintenanceBanner` (sitio, panel, `/forms`) y `AreaMaintenanceNotice` + `useAreaWriteBlock(area)` dentro de los formularios apagados (registro, reseteo, inscripción). Un 503 de mantenimiento refresca el aviso al instante (`client.ts`).
-- Permiso `maintenance:manage`: solo SUPERADMIN, fuera del conector. Cada alta/edición/fin se audita (`MaintenanceWindow`).
-- Server Actions no pasan por `/api` (el repo no usa ninguna): si se agregan, el portero no las ve.
-- **Botón de emergencia**: `maintenance_status()`, `maintenance_start(...)`, `maintenance_end(id)` y `maintenance_end_all()` (migración `20261006110000`) manejan las ventanas desde `psql` sin la app. No auditan. Detalle en el doc del milestone.
+- **The middleware now also runs for `/api/**`** (`apiGate`in`src/middleware.ts`): without touching any route, it answers 503 `{ code: "MAINTENANCE" }`when a live window blocks the request.`src/lib/maintenance/gate.ts`decides, using the pure rules in`evaluate.ts`. There is no database in the middleware (edge): it reads the windows with a `fetch`to the app's own`GET /api/maintenance?fresh=1`, cached for 15 s, and **fails open**.
+- **Fails on the safe side**: global read-only blocks every method that writes except `READ_ONLY_EXEMPT_PREFIXES` (`areas.ts`: sign-in/NextAuth, passkey options, OAuth token, policies, cron, mcp, the maintenance panel itself, the notification bell). **A new route that writes is blocked automatically**; if it must keep working in read-only mode, add it to that list with the reason.
+- **Areas** (`MAINTENANCE_AREAS`): defined by route prefixes (`paths`) or `effect: "code"` (`event-emails`: the event email senders call `areEventEmailsSuspended()` and skip sending; the bell keeps working). Adding an area = one entry in the catalog.
+- **What is protected inside**, because the middleware can't see it: the `maintain-reservations` cron skips itself under global read-only (idempotent, catches up the next day) and so do the write tools of the MCP connector (`defineTool`; `/api/mcp` is always POST).
+- **UI**: `MaintenanceProvider` (root layout) → `MaintenanceBanner` (site, panel, `/forms`) and `AreaMaintenanceNotice` + `useAreaWriteBlock(area)` inside the disabled forms (sign-up, password reset, event registration). A maintenance 503 refreshes the notice immediately (`client.ts`).
+- Permission `maintenance:manage`: SUPERADMIN only, outside the connector. Every create/edit/end is audited (`MaintenanceWindow`).
+- Server Actions don't go through `/api` (the repo uses none): if any are added, the gate won't see them.
+- **Emergency button**: `maintenance_status()`, `maintenance_start(...)`, `maintenance_end(id)` and `maintenance_end_all()` (migration `20261006110000`) manage the windows from `psql` without the app. They don't audit. Details in the milestone doc.
 
-### 18. Amenities / áreas comunes (milestone 24)
+### 18. Amenities / common areas (milestone 24)
 
 Full design: `docs/milestones/milestones-24-amenities.md`.
 
@@ -980,7 +980,7 @@ spaces_kind_invariants` + triggers `reservations_reject_amenity` / `events_rejec
   Espacios / Áreas comunes tabs, each reordered on its own (order compares only within a kind).
 - The MCP connector does **not** expose amenities (`list_spaces` = reservable only).
 
-### 19. Sitio público cacheable (milestone 25, P2)
+### 19. Cacheable public site (milestone 25, P2)
 
 Full detail: `docs/milestones/milestones-25-performance-security-audit.md` (P2).
 
@@ -1011,6 +1011,54 @@ spaces,themes,site-config,reservation-types}` by the same test. Without it the s
 - **The global CSP in `next.config.ts` overrides route headers.** A route that needs its own CSP
   must be excluded from the global rule's `source` (today only the participant-file proxy;
   `src/lib/security-headers.test.ts`).
+
+### 20. VPS deploy (`deploy/`)
+
+Full runbook and decisions: `deploy/README.md`. Migration from Vercel (database + Blob → disk, test through a
+tunnel, cut-over and rollback): `deploy/MIGRATION.md`; `lanube-import-vercel` rewrites the Blob URLs in the dump.
+Caddy has a loopback-only listener (`127.0.0.1:8080`) because, without `X-Forwarded-For`, `getClientIp()` is `null` and
+the rate-limited endpoints reject the request: never test the app by hitting port 3000 directly.
+
+- **Paths** (`deploy/README.md` §«Rutas»; `/etc/lanube/deploy.conf` is read by every script): `APP_DIR=/data/docker`
+  (compose + `.env`), `DATA_DIR=/data/volumenes/lanube` (`postgres/`, `uploads/`, `autodeploy/`),
+  `BACKUP_DIR=/data/backup/lanube`, `SCRIPT_DIR=/data/script/lanube` (with symlinks in `/usr/local/bin`; also holds
+  `offsite.sh` and the Caddy template). These are defaults, configurable when running the bootstrap.
+  `compose.yml` mounts the data with **relative** paths (`../volumenes/lanube/…`): `DATA_DIR` must be
+  `<APP_DIR>/../volumenes/lanube` (the bootstrap checks it). A new script reads the paths from `deploy.conf`,
+  never hardcodes them.
+- **Caddy runs on the host, never in Docker**: Docker publishes ports bypassing UFW. The app only binds to
+  `127.0.0.1:3000`; Postgres publishes nothing. Don't add public `ports:` to `compose.yml`.
+- **Behind Cloudflare**: UFW opens 443 only to Cloudflare's ranges (`update-cloudflare-ips`, weekly timer); Caddy
+  requires the Authenticated Origin Pulls client certificate **and** a secret `X-Origin-Token` header that Cloudflare
+  adds only in our zone (the IPs and that certificate are shared by all Cloudflare customers: they don't prove the
+  request comes from OUR zone). That is what makes `TRUST_CF_CONNECTING_IP=true` safe (§Rate limiting / `request-ip.ts`).
+- **Image** (`deploy/Dockerfile`): `runner` (Next standalone, enabled with `NEXT_OUTPUT=standalone`) and `migrator`
+  (Prisma CLI). The build needs a migrated Postgres (prerender, §19): CI starts a throwaway one. `NEXT_PUBLIC_*` is baked
+  in at build time (a GitHub repo variable, not the server's `.env`). The `.npmrc` (`legacy-peer-deps`) must reach
+  `npm ci`: `@tsparticles/react` declares a `workspace:^` peer.
+- **Uploaded files on disk**: `STORAGE_PROVIDER=local` + `STORAGE_LOCAL_DIR` (volume) + `STORAGE_ENV_ROOT=prod`
+  (there is no `VERCEL_ENV`). Public ones are served by `src/app/uploads/[...key]/route.ts` (raster images only, by
+  extension, canonical keys); private ones still go through the admin proxy.
+- **Pull deploy** (GitHub doesn't reach the server over SSH: there is no CI key with access): push to `main` →
+  `.github/workflows/deploy.yml` builds and pushes the images to GHCR and **moves the `production` tag** →
+  `lanube-autodeploy` (timer Mon–Thu 20:00 ART, **never Friday**: the guard is in the script as well as the timer;
+  outbound HTTPS only, conditional ETag) sees it and runs `lanube-deploy`: backup, migrate, recreate, healthcheck,
+  image rollback (migrations are **not** rolled back: write them backward-compatible). Manual deploy at any time:
+  `sudo lanube-autodeploy --now` or `sudo lanube-deploy deploy <sha>` (README «Deploy manual»).
+  SSH: `SSH_ALLOW_FROM` (01-bootstrap) limits port 22 by source, and `02-lock-ssh.sh` sets who gets in and how —
+  `ADMIN_USER` and `SSH_KEY_USERS` with a key only, `SSH_PASSWORD_USERS` with a password only. It writes a single
+  drop-in of its own and touches no other file in `sshd_config.d`.
+- **Re-running the bootstrap must not override anyone else's config.** It writes only uniquely named files
+  and lets later/admin definitions win: fail2ban `jail.d/00-lanube.conf` (a `.conf`, so any `.local` overrides
+  it; fail2ban's last definition wins), apt `52lanube-unattended`, sysctl `60-lanube-hardening.conf` (below any
+  `99-*`), UFW rules identified by our exact comments (`lanube-ssh`, `lanube-ssh-allowed`, `cloudflare-443`),
+  and the Caddyfile (marked on its first line; a foreign one is backed up first). sshd is the opposite
+  (first value wins): `00-lanube-hardening.conf` sorts early on purpose. New provisioning steps follow the same rule.
+- **Diagnostics**: `sudo lanube-doctor` (`deploy/scripts/lanube-doctor`, read-only, no secrets) checks containers and
+  published ports (via `docker inspect`: with `userland-proxy: false` `ss` doesn't list them), Caddy/certificates, UFW,
+  fail2ban, effective SSH and timers. It can run without re-running the bootstrap.
+- **Crons**: systemd timers replace them (`deploy/systemd`, same schedules as `vercel.json`). If a cron is added to
+  `vercel.json`, add it to `deploy/systemd` and to `lanube-cron`'s list as well.
 
 ## Testing & Seeding
 

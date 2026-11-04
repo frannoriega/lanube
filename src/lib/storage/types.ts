@@ -99,6 +99,12 @@ export function safeSegment(segment: string): string {
  * otherwise collide — this keeps them in separate top-level folders.
  */
 export function storageEnvRoot(): string {
+  // Fuera de Vercel (VPS) no existe `VERCEL_ENV`: sin esto todo caería en "dev". Se limita a los
+  // tres valores conocidos para que la clave nunca lleve segmentos arbitrarios.
+  const override = process.env.STORAGE_ENV_ROOT;
+  if (override === "prod" || override === "preview" || override === "dev") {
+    return override;
+  }
   switch (process.env.VERCEL_ENV) {
     case "production":
       return "prod";

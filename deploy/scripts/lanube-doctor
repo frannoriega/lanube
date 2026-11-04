@@ -1,0 +1,259 @@
+#!/usr/bin/env bash
+# Diagnóstico de la instalación. Es de SOLO LECTURA: no modifica nada y no muestra secretos
+# (ni el contenido de los .env ni el token de origen). Uso:
+#
+#   sudo lanube-doctor
+#
+# Cada comprobación termina en OK, AVISO (revisar), FALLO (algo está mal) o INFO (dato).
+# Salida: 0 si no hay ningún FALLO (puede haber avisos), 1 si hay alguno.
+set -uo pipefail
+
+if [ -t 1 ]; then G=$'\e[32m'; Y=$'\e[33m'; R=$'\e[31m'; B=$'\e[36m'; N=$'\e[0m'; else G=; Y=; R=; B=; N=; fi
+NOK=0; NWARN=0; NFAIL=0
+ok()      { printf '%s[ OK ]%s %s\n' "$G" "$N" "$1"; NOK=$((NOK + 1)); }
+warn()    { printf '%s[AVISO]%s %s\n' "$Y" "$N" "$1"; [ -z "${2:-}" ] || printf '        → %s\n' "$2"; NWARN=$((NWARN + 1)); }
+fail()    { printf '%s[FALLO]%s %s\n' "$R" "$N" "$1"; [ -z "${2:-}" ] || printf '        → %s\n' "$2"; NFAIL=$((NFAIL + 1)); }
+info()    { printf '%s[INFO]%s %s\n' "$B" "$N" "$1"; }
+section() { printf '\n== %s\n' "$1"; }
+have()    { command -v "$1" >/dev/null 2>&1; }
+# Valor de una clave de un archivo KEY=valor, sin comillas externas.
+envval()  { grep -m1 "^$2=" "$1" 2>/dev/null | cut -d= -f2- | sed -E 's/[[:space:]]+#.*$//; s/^[[:space:]]+//; s/[[:space:]]+$//; s/^"(.*)"$/\1/'; }
+summary() {
+  printf '\n== Resumen: %s OK, %s avisos, %s fallos\n' "$NOK" "$NWARN" "$NFAIL"
+  [ "$NFAIL" -eq 0 ] && exit 0
+  exit 1
+}
+
+[ "$(id -u)" = 0 ] || warn "Sin privilegios de root: varias comprobaciones no pueden leer lo que necesitan" "volver a ejecutar con sudo"
+
+# --------------------------------------------------------------------------------------------
+section "Configuración"
+CONF=/etc/lanube/deploy.conf
+if [ -r "$CONF" ]; then
+  # shellcheck disable=SC1090
+  . "$CONF"; ok "$CONF"
+else
+  fail "No se puede leer $CONF" "la instalación no se completó (ver README, sección Aprovisionamiento)"; summary
+fi
+APP_DIR="${APP_DIR:-/data/docker}"
+DATA_DIR="${DATA_DIR:-/data/volumenes/lanube}"
+BACKUP_DIR="${BACKUP_DIR:-/data/backup/lanube}"
+SCRIPT_DIR="${SCRIPT_DIR:-/data/script/lanube}"
+for f in compose.yml .env lanube.env postgres.env; do
+  [ -e "$APP_DIR/$f" ] && ok "$APP_DIR/$f existe" || fail "Falta $APP_DIR/$f"
+done
+for f in .env lanube.env postgres.env; do
+  [ -e "$APP_DIR/$f" ] || continue
+  mode="$(stat -c '%a' "$APP_DIR/$f" 2>/dev/null || true)"
+  [ -z "$mode" ] || [ "$mode" = 600 ] || warn "$APP_DIR/$f tiene permisos $mode" "chmod 600 $APP_DIR/$f"
+done
+for f in lanube.env postgres.env; do
+  if grep -q CAMBIAR "$APP_DIR/$f" 2>/dev/null; then
+    fail "$f conserva valores de plantilla («CAMBIAR»)" "completarlos antes del primer despliegue"
+  fi
+done
+URL="$(envval "$APP_DIR/lanube.env" NEXTAUTH_URL)"
+case "$URL" in
+  https://*) ok "NEXTAUTH_URL usa https" ;;
+  "")        warn "NEXTAUTH_URL no está definida" ;;
+  *)         warn "NEXTAUTH_URL no usa https ($URL)" "es lo esperado solo durante las pruebas" ;;
+esac
+TAG="$(envval "$APP_DIR/.env" IMAGE_TAG)"
+if [ -z "$TAG" ] || [ "$TAG" = none ]; then
+  warn "Todavía no hay ningún despliegue (IMAGE_TAG=${TAG:-vacío})" "sudo lanube-autodeploy --now"
+else
+  info "Versión desplegada: $TAG"
+fi
+
+# --------------------------------------------------------------------------------------------
+section "Contenedores"
+if ! have docker; then fail "Docker no está instalado"; summary; fi
+docker info >/dev/null 2>&1 && ok "El servicio de Docker responde" || { fail "Docker no responde"; summary; }
+cd "$APP_DIR" 2>/dev/null || { fail "No se puede entrar en $APP_DIR"; summary; }
+for svc in postgres app; do
+  cid="$(docker compose ps -q "$svc" 2>/dev/null | head -n1)"
+  if [ -z "$cid" ]; then fail "El contenedor «${svc}» no existe" "cd $APP_DIR && sudo docker compose up -d"; continue; fi
+  state="$(docker inspect -f '{{.State.Status}}' "$cid" 2>/dev/null)"
+  health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}-{{end}}' "$cid" 2>/dev/null)"
+  if [ "$state" = running ] && { [ "$health" = healthy ] || [ "$health" = - ]; }; then
+    ok "«${svc}»: $state${health:+ ($health)}"
+  else
+    fail "«${svc}»: $state ($health)" "sudo docker compose logs --tail 50 $svc"
+  fi
+  # Puertos publicados, tal como los ve Docker (con el proxy de usuario desactivado, `ss` no los lista).
+  bindings="$(docker inspect -f '{{json .NetworkSettings.Ports}}' "$cid" 2>/dev/null \
+    | jq -r 'to_entries[] | select(.value != null) | .value[] | "\(.HostIp):\(.HostPort)"' 2>/dev/null)"
+  if [ -z "$bindings" ]; then
+    ok "«${svc}» no publica puertos"
+  else
+    while IFS= read -r b; do
+      case "$b" in
+        127.0.0.1:*|::1:*) ok "«${svc}» publica $b (solo loopback)" ;;
+        *) fail "«${svc}» publica $b hacia la red" "quedaría accesible sin pasar por Caddy: en compose.yml el puerto debe ir como 127.0.0.1:<puerto>" ;;
+      esac
+    done <<<"$bindings"
+  fi
+done
+# Prueba de punta a punta: el puerto de la aplicación no debe contestar por la dirección de red del servidor.
+ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+if [ -n "$ip" ] && have curl; then
+  code="$(curl -sS -o /dev/null -m 3 -w '%{http_code}' "http://$ip:3000/" 2>/dev/null || true)"
+  if [ -n "$code" ] && [ "$code" != 000 ]; then
+    fail "La aplicación contesta en http://$ip:3000 (HTTP $code)" "está expuesta directamente en la red del servidor"
+  else
+    ok "La aplicación no contesta en la dirección de red del servidor ($ip:3000)"
+  fi
+fi
+if have curl; then
+  code="$(curl -sS -o /dev/null -m 5 -w '%{http_code}' http://127.0.0.1:3000/api/maintenance 2>/dev/null || true)"
+  [ "$code" = 200 ] && ok "La aplicación responde en 127.0.0.1:3000" || fail "La aplicación no responde en 127.0.0.1:3000 (HTTP ${code:-sin respuesta})" "sudo docker compose logs --tail 50 app"
+fi
+
+# --------------------------------------------------------------------------------------------
+section "Caddy y certificados"
+if ! have caddy; then
+  fail "Caddy no está instalado" "01-bootstrap.sh lo instala"
+else
+  systemctl is-active --quiet caddy && ok "Caddy está activo" || fail "Caddy no está activo" "sudo journalctl -xeu caddy -n 30"
+  caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1 && ok "La configuración de Caddy es válida" \
+    || fail "La configuración de Caddy no valida" "sudo caddy validate --config /etc/caddy/Caddyfile"
+  if [ -e /etc/caddy/sites/10-public.caddy ]; then ok "Sitio público activado"; else
+    info "Sitio público NO activado: Caddy solo atiende el listener de pruebas (127.0.0.1:8080)"
+  fi
+  have_cert=0; have_key=0
+  [ -s /etc/caddy/certs/origin.pem ] && have_cert=1
+  [ -s /etc/caddy/certs/origin.key ] && have_key=1
+  if [ "$have_cert" = 1 ] && [ "$have_key" = 1 ]; then
+    ok "Certificado y clave de origen presentes"
+    # La clave debe corresponder al certificado: si no, Caddy no puede servir TLS.
+    c="$(openssl x509 -in /etc/caddy/certs/origin.pem -noout -pubkey 2>/dev/null | openssl sha256 2>/dev/null)"
+    k="$(openssl pkey -in /etc/caddy/certs/origin.key -pubout 2>/dev/null | openssl sha256 2>/dev/null)"
+    if [ -n "$c" ] && [ "$c" = "$k" ]; then ok "La clave corresponde al certificado"
+    else fail "La clave de origen NO corresponde al certificado" "el certificado debe haberse emitido a partir de la solicitud (CSR) generada con esta clave"; fi
+    end="$(openssl x509 -in /etc/caddy/certs/origin.pem -noout -enddate 2>/dev/null | cut -d= -f2)"
+    if [ -n "$end" ]; then
+      left=$(( ($(date -d "$end" +%s 2>/dev/null || echo 0) - $(date +%s)) / 86400 ))
+      if [ "$left" -lt 0 ]; then fail "El certificado de origen venció ($end)"
+      elif [ "$left" -lt 30 ]; then warn "El certificado de origen vence en ${left} días ($end)"
+      else info "El certificado de origen vence el $end (${left} días)"; fi
+    fi
+  elif [ "$have_key" = 1 ]; then
+    info "Hay clave de origen pero todavía no certificado: a la espera de que lo emitan a partir de la solicitud (CSR)"
+  elif [ "$have_cert" = 1 ]; then
+    fail "Hay certificado de origen pero falta la clave (/etc/caddy/certs/origin.key)" "sin la clave que generó la solicitud, el certificado no sirve: hay que generar un par nuevo y pedir otro certificado"
+  else
+    warn "Faltan el certificado y la clave de origen en /etc/caddy/certs/" "sin ellos no se puede activar el sitio público"
+  fi
+  if [ -s /etc/caddy/origin-token ]; then
+    ok "El token de origen está definido (no se muestra)"
+    mode="$(stat -c '%a %U:%G' /etc/caddy/origin-token 2>/dev/null || true)"
+    [ -z "$mode" ] || [ "$mode" = "640 root:caddy" ] || warn "Permisos del token de origen: $mode" "se esperan 640 root:caddy (enable-public-site los corrige)"
+  else
+    info "Todavía no hay token de origen (lo crea o lo usa enable-public-site)"
+  fi
+  if have curl; then
+    code="$(curl -sS -o /dev/null -m 3 -w '%{http_code}' http://127.0.0.1:8080/api/maintenance 2>/dev/null || true)"
+    [ "$code" = 200 ] && ok "El listener de pruebas responde (127.0.0.1:8080)" || warn "El listener de pruebas no responde (HTTP ${code:-sin respuesta})"
+  fi
+fi
+
+# --------------------------------------------------------------------------------------------
+section "Firewall y fail2ban"
+if have ufw; then
+  st="$(ufw status 2>/dev/null)"
+  if grep -q '^Status: active' <<<"$st"; then
+    ok "UFW está activo"
+    rules="$(grep -E '(^|[[:space:]])22(/tcp)?([[:space:]]|$)' <<<"$st" | sed 's/[[:space:]]\+/ /g' | head -n 6)"
+    [ -z "$rules" ] && warn "UFW no tiene ninguna regla para el puerto 22" || while IFS= read -r l; do info "UFW, puerto 22: $l"; done <<<"$rules"
+    # Versiones anteriores comentaban la regla abierta como «ssh» (SSH desde cualquier origen): si
+    # sigue ahí, SSH_ALLOW_FROM no está restringiendo nada. «ssh-allowed» es la regla por origen:
+    # es válida, solo conserva el nombre antiguo.
+    grep -qE '# ssh$' <<<"$st" \
+      && warn "UFW tiene una regla con comentario «ssh» (de una versión anterior o ajena)" "sudo ufw status numbered; si es la que abre el puerto 22 a cualquier origen, sudo ufw delete <n>"
+    grep -qE '# ssh-allowed$' <<<"$st" \
+      && info "UFW: hay reglas con el comentario antiguo «ssh-allowed» (válidas; el bootstrap actual las nombra lanube-ssh-allowed)"
+    n="$(grep -c 'cloudflare-443' <<<"$st")"
+    [ "$n" -gt 0 ] && ok "UFW: $n reglas de Cloudflare para el 443" || warn "UFW no tiene reglas para el 443 de Cloudflare" "sudo update-cloudflare-ips"
+  else
+    warn "UFW no está activo" "sin él nada filtra el tráfico entrante en el propio servidor"
+  fi
+else
+  warn "UFW no está instalado"
+fi
+if have fail2ban-client && systemctl is-active --quiet fail2ban; then
+  ok "fail2ban está activo"
+  # Los valores de La Nube viven en 00-lanube.conf; una instalación anterior los dejó en lanube.local
+  # (que prevalece y puede tener ajustes propios): mientras uno de los dos exista, hay configuración.
+  if [ -e /etc/fail2ban/jail.d/00-lanube.conf ]; then ok "fail2ban: /etc/fail2ban/jail.d/00-lanube.conf"
+  elif [ -e /etc/fail2ban/jail.d/lanube.local ]; then :
+  else warn "No hay configuración de La Nube para fail2ban (jail.d/00-lanube.conf)" "volver a correr 01-bootstrap.sh"; fi
+  [ ! -e /etc/fail2ban/jail.d/lanube.local ] \
+    || info "fail2ban: /etc/fail2ban/jail.d/lanube.local (de una versión anterior) prevalece sobre 00-lanube.conf; mientras tenga ajustes propios, conservarlo"
+  ign="$(fail2ban-client get sshd ignoreip 2>/dev/null | sed -E 's/^[|`]- *//' | grep -E '^[0-9a-fA-F:.]+(/[0-9]+)?$' || true)"
+  if [ -z "$ign" ]; then
+    warn "No se pudo leer el ignoreip de la jaula sshd"
+  else
+    info "ignoreip de sshd: $(tr '\n' ' ' <<<"$ign")"
+    if ! grep -qvE '^(127\.|::1)' <<<"$ign"; then
+      warn "El ignoreip solo contiene loopback" "si varios administradores entran por una VPN o NAT comparten una dirección, y un bloqueo los afecta a todos: incluir ese rango"
+    fi
+  fi
+  n="$(fail2ban-client status sshd 2>/dev/null | grep -i 'currently banned' | grep -oE '[0-9]+' | head -n1)"
+  [ "${n:-0}" = 0 ] && ok "No hay direcciones bloqueadas por sshd" || warn "Direcciones bloqueadas por sshd: $n" "sudo fail2ban-client status sshd"
+else
+  warn "fail2ban no está activo"
+fi
+
+# --------------------------------------------------------------------------------------------
+section "Acceso SSH (solo lectura)"
+if have sshd; then
+  eff="$(sshd -T 2>/dev/null | grep -E '^(permitrootlogin|passwordauthentication|authenticationmethods|allowusers) ' || true)"
+  if [ -n "$eff" ]; then while IFS= read -r l; do info "sshd aplica: $l"; done <<<"$eff"; else warn "No se pudo leer la configuración efectiva de sshd" "ejecutar como root"; fi
+  files="$(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null | xargs -r -n1 basename | tr '\n' ' ')"
+  [ -z "$files" ] || info "Archivos en sshd_config.d (el primero que define una directiva prevalece): $files"
+fi
+
+# --------------------------------------------------------------------------------------------
+section "Tareas programadas y copias"
+if have systemctl; then
+  timers="$(systemctl list-unit-files 'lanube-*.timer' --no-legend 2>/dev/null | awk '{print $1}')"
+  [ -n "$timers" ] || warn "No hay temporizadores lanube-* instalados"
+  for t in $timers; do
+    if systemctl is-active --quiet "$t"; then ok "$t activo"; else fail "$t no está activo" "sudo systemctl enable --now $t"; fi
+    svc="${t%.timer}.service"
+    res="$(systemctl show -p Result --value "$svc" 2>/dev/null)"
+    [ -z "$res" ] || [ "$res" = success ] || warn "La última ejecución de $svc terminó con «${res}»" "sudo journalctl -u $svc -n 50"
+  done
+fi
+newest="$(find "$BACKUP_DIR" -maxdepth 1 -name 'db-*.dump' -printf '%T@ %f\n' 2>/dev/null | sort -n | tail -n1)"
+if [ -z "$newest" ]; then
+  warn "No hay copias de la base de datos en $BACKUP_DIR" "sudo lanube-backup all"
+else
+  age=$(( ($(date +%s) - ${newest%%.*}) / 86400 ))
+  [ "$age" -le 2 ] && ok "Última copia de la base de datos: ${newest#* } (hace $age días)" || warn "La última copia de la base de datos tiene $age días (${newest#* })" "sudo journalctl -u lanube-backup -n 50"
+fi
+[ -x "$SCRIPT_DIR/offsite.sh" ] && info "Hay un script de copias externas ($SCRIPT_DIR/offsite.sh)" || info "No hay script de copias externas: las copias viven solo en este disco"
+
+# --------------------------------------------------------------------------------------------
+section "Sistema"
+# compose.yml monta ../volumenes/lanube/{postgres,uploads}: tienen que existir con el dueño que usa
+# cada contenedor (Postgres: uid 999 una vez inicializado; la app: uid 1000).
+for pair in postgres:999 uploads:1000; do
+  d="$DATA_DIR/${pair%%:*}"; want="${pair##*:}"
+  if [ ! -d "$d" ]; then fail "Falta $d" "se crea con 01-bootstrap.sh"; continue; fi
+  own="$(stat -c '%u' "$d" 2>/dev/null || true)"
+  [ "$own" = "$want" ] && ok "$d (uid $own)" || warn "$d pertenece al uid $own y se espera $want" "sudo chown -R $want:$want $d"
+done
+for d in "$DATA_DIR" "$BACKUP_DIR"; do
+  [ -n "$d" ] && [ -d "$d" ] || continue
+  use="$(df -P "$d" 2>/dev/null | awk 'NR==2 {gsub("%","",$5); print $5}')"
+  [ -z "$use" ] || { [ "$use" -lt 85 ] && ok "Disco de $d: $use% usado" || warn "Disco de $d: $use% usado"; }
+done
+[ ! -e /etc/sysctl.d/99-lanube-hardening.conf ] \
+  || warn "Existe /etc/sysctl.d/99-lanube-hardening.conf (de una versión anterior): pisa cualquier otro ajuste de sysctl" "volver a correr 01-bootstrap.sh (lo reemplaza por 60-lanube-hardening.conf)"
+[ -e /var/run/reboot-required ] && warn "El sistema tiene un reinicio pendiente" "coordinar con quien administra el servidor" || ok "Sin reinicio pendiente"
+if have timedatectl; then
+  [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = yes ] && ok "Reloj sincronizado" || warn "El reloj no figura sincronizado" "las fechas de reservas y los tokens dependen de la hora"
+fi
+
+summary
