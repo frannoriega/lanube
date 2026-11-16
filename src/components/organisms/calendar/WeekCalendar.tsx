@@ -13,20 +13,17 @@ import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import {
-  hasMinimumNotice,
-  MINIMUM_NOTICE_MESSAGE,
-} from "@/lib/reservations/booking-window";
 import { toCapitalCase } from "@/lib/utils/string";
 import { addDays, addWeeks, format, isSameDay, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   BUSINESS_HOURS,
+  daysWithinHorizon,
   firstBookableDayIndex,
   firstBookableWeekStart,
-  getCurrentWorkWeekStart,
   fromUtcMs,
+  horizonWeekStart,
   isDayFullyBlocked,
   isDayFullyClosed,
   minutesToTime,
@@ -131,8 +128,12 @@ export function WeekCalendar({
   const [selection, setSelection] = useState<DragSelection | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   // Horario inicial del formulario de reserva (lo fijan el arrastre, el toque o "Reservar").
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
+  const [startTime, setStartTime] = useState(
+    minutesToTime(BUSINESS_HOURS.START * 60),
+  );
+  const [endTime, setEndTime] = useState(
+    minutesToTime(BUSINESS_HOURS.START * 60 + 60),
+  );
   const [submitting, setSubmitting] = useState(false);
   /*
    * Toque en curso sobre una columna (punteros táctiles / lápiz). Se guarda dónde empezó
@@ -183,29 +184,36 @@ export function WeekCalendar({
    * día que todavía admite reservas (o en el lunes si ninguno), en vez de en un día rayado.
    */
   const [focusedDayIdx, setFocusedDayIdx] = useState(0);
+  /*
+   * Días de la semana que entran en el horizonte (5 salvo en la última página, que se acorta).
+   * Los de afuera no se dibujan; `shownDays` es lo que ven las columnas y la tira de días.
+   */
+  const shownDays = useMemo(
+    () => weekDays.slice(0, daysWithinHorizon(weekDays, now())),
+    [weekDays, now],
+  );
+  // Último día dibujado de la semana: cierra el rango del encabezado (viernes salvo en la última página).
+  const lastShownDay = shownDays[shownDays.length - 1] ?? weekDays[0];
   useEffect(() => {
-    if (!weekDays.length) return;
-    const first = firstBookableDayIndex(weekDays, now());
+    if (!shownDays.length) return;
+    const first = firstBookableDayIndex(shownDays, now());
     setFocusedDayIdx(first === -1 ? 0 : first);
     // `now` es estable por revisión de alineación; solo interesa re-enfocar al cambiar de semana.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekDays]);
+  }, [shownDays]);
   const visibleIdx = useMemo(
-    () => visibleDayIndices(visibleCount, focusedDayIdx),
-    [visibleCount, focusedDayIdx],
+    () => visibleDayIndices(visibleCount, focusedDayIdx, shownDays.length),
+    [visibleCount, focusedDayIdx, shownDays.length],
   );
 
   /*
    * "Hoy" lleva a la primera semana con algo reservable (la misma con la que abre), y es
-   * también el límite hacia atrás. El límite hacia adelante sigue anclado a la semana de
-   * trabajo actual + 1, como antes: saltar una semana bloqueada no extiende el horizonte de
-   * reserva.
+   * también el límite hacia atrás. El límite hacia adelante es el horizonte deslizante de dos
+   * semanas (milestone 26): la última página es la semana que contiene el último día
+   * reservable, y de ella solo se dibujan los días que entran.
    */
   const todayWeekStart = useMemo(() => firstBookableWeekStart(now()), [now]);
-  const maxWeekStart = useMemo(
-    () => addWeeks(getCurrentWorkWeekStart(now()), 1),
-    [now],
-  );
+  const maxWeekStart = useMemo(() => horizonWeekStart(now()), [now]);
   const canGoNext = !!(
     currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart
   );
@@ -346,7 +354,7 @@ export function WeekCalendar({
       const selectedDateTime = new Date(posInfo.day);
       selectedDateTime.setHours(0, posInfo.minutes, 0, 0);
 
-      if (!hasMinimumNotice(selectedDateTime.getTime(), clock.getTime())) {
+      if (selectedDateTime.getTime() < clock.getTime()) {
         return;
       }
 
@@ -575,8 +583,8 @@ export function WeekCalendar({
 
       const startAt = new Date(day);
       startAt.setHours(0, start, 0, 0);
-      if (!hasMinimumNotice(startAt.getTime(), now().getTime())) {
-        toast.error(MINIMUM_NOTICE_MESSAGE);
+      if (startAt.getTime() < now().getTime()) {
+        toast.error("No se pueden hacer reservas en el pasado");
         return;
       }
 
@@ -653,10 +661,6 @@ export function WeekCalendar({
       toast.error("No se pueden hacer reservas en el pasado");
       return;
     }
-    if (!hasMinimumNotice(startDateTime.getTime(), clock.getTime())) {
-      toast.error(MINIMUM_NOTICE_MESSAGE);
-      return;
-    }
 
     setSubmitting(true);
     try {
@@ -706,27 +710,32 @@ export function WeekCalendar({
         {/* Week Navigation */}
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="min-w-0 text-sm text-gray-600 dark:text-gray-400">
-            {isNarrow ? (
+            {isSameDay(currentWeekStart, lastShownDay) ? (
+              // Última página del horizonte con un solo día: sin rango («15 de noviembre de 2026»).
+              <>
+                {format(currentWeekStart, "d 'de' MMMM 'de' yyyy", {
+                  locale: es,
+                })}
+              </>
+            ) : isNarrow ? (
               // En las vistas angostas el rango va corto ("5 – 9 oct") para dejar lugar a los botones.
               // Si la semana cruza de mes, el primer día lleva su mes ("28 sept – 2 oct"): sin él
               // se leía "28 – 2 oct", como si fuera del 28 de octubre.
               <>
                 {format(
                   currentWeekStart,
-                  isSameMonth(currentWeekStart, addDays(currentWeekStart, 4))
-                    ? "d"
-                    : "d MMM",
+                  isSameMonth(currentWeekStart, lastShownDay) ? "d" : "d MMM",
                   { locale: es },
                 )}{" "}
                 –{" "}
-                {format(addDays(currentWeekStart, 4), "d MMM yyyy", {
+                {format(lastShownDay, "d MMM yyyy", {
                   locale: es,
                 })}
               </>
             ) : (
               <>
                 {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-                {format(addDays(currentWeekStart, 4), "d 'de' MMMM 'de' yyyy", {
+                {format(lastShownDay, "d 'de' MMMM 'de' yyyy", {
                   locale: es,
                 })}
               </>
@@ -771,7 +780,7 @@ export function WeekCalendar({
         {/* Tira de días (solo vistas angostas): elegir el día que se muestra. */}
         {isNarrow && (
           <DayStrip
-            days={weekDays}
+            days={shownDays}
             focusedIndex={focusedDayIdx}
             visibleIndices={visibleIdx}
             todayRef={now()}

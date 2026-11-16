@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { unixMsToDate } from "@/lib/unix-ms";
 import {
   validateAgainstClosures,
+  validateReservationReason,
   validateUserReservationWindow,
 } from "./user-rules";
 
@@ -22,7 +23,7 @@ import {
  *
  * Antes estas reglas vivían en el route handler `POST/DELETE /api/resources/[spaceId]`, y
  * cualquier segundo cliente que llamara a `createReservation()` directo (el conector MCP) se
- * las habría salteado: grilla de 15 minutos, nada en el pasado, 24 h de anticipación, ventana
+ * las habría salteado: grilla de 15 minutos, nada en el pasado, ventana
  * horaria del predio, tipo de reserva válido, y que solo se cancele lo propio. Ahora el route
  * handler y el endpoint MCP llaman a estas funciones, así que **las reglas son las mismas
  * porque son el mismo código**.
@@ -63,8 +64,10 @@ export async function requestUserReservation(
   if (!space || !space.isReservable)
     throw new DomainError("Espacio no encontrado", 404);
 
-  const reason = input.reason?.trim();
-  if (!reason) throw new DomainError("Faltan campos requeridos");
+  // Mismo largo máximo que el formulario: antes solo lo limitaba la UI.
+  const reason = typeof input.reason === "string" ? input.reason.trim() : "";
+  const reasonViolation = validateReservationReason(reason);
+  if (reasonViolation) throw new DomainError(reasonViolation);
 
   const typeCode =
     typeof input.eventType === "string" && input.eventType

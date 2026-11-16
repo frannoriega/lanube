@@ -6,7 +6,7 @@
  * duplicar el markup.
  *
  * Son componentes **de presentación**: no piden datos ni deciden reglas. El fetch, el envío
- * de la reserva, la regla de 24h de anticipación (`isDayFullyBlocked` / `hasMinimumNotice`)
+ * de la reserva, el bloqueo de días ya pasados (`isDayFullyBlocked`)
  * y el diálogo de detalle siguen viviendo una sola vez en `WeekCalendar`, que le pasa a cada
  * columna lo que ya calculó.
  */
@@ -88,7 +88,7 @@ export function DayHeaderCell({
 
 export interface DayColumnProps {
   day: Date;
-  /** Día entero bloqueado por la anticipación mínima de 24h: se dibuja rayado y no acepta selección. */
+  /** Día entero bloqueado (ya no queda ningún turno por delante): se dibuja rayado y no acepta selección. */
   blocked: boolean;
   reservations: ReservationOccurrence[];
   unavailableSlots: UnavailableSlot[];
@@ -317,7 +317,7 @@ function OccurrenceBlock({
  * Tira de días para las vistas angostas (1 o 3 días, < 768px): un chip por día hábil de la
  * semana. Reemplaza al encabezado de 5 columnas, que no entra en un teléfono.
  *   - El chip del día enfocado queda resaltado; tocar otro lo enfoca.
- *   - Los días bloqueados por la anticipación de 24h quedan deshabilitados.
+ *   - Los días sin turnos por delante quedan deshabilitados.
  *   - Un punto marca los días donde el usuario ya tiene una reserva propia.
  * Sin gestos de swipe a propósito: chocarían con el scroll vertical de la página.
  */

@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TZDate } from "@date-fns/tz";
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
-import {
-  BOOKING_WINDOW_MESSAGES,
-  MINIMUM_NOTICE_MESSAGE,
-} from "./booking-window";
+import { BOOKING_WINDOW_MESSAGES } from "./booking-window";
 import {
   validateAgainstClosures,
   validateUserReservationWindow,
@@ -62,23 +59,49 @@ describe("validateUserReservationWindow", () => {
     ).toBe("No se pueden hacer reservas en el pasado");
   });
 
-  it("exige 24 h reales de anticipación", () => {
-    // Mañana a las 09:00: 23 h de margen.
+  it("no exige anticipación: vale cualquier turno desde ahora en adelante", () => {
+    // NOW es el lunes 2026-10-05 a las 10:00 local.
+    // Un rato después, el mismo día.
     expect(
       validateUserReservationWindow(
-        local(2026, 10, 6, 9),
-        local(2026, 10, 6, 11),
-        NOW,
-      ),
-    ).toBe(MINIMUM_NOTICE_MESSAGE);
-    // Mañana a las 10:00: exactamente 24 h, alcanza.
-    expect(
-      validateUserReservationWindow(
-        local(2026, 10, 6, 10),
-        local(2026, 10, 6, 11),
+        local(2026, 10, 5, 10, 15),
+        local(2026, 10, 5, 11),
         NOW,
       ),
     ).toBeNull();
+    // Exactamente ahora.
+    expect(
+      validateUserReservationWindow(
+        local(2026, 10, 5, 10),
+        local(2026, 10, 5, 11),
+        NOW,
+      ),
+    ).toBeNull();
+    // Mañana temprano (antes exigía 24 h).
+    expect(
+      validateUserReservationWindow(
+        local(2026, 10, 6, 8),
+        local(2026, 10, 6, 9),
+        NOW,
+      ),
+    ).toBeNull();
+  });
+
+  it("rechaza lo que pasa del horizonte de 2 semanas, y acepta el último día entero", () => {
+    // NOW es el lunes 2026-10-05 10:00: se puede reservar hasta el lunes 19 inclusive.
+    expect(
+      validateUserReservationWindow(
+        local(2026, 10, 19, 18),
+        local(2026, 10, 19, 19),
+        NOW,
+      ),
+    ).toBeNull();
+    const msg = validateUserReservationWindow(
+      local(2026, 10, 20, 8),
+      local(2026, 10, 20, 9),
+      NOW,
+    );
+    expect(msg).toContain("19/10/2026");
   });
 
   it("aplica la ventana horaria del predio", () => {
@@ -92,8 +115,8 @@ describe("validateUserReservationWindow", () => {
     ).toBe(BOOKING_WINDOW_MESSAGES.weekend);
     expect(
       validateUserReservationWindow(
-        local(2026, 10, 8, 17),
-        local(2026, 10, 8, 19),
+        local(2026, 10, 8, 18),
+        local(2026, 10, 8, 20),
         NOW,
       ),
     ).toBe(BOOKING_WINDOW_MESSAGES.outside_hours);

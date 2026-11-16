@@ -389,7 +389,8 @@ src/
   Every admin reservation view — the list, the timeline, the per-day counts and the dashboard's
   pending/approved/rejected counters — filters `EXCLUDE_EVENT_RESERVATIONS`
   (`src/lib/db/adminReservations.ts`), and `PATCH /api/admin/reservations/[id]` answers 409 for
-  an `EVENT` reservation. A new admin reservation query must include that filter (the SQL ones
+  an `EVENT` reservation (and only decides **PENDING** ones: `APPROVED`/`REJECTED`, reject needs
+  a reason — milestone 26). A new admin reservation query must include that filter (the SQL ones
   over `reservation_occurrences()` say `r.reservable_type <> 'EVENT'`). Usage reports
   (`adminReports.ts`) still count events on purpose — one per session since milestone 25.
 - **Public form flow**: unauthenticated routes under `/forms/[slug]` (submit) and
@@ -483,6 +484,8 @@ for event exceptions (business rule; the `reason` column is optional). The pure 
   resolves each to a reservation by weekday **after** the recurrence diff, writes/clears the
   exception (one per date), rebuilds the ledger, and **collects notifications sent only after the
   transaction commits** (never on a rolled-back edit). `revert` emails a **"restored"** notice.
+  Each action must name a **real, upcoming** session (`isUpcomingOccurrence`, the same rule as the
+  panel's list) and a reschedule must be same-day on the 15-min grid — otherwise 400 (milestone 26).
 - **Editing preserves exceptions:** `updateEvent` diffs weekdays and updates reservations in place
   (no delete+recreate). It throws `EventEditDropWarning` (→ **409** with the dropped sessions) only
   when an edit would **drop** a saved exception (removed weekday / out-of-range date / resource
@@ -823,8 +826,13 @@ onSave)` + `ReorderBar` (`molecules/table-reorder.tsx`) and `DataTable`'s `reord
   phones, tones with built-in `dark:` variants.
 - **Booking calendar** (`organisms/calendar/`): `WeekCalendar` shows 1 / 3 / 5 days by width
   (`calendar-utils.ts`, unit-tested), `DayStrip` on narrow views, tap-a-slot → booking drawer
-  on touch (drag-select is mouse-only), opens on the first week/day still bookable under the
-  24h notice rule. Pure date logic lives in `calendar-utils.ts`; keep it there.
+  on touch (drag-select is mouse-only), opens on the first week/day with a slot still ahead of now (no
+  minimum notice since milestone 26). Pure date logic lives in `calendar-utils.ts`; keep it there.
+- **Booking horizon** (milestone 26): users can book from `now` to the end of local day today + 14 (a
+  sliding window, not "this week + next"). The one rule is `src/lib/reservations/booking-horizon.ts`;
+  the server enforces it in `validateUserReservationWindow` (web + MCP) and `computeFreeWindows`, and
+  the calendar drops (doesn't grey) days past it. Past days stay greyed. Booking hours are
+  `BOOKING_OPEN/CLOSE_HOUR` in `booking-window.ts` (08–19); there is no minimum notice.
 - **Mobile screenshots:** `node scripts/mobile-shots.mjs <name> [filter]` (Playwright, signs
   in as `u1` / `sa1`) captures every route at phone 390 (light + dark) / tablet 820 /
   desktop 1440 into gitignored `.mobile-shots/<name>/` and prints **OVF** lines for

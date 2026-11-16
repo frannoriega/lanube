@@ -62,8 +62,19 @@ export async function PATCH(
 
     const { status, deniedReason, preview } = await request.json();
 
-    if (!status || !["APPROVED", "REJECTED", "CANCELLED"].includes(status)) {
+    // Solo las dos decisiones que ofrece el panel (Aprobar / Rechazar). `CANCELLED` se aceptaba
+    // pero ninguna pantalla lo manda (auditoría de restricciones de UI, milestone 26).
+    if (!status || !["APPROVED", "REJECTED"].includes(status)) {
       return NextResponse.json({ message: "Estado inválido" }, { status: 400 });
+    }
+    // Rechazar exige un motivo, como el botón «Confirmar rechazo»: es lo que lee quien la pidió.
+    const trimmedReason =
+      typeof deniedReason === "string" ? deniedReason.trim() : "";
+    if (status === "REJECTED" && !trimmedReason) {
+      return apiError("El motivo del rechazo es obligatorio", 400);
+    }
+    if (trimmedReason.length > 1000) {
+      return apiError("El motivo admite hasta 1000 caracteres", 400);
     }
 
     const resolvedParams = await params;
@@ -73,13 +84,20 @@ export async function PATCH(
     // ocupado un espacio que ya no lo está. Se cambian editando el evento.
     const target = await prisma.reservation.findUnique({
       where: { id: resolvedParams.id },
-      select: { reservableType: true },
+      select: { reservableType: true, status: true },
     });
-    if (target?.reservableType === "EVENT") {
+    if (!target) return apiError("Reserva no encontrada", 404);
+    if (target.reservableType === "EVENT") {
       return apiError(
         "Esta reserva pertenece a un evento: modificala desde la gestión del evento.",
         409,
       );
+    }
+    // Solo se decide lo pendiente: el panel muestra Aprobar / Rechazar únicamente en reservas
+    // PENDING. Antes un PATCH directo podía rechazar una ya aprobada o reaprobar una rechazada
+    // (y con eso rechazar automáticamente a otras).
+    if (target.status !== "PENDING") {
+      return apiError("Esta reserva ya fue resuelta", 409);
     }
 
     if (status === "APPROVED") {
@@ -160,7 +178,7 @@ export async function PATCH(
       const reservation = await setReservationStatus(
         resolvedParams.id,
         status as ReservationStatus,
-        deniedReason,
+        trimmedReason,
       );
       const context = await getReservationNotificationContext(
         resolvedParams.id,
@@ -185,7 +203,7 @@ export async function PATCH(
               before: diff.before,
               after: diff.after,
               context: context ? buildReservationAuditContext(context) : null,
-              reason: deniedReason ?? null,
+              reason: trimmedReason || null,
             },
           );
         }

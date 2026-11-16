@@ -291,6 +291,25 @@ describe("repeating groups", () => {
     expect(res.errors["members"]).toBe("Agregá al menos 1");
   });
 
+  it("exige exactamente la cantidad que dicta countFrom (el form la sincroniza; el server ahora también la valida)", () => {
+    const one = { mname: "Ana", mdni: "12345678" };
+    // Pide 2 y manda 3: antes pasaba (solo se miraban min y max del grupo).
+    expect(
+      validateForm(schema, { count: "2", members: [one, one, one] }).errors[
+        "members"
+      ],
+    ).toBe("Tiene que haber 2 elemento(s)");
+    // Pide 3 y manda 2.
+    expect(
+      validateForm(schema, { count: "3", members: [one, one] }).errors[
+        "members"
+      ],
+    ).toBe("Tiene que haber 3 elemento(s)");
+    expect(validateForm(schema, { count: "2", members: [one, one] }).ok).toBe(
+      true,
+    );
+  });
+
   it("prune preserves the array structure and drops unknown keys within items", () => {
     const pruned = pruneAnswers(schema, {
       count: "1",

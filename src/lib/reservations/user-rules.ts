@@ -5,11 +5,29 @@ import {
 } from "@/lib/closed-days/closures";
 import { isOnLedgerGrid } from "@/lib/constants/reservations";
 import {
-  BOOKING_WINDOW_MESSAGES,
-  checkBookingWindow,
-  hasMinimumNotice,
-  MINIMUM_NOTICE_MESSAGE,
-} from "./booking-window";
+  bookingHorizonMessage,
+  isBeyondBookingHorizon,
+} from "./booking-horizon";
+import { BOOKING_WINDOW_MESSAGES, checkBookingWindow } from "./booking-window";
+
+/**
+ * Largo máximo del motivo de una reserva. Lo usan el formulario de la web (`BookingForm`), la
+ * tool MCP y {@link validateReservationReason} en el servidor: antes solo lo limitaba el
+ * formulario, y un POST directo a `/api/resources/[spaceId]` guardaba un motivo de cualquier
+ * tamaño (auditoría de restricciones de UI, milestone 26).
+ */
+export const RESERVATION_REASON_MAX = 1000;
+
+/**
+ * Valida el motivo ya recortado. Devuelve el mensaje en castellano o `null` si es válido.
+ * Es la misma regla que el schema del formulario: no vacío y hasta {@link RESERVATION_REASON_MAX}.
+ */
+export function validateReservationReason(reason: string): string | null {
+  if (!reason) return "Faltan campos requeridos";
+  if (reason.length > RESERVATION_REASON_MAX)
+    return `El motivo admite hasta ${RESERVATION_REASON_MAX} caracteres`;
+  return null;
+}
 
 /**
  * Reglas **puras** (sin base, sin reloj propio) que un usuario tiene que cumplir para pedir
@@ -39,9 +57,13 @@ export function validateUserReservationWindow(
 
   if (startMs < nowMs) return "No se pueden hacer reservas en el pasado";
 
-  // Anticipación mínima real (24hs de margen), no por día calendario — ver el comentario de
-  // MINIMUM_NOTICE_MS en booking-window.ts.
-  if (!hasMinimumNotice(startMs, nowMs)) return MINIMUM_NOTICE_MESSAGE;
+  // Horizonte de dos semanas, deslizante y por día local (milestone 26): pasado el último día
+  // reservable no puede haber reservas de usuarios, así los eventos del equipo nunca las pisan.
+  if (isBeyondBookingHorizon(startMs, nowMs))
+    return bookingHorizonMessage(nowMs);
+
+  // Sin anticipación mínima (desde el milestone 26): vale cualquier turno que empiece desde
+  // `now` en adelante. Hasta entonces se exigían 24 h de margen.
 
   // Reglas de día de semana + horario de apertura, comparadas en la zona horaria del propio
   // predio (milestone-12 D14).

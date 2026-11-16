@@ -105,7 +105,11 @@ export function buildAdminUsersColumns({
     enableSorting: false,
     cell: ({ row }) => {
       const user = row.original;
-      if (!canManageRoles || user.id === currentUserId) {
+      // Un rol actual que no está entre los asignables (el superadmin, o uno que el rol de
+      // quien mira no puede otorgar) no se puede cambiar: el servidor lo rechaza con 403.
+      const roleLocked =
+        user.roleId != null && !roles.some((r) => r.id === user.roleId);
+      if (!canManageRoles || user.id === currentUserId || roleLocked) {
         return <Badge variant="secondary">{resolveRoleLabel(user.role)}</Badge>;
       }
       return (

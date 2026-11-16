@@ -15,6 +15,7 @@ import {
   ExistingException,
   RawReservation,
   detectDroppedExceptions,
+  isUpcomingOccurrence,
   utcDateKey,
   weekdayOfRrule,
 } from "@/lib/events/occurrences";
@@ -664,7 +665,11 @@ async function applySessionActions(
 
   const reservations = await tx.reservation.findMany({
     where: { reservableType: "EVENT", reservableId: eventId },
-    include: { exceptions: { select: { id: true, exceptionDate: true } } },
+    include: {
+      exceptions: {
+        select: { id: true, exceptionDate: true, newEndTime: true },
+      },
+    },
   });
   const byWeekday = new Map<number, (typeof reservations)[number]>();
   for (const r of reservations) {
@@ -678,11 +683,34 @@ async function applySessionActions(
     if (!r) continue; // weekday no longer part of the event
     const duration = Number(r.endTime) - Number(r.startTime);
     const key = utcDateKey(a.occurrenceDateMs);
+    const sameDate = r.exceptions.filter(
+      (ex) => utcDateKey(Number(ex.exceptionDate)) === key,
+    );
+
+    // Solo sesiones reales y por venir, las mismas que ofrece el panel «Sesiones»: un PUT directo
+    // ya no puede inventar una fecha ni tocar una sesión que pasó (y avisarle a los inscriptos).
+    const rescheduledEnd = sameDate
+      .map((ex) => (ex.newEndTime != null ? Number(ex.newEndTime) : null))
+      .find((ms) => ms != null);
+    if (
+      !isUpcomingOccurrence(
+        {
+          startMs: Number(r.startTime),
+          endMs: Number(r.endTime),
+          recurrenceEndMs: Number(r.recurrenceEnd ?? r.endTime),
+        },
+        a.occurrenceDateMs,
+        nowMs(),
+        rescheduledEnd ?? null,
+      )
+    ) {
+      throw new DomainError(
+        `La sesión del ${dateKeyFromUnixMs(a.occurrenceDateMs).split("-").reverse().join("/")} no existe o ya pasó`,
+      );
+    }
 
     // One exception per date: drop any existing one first.
-    const stale = r.exceptions
-      .filter((ex) => utcDateKey(Number(ex.exceptionDate)) === key)
-      .map((ex) => ex.id);
+    const stale = sameDate.map((ex) => ex.id);
     if (stale.length > 0) {
       await tx.reservationException.deleteMany({
         where: { id: { in: stale } },

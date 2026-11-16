@@ -119,7 +119,7 @@ export interface ClosureSlot {
 
 /**
  * Expande los cierres a tramos **por día** dentro de `[rangeStartMs, rangeEndMs]`, recortados
- * al horario en que se puede reservar (09:00–18:00).
+ * al horario en que se puede reservar (`BOOKING_OPEN_MINUTES`..`BOOKING_CLOSE_MINUTES`).
  *
  * Lo hace el servidor y no el cliente para que el navegador no tenga que repetir la lógica de
  * zona horaria. El recorte importa por dos motivos: fuera de ese horario el calendario no

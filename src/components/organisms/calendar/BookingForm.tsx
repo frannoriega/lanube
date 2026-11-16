@@ -12,8 +12,7 @@
  *   - Orden: Horario · Tipo · Motivo. El pie (Cancelar / Crear reserva) usa
  *     `ResponsiveDialogFooter`, así en el teléfono queda pegado abajo de la hoja.
  *
- * Las reglas de negocio que dependen del reloj (no reservar en el pasado, 24h de
- * anticipación mínima) **no** viven acá: las sigue aplicando `WeekCalendar` en su submit,
+ * Las reglas de negocio que dependen del reloj (no reservar en el pasado) **no** viven acá: las sigue aplicando `WeekCalendar` en su submit,
  * para que haya un único lugar donde se decide si una reserva es válida.
  */
 
@@ -35,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { RESERVATION_REASON_MAX } from "@/lib/reservations/user-rules";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useMemo } from "react";
@@ -58,7 +58,10 @@ export const bookingFormSchema = z
       .string()
       .trim()
       .min(1, "Contanos para qué es la reserva")
-      .max(1000, "Máximo 1000 caracteres"),
+      .max(
+        RESERVATION_REASON_MAX,
+        `Máximo ${RESERVATION_REASON_MAX} caracteres`,
+      ),
   })
   .refine((v) => timeToMinutes(v.endTime) > timeToMinutes(v.startTime), {
     message: "La hora de fin debe ser posterior a la de inicio",

@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TZDate } from "@date-fns/tz";
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
-import {
-  checkBookingWindow,
-  hasMinimumNotice,
-  MINIMUM_NOTICE_MS,
-} from "./booking-window";
+import { checkBookingWindow } from "./booking-window";
 
 /** Unix ms for a venue-local date + time, so the cases read as the rule they test. */
 function local(y: number, m: number, d: number, h: number, min = 0): number {
@@ -23,19 +19,19 @@ describe("checkBookingWindow", () => {
     ).toBe(null);
   });
 
-  it("rejects a booking ending after 18:00 local", () => {
-    // The old check was `endHour > 21` on UTC hours, which admitted 18:59 local.
+  it("rejects a booking ending after 19:00 local", () => {
+    // The old check was `endHour > 21` on UTC hours, which admitted one hour past close.
     expect(
-      checkBookingWindow(local(2026, 9, 24, 17), local(2026, 9, 24, 18, 59)),
+      checkBookingWindow(local(2026, 9, 24, 18), local(2026, 9, 24, 19, 59)),
     ).toBe("outside_hours");
     expect(
-      checkBookingWindow(local(2026, 9, 24, 17), local(2026, 9, 24, 18, 15)),
+      checkBookingWindow(local(2026, 9, 24, 18), local(2026, 9, 24, 19, 15)),
     ).toBe("outside_hours");
   });
 
-  it("rejects a booking starting before 09:00 local", () => {
+  it("rejects a booking starting before 08:00 local", () => {
     expect(
-      checkBookingWindow(local(2026, 9, 24, 8, 45), local(2026, 9, 24, 10)),
+      checkBookingWindow(local(2026, 9, 24, 7, 45), local(2026, 9, 24, 10)),
     ).toBe("outside_hours");
   });
 
@@ -73,27 +69,5 @@ describe("checkBookingWindow", () => {
     expect(
       checkBookingWindow(local(2026, 9, 24, 17), local(2026, 9, 25, 10)),
     ).toBe("overnight");
-  });
-});
-
-describe("hasMinimumNotice", () => {
-  const nowMs = local(2026, 9, 24, 12); // Thursday 12:00 local
-
-  it("rejects a start less than 24h away", () => {
-    expect(hasMinimumNotice(nowMs + MINIMUM_NOTICE_MS - 1, nowMs)).toBe(false);
-    // The old day-based rule let this through: "tomorrow" by calendar day, only 10h away.
-    expect(hasMinimumNotice(local(2026, 9, 25, 9), nowMs)).toBe(false);
-  });
-
-  it("allows a start exactly 24h away", () => {
-    expect(hasMinimumNotice(nowMs + MINIMUM_NOTICE_MS, nowMs)).toBe(true);
-  });
-
-  it("allows a start well beyond 24h away", () => {
-    expect(hasMinimumNotice(local(2026, 9, 28, 9), nowMs)).toBe(true);
-  });
-
-  it("rejects a start in the past", () => {
-    expect(hasMinimumNotice(nowMs - 1000, nowMs)).toBe(false);
   });
 });

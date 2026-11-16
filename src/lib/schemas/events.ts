@@ -1,3 +1,5 @@
+import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
+import { isOnLedgerGrid } from "@/lib/constants/reservations";
 import { DATETIME_LOCAL_RE } from "@/lib/events/datetime";
 import { conditionSchema, formSchemaZod } from "@/lib/events/form-schema";
 import { registerEmailSchema } from "@/lib/schemas/auth";
@@ -164,7 +166,21 @@ export const sessionActionSchema = z.discriminatedUnion("kind", [
     .refine((d) => d.newEndMs > d.newStartMs, {
       message: "El horario de fin debe ser posterior al de inicio",
       path: ["newEndMs"],
-    }),
+    })
+    // El diálogo «Reprogramar» elige un solo día y horas en cuartos de hora (`TimeSelect`); el
+    // servidor no lo exigía (auditoría de restricciones de UI, milestone 26). Mismo motivo que
+    // `timeOfDaySchema`: fuera de la grilla del ledger los buckets no se comparan.
+    .refine((d) => isOnLedgerGrid(d.newStartMs) && isOnLedgerGrid(d.newEndMs), {
+      message: "La sesión debe empezar y terminar en intervalos de 15 minutos",
+      path: ["newStartMs"],
+    })
+    .refine(
+      (d) => dateKeyFromUnixMs(d.newStartMs) === dateKeyFromUnixMs(d.newEndMs),
+      {
+        message: "La sesión debe empezar y terminar el mismo día",
+        path: ["newEndMs"],
+      },
+    ),
   z.object({
     kind: z.literal("revert"),
     weekday: z.number().int().min(0).max(6),

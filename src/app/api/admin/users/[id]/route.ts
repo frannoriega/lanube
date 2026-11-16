@@ -47,6 +47,22 @@ export async function PATCH(
 
   // El rol superadmin nunca se asigna desde el panel, ni siquiera por otro superadmin — ese
   // tier se otorga a mano en la base de datos (ver Role.grantableRoleIds).
+  // Simétrico: a quien ya es superadmin tampoco se le cambia (ni se le quita) el rol desde el
+  // panel. La tabla lo muestra como texto, sin selector.
+  const target = await prisma.registeredUser.findUnique({
+    where: { id },
+    select: { roleId: true, roleRef: { select: { isSuperadmin: true } } },
+  });
+  if (target?.roleRef?.isSuperadmin) {
+    return NextResponse.json(
+      {
+        message:
+          "El rol superadmin no se puede quitar desde el panel: se gestiona manualmente en la base de datos",
+      },
+      { status: 403 },
+    );
+  }
+
   if (nextRole?.isSuperadmin) {
     return NextResponse.json(
       {
@@ -61,12 +77,22 @@ export async function PATCH(
   // null). Cualquier otro actor con `users:roles:manage` queda limitado a lo que SU PROPIO
   // rol tiene habilitado otorgar — defensa en profundidad además del filtro que ya aplica
   // GET /api/admin/roles/assignable, para quien llame a este endpoint directamente.
-  if (!session.isSuperadmin && parsed.data.roleId) {
+  if (!session.isSuperadmin) {
     const resolved = await getPermissionSetForUser(session.userId);
     const grantable = new Set(resolved?.role?.grantableRoleIds ?? []);
-    if (!grantable.has(parsed.data.roleId)) {
+    if (parsed.data.roleId && !grantable.has(parsed.data.roleId)) {
       return NextResponse.json(
         { message: "No tenés permiso para asignar ese rol" },
+        { status: 403 },
+      );
+    }
+    // Tampoco puede tocar a alguien cuyo rol ACTUAL no podría otorgar: si no, quitarle el rol
+    // (roleId null) a un superadmin o a otro admin pasaba el chequeo de arriba, que solo mira
+    // el rol de destino. La tabla de usuarios ya muestra ese rol como texto, sin selector
+    // (auditoría de restricciones de UI, milestone 26).
+    if (target?.roleId && !grantable.has(target.roleId)) {
+      return NextResponse.json(
+        { message: "No tenés permiso para cambiar el rol de esta persona" },
         { status: 403 },
       );
     }

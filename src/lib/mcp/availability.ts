@@ -1,18 +1,18 @@
 import { TZDate } from "@date-fns/tz";
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
 import { LEDGER_SLOT_MS } from "@/lib/constants/reservations";
+import { bookingHorizonEndMs } from "@/lib/reservations/booking-horizon";
 import {
   BOOKING_CLOSE_MINUTES,
   BOOKING_OPEN_MINUTES,
-  MINIMUM_NOTICE_MS,
 } from "@/lib/reservations/booking-window";
 
 /**
  * Huecos libres de un espacio para la tool `get_availability` (milestone 20). Puro y
  * testeado: la parte con base (los bloques ocupados) la pone el llamador.
  *
- * Parte de las **mismas reglas** que valida `requestUserReservation` — días hábiles, 09:00 a
- * 18:00 en la zona del predio, 24 h de anticipación, grilla de 15 minutos — para que lo que
+ * Parte de las **mismas reglas** que valida `requestUserReservation` — días hábiles, el horario
+ * de reserva en la zona del predio, nada en el pasado, grilla de 15 minutos — para que lo que
  * el asistente ve como "libre" sea efectivamente reservable. Lo único que no puede anticipar
  * es una reserva aprobada entre la consulta y el pedido; en ese caso el pedido falla con el
  * mensaje de siempre.
@@ -42,7 +42,7 @@ function ceilToGrid(ms: number): number {
 /**
  * Para cada día hábil entre `fromDayMs` (medianoche local, inclusive) y `toDayMs` (medianoche
  * local, exclusive), los tramos libres dentro del horario de apertura, descontando `busy`, lo
- * que cae antes de `nowMs + 24 h`, y los tramos de menos de `minDurationMs`.
+ * que cae antes de `nowMs` o después del horizonte de dos semanas, y los tramos de menos de `minDurationMs`.
  */
 export function computeFreeWindows(input: {
   fromDayMs: number;
@@ -52,7 +52,8 @@ export function computeFreeWindows(input: {
   minDurationMs?: number;
 }): DayAvailability[] {
   const minDuration = input.minDurationMs ?? LEDGER_SLOT_MS;
-  const earliest = ceilToGrid(input.nowMs + MINIMUM_NOTICE_MS);
+  const earliest = ceilToGrid(input.nowMs);
+  const horizonEndMs = bookingHorizonEndMs(input.nowMs);
   const busy = [...input.busy].sort((a, b) => a.startMs - b.startMs);
   const days: DayAvailability[] = [];
 
@@ -61,6 +62,8 @@ export function computeFreeWindows(input: {
   while (cursor.getTime() < input.toDayMs) {
     const weekday = cursor.getDay();
     const dayStartMs = cursor.getTime();
+    // Pasado el horizonte de dos semanas no se ofrece nada (el servidor lo rechazaría).
+    if (dayStartMs >= horizonEndMs) break;
     if (weekday !== 0 && weekday !== 6) {
       const open = new TZDate(
         cursor.getFullYear(),

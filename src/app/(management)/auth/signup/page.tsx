@@ -27,22 +27,17 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Logo from "@/components/atoms/logos/lanube";
 import { z } from "zod";
-import { dniSchema, sanitizeDni } from "@/lib/schemas/profile";
+import {
+  dniSchema,
+  sanitizeDni,
+  signupProfileSchema,
+} from "@/lib/schemas/profile";
 
-const signUpSchema = z.object({
-  name: z
-    .string()
-    .min(3, { message: "El nombre debe tener al menos 3 caracteres" }),
-  lastName: z
-    .string()
-    .min(3, { message: "El apellido debe tener al menos 3 caracteres" }),
-  dni: dniSchema,
-  institution: z.string().optional(),
-  reasonToJoin: z
-    .string()
-    .min(20, { message: "El motivo debe tener al menos 20 caracteres" })
-    .max(500, { message: "El motivo debe tener menos de 500 caracteres" }),
-});
+/**
+ * Las mismas reglas que valida `POST /api/auth/signup` (`signupProfileSchema`); solo cambia el
+ * DNI, que el input ya entrega como número (el servidor acepta además texto).
+ */
+const signUpSchema = signupProfileSchema.extend({ dni: dniSchema });
 
 export default function SignUpPage() {
   const { data: session, update } = useSession();

@@ -112,6 +112,36 @@ export function expandEventOccurrences(
 }
 
 /**
+ * ¿`occurrenceDateMs` nombra una sesión **real y todavía por venir** de esta reserva semanal?
+ *
+ * El panel «Sesiones» solo ofrece cancelar / reprogramar / restaurar las sesiones que lista
+ * `expandEventOccurrences` (las que no terminaron), pero `updateEvent` aceptaba cualquier fecha:
+ * un PUT directo podía crear una excepción para un día que no es del evento, o para una sesión
+ * que ya pasó — y en los dos casos mandaba el correo a los inscriptos (auditoría de
+ * restricciones de UI, milestone 26). Esta es la misma regla que la lista, para el servidor.
+ *
+ * Las acciones se emparejan por **fecha UTC** (`utcDateKey`), igual que las excepciones y el SQL
+ * (`effective_occurrence_window`), así que acá también: la hora de `occurrenceDateMs` no importa.
+ * Una sesión ya reprogramada a un horario futuro sigue contando como por venir aunque su fecha
+ * nominal haya pasado (`rescheduledEndMs`), igual que en la lista.
+ */
+export function isUpcomingOccurrence(
+  r: { startMs: number; endMs: number; recurrenceEndMs: number },
+  occurrenceDateMs: number,
+  nowMs: number,
+  rescheduledEndMs: number | null = null,
+): boolean {
+  const key = utcDateKey(occurrenceDateMs);
+  const duration = r.endMs - r.startMs;
+  for (let occ = r.startMs; occ <= r.recurrenceEndMs; occ += WEEK_MS) {
+    if (utcDateKey(occ) !== key) continue;
+    if (occ + duration > nowMs) return true;
+    return rescheduledEndMs != null && rescheduledEndMs > nowMs;
+  }
+  return false;
+}
+
+/**
  * Like `expandEventOccurrences` but includes past occurrences too — every
  * week from startMs through recurrenceEndMs. Used on the public event detail
  * page to show the full agenda (past sessions grayed out).

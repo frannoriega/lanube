@@ -5,7 +5,8 @@ import { TZDate } from "@date-fns/tz";
  * Cuándo se puede reservar un espacio, expresado en **hora local del predio**
  * (`ADMIN_TIMEZONE`).
  *
- * Las reglas en sí no cambian de intención — solo días de semana, de 09:00 a 18:00 —, pero
+ * Las reglas en sí no cambian de intención — solo días de semana, dentro del horario de
+ * `BOOKING_OPEN_MINUTES`..`BOOKING_CLOSE_MINUTES` —, pero
  * `POST /api/resources/[spaceId]` las validaba con `getUTCHours()` / `getUTCDay()` contra un
  * predio en UTC−3, y eso salía mal de tres formas (milestone-12 D14):
  *
@@ -19,8 +20,16 @@ import { TZDate } from "@date-fns/tz";
  * Comparar en la zona del propio predio elimina los tres casos, y hace que las constantes se
  * lean como la regla que codifican en lugar de como offsets que alguien tiene que recalcular.
  */
-export const BOOKING_OPEN_MINUTES = 9 * 60; // 09:00 local
-export const BOOKING_CLOSE_MINUTES = 18 * 60; // 18:00 local
+/**
+ * **Única fuente de verdad del horario de reserva.** El calendario (`BUSINESS_HOURS`), los
+ * cierres parciales, el asistente MCP y los mensajes de error se derivan de estas dos horas:
+ * cambiar el horario es cambiar solo estas constantes (y los textos fijos que se listan en el
+ * milestone 26). Desde el milestone 26 es de 08:00 a 19:00 (antes, de 09:00 a 18:00).
+ */
+export const BOOKING_OPEN_HOUR = 8;
+export const BOOKING_CLOSE_HOUR = 19;
+export const BOOKING_OPEN_MINUTES = BOOKING_OPEN_HOUR * 60; // 08:00 local
+export const BOOKING_CLOSE_MINUTES = BOOKING_CLOSE_HOUR * 60; // 19:00 local
 
 /** Minutos desde la medianoche local, en la zona del predio. */
 function localMinutes(ms: number): number {
@@ -67,24 +76,6 @@ export function checkBookingWindow(
 /** Mensaje en español para cada incumplimiento. */
 export const BOOKING_WINDOW_MESSAGES: Record<BookingWindowViolation, string> = {
   weekend: "Las reservas solo están disponibles de lunes a viernes",
-  outside_hours: "Las reservas deben estar entre las 9:00 y las 18:00",
+  outside_hours: `Las reservas deben estar entre las ${BOOKING_OPEN_HOUR}:00 y las ${BOOKING_CLOSE_HOUR}:00`,
   overnight: "La reserva debe empezar y terminar el mismo día",
 };
-
-/**
- * Anticipación mínima exigida para reservar, en horas.
- *
- * Reemplaza la regla anterior ("solo a partir de mañana", comparada por día calendario), que
- * dejaba colar reservas con menos de 24hs reales de aviso: alguien reservando hoy a las 23:00
- * para mañana a las 09:00 pasaba el chequeo por día pero tenía 10hs de anticipación, no 24.
- */
-export const MINIMUM_NOTICE_HOURS = 24;
-export const MINIMUM_NOTICE_MS = MINIMUM_NOTICE_HOURS * 60 * 60 * 1000;
-
-export const MINIMUM_NOTICE_MESSAGE =
-  "Las reservas deben realizarse con un mínimo de 24 horas de anticipación. Por favor, seleccioná una fecha y un horario que cumplan con ese plazo.";
-
-/** true si `startMs` deja al menos `MINIMUM_NOTICE_HOURS` de margen desde `nowMs`. */
-export function hasMinimumNotice(startMs: number, nowMs: number): boolean {
-  return startMs - nowMs >= MINIMUM_NOTICE_MS;
-}

@@ -1,4 +1,9 @@
 import "server-only";
+import { formatMinutes } from "@/lib/closed-days/closures";
+import {
+  BOOKING_CLOSE_MINUTES,
+  BOOKING_OPEN_MINUTES,
+} from "@/lib/reservations/booking-window";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { nowMs } from "@/lib/clock";
@@ -82,8 +87,7 @@ export function registerReservationTools(
           booking_url: `${ctx.origin}/user/spaces/${s.slug}`,
         })),
         reservation_types: types.map((t) => ({ code: t.code, name: t.name })),
-        booking_rules:
-          "Lunes a viernes de 09:00 a 18:00 (hora de Argentina), en intervalos de 15 minutos, con al menos 24 h de anticipación, y nunca en un día cerrado (feriados, vacaciones: get_availability indica el motivo). Toda reserva queda pendiente de aprobación.",
+        booking_rules: `Lunes a viernes de ${formatMinutes(BOOKING_OPEN_MINUTES)} a ${formatMinutes(BOOKING_CLOSE_MINUTES)} (hora de Argentina), en intervalos de 15 minutos, desde ahora y hasta 2 semanas adelante, y nunca en un día cerrado (feriados, vacaciones: get_availability indica el motivo). Toda reserva queda pendiente de aprobación.`,
       });
     },
   );

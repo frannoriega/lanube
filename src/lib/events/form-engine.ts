@@ -333,6 +333,17 @@ function validateNodes(
         errors[`${prefix}${node.id}`] = `Agregá al menos ${min}`;
       if (typeof max === "number" && items.length > max)
         errors[`${prefix}${node.id}`] = `Máximo ${max}`;
+      // Un grupo cuya cantidad sale de otro campo (`countFrom`) tiene que traer exactamente esa
+      // cantidad: el formulario la sincroniza solo, pero el servidor no lo chequeaba y un envío
+      // directo podía traer más o menos bloques (auditoría de restricciones de UI, milestone 26).
+      const expected = repeatCount(node, scopes);
+      if (
+        expected != null &&
+        items.length !== expected &&
+        !errors[`${prefix}${node.id}`]
+      )
+        errors[`${prefix}${node.id}`] =
+          `Tiene que haber ${expected} elemento(s)`;
       items.forEach((item, index) => {
         validateNodes(
           node.children,

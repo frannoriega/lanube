@@ -4,13 +4,24 @@
  * extraídas en el milestone 14 y para poder testearlas sin montar React
  * (`calendar-utils.test.ts`).
  */
-import { hasMinimumNotice } from "@/lib/reservations/booking-window";
-import { addDays, addWeeks, getDay, isSameDay, startOfWeek } from "date-fns";
+import { bookingHorizonLastDateKey } from "@/lib/reservations/booking-horizon";
+import {
+  BOOKING_CLOSE_HOUR,
+  BOOKING_OPEN_HOUR,
+} from "@/lib/reservations/booking-window";
+import {
+  addDays,
+  addWeeks,
+  format,
+  getDay,
+  isSameDay,
+  startOfWeek,
+} from "date-fns";
 
 /** Horario de atención: el eje vertical del calendario va de START a END. */
 export const BUSINESS_HOURS = {
-  START: 9, // 9 AM
-  END: 18, // 6 PM
+  START: BOOKING_OPEN_HOUR,
+  END: BOOKING_CLOSE_HOUR,
 } as const;
 
 /** Granularidad de las reservas (y de los selects de hora), en minutos. */
@@ -28,15 +39,44 @@ export function fromUtcMs(ms: number): Date {
 }
 
 /**
- * A day is fully blocked once even its latest possible slot can't meet the real 24h minimum
- * notice (`hasMinimumNotice`) — e.g. after ~18:00 today, tomorrow's last slot (17:45) is less
- * than 24h away, so tomorrow greys out too. Earlier slots within an otherwise-open day are
- * still rejected individually (drag-start, tap, submit) by the same real-time check.
+ * Un día queda bloqueado por completo cuando hasta su último turno posible ya empezó (p. ej.
+ * hoy después de las 18:45). Sin anticipación mínima (milestone 26), solo puede pasarle a hoy
+ * y a días pasados. Los turnos anteriores de un día todavía abierto se rechazan uno por uno
+ * (arrastre, toque, envío) con la misma comparación contra el reloj.
  */
 export function isDayFullyBlocked(day: Date, clock: Date): boolean {
   const lastSlot = new Date(day);
   lastSlot.setHours(0, LAST_BOOKABLE_START_MINUTES, 0, 0);
-  return !hasMinimumNotice(lastSlot.getTime(), clock.getTime());
+  return lastSlot.getTime() < clock.getTime();
+}
+
+/**
+ * ¿`day` (medianoche local) cae después del último día reservable? (horizonte deslizante de
+ * dos semanas, milestone 26: `reservations/booking-horizon.ts`). Esos días **no se dibujan**
+ * —se acorta el calendario— en lugar de mostrarse rayados; los pasados, en cambio, sí se
+ * muestran rayados (`isDayFullyBlocked`) para no perder la referencia de la semana.
+ */
+export function isDayBeyondHorizon(day: Date, clock: Date): boolean {
+  // Se compara por fecha de calendario (`YYYY-MM-DD`) y no por instante: `day` es la medianoche
+  // en la zona del navegador y el horizonte se calcula en la del predio; las fechas no dependen
+  // de la diferencia entre ambas.
+  return format(day, "yyyy-MM-dd") > bookingHorizonLastDateKey(clock.getTime());
+}
+
+/** Lunes de la semana que contiene el último día reservable: la última página del calendario. */
+export function horizonWeekStart(clock: Date): Date {
+  const [y, m, d] = bookingHorizonLastDateKey(clock.getTime())
+    .split("-")
+    .map(Number);
+  return startOfWeek(new Date(y, m - 1, d), { weekStartsOn: 1 });
+}
+
+/**
+ * Cuántos de los días de `weekDays` (lunes a viernes, en orden) están dentro del horizonte.
+ * Los que quedan afuera son siempre un sufijo, así que alcanza con contar el prefijo.
+ */
+export function daysWithinHorizon(weekDays: Date[], clock: Date): number {
+  return weekDays.filter((d) => !isDayBeyondHorizon(d, clock)).length;
 }
 
 export function minutesToTime(minutes: number): string {
@@ -122,8 +162,7 @@ export function visibleDayIndices(
 }
 
 /**
- * Índice del primer día de `days` que todavía admite reservas (por la anticipación mínima de
- * 24h), o `-1` si ninguno. Lo usa el calendario para abrir directamente en un día reservable
+ * Índice del primer día de `days` que todavía admite reservas (le queda algún turno), o `-1` si ninguno. Lo usa el calendario para abrir directamente en un día reservable
  * en vez de en uno rayado (hallazgo F).
  */
 export function firstBookableDayIndex(days: Date[], clock: Date): number {
@@ -131,22 +170,21 @@ export function firstBookableDayIndex(days: Date[], clock: Date): number {
 }
 
 /**
- * Lunes de la "semana de trabajo actual" del calendario: la de hoy de lunes a jueves; la
- * siguiente si hoy es viernes, sábado o domingo (en esos días ya no queda nada reservable
- * de la semana en curso por la anticipación de 24h).
+ * Lunes de la "semana de trabajo actual" del calendario: la de hoy de lunes a viernes; la
+ * siguiente si hoy es sábado o domingo (no queda nada reservable de la semana en curso). Hasta
+ * el milestone 26 el viernes también saltaba a la semana siguiente, porque la anticipación de
+ * 24 h ya había bloqueado el resto del viernes; sin esa regla, el viernes es reservable.
  */
 export function getCurrentWorkWeekStart(now: Date): Date {
   const dayOfWeek = getDay(now); // 0 = domingo, 6 = sábado
   const monday = startOfWeek(now, { weekStartsOn: 1 });
-  return dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6
-    ? addWeeks(monday, 1)
-    : monday;
+  return dayOfWeek === 0 || dayOfWeek === 6 ? addWeeks(monday, 1) : monday;
 }
 
 /**
  * Semana con la que abre el calendario (milestone 14, hallazgo F): la semana de trabajo
- * actual, salvo que **todos** sus días ya estén bloqueados por la anticipación de 24h (p. ej.
- * un jueves a la noche) — en ese caso, la siguiente. Antes abría en una semana enteramente
+ * actual, salvo que **todos** sus días ya estén bloqueados (p. ej.
+ * un viernes después del cierre) — en ese caso, la siguiente. Antes abría en una semana enteramente
  * rayada, sin un solo botón "Reservar", y parecía que no había lugar.
  */
 export function firstBookableWeekStart(now: Date): Date {
@@ -163,7 +201,7 @@ export function firstBookableWeekStart(now: Date): Date {
  * ¿Los cierres del espacio (`kind: "closed"`, milestone 23) cubren **todo** el horario de
  * reserva de `day`? Entonces no tiene sentido ofrecer «Reservar» ese día: se pediría algo que
  * el servidor va a rechazar. Une los cierres del día (dos cierres parciales contiguos, mañana y
- * tarde, también cierran el día completo). Los tramos ya vienen recortados a 09:00–18:00.
+ * tarde, también cierran el día completo). Los tramos ya vienen recortados al horario de reserva.
  */
 export function isDayFullyClosed(
   day: Date,

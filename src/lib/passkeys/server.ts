@@ -280,6 +280,18 @@ export async function finishPasskeyRegistration(
   const { credential, credentialDeviceType, credentialBackedUp } =
     verification.registrationInfo;
 
+  // El tope también se mira al guardar, no solo al pedir el desafío: con varios altas abiertos
+  // a la vez (pedidos en paralelo), cada uno pasaba el chequeo de `startPasskeyRegistration` y
+  // la cuenta terminaba con más del máximo que muestra la pantalla (auditoría de restricciones
+  // de UI, milestone 26).
+  const existing = await prisma.passkeyCredential.count({ where: { userId } });
+  if (existing >= MAX_PASSKEYS_PER_USER) {
+    throw new DomainError(
+      `Llegaste al máximo de ${MAX_PASSKEYS_PER_USER} passkeys. Eliminá una para agregar otra.`,
+      409,
+    );
+  }
+
   try {
     return await prisma.passkeyCredential.create({
       data: {

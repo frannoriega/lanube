@@ -221,12 +221,19 @@ function deriveKey(name: string, taken: ReadonlySet<string>): string {
  * Keeps `grantableRoleIds` honest against rows that actually exist today: drops ids that
  * don't correspond to a role, and — the one rule that can never be relaxed from the UI —
  * drops any `isSuperadmin` role. That tier is only ever granted by hand in the database.
+ *
+ * Con `selfId` (al editar) también descarta el propio rol: el formulario nunca lo ofrece
+ * («Puede otorgar estos roles» excluye el que se está editando), porque un rol que se otorga a
+ * sí mismo deja que quien lo tiene lo reparta sin límite. Antes el servidor lo aceptaba
+ * (auditoría de restricciones de UI, milestone 26).
  */
 async function sanitizeGrantableRoleIds(
   ids: readonly string[] | undefined,
+  selfId?: string,
 ): Promise<string[]> {
   if (!ids || ids.length === 0) return [];
   const candidates = new Set(ids);
+  if (selfId) candidates.delete(selfId);
   const rows = await prisma.role.findMany({
     where: { id: { in: Array.from(candidates) }, isSuperadmin: false },
     select: { id: true },
@@ -306,6 +313,7 @@ export async function updateRole(
         permissions: sanitizePermissions(input.permissions),
         grantableRoleIds: await sanitizeGrantableRoleIds(
           input.grantableRoleIds,
+          id,
         ),
         updatedAt: BigInt(Date.now()),
       },

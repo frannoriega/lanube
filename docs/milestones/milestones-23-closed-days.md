@@ -219,7 +219,7 @@ eso los cierres parciales entran desde el principio.
 5. **Calendario** ✅ — no hace falta un `GET /api/closed-days` público para esto: los cierres
    viajan dentro de la respuesta que el calendario ya pide (`getCalendarDataBySpace`), como
    tramos `kind: "closed"` con `title`. `closureSlotsForRange()` (pura, testeada) los expande
-   **por día y recortados a 09:00–18:00** en el servidor, así el navegador no repite la lógica de
+   **por día y recortados al horario de reserva** (hoy 08:00–19:00) en el servidor, así el navegador no repite la lógica de
    zona horaria y el chequeo de solapes de `WeekCalendar` (que compara minutos del día) no lee
    la medianoche de un cierre de día completo como las 00:00. `DayColumn` los dibuja como una
    tarjeta «Cerrado» + el motivo (no un rayado anónimo); la fusión de tramos contiguos no mezcla

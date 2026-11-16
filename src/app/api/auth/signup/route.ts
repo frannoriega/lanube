@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { serializeJson } from "@/lib/json-bigint";
 import { NextRequest, NextResponse } from "next/server";
 import { apiServerError } from "@/lib/api/response";
-import { dniInputSchema } from "@/lib/schemas/profile";
+import { signupProfileSchema } from "@/lib/schemas/profile";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,16 +28,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, lastName, dni, institution, reasonToJoin } =
-      await request.json();
-
-    const parsedDni = dniInputSchema.safeParse(dni);
-    if (!parsedDni.success) {
+    // Las mismas reglas que el formulario (`signupProfileSchema`): antes solo se validaba el DNI
+    // y el resto se guardaba tal cual llegaba.
+    const parsed = signupProfileSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Ingrese un DNI válido (solo números)" },
+        { message: parsed.error.issues[0]?.message ?? "Datos inválidos" },
         { status: 400 },
       );
     }
+    const { name, lastName, dni, institution, reasonToJoin } = parsed.data;
 
     // Check if user already exists
     const existingUser = await prisma.registeredUser.findFirst({
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
         },
         name,
         lastName,
-        dni: parsedDni.data.toString(),
+        dni: dni.toString(),
         institution: institution || null,
         reasonToJoin,
       },

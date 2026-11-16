@@ -5,6 +5,7 @@ import {
   effectiveExceptions,
   expandAllEventOccurrences,
   expandEventOccurrences,
+  isUpcomingOccurrence,
   weekdayOfRrule,
   type RawReservation,
 } from "@/lib/events/occurrences";
@@ -32,6 +33,33 @@ function makeRes(
     exceptions,
   };
 }
+
+describe("isUpcomingOccurrence (el server solo acepta acciones sobre sesiones que lista el panel)", () => {
+  const r = makeRes();
+
+  it("acepta una sesión real que todavía no terminó, sin importar la hora del ms", () => {
+    expect(isUpcomingOccurrence(r, START + 2 * WEEK, START)).toBe(true);
+    // Mismo día UTC, otra hora: se empareja por fecha, igual que las excepciones.
+    expect(isUpcomingOccurrence(r, START + 2 * WEEK - 3_600_000, START)).toBe(
+      true,
+    );
+  });
+
+  it("rechaza un día que no es del evento o queda fuera del rango", () => {
+    expect(isUpcomingOccurrence(r, START + 24 * 3_600_000, START)).toBe(false);
+    expect(isUpcomingOccurrence(r, START + 4 * WEEK, START)).toBe(false);
+    expect(isUpcomingOccurrence(r, START - WEEK, START - 2 * WEEK)).toBe(false);
+  });
+
+  it("rechaza una sesión que ya terminó, salvo que esté reprogramada a futuro", () => {
+    const now = START + WEEK + DURATION + 1; // terminó la semana 1
+    expect(isUpcomingOccurrence(r, START + WEEK, now)).toBe(false);
+    expect(isUpcomingOccurrence(r, START + WEEK, now, now + 3_600_000)).toBe(
+      true,
+    );
+    expect(isUpcomingOccurrence(r, START + 2 * WEEK, now)).toBe(true);
+  });
+});
 
 describe("expandEventOccurrences", () => {
   it("expands a weekly reservation into one occurrence per week", () => {

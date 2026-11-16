@@ -198,8 +198,8 @@ describe("closureSlotsForRange", () => {
     expect(slots).toEqual([
       {
         title: "Feriado",
-        startTime: at("2026-05-25", 9),
-        endTime: at("2026-05-25", 18),
+        startTime: at("2026-05-25", 8),
+        endTime: at("2026-05-25", 19),
       },
     ]);
   });
@@ -211,8 +211,8 @@ describe("closureSlotsForRange", () => {
       at("2026-07-23", 23),
     );
     expect(slots.map((s) => s.startTime)).toEqual([
-      at("2026-07-22", 9),
-      at("2026-07-23", 9),
+      at("2026-07-22", 8),
+      at("2026-07-23", 8),
     ]);
   });
 
@@ -224,10 +224,10 @@ describe("closureSlotsForRange", () => {
       {
         title: "Cierre parcial",
         startTime: at("2026-05-25", 14),
-        endTime: at("2026-05-25", 18),
+        endTime: at("2026-05-25", 19),
       },
     ]);
-    const noche = partial("2026-05-25", 19 * 60, 21 * 60);
+    const noche = partial("2026-05-25", 20 * 60, 21 * 60);
     expect(
       closureSlotsForRange([noche], at("2026-05-25", 0), at("2026-05-25", 23)),
     ).toEqual([]);

@@ -233,6 +233,18 @@ const inputNodeSchema: z.ZodType<InputNode> = z
         path: ["options"],
       });
     }
+    // Mismo chequeo que el constructor de formularios: con mínimo > máximo el campo no admite
+    // ninguna respuesta y el formulario público queda imposible de enviar. Antes solo lo
+    // frenaba la UI (auditoría de restricciones de UI, milestone 26).
+    const min = node.constraints?.min;
+    const max = node.constraints?.max;
+    if (typeof min === "number" && typeof max === "number" && min > max) {
+      ctx.addIssue({
+        code: "custom",
+        message: "El máximo debe ser mayor o igual al mínimo",
+        path: ["constraints", "max"],
+      });
+    }
   });
 
 const repeatSchema: z.ZodType<RepeatConfig> = z.object({
@@ -247,7 +259,10 @@ const groupNodeSchema: z.ZodType<GroupNode> = z.lazy(() =>
     kind: z.literal("group"),
     id: z.string().min(1),
     label: z.string().trim().max(200).nullable().optional(),
-    children: z.array(formNodeSchema),
+    // Un grupo vacío no pide nada: el constructor ya lo rechazaba, ahora también el servidor.
+    children: z
+      .array(formNodeSchema)
+      .min(1, { message: "Agregá al menos un campo al grupo" }),
     repeat: repeatSchema.nullable().optional(),
     visibleWhen: conditionSchema.nullable().optional(),
   }),

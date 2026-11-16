@@ -47,7 +47,7 @@ describe("computeFreeWindows", () => {
   // Ahora = lunes 2026-10-05 10:00 local.
   const NOW = local(2026, 10, 5, 10);
 
-  it("salta fines de semana y respeta horario y anticipación", () => {
+  it("salta fines de semana y respeta horario y no ofrece el pasado", () => {
     const days = computeFreeWindows({
       fromDayMs: local(2026, 10, 5), // lunes
       toDayMs: local(2026, 10, 12), // lunes siguiente (exclusive)
@@ -62,14 +62,29 @@ describe("computeFreeWindows", () => {
       "2026-10-08",
       "2026-10-09",
     ]);
-    // Hoy no queda nada (24 h de anticipación); mañana desde las 10:00.
-    expect(days[0].windows).toEqual([]);
+    // Hoy: desde ahora (10:00) hasta el cierre; mañana, el horario completo.
+    expect(days[0].windows).toEqual([
+      { startMs: local(2026, 10, 5, 10), endMs: local(2026, 10, 5, 19) },
+    ]);
     expect(days[1].windows).toEqual([
-      { startMs: local(2026, 10, 6, 10), endMs: local(2026, 10, 6, 18) },
+      { startMs: local(2026, 10, 6, 8), endMs: local(2026, 10, 6, 19) },
     ]);
     expect(days[2].windows).toEqual([
-      { startMs: local(2026, 10, 7, 9), endMs: local(2026, 10, 7, 18) },
+      { startMs: local(2026, 10, 7, 8), endMs: local(2026, 10, 7, 19) },
     ]);
+  });
+
+  it("no ofrece nada pasado el horizonte de dos semanas", () => {
+    // NOW = lunes 2026-10-05 10:00: el último día reservable es el lunes 19.
+    const days = computeFreeWindows({
+      fromDayMs: local(2026, 10, 12),
+      toDayMs: local(2026, 10, 27),
+      busy: [],
+      nowMs: NOW,
+    });
+    const keys = days.map((d) => toVenueDateKey(d.dayStartMs));
+    expect(keys[keys.length - 1]).toBe("2026-10-19");
+    expect(keys).not.toContain("2026-10-20");
   });
 
   it("descuenta bloques ocupados (también contiguos) y tramos cortos", () => {
@@ -81,16 +96,16 @@ describe("computeFreeWindows", () => {
         { startMs: local(2026, 10, 8, 11, 15), endMs: local(2026, 10, 8, 12) },
         {
           startMs: local(2026, 10, 8, 12, 30),
-          endMs: local(2026, 10, 8, 17, 45),
+          endMs: local(2026, 10, 8, 18, 45),
         },
       ],
       nowMs: NOW,
       minDurationMs: 30 * 60 * 1000,
     });
     expect(day.windows).toEqual([
-      { startMs: local(2026, 10, 8, 9), endMs: local(2026, 10, 8, 11) },
+      { startMs: local(2026, 10, 8, 8), endMs: local(2026, 10, 8, 11) },
       { startMs: local(2026, 10, 8, 12), endMs: local(2026, 10, 8, 12, 30) },
-      // 17:45–18:00 dura 15 min: queda afuera por minDuration.
+      // 18:45–19:00 dura 15 min: queda afuera por minDuration.: queda afuera por minDuration.
     ]);
   });
 });

@@ -62,6 +62,24 @@ export const reasonToJoinSchema = z
   .min(20, { message: "El motivo debe tener al menos 20 caracteres" })
   .max(500, { message: "El motivo debe tener menos de 500 caracteres" });
 
+/**
+ * Alta del perfil (`/auth/signup` → `POST /api/auth/signup`): los datos personales con las
+ * mismas reglas que "Configuración → Perfil", más el DNI y el motivo para unirse.
+ *
+ * Antes el formulario tenía su propio schema y la API solo validaba el DNI: nombre, apellido,
+ * institución y motivo se guardaban tal cual llegaban (vacíos o de cualquier largo) con un POST
+ * directo (auditoría de restricciones de UI, milestone 26). Ahora las dos puntas usan este.
+ * `dni` llega como número desde el formulario y como número o texto a la API: por eso
+ * {@link dniInputSchema}, que acepta ambos.
+ */
+export const signupProfileSchema = personalInfoSchema.extend({
+  institution: personalInfoSchema.shape.institution.optional(),
+  dni: dniInputSchema,
+  reasonToJoin: reasonToJoinSchema,
+});
+
+export type SignupProfileInput = z.input<typeof signupProfileSchema>;
+
 /** Por qué se pide el cambio. Lo lee el admin que decide. */
 export const changeJustificationSchema = z
   .string()
