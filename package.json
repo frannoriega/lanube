@@ -1,6 +1,6 @@
 {
   "name": "la-nube-coworking",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,6 +19,8 @@
     "db:reset": "prisma migrate reset --force && npm run db:seed",
     "test": "vitest run",
     "test:watch": "vitest",
+    "release:check": "tsx scripts/check-release.ts",
+    "release:verify": "node scripts/verify-deployment.mjs",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "prepare": "husky || true"

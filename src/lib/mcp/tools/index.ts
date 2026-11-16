@@ -1,4 +1,5 @@
 import "server-only";
+import { APP_VERSION } from "@/lib/changelog/registry";
 import { formatMinutes } from "@/lib/closed-days/closures";
 import {
   BOOKING_CLOSE_MINUTES,
@@ -19,8 +20,10 @@ export type { McpToolContext } from "./shared";
  * una cuenta sin permisos de gestión ni se entera de que existen.
  */
 export function buildMcpServer(ctx: McpToolContext): McpServer {
+  // `serverInfo.version` es la versión de la app (milestone 28), la misma del pie del sitio y de
+  // `GET /api/version`. Antes era un "1.1.0" propio del conector que no seguía a nada.
   const server = new McpServer(
-    { name: "la-nube", title: "La Nube", version: "1.1.0" },
+    { name: "la-nube", title: "La Nube", version: APP_VERSION },
     {
       instructions:
         "Herramientas de La Nube (Polo Tecnológico de Concepción del Uruguay: coworking, laboratorio y eventos). " +

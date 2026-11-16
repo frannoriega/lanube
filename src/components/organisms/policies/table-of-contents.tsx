@@ -9,20 +9,32 @@ interface Entry {
 }
 
 /**
- * Índice de una política (milestone 18; genérico desde el 19). Se arma leyendo los `h2[id]` ya
- * renderizados dentro de `#politica`, así que nunca se desincroniza del MDX: si se agrega o
- * renombra una sección, el índice la refleja sin tocar este archivo.
+ * Índice de una página larga (milestone 18 para las políticas; desde el 28 también lo usan las
+ * novedades). Se arma leyendo los títulos con `id` ya renderizados dentro de `#<targetId>`
+ * (`selector`), así que nunca se desincroniza del texto: si se agrega o renombra una sección,
+ * el índice la refleja sin tocar este archivo.
  *
  * Marca la sección que se está leyendo (la última cuyo título ya pasó bajo el header). Sin
  * JavaScript no se muestra — la política se lee igual, el índice es sólo un atajo.
  */
-export function TableOfContents() {
+export function TableOfContents({
+  targetId = "politica",
+  selector = "h2[id]",
+  label = "Índice de la política",
+}: {
+  /** El `id` del contenedor del texto. */
+  targetId?: string;
+  /** Qué títulos entran al índice (deben tener `id`). */
+  selector?: string;
+  /** Nombre accesible del `<nav>`. */
+  label?: string;
+} = {}) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [active, setActive] = useState<string | null>(null);
 
   useEffect(() => {
     const headings = Array.from(
-      document.querySelectorAll<HTMLHeadingElement>("#politica h2[id]"),
+      document.querySelectorAll<HTMLHeadingElement>(`#${targetId} ${selector}`),
     );
     setEntries(
       headings.map((h) => ({ id: h.id, text: h.textContent?.trim() ?? "" })),
@@ -50,12 +62,12 @@ export function TableOfContents() {
       window.removeEventListener("scroll", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [targetId, selector]);
 
   if (entries.length === 0) return null;
 
   return (
-    <nav aria-label="Índice de la política" className="flex flex-col gap-3">
+    <nav aria-label={label} className="flex flex-col gap-3">
       <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
         En esta página
       </span>

@@ -1068,6 +1068,30 @@ the rate-limited endpoints reject the request: never test the app by hitting por
 - **Crons**: systemd timers replace them (`deploy/systemd`, same schedules as `vercel.json`). If a cron is added to
   `vercel.json`, add it to `deploy/systemd` and to `lanube-cron`'s list as well.
 
+### 21. Versioning, changelog & build verification (milestone 28)
+
+Full design, legal notes and the release procedure: `docs/milestones/milestones-28-versioning-and-build-verification.md`.
+
+- **Semver; the version lives in `src/lib/changelog/registry.ts`** (`RELEASES`, last entry = `APP_VERSION`), mirrored in
+  `package.json`/`package-lock.json` (`registry.test.ts` enforces it). MAJOR = someone must change what they do
+  (removed feature/URL, incompatible MCP/API contract); MINOR = something new to use; PATCH = fixes/internal. Each
+  version must be the next step (`isNextVersion`), no prereleases.
+- **Every change that reaches the server needs a version bump + a changelog entry** (`RELEASES` +
+  `src/assets/changelog/<version>.md`, plain markdown written for users, in Spanish). `scripts/check-release.ts`
+  (`npm run release:check`, runs in CI before tests) fails if `v<version>` is already tagged and `APP_PATHS` changed
+  since; tests and `src/assets/changelog/` don't count. CI creates the `v<version>` tag on publish and never moves one.
+  A new root file that changes what runs goes into `APP_PATHS`.
+- Public pages: `/changelog` (timeline + «Cómo leer los números» aside) and `/changelog/[version]` (policy-style:
+  sticky index via `TableOfContents targetId/selector`, `Markdown headingIds`, `ReadingProgress`), both static
+  (`dynamicParams = false`), linked only from the footer (version badge + «Novedades»), never the navbar.
+- **Build identity**: `src/lib/build-info.ts` (commit from `APP_COMMIT_SHA` — the Dockerfile's `GIT_SHA` build-arg —
+  or `VERCEL_GIT_COMMIT_SHA`), `GET /api/version` (public on purpose; `?files=1` adds the manifest), Next's `buildId`
+  = commit, and `release-manifest.json` (SHA-256 of `.next/static`, written by `scripts/release-manifest.mjs` after
+  `next build`). The footer links the source at the exact commit (AGPL §13 offer) from code, not site config.
+- `npm run release:verify -- <url>` (`scripts/verify-deployment.mjs`) compares a live site against the CI image for
+  its commit (provenance attested in CI). It proves client code only — server-only code can't be verified remotely;
+  don't claim otherwise.
+
 ## Testing & Seeding
 
 **Vitest Configuration** (`vitest.config.ts`):

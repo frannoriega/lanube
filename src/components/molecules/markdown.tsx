@@ -2,6 +2,8 @@ import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
+import { slugify } from "@/lib/utils/string";
+import type { ReactNode } from "react";
 
 /**
  * Renders standard (CommonMark + GFM) markdown for event descriptions. Raw HTML is NOT parsed
@@ -55,11 +57,55 @@ const READING_CLASSES = [
   "[&_hr]:my-10",
 ].join(" ");
 
+/** Texto plano de los hijos de un título (para derivar su `id`). */
+function textOf(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (node && typeof node === "object" && "props" in node)
+    return textOf((node.props as { children?: ReactNode }).children);
+  return "";
+}
+
+/**
+ * Los mismos componentes, pero cada título lleva un `id` derivado de su texto
+ * ("Para el equipo de gestión" → `para-el-equipo-de-gestion`): lo usan los enlaces `#…` y el
+ * índice de las novedades (`TableOfContents`). Se mantiene el corrimiento de un nivel.
+ */
+const SHIFT: Record<string, "h2" | "h3" | "h4" | "h5" | "h6"> = {
+  h1: "h2",
+  h2: "h3",
+  h3: "h4",
+  h4: "h5",
+  h5: "h6",
+  h6: "h6",
+};
+const componentsWithIds: Components = {
+  ...components,
+  ...Object.fromEntries(
+    Object.entries(SHIFT).map(([from, Tag]) => [
+      from,
+      ({
+        children,
+        node: _node,
+        ...props
+      }: {
+        children?: ReactNode;
+        node?: unknown;
+      }) => (
+        <Tag id={slugify(textOf(children))} {...props}>
+          {children}
+        </Tag>
+      ),
+    ]),
+  ),
+};
+
 export function Markdown({
   children,
   className,
   size = "default",
   breaks = false,
+  headingIds = false,
 }: {
   children: string;
   className?: string;
@@ -75,6 +121,12 @@ export function Markdown({
    * `reading`: cuerpo de artículo — ver {@link READING_CLASSES}.
    */
   size?: "default" | "reading";
+  /**
+   * Cada título lleva un `id` derivado de su texto, para enlazarlo o armar un índice. Solo para
+   * texto escrito por el equipo en el repo (las novedades): en contenido de usuarios dos
+   * títulos iguales darían `id` repetidos.
+   */
+  headingIds?: boolean;
 }) {
   return (
     <div
@@ -110,7 +162,10 @@ export function Markdown({
         className,
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={headingIds ? componentsWithIds : components}
+      >
         {children}
       </ReactMarkdown>
     </div>

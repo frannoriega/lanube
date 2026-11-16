@@ -9,7 +9,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { buildCommit, SOURCE_LICENSE, sourceUrl } from "@/lib/build-info";
 import { getPublicSiteConfig } from "@/lib/cache/public-reads";
+import { APP_VERSION } from "@/lib/changelog/registry";
 import { links } from "@/lib/constants/nav";
 import { POLICIES, POLICY_KEYS } from "@/lib/policies/registry";
 import { cn } from "@/lib/utils";
@@ -18,6 +20,8 @@ import Link from "next/link";
 
 export default async function Footer({ className }: { className?: string }) {
   const contact = await getPublicSiteConfig();
+  // Identidad del build (milestone 28). Se resuelve al prerenderizar, con el commit de la imagen.
+  const commit = buildCommit();
   // Azul noche de marca (milestone 18) en vez de `slate-950`: el casi-negro neutro no
   // pertenecía a ninguna paleta del sitio; éste es el mismo fondo de la franja de cifras.
   const cns = cn(
@@ -32,17 +36,19 @@ export default async function Footer({ className }: { className?: string }) {
             <div className="flex flex-col gap-2">
               <div className="flex flex-row gap-2">
                 <h2 className="text-xl font-bold">La Nube</h2>
+                {/* La versión que corre (milestone 28; antes decía «Beta»). Lleva a las novedades. */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="cursor-help">
-                      Beta
+                    <Badge
+                      variant="outline"
+                      className="font-mono hover:bg-white/10"
+                      asChild
+                    >
+                      <Link href="/changelog">v{APP_VERSION}</Link>
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>
-                      Versión inicial del sistema. Estamos trabajando para
-                      mejorar la experiencia de usuario.
-                    </p>
+                    <p>Versión {APP_VERSION}. Mirá qué hay de nuevo.</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -83,6 +89,15 @@ export default async function Footer({ className }: { className?: string }) {
                       </Link>
                     </li>
                   ))}
+                  {/* Solo en el pie, no en la barra (milestone 28). */}
+                  <li>
+                    <Link
+                      href="/changelog"
+                      className="block py-2 hover:underline"
+                    >
+                      Novedades
+                    </Link>
+                  </li>
                 </ul>
               </nav>
             </div>
@@ -165,6 +180,24 @@ export default async function Footer({ className }: { className?: string }) {
               </ul>
             </div>
           </section>
+        </div>
+        {/*
+          Oferta del código fuente (AGPL-3.0 §13, milestone 28): quien usa el sistema por la red
+          tiene que poder obtener el código de la versión que está usando. El enlace va al commit
+          exacto del build y está en el código, no en la configuración del sitio, a propósito:
+          una versión modificada que se despliegue tiene que apuntar a su propio código.
+        */}
+        <div className="dark mx-8 flex flex-col gap-1 border-t border-white/10 py-4 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
+          <span>La Nube es software libre ({SOURCE_LICENSE}).</span>
+          <a
+            href={sourceUrl(commit)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Código fuente de esta versión
+            {commit ? ` (v${APP_VERSION} · ${commit.slice(0, 7)})` : ""}
+          </a>
         </div>
       </Container>
     </footer>

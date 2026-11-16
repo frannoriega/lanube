@@ -197,6 +197,17 @@ servidor detecta el cambio en su siguiente ventana (de lunes a jueves a las 20:0
 un _push_ del viernes se despliega el lunes) y ejecuta `lanube-deploy`. El resultado no se refleja en
 GitHub: se consulta en el servidor (sección 7).
 
+**Versiones (milestone 28).** Antes de las pruebas corre la guarda de versión
+(`npm run release:check`): si la versión de `package.json` ya tiene su tag `v<versión>` y desde ese tag
+cambió algo de lo que se despliega, el workflow falla y no se publica nada. Hay que subir la versión y
+agregar su entrada de novedades (`src/lib/changelog/registry.ts` + `src/assets/changelog/<versión>.md`).
+Al publicar, el workflow crea el tag `v<versión>` (nunca mueve uno existente) y firma una atestación de
+procedencia de la imagen de la aplicación (`gh attestation verify oci://ghcr.io/<owner>/<repo>:<sha>
+--repo <owner>/<repo>`). La imagen lleva `release-manifest.json` (huella de los archivos estáticos) y
+expone versión y commit en `GET /api/version`; para comprobar que un sitio en vivo es el build de CI:
+`npm run release:verify -- https://<dominio>` (necesita Docker y el paquete de GHCR público). Detalle y
+límites: `docs/milestones/milestones-28-versioning-and-build-verification.md`.
+
 ## 6. Despliegue (`lanube-deploy`)
 
 1. Descarga las imágenes de la aplicación y del migrador **del mismo commit**.

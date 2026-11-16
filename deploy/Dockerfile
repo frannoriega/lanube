@@ -22,13 +22,21 @@ RUN npm ci --no-audit --no-fund
 # --- builder ---
 FROM deps AS builder
 ARG DATABASE_URL
+# Commit del build (milestone 28): lo pasa CI (`--build-arg GIT_SHA=${{ github.sha }}`). Va al
+# buildId de Next, al manifiesto del build y a `GET /api/version`. Va después de `deps` para no
+# invalidar la caché de `npm ci` en cada commit.
+ARG GIT_SHA=""
 # NEXT_PUBLIC_* se incrusta en el bundle en el build: no alcanza con ponerlo en el .env del servidor.
 ARG NEXT_PUBLIC_TURNSTILE_SITEKEY
 ENV DATABASE_URL=$DATABASE_URL \
   NEXT_PUBLIC_TURNSTILE_SITEKEY=$NEXT_PUBLIC_TURNSTILE_SITEKEY \
-  NEXT_OUTPUT=standalone
+  NEXT_OUTPUT=standalone \
+  APP_COMMIT_SHA=$GIT_SHA
 COPY . .
-RUN npx prisma migrate deploy && npx next build
+# El manifiesto (SHA-256 de cada archivo de /_next/static) queda junto a server.js: es la
+# referencia contra la que `scripts/verify-deployment.mjs` compara el sitio en vivo.
+RUN npx prisma migrate deploy && npx next build \
+  && node scripts/release-manifest.mjs .next/standalone/release-manifest.json
 
 # --- migrator: se usa solo con `docker compose run --rm migrate` ---
 FROM builder AS migrator
@@ -38,9 +46,11 @@ CMD ["npx", "prisma", "migrate", "deploy"]
 
 # --- runner ---
 FROM base AS runner
+ARG GIT_SHA=""
 ENV NODE_ENV=production \
   HOSTNAME=0.0.0.0 \
-  PORT=3000
+  PORT=3000 \
+  APP_COMMIT_SHA=$GIT_SHA
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/* \
   && mkdir -p /app/.next/cache /data/uploads \

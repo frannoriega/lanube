@@ -34,9 +34,14 @@ jobs:
       DATABASE_URL: postgresql://postgres:ci@127.0.0.1:5432/ci?schema=public
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        # Historial y tags completos: la guarda de versión compara contra el último tag v*.
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 24, cache: npm }
       - run: npm ci
+      # Milestone 28: si cambió lo que se despliega y la versión ya se publicó, no se sigue.
+      - name: Guarda de versión
+        run: npm run release:check
       - run: npm run lint
       - run: npm run format:check
       - run: npx prisma migrate deploy
@@ -48,8 +53,10 @@ jobs:
     # Entorno con aprobación opcional: Settings → Environments → production → Required reviewers.
     environment: production
     permissions:
-      contents: write # mover el tag `production`
+      contents: write # mover el tag `production` y crear el tag `v<versión>`
       packages: write
+      id-token: write # firmar la atestación de procedencia (Sigstore)
+      attestations: write
     services:
       postgres:
         image: postgres:17
@@ -73,7 +80,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Versión
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Imagen de la app
+        id: app
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
@@ -81,12 +93,17 @@ jobs:
           target: runner
           push: true
           tags: ${{ env.IMAGE }}:${{ github.sha }}
-          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.licenses=AGPL-3.0
           allow: network.host
           network: host # el build prerenderiza páginas y necesita el Postgres del servicio
           build-args: |
             DATABASE_URL=${{ env.CI_DATABASE_URL }}
             NEXT_PUBLIC_TURNSTILE_SITEKEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -104,7 +121,19 @@ jobs:
           build-args: |
             DATABASE_URL=${{ env.CI_DATABASE_URL }}
             NEXT_PUBLIC_TURNSTILE_SITEKEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
+
+      # Milestone 28: constancia firmada (Sigstore, registro público de transparencia) de que esta
+      # imagen la construyó este workflow, desde este repo y este commit. Se verifica con
+      # `gh attestation verify oci://<imagen>:<sha> --repo <owner>/<repo>` (lo hace
+      # scripts/verify-deployment.mjs). Es la pieza que convierte «la imagen de CI» en referencia.
+      - name: Atestación de procedencia de la imagen
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.app.outputs.digest }}
+          push-to-registry: true
 
       # Deploy por PULL: acá solo se «publica» el commit moviendo el tag `production`. El VPS (sin SSH desde
       # CI) lo mira una vez por día, lun-jue 20:00 ART, y despliega solo (lanube-autodeploy). Esto va al
@@ -122,3 +151,19 @@ jobs:
             -f sha="$GITHUB_SHA" -F force=true \
           || gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
             -f ref=refs/tags/production -f sha="$GITHUB_SHA"
+
+      # Milestone 28: el tag `v<versión>` marca la versión como publicada; desde acá, la guarda de
+      # versión frena cualquier cambio de app que no suba el número. Si ya existe (un push que solo
+      # tocó docs), se deja donde está: nunca se mueve un tag de versión.
+      - name: Marcar la versión como publicada (tag v<versión>)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "v$VERSION ya existe: no se mueve."
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/v$VERSION" -f sha="$GITHUB_SHA"
+          fi

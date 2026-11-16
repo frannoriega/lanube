@@ -76,7 +76,17 @@ const nextConfig: NextConfig = {
   // incluye los .mdx (solo los incluye compilados, vía import) y el diff fallaría en producción.
   outputFileTracingIncludes: {
     "/policies/accept": ["./src/assets/policies/**/*.mdx"],
+    // Novedades (milestone 28): las páginas se generan en el build, pero si alguna se regenera en
+    // el servidor tiene que poder leer su markdown.
+    "/changelog/[version]": ["./src/assets/changelog/**/*.md"],
   },
+  // El buildId de Next es el commit cuando se conoce (imagen de CI, milestone 28): así las rutas
+  // `/_next/static/<buildId>/…` y el HTML de cada página nombran el commit del que salieron. Sin
+  // commit (desarrollo, Vercel), `null` deja el id aleatorio de siempre.
+  generateBuildId: async () =>
+    /^[0-9a-f]{40}$/.test(process.env.APP_COMMIT_SHA ?? "")
+      ? (process.env.APP_COMMIT_SHA as string)
+      : null,
   images: { remotePatterns: imageRemotePatterns },
   async redirects() {
     return [
