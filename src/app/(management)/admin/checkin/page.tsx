@@ -26,8 +26,6 @@ import {
   Clock,
   Users,
   Building2,
-  Microscope,
-  Calendar,
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -52,32 +50,6 @@ export default function AdminCheckInPage() {
       toast.error(apiErrorMessage(err, "Error al realizar check-out"));
     } finally {
       setCheckOutProcessing(null);
-    }
-  };
-
-  const getServiceIcon = (service: string) => {
-    switch (service) {
-      case "COWORKING":
-        return <Building2 className="h-4 w-4 text-blue-500" />;
-      case "LAB":
-        return <Microscope className="h-4 w-4 text-green-500" />;
-      case "AUDITORIUM":
-        return <Calendar className="h-4 w-4 text-purple-500" />;
-      default:
-        return <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
-    }
-  };
-
-  const getServiceName = (service: string) => {
-    switch (service) {
-      case "COWORKING":
-        return "Coworking";
-      case "LAB":
-        return "Laboratorio";
-      case "AUDITORIUM":
-        return "Auditorio";
-      default:
-        return service;
     }
   };
 
@@ -229,7 +201,7 @@ export default function AdminCheckInPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    {getServiceIcon(user.service)}
+                    <Building2 className="h-4 w-4 text-blue-500" />
                     <div>
                       <h3 className="font-semibold text-lg">
                         {user.name} {user.lastName}
@@ -237,7 +209,7 @@ export default function AdminCheckInPage() {
                       <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                         <p>Email: {user.email}</p>
                         <p>DNI: {user.dni}</p>
-                        <p>Servicio: {getServiceName(user.service)}</p>
+                        <p>Servicio: {user.service}</p>
                         <p>
                           Check-in:{" "}
                           {new Date(user.checkInTime).toLocaleTimeString(

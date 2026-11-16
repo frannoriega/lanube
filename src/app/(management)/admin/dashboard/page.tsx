@@ -25,10 +25,7 @@ import {
   Calendar,
   Clock,
   Eye,
-  FlaskConical,
   Loader2,
-  MessagesSquare,
-  Presentation,
   TrendingUp,
   Users,
   type LucideIcon,
@@ -125,30 +122,6 @@ export default function AdminDashboard() {
     [commitApprove, refetchStats, triggerRefetch],
   );
 
-  const createServiceIcon = (service: string) => {
-    const icons: Record<string, React.ElementType> = {
-      COWORKING: Building2,
-      LAB: FlaskConical,
-      AUDITORIUM: Presentation,
-      MEETING: MessagesSquare,
-    };
-    const Icon = icons[service] ?? Building2;
-    return <Icon className="h-8 w-8 text-blue-500" />;
-  };
-
-  const getServiceName = (service: string) => {
-    switch (service) {
-      case "COWORKING":
-        return "Coworking";
-      case "LAB":
-        return "Laboratorio";
-      case "AUDITORIUM":
-        return "Auditorio";
-      default:
-        return service;
-    }
-  };
-
   const isReservationEndingSoon = (endTime: number | null) => {
     if (endTime == null || endTime <= 0) return false;
     const t = now();
@@ -228,13 +201,13 @@ export default function AdminDashboard() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    {createServiceIcon(user.service)}
+                    <Building2 className="h-8 w-8 text-blue-500" />
                     <div>
                       <p className="font-medium">
                         {user.name} {user.lastName}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {getServiceName(user.service)} • Ingresó:{" "}
+                        {user.service} • Ingresó:{" "}
                         {new Date(user.checkInTime).toLocaleTimeString("es-AR")}
                       </p>
                     </div>

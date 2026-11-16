@@ -919,7 +919,7 @@ export function SignInScreen({
               <AnimatePresence mode="wait">{renderScreen()}</AnimatePresence>
             </div>
             <p className="text-sm text-center">
-              Accede a nuestros espacios de coworking, laboratorio y auditorio
+              Accede a nuestros espacios de trabajo, laboratorio y salas
             </p>
             <div className="flex w-full justify-center">
               <Link href="/policies/privacy" className="text-sm text-center">

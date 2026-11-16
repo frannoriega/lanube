@@ -1,81 +1,81 @@
 {
   ".husky/_/applypatch-msg": {
-    "mtime": 1791492250.9490056,
+    "mtime": 1794850377.6991305,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/commit-msg": {
-    "mtime": 1791492250.9444072,
+    "mtime": 1794850377.6985161,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/h": {
-    "mtime": 1791492250.9407933,
+    "mtime": 1794850377.697485,
     "ast_hash": "15239a01c5554e56ff745570fb583a91",
     "semantic_hash": "15239a01c5554e56ff745570fb583a91"
   },
   ".husky/_/husky.sh": {
-    "mtime": 1791492250.9589584,
+    "mtime": 1794850377.7016954,
     "ast_hash": "13871d2ab13e8423790ecb2c01c78c18",
     "semantic_hash": "13871d2ab13e8423790ecb2c01c78c18"
   },
   ".husky/_/post-applypatch": {
-    "mtime": 1791492250.9520488,
+    "mtime": 1794850377.6999073,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-checkout": {
-    "mtime": 1791492250.957961,
+    "mtime": 1794850377.7006664,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-commit": {
-    "mtime": 1791492250.9459777,
+    "mtime": 1794850377.6987906,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-merge": {
-    "mtime": 1791492250.9581676,
+    "mtime": 1794850377.7008646,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-rewrite": {
-    "mtime": 1791492250.956144,
+    "mtime": 1794850377.700365,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-applypatch": {
-    "mtime": 1791492250.950717,
+    "mtime": 1794850377.6994643,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-auto-gc": {
-    "mtime": 1791492250.9586716,
+    "mtime": 1794850377.7014217,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-commit": {
-    "mtime": 1791492250.9422696,
+    "mtime": 1794850377.6976867,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-merge-commit": {
-    "mtime": 1791492250.9425318,
+    "mtime": 1794850377.6979866,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-push": {
-    "mtime": 1791492250.958437,
+    "mtime": 1794850377.7010996,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-rebase": {
-    "mtime": 1791492250.9543715,
+    "mtime": 1794850377.7001438,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/prepare-commit-msg": {
-    "mtime": 1791492250.9441214,
+    "mtime": 1794850377.6982193,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "src/components/molecules/markdown.tsx": {
-    "mtime": 1793737696.3636715,
-    "ast_hash": "06586a12abaceac80e40c2c064fab421",
+    "mtime": 1794850822.89774,
+    "ast_hash": "49d89d38e408eb515aadfc4311257620",
     "semantic_hash": ""
   },
   "src/components/molecules/marquee/index.tsx": {
@@ -1605,8 +1605,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1794846376.509878,
-    "ast_hash": "8921bc0e1745ba86b5e789e917c39365",
+    "mtime": 1794850899.4798503,
+    "ast_hash": "e54242a032278a5a16b01ecd1430886d",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3790,8 +3790,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/policies/table-of-contents.tsx": {
-    "mtime": 1793737696.371975,
-    "ast_hash": "5795aa9939340baef08a56f199f77167",
+    "mtime": 1794850808.5364263,
+    "ast_hash": "f1a28b2a11f7cba6997d891894e3c7d1",
     "semantic_hash": ""
   },
   "src/components/organisms/settings/accepted-policies-section.tsx": {
@@ -4630,13 +4630,13 @@
     "semantic_hash": ""
   },
   "src/app/(public)/changelog/[version]/page.tsx": {
-    "mtime": 1794846022.5423357,
-    "ast_hash": "f222a6508ad61ca550a831a5f24658b4",
+    "mtime": 1794850781.7932842,
+    "ast_hash": "8be4542120e3c9e99197cb3725926eb3",
     "semantic_hash": ""
   },
   "src/app/(public)/changelog/page.tsx": {
-    "mtime": 1794846022.3209903,
-    "ast_hash": "930e86840f464908e8b09af449e2bb9f",
+    "mtime": 1794850884.7013195,
+    "ast_hash": "eb2cd0b91ffeeace1a5f4ae68aec32b6",
     "semantic_hash": ""
   },
   "src/app/api/version/route.ts": {
@@ -4670,8 +4670,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-28-versioning-and-build-verification.md": {
-    "mtime": 1794846377.4183161,
-    "ast_hash": "7f8cfbf3f49fa873c35fac71f7811deb",
+    "mtime": 1794850899.1351645,
+    "ast_hash": "f3c8c4e14ed2ea50325752ca385553b9",
     "semantic_hash": ""
   },
   "src/assets/changelog/1.0.0.md": {

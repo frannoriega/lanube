@@ -36,14 +36,6 @@ function minutesToDisplay(mins: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
-const RESOURCE_LABELS: Record<string, string> = {
-  COWORKING: "Coworking",
-  LAB: "Laboratorio",
-  AUDITORIUM: "Auditorio",
-  MEETING: "Sala de reuniones",
-  UNKNOWN: "Otro",
-};
-
 const MONTH_LABELS = [
   "Ene",
   "Feb",
@@ -505,8 +497,7 @@ function PerResourceTable({ data }: { data: ReportData }) {
       id: "service",
       header: "Servicio",
       meta: { mobile: "title", label: "Servicio" },
-      cell: ({ row }) =>
-        RESOURCE_LABELS[row.original.resourceType] ?? row.original.resourceType,
+      cell: ({ row }) => row.original.resourceType,
     },
     {
       id: "total",
@@ -622,7 +613,7 @@ function buildDurationRows(data: ReportData): DurationRow[] {
       .sort((a: ResourceStats, b: ResourceStats) => b.count - a.count)
       .map((r: ResourceStats) => ({
         id: r.resourceType,
-        label: RESOURCE_LABELS[r.resourceType] ?? r.resourceType,
+        label: r.resourceType,
         total: r.totalMinutes,
         min: r.minMinutes,
         avg: r.avgMinutes,

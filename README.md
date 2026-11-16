@@ -8,7 +8,7 @@ Sistema completo de gestión para el espacio de coworking La Nube, desarrollado 
 
 - ✅ Registro con información personal (nombre, apellido, DNI, institución, motivo)
 - ✅ Dashboard con estadísticas personales
-- ✅ Reservas para Coworking, Laboratorio y Auditorio
+- ✅ Reservas para Coworking, Laboratorio y Sala de Conferencias
 - ✅ Gestión de reservas existentes
 - ✅ Configuración de perfil personal
 
