@@ -57,3 +57,6 @@ next-env.d.ts
 /blob-import/
 *.dump
 vercel-source-*.sql
+
+# misc
+ignored
