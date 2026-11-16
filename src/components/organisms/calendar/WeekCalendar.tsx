@@ -33,6 +33,7 @@ import {
   visibleDayIndices,
   WORK_WEEK_DAYS,
   firstBookableMinutes,
+  LAST_BOOKABLE_START_MINUTES,
 } from "./calendar-utils";
 import { BookingForm, type BookingFormValues } from "./BookingForm";
 import {
@@ -474,14 +475,23 @@ export function WeekCalendar({
    * code, and this is also the better touch path. Flagged in the milestone doc as the
    * cheaper of the two options pending a product call.
    */
-  const openBookingForDay = useCallback((day: Date) => {
-    const startMinutes = BUSINESS_HOURS.START * 60;
-    const endMinutes = startMinutes + 60;
-    setSelection({ day, startMinutes, endMinutes });
-    setStartTime(minutesToTime(startMinutes));
-    setEndTime(minutesToTime(endMinutes));
-    setDialogOpen(true);
-  }, []);
+  const openBookingForDay = useCallback(
+    (day: Date) => {
+      // Hoy no se ofrece lo que ya pasó: el formulario abre en el primer turno reservable
+      // (p. ej. a las 15:10, a las 15:15), no a la apertura, que el servidor rechazaría.
+      const startMinutes = firstBookableMinutes(day, now());
+      if (startMinutes > LAST_BOOKABLE_START_MINUTES) {
+        toast.error("No se pueden hacer reservas en el pasado");
+        return;
+      }
+      const endMinutes = Math.min(startMinutes + 60, BUSINESS_HOURS.END * 60);
+      setSelection({ day, startMinutes, endMinutes });
+      setStartTime(minutesToTime(startMinutes));
+      setEndTime(minutesToTime(endMinutes));
+      setDialogOpen(true);
+    },
+    [now],
+  );
 
   /**
    * Bloques ocupados de un día como intervalos [inicio, fin) en minutos desde medianoche:

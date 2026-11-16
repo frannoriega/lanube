@@ -52,6 +52,14 @@ export const RELEASES = [
       "La primera versión estable de La Nube: reservas de espacios, eventos con inscripción, noticias, panel de gestión, políticas versionadas y conector para asistentes de IA.",
     file: "1.0.0.md",
   },
+  {
+    version: "1.0.1",
+    date: "2026-11-16",
+    title: "Reservas de hoy y botón de ingreso más claros",
+    summary:
+      "Al reservar para hoy, el formulario ya no propone la hora de apertura si ya pasó: empieza en el primer turno que se puede reservar. Y el botón de ingreso del inicio muestra un indicador de carga mientras se resuelve la sesión.",
+    file: "1.0.1.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

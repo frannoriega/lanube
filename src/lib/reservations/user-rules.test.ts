@@ -59,6 +59,24 @@ describe("validateUserReservationWindow", () => {
     ).toBe("No se pueden hacer reservas en el pasado");
   });
 
+  it("hoy a las 15:10 rechaza el turno de apertura y acepta el de las 15:15", () => {
+    const now = local(2026, 10, 5, 15, 10);
+    expect(
+      validateUserReservationWindow(
+        local(2026, 10, 5, 8),
+        local(2026, 10, 5, 9),
+        now,
+      ),
+    ).toBe("No se pueden hacer reservas en el pasado");
+    expect(
+      validateUserReservationWindow(
+        local(2026, 10, 5, 15, 15),
+        local(2026, 10, 5, 16, 15),
+        now,
+      ),
+    ).toBeNull();
+  });
+
   it("no exige anticipación: vale cualquier turno desde ahora en adelante", () => {
     // NOW es el lunes 2026-10-05 a las 10:00 local.
     // Un rato después, el mismo día.
