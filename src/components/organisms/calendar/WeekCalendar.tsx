@@ -32,6 +32,7 @@ import {
   visibleDayCountFor,
   visibleDayIndices,
   WORK_WEEK_DAYS,
+  firstBookableMinutes,
 } from "./calendar-utils";
 import { BookingForm, type BookingFormValues } from "./BookingForm";
 import {
@@ -682,6 +683,12 @@ export function WeekCalendar({
   };
 
   /** Valores con los que abre el formulario: el horario elegido + el tipo por defecto. */
+  // Primer minuto reservable del día elegido (hoy: no antes de ahora). Se recalcula al abrir el
+  // formulario; el submit vuelve a comparar contra el reloj, que sigue siendo la regla.
+  const bookingMinStartMinutes = selection
+    ? firstBookableMinutes(selection.day, now())
+    : undefined;
+
   const bookingDefaults = useMemo<BookingFormValues>(
     () => ({ startTime, endTime, eventType: defaultEventType, reason: "" }),
     [startTime, endTime, defaultEventType],
@@ -880,6 +887,7 @@ export function WeekCalendar({
                   blocked={isDayFullyBlocked(day, now())}
                   reservations={getReservationsForDay(day)}
                   unavailableSlots={getUnavailableSlotsForDay(day)}
+                  firstBookableMinutes={firstBookableMinutes(day, now())}
                   userId={userId}
                   selectionOverlay={
                     dragSelection && dragSelection.dayIndex === dayIdx
@@ -926,6 +934,7 @@ export function WeekCalendar({
 
           <BookingForm
             defaultValues={bookingDefaults}
+            minStartMinutes={bookingMinStartMinutes}
             eventTypes={eventTypes}
             reasonLabel={description}
             submitting={submitting}

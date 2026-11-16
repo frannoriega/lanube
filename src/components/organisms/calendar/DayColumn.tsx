@@ -92,6 +92,11 @@ export interface DayColumnProps {
   blocked: boolean;
   reservations: ReservationOccurrence[];
   unavailableSlots: UnavailableSlot[];
+  /**
+   * Minuto del día (desde medianoche) desde el cual ya se puede reservar (`firstBookableMinutes`).
+   * Lo anterior —las horas de hoy que ya pasaron— se raya como «no disponible».
+   */
+  firstBookableMinutes: number;
   userId?: string;
   /** Selección en curso (arrastre o toque) a dibujar sobre esta columna, en % del alto. */
   selectionOverlay: { top: string; height: string } | null;
@@ -113,6 +118,7 @@ export function DayColumn({
   blocked,
   reservations,
   unavailableSlots,
+  firstBookableMinutes,
   userId,
   selectionOverlay,
   onPointerDownSlot,
@@ -122,6 +128,15 @@ export function DayColumn({
   onSelectOccurrence,
 }: DayColumnProps) {
   const hours = BUSINESS_HOURS.END - BUSINESS_HOURS.START;
+  // Tramo de hoy que ya pasó, en % del alto (0 si el día es futuro; un día pasado entero ya va
+  // rayado por `blocked`).
+  const pastHeightPct = Math.max(
+    0,
+    Math.min(
+      100,
+      ((firstBookableMinutes - BUSINESS_HOURS.START * 60) / (hours * 60)) * 100,
+    ),
+  );
   return (
     <div
       className={cn(
@@ -145,6 +160,18 @@ export function DayColumn({
           style={{ top: `${(hour / hours) * 100}%` }}
         />
       ))}
+
+      {/* Horas de hoy que ya pasaron: no se puede reservar antes de «ahora» */}
+      {!blocked && pastHeightPct > 0 && (
+        <div
+          className="absolute top-0 z-50 w-full"
+          style={{ height: `${pastHeightPct}%` }}
+          title="Este horario ya pasó"
+          data-testid="past-slots"
+        >
+          <div className={cn("h-full rounded", BLOCKED_STRIPES)} />
+        </div>
+      )}
 
       {/* Unavailable slots */}
       {!blocked &&

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   daysWithinHorizon,
   firstBookableDayIndex,
+  firstBookableMinutes,
   firstBookableWeekStart,
   getCurrentWorkWeekStart,
   horizonWeekStart,
@@ -156,5 +157,36 @@ describe("horizonte deslizante de 2 semanas en el calendario", () => {
     const sat10 = new Date(2026, 9, 10, 10); // último día: sábado 24
     expect(horizonWeekStart(sat10)).toEqual(new Date(2026, 9, 19));
     expect(daysWithinHorizon(weekOf(new Date(2026, 9, 19)), sat10)).toBe(5);
+  });
+});
+
+describe("firstBookableMinutes", () => {
+  const at = (h: number, m = 0, sec = 0, ms = 0) => {
+    const d = new Date(2026, 10, 18); // miércoles
+    d.setHours(h, m, sec, ms);
+    return d;
+  };
+  const day = at(0);
+
+  it("un día futuro abre en la apertura", () => {
+    expect(firstBookableMinutes(addDays(day, 1), at(12))).toBe(8 * 60);
+  });
+
+  it("un día pasado queda cerrado entero", () => {
+    expect(firstBookableMinutes(addDays(day, -1), at(12))).toBe(19 * 60);
+  });
+
+  it("hoy redondea hacia arriba a la grilla de 15 min", () => {
+    expect(firstBookableMinutes(day, at(10, 7))).toBe(10 * 60 + 15);
+    expect(firstBookableMinutes(day, at(10, 15, 0, 1))).toBe(10 * 60 + 30);
+  });
+
+  it("hoy en punto de la grilla ese turno todavía sirve", () => {
+    expect(firstBookableMinutes(day, at(10, 15))).toBe(10 * 60 + 15);
+  });
+
+  it("antes de abrir no adelanta nada; después de cerrar queda todo atrás", () => {
+    expect(firstBookableMinutes(day, at(6, 30))).toBe(8 * 60);
+    expect(firstBookableMinutes(day, at(19, 30))).toBe(19 * 60);
   });
 });

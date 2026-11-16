@@ -51,6 +51,35 @@ export function isDayFullyBlocked(day: Date, clock: Date): boolean {
 }
 
 /**
+ * Primer minuto del día (desde medianoche, en la grilla de 15 min) en el que todavía se puede
+ * empezar una reserva en `day`, visto desde `clock`. Es la misma comparación que rechaza el
+ * arrastre, el toque y el envío (`inicio < ahora`), así el calendario y el formulario no
+ * prometen horarios que después se rechazan.
+ *
+ * - Día futuro: la apertura (`BUSINESS_HOURS.START`).
+ * - Día pasado: el cierre (`BUSINESS_HOURS.END`), o sea todo el día queda atrás.
+ * - Hoy: el siguiente múltiplo de 15 min que no esté antes de ahora, acotado al horario.
+ *
+ * Lo anterior a este valor se dibuja como «no disponible» y no se ofrece en el formulario.
+ */
+export function firstBookableMinutes(day: Date, clock: Date): number {
+  const open = BUSINESS_HOURS.START * 60;
+  const close = BUSINESS_HOURS.END * 60;
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  const clockDayStart = new Date(clock);
+  clockDayStart.setHours(0, 0, 0, 0);
+  if (dayStart.getTime() > clockDayStart.getTime()) return open;
+  if (dayStart.getTime() < clockDayStart.getTime()) return close;
+  // Minutos transcurridos hoy, con fracción: a las 10:00:00.000 en punto 10:00 todavía sirve
+  // (`inicio < ahora` es falso), a las 10:00:00.001 ya no.
+  const elapsed = (clock.getTime() - clockDayStart.getTime()) / 60_000;
+  const next =
+    Math.ceil(elapsed / TIME_INTERVAL_MINUTES) * TIME_INTERVAL_MINUTES;
+  return Math.min(close, Math.max(open, next));
+}
+
+/**
  * ¿`day` (medianoche local) cae después del último día reservable? (horizonte deslizante de
  * dos semanas, milestone 26: `reservations/booking-horizon.ts`). Esos días **no se dibujan**
  * —se acorta el calendario— en lugar de mostrarse rayados; los pasados, en cambio, sí se

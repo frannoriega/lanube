@@ -83,6 +83,7 @@ const TIME_OPTIONS = generateTimeOptions();
 
 export function BookingForm({
   defaultValues,
+  minStartMinutes,
   eventTypes,
   reasonLabel,
   submitting,
@@ -91,6 +92,11 @@ export function BookingForm({
 }: {
   /** Valores iniciales; cambian cada vez que se abre el formulario desde otro horario. */
   defaultValues: BookingFormValues;
+  /**
+   * Primer minuto del día en que se puede empezar (hoy: no antes de ahora). El select de inicio
+   * no ofrece horarios anteriores. La validación real sigue en el envío de `WeekCalendar`.
+   */
+  minStartMinutes?: number;
   eventTypes: Array<{ value: string; label: string }>;
   /** Rótulo del campo motivo (cada espacio puede personalizarlo). */
   reasonLabel?: string;
@@ -117,6 +123,19 @@ export function BookingForm({
 
   const startTime = form.watch("startTime");
   const endTime = form.watch("endTime");
+
+  // El inicio no ofrece horas que ya pasaron. El valor actual se conserva aunque haya quedado
+  // atrás (el formulario quedó abierto): el envío lo rechaza con el mensaje de siempre.
+  const startOptions = useMemo(
+    () =>
+      TIME_OPTIONS.slice(0, -1).filter(
+        (o) =>
+          minStartMinutes === undefined ||
+          timeToMinutes(o.value) >= minStartMinutes ||
+          o.value === startTime,
+      ),
+    [minStartMinutes, startTime],
+  );
 
   // El fin solo ofrece horas posteriores al inicio.
   const endOptions = useMemo(
@@ -164,7 +183,7 @@ export function BookingForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {TIME_OPTIONS.slice(0, -1).map((o) => (
+                      {startOptions.map((o) => (
                         <SelectItem key={o.value} value={o.value}>
                           {o.label}
                         </SelectItem>
