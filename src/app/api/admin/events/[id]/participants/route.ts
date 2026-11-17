@@ -9,6 +9,7 @@ import {
 } from "@/lib/events/form-export";
 import { listEventParticipants } from "@/lib/db/participants";
 import { serializeJson } from "@/lib/json-bigint";
+import { requestOrigin } from "@/lib/oauth/origin";
 import { ParticipantStatus } from "@/types/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -55,7 +56,10 @@ export async function GET(
       getEventFormColumns(id),
     ]);
 
-    const { origin, searchParams } = new URL(request.url);
+    // Origen público (no `request.url`, que en el VPS es `0.0.0.0:3000`): los links de
+    // archivos del CSV se abren desde la planilla.
+    const origin = requestOrigin(request);
+    const { searchParams } = request.nextUrl;
     if (searchParams.get("format") === "csv") {
       const header = [
         "Email",

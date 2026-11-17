@@ -60,6 +60,14 @@ export const RELEASES = [
       "Al reservar para hoy, el formulario ya no propone la hora de apertura si ya pasó: empieza en el primer turno que se puede reservar. Y el botón de ingreso del inicio muestra un indicador de carga mientras se resuelve la sesión.",
     file: "1.0.1.md",
   },
+  {
+    version: "1.0.2",
+    date: "2026-11-17",
+    title: "La confirmación del email vuelve a funcionar",
+    summary:
+      "Al abrir el enlace de confirmación del email, el sitio redirigía a una dirección inválida y el navegador mostraba un error de conexión. Ahora vuelve a la pantalla de ingreso de La Nube.",
+    file: "1.0.2.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */
