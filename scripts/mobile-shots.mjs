@@ -100,6 +100,8 @@ const SHOTS = [
     },
   },
   { name: "user-events", user: "user", url: "/user/events" },
+  // Milestone 32: calendario de actividades (la vista inicial depende del ancho).
+  { name: "user-activity-calendar", user: "user", url: "/user/calendar" },
   { name: "user-settings", user: "user", url: "/user/settings" },
   {
     name: "user-drawer",
@@ -127,6 +129,7 @@ const SHOTS = [
   { name: "admin-users", user: "admin", url: "/admin/users" },
   { name: "admin-checkin", user: "admin", url: "/admin/checkin" },
   { name: "admin-closed-days", user: "admin", url: "/admin/closed-days" },
+  { name: "admin-activity-calendar", user: "admin", url: "/admin/calendar" },
   {
     name: "admin-closed-day-new",
     user: "admin",

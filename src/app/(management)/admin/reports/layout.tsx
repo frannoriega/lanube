@@ -1,4 +1,6 @@
 import { requirePagePermission } from "@/lib/page-auth";
+// Estilos de impresión de toda la sección: la página general y la de cada evento.
+import "./print.css";
 
 /**
  * Guarda de la sección «Reportes»: exige `reports:view` en el servidor, no solo el `admin:access`

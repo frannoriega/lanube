@@ -14,7 +14,17 @@ import {
 } from "@/components/ui/chart";
 import type { EventReport } from "@/lib/db/eventReports";
 import type { ChoiceDistribution } from "@/lib/events/report-stats";
-import { CalendarDays, DoorOpen, Percent, UserPlus, Users } from "lucide-react";
+import {
+  CalendarDays,
+  DoorOpen,
+  Percent,
+  Printer,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ReportExportPanel } from "@/components/organisms/admin/report-export";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -63,6 +73,12 @@ const dayLabel = (ms: number) =>
 const keyLabel = (key: string) => `${key.slice(8, 10)}/${key.slice(5, 7)}`;
 
 export default function EventReportView({ data }: { data: EventReport }) {
+  // Fecha de generación para la versión impresa; en el cliente, así usa la zona del navegador
+  // sin desfasar la hidratación.
+  const [generatedAt, setGeneratedAt] = useState("");
+  useEffect(() => {
+    setGeneratedAt(new Date().toLocaleString("es-AR", { hourCycle: "h23" }));
+  }, []);
   const registrations =
     data.byStatus.PENDING +
     data.byStatus.APPROVED +
@@ -71,14 +87,36 @@ export default function EventReportView({ data }: { data: EventReport }) {
   const showAttendance = data.checkInEnabled || data.attendance.length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold">{data.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {data.typeName} · {data.spaceName} ·{" "}
-          <LocalDateRange startMs={data.firstMs} endMs={data.lastMs} />
-        </p>
+    // `admin-report`: la clase a la que apuntan los estilos de impresión de la sección
+    // (`reports/print.css`, cargado por el layout).
+    <div className="admin-report space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold">{data.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {data.typeName} · {data.spaceName} ·{" "}
+            <LocalDateRange startMs={data.firstMs} endMs={data.lastMs} />
+          </p>
+          {generatedAt && (
+            <p className="hidden text-xs print:block">
+              Reporte del evento — La Nube · Generado: {generatedAt}
+            </p>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 print:hidden"
+          onClick={() => window.print()}
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </Button>
       </div>
+
+      <ReportExportPanel
+        events={[{ id: data.id, name: data.name, detail: "" }]}
+        fixedEvent
+      />
 
       <StatGrid>
         <StatTile

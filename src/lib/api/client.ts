@@ -164,3 +164,50 @@ export function apiSend<TResponse = unknown, TBody = unknown>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
+
+/**
+ * Descarga un archivo de la API (la exportación de reportes): pide `url`, y si sale bien lo
+ * guarda con el nombre que manda el servidor (`Content-Disposition`). Si falla, lanza el mismo
+ * `ApiError` que el resto del cliente (con el `message` del servidor), así quien llama muestra
+ * el error con `apiErrorMessage` en vez de que el navegador abra un JSON.
+ */
+export async function apiDownload(
+  url: string,
+  fallbackName: string,
+): Promise<void> {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    redirectIfPoliciesPending(res.status, body);
+    refreshMaintenanceIfBlocked(res.status, body);
+    throw new ApiError(res.status, body);
+  }
+  const blob = await res.blob();
+  const name =
+    filenameFromDisposition(res.headers.get("Content-Disposition")) ??
+    fallbackName;
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // El clic ya tomó el blob; se libera en el próximo ciclo para no cortar la descarga.
+  setTimeout(() => URL.revokeObjectURL(href), 0);
+}
+
+/** `filename*=UTF-8''…` (RFC 6266) o, si no está, `filename="…"`. */
+export function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (star) {
+    try {
+      return decodeURIComponent(star[1].trim());
+    } catch {
+      // Cae al `filename` común.
+    }
+  }
+  const plain = /filename="([^"]+)"/i.exec(header);
+  return plain ? plain[1] : null;
+}

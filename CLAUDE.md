@@ -79,11 +79,13 @@ src/
 │   │   │   ├── dashboard/        # User dashboard with stats
 │   │   │   ├── spaces/[slug]/    # Reservation booking UI (dynamic; resolves Space by slug)
 │   │   │   ├── events/           # Events the user can see/register for
+│   │   │   ├── calendar/         # Calendario de actividades del usuario (milestone 32, §22)
 │   │   │   └── settings/         # Sectioned settings (milestone 17): profile/ identity/
 │   │   │                         #   security/ account/ — /user/settings redirects to profile
 │   │   ├── admin/                # Admin-only section (guards by role in middleware)
 │   │   │   ├── dashboard/        # Admin overview
 │   │   │   ├── reservations/     # Admin reservation management
+│   │   │   ├── calendar/         # Calendario de actividades, solo lectura (milestone 32, §22)
 │   │   │   ├── users/            # User list, search, ban management
 │   │   │   ├── checkin/          # Check-in/out system
 │   │   │   ├── incidents/        # ⚠️ NOT FUNCTIONAL: the API is a 501 stub, so the
@@ -1138,6 +1140,36 @@ Full design, legal notes and the release procedure: `docs/milestones/milestones-
 - `npm run release:verify -- <url>` (`scripts/verify-deployment.mjs`) compares a live site against the CI image for
   its commit (provenance attested in CI). It proves client code only — server-only code can't be verified remotely;
   don't claim otherwise.
+
+### 22. Activity calendar & report exports (milestone 32, v1.4.0)
+
+Full design, decisions and verification: `docs/milestones/milestones-32-activity-calendar.md`.
+
+- **Calendario de actividades** (`/admin/calendar` con `reservations:manage`, `/user/calendar`):
+  **solo lectura**, vistas día / 3 días / semana / mes, organismo propio
+  (`organisms/activity-calendar/`) — `WeekCalendar`/`DayColumn` son para reservar y no se usan.
+  Datos por rango visible: `GET /api/{admin,user}/calendar?from&to` →
+  `getActivityCalendar()` (`src/lib/db/activityCalendar.ts`) sobre `reservation_occurrences()`.
+  Reglas puras en `src/lib/calendar/activity.ts`: rango ≤ 45 días y navegación hasta el fin del
+  año próximo (también en el servidor), «Ocupado», cierres y mantenimiento como ítems.
+- **⚠️ La vista de usuario nunca expone reservas ajenas**: salen unidas por espacio como
+  «Ocupado» (`mergeBusy`), sin id, nombre, motivo ni estado; los eventos no publicados, igual. Un
+  campo nuevo en `CalendarItem` con datos de una persona va solo en la rama `admin`.
+- **Exportar reportes**: `GET /api/admin/reports/export` (`reports:view`; query en
+  `src/lib/reports/export/request.ts`). Los reportes se traducen **una vez** al modelo de
+  `model.ts` (`build.ts`, puro) y de ahí salen CSV (`csv.ts`) y Excel (`xlsx.ts`, ExcelJS). Un
+  bloque nuevo del reporte en pantalla se exporta agregándolo en `build.ts`, no en cada formato.
+- **Gráficos de Excel nativos**: ExcelJS no los escribe; `xlsx-charts.ts` inyecta las partes
+  DrawingML en el paquete (orden de elementos del esquema OOXML estricto — Excel declara dañado el
+  archivo si no). Las series apuntan a las celdas de su tabla.
+- **Cada tabla exportada se describe sola** (cada fila con `Desde`/`Hasta` o su evento) y cada hoja
+  tiene nombre propio: es lo que permite juntar exportes en una planilla. No se acepta subir una
+  planilla para agregarle hojas (ExcelJS pierde lo que no entiende al reescribirla).
+- CSV: RFC 4180, UTF-8 con BOM, valores neutros de idioma, y **todo texto pasa por
+  `neutralizeFormula`** (inyección de fórmulas). Varias tablas → .zip.
+- Descargas desde el cliente con `apiDownload` (`src/lib/api/client.ts`), nunca un `fetch` suelto.
+- `reports/print.css` se carga en el `layout.tsx` de la sección: aplica a `/admin/reports` y al
+  reporte de cada evento (clase `admin-report`).
 
 ## Testing & Seeding
 

@@ -23,6 +23,7 @@ import {
   Building2,
   Calendar,
   CalendarDays,
+  CalendarRange,
   ChevronDown,
   FileText,
   Construction,
@@ -102,6 +103,12 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/user/events",
       icon: CalendarDays,
     },
+    // Milestone 32: calendario de actividades (solo lectura).
+    {
+      name: "Calendario",
+      href: "/user/calendar",
+      icon: CalendarRange,
+    },
   ],
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -124,6 +131,14 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/admin/reservations",
       section: "Reservas",
       icon: Calendar,
+      permission: "reservations:manage",
+    },
+    {
+      // Milestone 32: todo lo que pasa en La Nube, en día / 3 días / semana / mes.
+      name: "Calendario",
+      href: "/admin/calendar",
+      section: "Reservas",
+      icon: CalendarRange,
       permission: "reservations:manage",
     },
     {

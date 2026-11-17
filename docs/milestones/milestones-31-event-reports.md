@@ -54,7 +54,9 @@ evento lee de las tablas de eventos/participantes/check-ins, que no se podan.
 
 ## Fuera de alcance
 
-- Exportar el reporte por evento a CSV (ya existe el CSV de inscriptos).
+- Exportar el reporte por evento a CSV (ya existe el CSV de inscriptos). **Hecho después**, en la
+  versión 1.4.0: Excel y CSV de los reportes, ver `milestones-32-activity-calendar.md`, «Exportar
+  reportes».
 
 ## Registro de implementación
 

@@ -1,6 +1,5 @@
 "use client";
 
-import "./print.css";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,6 +27,10 @@ import AdminReport from "@/components/templates/admin/report";
 import EventsReportSection from "@/components/templates/admin/report/events-section";
 import { LoadError } from "@/components/molecules/load-error";
 import type { EventsReport } from "@/lib/db/eventReports";
+import {
+  ReportExportPanel,
+  type ExportableEvent,
+} from "@/components/organisms/admin/report-export";
 
 const ADMIN_TZ = "America/Argentina/Buenos_Aires";
 
@@ -199,6 +202,21 @@ export default function AdminReportsPage() {
     : null;
   const events = useApi<EventsReport>(eventsUrl);
 
+  // Eventos del período para el panel «Exportar» (memoizado: la tabla de selección necesita
+  // un arreglo estable, ver la nota de `DataTable` en CLAUDE.md §13).
+  const exportableEvents = useMemo<ExportableEvent[]>(
+    () =>
+      (events.data?.events ?? []).map((e) => {
+        const sessions = e.sessions.held + e.sessions.upcoming;
+        return {
+          id: e.id,
+          name: e.name,
+          detail: `${sessions} ${sessions === 1 ? "sesión" : "sesiones"} · ${e.holding} inscriptos`,
+        };
+      }),
+    [events.data],
+  );
+
   useEffect(() => {
     if (report) {
       setGeneratedAt(now().toLocaleString("es-AR", { timeZone: ADMIN_TZ }));
@@ -354,6 +372,14 @@ export default function AdminReportsPage() {
         <div className="flex h-32 items-center justify-center print:hidden">
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-la-nube-primary" />
         </div>
+      )}
+
+      {/* Exportar (Excel / CSV): el mismo período que se está viendo. */}
+      {report && !loading && (
+        <ReportExportPanel
+          period={{ fromMs: report.period.from, toMs: report.period.to }}
+          events={exportableEvents}
+        />
       )}
 
       {/* ───── Printable report area ───── */}

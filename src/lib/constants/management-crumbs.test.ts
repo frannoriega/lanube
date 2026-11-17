@@ -85,4 +85,14 @@ describe("managementCrumbs", () => {
       { name: "Evento" },
     ]);
   });
+  it("labels the activity calendar (milestone 32)", () => {
+    expect(managementCrumbs("/admin/calendar", "admin")).toEqual([
+      { name: "Panel", href: "/admin/dashboard" },
+      { name: "Calendario" },
+    ]);
+    expect(managementCrumbs("/user/calendar", "user")).toEqual([
+      { name: "Panel de control", href: "/user/dashboard" },
+      { name: "Calendario" },
+    ]);
+  });
 });

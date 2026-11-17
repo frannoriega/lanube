@@ -100,6 +100,14 @@ export const RELEASES = [
       "Los reportes suman una sección de eventos con sesiones, inscripciones, ocupación y asistencia del período. Cada evento tiene además su propio reporte, con un gráfico de asistencia por sesión.",
     file: "1.3.0.md",
   },
+  {
+    version: "1.4.0",
+    date: "2026-11-17",
+    title: "Calendario de actividades y reportes para descargar",
+    summary:
+      "Un calendario con todo lo que pasa en La Nube, por día, 3 días, semana o mes. Y los reportes se pueden descargar en Excel (con gráficos) o en CSV, eligiendo qué incluir; el reporte de cada evento también se puede imprimir.",
+    file: "1.4.0.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */
