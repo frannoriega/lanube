@@ -1,3 +1,4 @@
+import { requirePagePermission } from "@/lib/page-auth";
 import { EventForm } from "@/components/organisms/admin/event-form";
 import {
   eventToFormDefaults,
@@ -12,6 +13,9 @@ export default async function EditEventPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // La página exige el permiso, no solo el `admin:access` del middleware (arreglo de
+  // seguridad del 2026-11-17: la página arma datos de eventos en el servidor).
+  await requirePagePermission("events:manage");
   const { id } = await params;
   const event = await getEvent(id);
   if (!event) notFound();

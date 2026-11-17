@@ -84,6 +84,14 @@ export const RELEASES = [
       "Los eventos pueden usar check-in: en la puerta se busca a cada persona por su email y se registra su ingreso a la sesión. Quien llega sin haberse inscripto se puede registrar ahí mismo, y queda identificado como tal.",
     file: "1.2.0.md",
   },
+  {
+    version: "1.2.1",
+    date: "2026-11-17",
+    title: "Cada sección del panel exige su permiso",
+    summary:
+      "Algunas secciones del panel se podían abrir escribiendo su dirección aunque el rol no tuviera permiso para usarlas. Ahora cada sección comprueba el permiso antes de mostrarse.",
+    file: "1.2.1.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

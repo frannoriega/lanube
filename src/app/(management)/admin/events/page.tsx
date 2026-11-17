@@ -1,3 +1,4 @@
+import { requirePagePermission } from "@/lib/page-auth";
 import { EventFilters } from "@/components/organisms/admin/event-filters";
 import { EventsAdminTable } from "@/components/organisms/admin/events-admin-table";
 import { Pagination } from "@/components/molecules/pagination";
@@ -38,6 +39,9 @@ export default async function EventsPage({
 }: {
   searchParams: Promise<EventsSearchParams>;
 }) {
+  // La página exige el permiso, no solo el `admin:access` del middleware (arreglo de
+  // seguridad del 2026-11-17: la página arma datos de eventos en el servidor).
+  await requirePagePermission("events:manage");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const featured = sp.featured === "1";

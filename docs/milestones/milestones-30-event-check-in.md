@@ -275,4 +275,21 @@ Las páginas de gestión de eventos (`/admin/events`, `/admin/events/[id]`,
 `admin:access` del middleware. Las APIs sí lo exigen, pero `participants/page.tsx` arma la
 tabla de inscriptos (con sus respuestas) en el servidor, así que cualquier rol con
 `admin:access` — un Comunicador, o el rol de recepción que habilita este milestone — puede
-verla entrando por la URL. No se tocó: se avisó al usuario.
+verla entrando por la URL. Se avisó al usuario, que pidió arreglarlo.
+
+**Arreglado el 2026-11-17 (versión 1.2.1).** Al revisar todas las páginas de `/admin` el
+hueco era más ancho: tampoco tenían guarda formularios (en el servidor), reservas, usuarios,
+reportes, ingresos (`/admin/checkin`) e incidentes (de cliente; sus APIs sí estaban
+protegidas, así que esas solo mostraban la carcasa). Arreglo:
+
+- Eventos: `requirePagePermission("events:manage")` **en cada página** (listado, nuevo, editar,
+  inscriptos). No un `layout.tsx` de la sección, porque cubriría también
+  `/admin/events/checkin` y `/admin/events/[id]/checkin`, que piden `events:checkin`.
+- Formularios, reservas, usuarios, reportes, ingresos e incidentes: un `layout.tsx` por
+  sección con su permiso (cubre las páginas de cliente).
+- `src/lib/admin-page-guards.test.ts`: toda `page.tsx` bajo `/admin` tiene que llamar a
+  `requirePagePermission(` o tener un `layout.tsx` de su sección que lo haga; solo el
+  dashboard está exento, con su motivo. Se comprobó que el test falla al sacar una guarda.
+- Verificado con Playwright contra el stack local: una cuenta con el rol Comunicador (`u2`,
+  asignado y vuelto a su rol después) termina en `/admin/dashboard` al abrir eventos,
+  inscriptos, formularios, usuarios y reportes, y sigue entrando a Noticias.
