@@ -76,6 +76,14 @@ export const RELEASES = [
       "Los eventos del calendario de reservas se ven como eventos, con un enlace a su página. Los estados de las reservas aparecen en español. En el panel, la tabla de usuarios permite elegir qué columnas ver y explica mejor la columna de políticas.",
     file: "1.1.0.md",
   },
+  {
+    version: "1.2.0",
+    date: "2026-11-17",
+    title: "Check-in en la puerta para los eventos",
+    summary:
+      "Los eventos pueden usar check-in: en la puerta se busca a cada persona por su email y se registra su ingreso a la sesión. Quien llega sin haberse inscripto se puede registrar ahí mismo, y queda identificado como tal.",
+    file: "1.2.0.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

@@ -100,6 +100,8 @@ export const eventInputSchema = z
     // When true, registrations require admin approval (start PENDING); the capacity then caps
     // how many can register, not the final approved headcount.
     requiresApproval: z.boolean(),
+    // Milestone 30: habilita la pantalla de check-in en la puerta.
+    checkInEnabled: z.boolean(),
     // Required cover image URL produced by the upload endpoint. Accepts an absolute
     // http(s) URL (Vercel Blob / custom host) or a root-relative path (local dev provider).
     imageUrl: z

@@ -6,7 +6,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CalendarCog, Check, Link2, Pencil, Users } from "lucide-react";
+import {
+  CalendarCog,
+  Check,
+  DoorOpen,
+  Link2,
+  Pencil,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -29,11 +36,14 @@ export function EventCardActions({
   eventId,
   formSlug,
   formPublished,
+  checkInEnabled = false,
   inline = false,
 }: {
   eventId: string;
   formSlug: string | null;
   formPublished: boolean;
+  /** Milestone 30: agrega el acceso a la pantalla de check-in del evento. */
+  checkInEnabled?: boolean;
   /**
    * Dentro de una fila de la tabla de eventos (milestone 16) en vez de al pie de una tarjeta:
    * sin borde ni relleno propios.
@@ -90,6 +100,28 @@ export function EventCardActions({
         </TooltipTrigger>
         <TooltipContent>Ver inscriptos</TooltipContent>
       </Tooltip>
+
+      {checkInEnabled && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className={ACTION_CLASSES}
+            >
+              <Link
+                href={`/admin/events/${eventId}/checkin`}
+                aria-label="Check-in en la puerta"
+              >
+                <DoorOpen className="h-4 w-4" />
+                <span className="sm:sr-only">Check-in</span>
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Check-in en la puerta</TooltipContent>
+        </Tooltip>
+      )}
 
       <Tooltip>
         <TooltipTrigger asChild>

@@ -67,6 +67,17 @@ enum ParticipantStatus {
   @@map("participant_statuses")
 }
 
+/// Cómo llegó una inscripción (milestone 30). REGISTERED: por el formulario público.
+/// WALK_IN: «se presentó sin inscripción» — la cargó un admin en la puerta con el check-in.
+/// Es un origen y no un estado: quien llega sin inscripción queda APPROVED (está adentro) y
+/// todo lo que filtra por estado sigue igual; el origen es lo que separan las estadísticas.
+enum ParticipantSource {
+  REGISTERED
+  WALK_IN
+
+  @@map("participant_sources")
+}
+
 // Entrance effect a landing theme plays on first visit while its window is active.
 // Kept as a small, developer-owned set (not free-form) so a superadmin can only pick
 // among presets built and vetted in code — see docs/milestones/milestones-3-seasonal-landing-themes.md.

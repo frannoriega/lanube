@@ -97,6 +97,12 @@ export enum ParticipantStatus {
   CANCELLED = "CANCELLED",
 }
 
+/** Cómo llegó una inscripción (milestone 30): formulario público o «sin inscripción». */
+export enum ParticipantSource {
+  REGISTERED = "REGISTERED",
+  WALK_IN = "WALK_IN",
+}
+
 export enum ClosedDaySource {
   NATIONAL_SYNC = "NATIONAL_SYNC",
   MANUAL_HOLIDAY = "MANUAL_HOLIDAY",

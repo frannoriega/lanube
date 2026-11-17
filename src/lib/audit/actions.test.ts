@@ -77,6 +77,8 @@ const AUDIT_EXEMPT: Record<string, string> = {
     "Stores a file; the post that references it is audited on save.",
   "admin/spaces/upload":
     "Stores a file; the space that references it is audited on save.",
+  "admin/events/[id]/checkin/upload":
+    "Stores a file; the walk-in registration that references it is audited (participant.walkIn).",
   "admin/incidents":
     "API is a 501 stub — nothing is written, so there is nothing to audit (milestone-10 F1.6).",
   "admin/incidents/[id]":

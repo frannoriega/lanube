@@ -572,6 +572,30 @@ are auto-approved (default `false`) or filtered by an admin.
   **all-or-nothing** (user decision): if they don't all fit, 409 and nothing changes; the dialog
   warns before that. The reject dialog warns that rejecting is final unless there's room later.
 
+### Event check-in (milestone 30)
+
+Full design + what was built: `docs/milestones/milestones-30-event-check-in.md`.
+
+- **Optional per event** (`Event.checkInEnabled`, switch in the event form's «Inscripción»). The door
+  screen is `/admin/events/[id]/checkin`; the entry point for a reception role is
+  `/admin/events/checkin` («Check-in», in the nav's «Eventos» section). Everything needs `events:checkin`, a
+  permission **separate from `events:manage`** so a reception role doesn't edit events.
+- **A check-in belongs to one session**, keyed by its **nominal** start (`EventCheckIn.occurrenceStart`
+  = `occurrenceDateMs`, same key as session actions). `reservationId` has **no FK**: editing an event's
+  weekdays deletes reservations and must not delete recorded attendance. Only sessions of today or
+  earlier (by day, admin tz) and never a cancelled one. Pure rules in `src/lib/events/checkin.ts`.
+- **The screen is one table**: session + counter, then the participants table (**email only**, status,
+  check-in button) with a client-side email search; no form answers are shown (forms can be anything; a
+  reliable name is milestone 34). An empty search offers «Registrar sin inscripción» with that email.
+  Group registrations check in whoever registered.
+- **Walk-ins** (`EventParticipant.source = WALK_IN`, a source, not a status): the admin fills the
+  event's full form; the person becomes `APPROVED` **without capacity/window checks and without any
+  email**, and holds a spot for later sessions (user decisions). Same rule for checking in a
+  `PENDING`/`REJECTED`/`CANCELLED` registration: it needs `admit: true` (the UI asks «¿Dejar pasar?»)
+  and becomes `APPROVED` — no `decideParticipants`, no email. Undoing a check-in never reverts that.
+- Audited on the `Event` entity like `participant.decide`: `participant.checkIn` (with
+  `admittedFrom`), `participant.checkInUndo`, `participant.walkIn`.
+
 ### Event card summary + featured
 
 - `Event.summary` (nullable, ≤200 chars, plain text) is the blurb shown on landing/event cards.
@@ -700,6 +724,10 @@ Shared event labels (type + weekday) live in `src/lib/constants/events.ts`.
   UI copy is Spanish. Renaming one means adding a permanent redirect from the old path in
   `next.config.ts` — shared links live forever (`/services` → `/spaces`,
   `/noticias` → `/news`).
+- **The admin sidebar is grouped in sections** (`NavigationItem.section`: Personas, Reservas, Eventos,
+  Contenido, Análisis, Sistema): a small heading is printed whenever the section changes, computed from
+  the permission-filtered items, so a section with nothing visible disappears. A new admin item needs a
+  `section` and its place in the list next to its siblings.
 - **The logo is always a link to `/`** — public header (desktop + mobile drawer, also
   on `/forms`), the sign-in card, and both management sidebars. Sign-in additionally has
   an explicit "Volver al inicio", since **signing out lands there** (`signOut({ callbackUrl:

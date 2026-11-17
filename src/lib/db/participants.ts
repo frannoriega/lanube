@@ -70,7 +70,7 @@ function rowToFlat(f: FormRow["fields"][number]): FlatFieldInput {
  * `fields` only if `schema` is null (e.g. a form created by old code during a deploy window before
  * the backfill/dual-write applied).
  */
-function formSchema(form: FormRow): FormSchema {
+export function formSchema(form: FormRow): FormSchema {
   return form.schema != null
     ? parseFormSchema(form.schema)
     : flatFieldsToSchema(form.fields.map(rowToFlat));
@@ -82,7 +82,7 @@ function formFields(form: FormRow): PublicFormField[] {
 }
 
 /** Mensaje cuando una respuesta trae un archivo que no salió de nuestra subida. */
-const INVALID_FILE_MESSAGE =
+export const INVALID_FILE_MESSAGE =
   "Uno de los archivos adjuntos no es válido. Volvé a subirlo.";
 
 /**
@@ -93,7 +93,7 @@ const INVALID_FILE_MESSAGE =
  * - si no, tiene que traer una firma válida para este evento (`verifyUploadedFile`).
  * Devuelve `null` si algún archivo no pasa.
  */
-function verifiedAnswerFiles(
+export function verifiedAnswerFiles(
   answers: unknown,
   eventId: string,
   trusted: UploadedFile[] = [],

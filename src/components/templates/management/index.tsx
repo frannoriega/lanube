@@ -32,6 +32,7 @@ import {
   LucideProps,
   Menu,
   CalendarOff,
+  DoorOpen,
   Newspaper,
   Settings,
   Shield,
@@ -48,6 +49,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ForwardRefExoticComponent,
+  Fragment,
   RefAttributes,
   useMemo,
   useState,
@@ -78,6 +80,12 @@ interface NavigationItem {
    * (defaults to "admin:access", i.e. shown to any admin-shell role). Lets a
    * narrow role like Comunicador see only what it can actually use. */
   permission?: Permission;
+  /**
+   * Sección del menú del panel (solo admin, 2026-11-17): los ítems se agrupan bajo un título
+   * chico cada vez que cambia la sección, en el orden de la lista. Una sección cuyos ítems no
+   * puede ver el rol no aparece (los títulos salen de los ítems visibles).
+   */
+  section?: string;
 }
 
 const navigation: Record<"user" | "admin", NavigationItem[]> = {
@@ -100,48 +108,65 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
     {
       name: "Usuarios",
       href: "/admin/users",
+      section: "Personas",
       icon: Users,
       permission: "users:manage",
     },
     {
       name: "Cambios de datos",
       href: "/admin/profile-requests",
+      section: "Personas",
       icon: UserCheck,
       permission: "users:profile-requests:review",
     },
     {
       name: "Reservas",
       href: "/admin/reservations",
+      section: "Reservas",
       icon: Calendar,
       permission: "reservations:manage",
     },
     {
       name: "Días cerrados",
       href: "/admin/closed-days",
+      section: "Reservas",
       icon: CalendarOff,
       permission: "closed-days:manage",
     },
     {
       name: "Eventos",
       href: "/admin/events",
+      section: "Eventos",
       icon: CalendarDays,
       permission: "events:manage",
     },
     {
-      name: "Noticias",
-      href: "/admin/news",
-      icon: Newspaper,
-      permission: "news:manage",
+      // Milestone 30: la puerta. Aparte de «Eventos» para que un rol de recepción (solo
+      // `events:checkin`) tenga por dónde entrar sin ver la gestión de eventos.
+      name: "Check-in",
+      href: "/admin/events/checkin",
+      section: "Eventos",
+      icon: DoorOpen,
+      permission: "events:checkin",
     },
     {
       name: "Formularios",
       href: "/admin/forms",
+      section: "Eventos",
       icon: FileText,
       permission: "forms:manage",
     },
     {
+      name: "Noticias",
+      href: "/admin/news",
+      section: "Contenido",
+      icon: Newspaper,
+      permission: "news:manage",
+    },
+    {
       name: "Reportes",
       href: "/admin/reports",
+      section: "Análisis",
       icon: BarChart3,
       permission: "reports:view",
     },
@@ -157,6 +182,7 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
 const configNavigation: NavigationItem = {
   name: "Configuración",
   icon: Settings,
+  section: "Sistema",
   children: [
     {
       name: "Espacios",
@@ -238,6 +264,12 @@ export default function ManagementLayout({
       pathname.startsWith("/admin/reservations")
     )
       return true;
+    // La pantalla de check-in de un evento cuelga de «Check-in de eventos», no de «Eventos».
+    if (
+      href === "/admin/events/checkin" &&
+      /^\/admin\/events\/[^/]+\/checkin$/.test(pathname)
+    )
+      return true;
     return false;
   };
 
@@ -304,6 +336,27 @@ export default function ManagementLayout({
       }
     }
   };
+
+  /**
+   * Los ítems con el título de su sección delante cada vez que la sección cambia (milestone
+   * 30, 2026-11-17: el menú del panel se agrupó en secciones). Los títulos salen de los ítems
+   * ya filtrados por permiso, así que una sección sin ítems visibles no aparece.
+   */
+  const renderNav = (items: NavigationItem[]) =>
+    items.map((item, i) => {
+      const startsSection =
+        item.section && item.section !== items[i - 1]?.section;
+      return (
+        <Fragment key={item.name}>
+          {startsSection && (
+            <p className="px-2 pt-4 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              {item.section}
+            </p>
+          )}
+          {recursiveRender(item)}
+        </Fragment>
+      );
+    });
 
   const navItems = useMemo(() => {
     if (userType !== "admin") {
@@ -378,9 +431,7 @@ export default function ManagementLayout({
               </SheetClose>
             </div>
             <nav className="min-h-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto px-2 py-4">
-              {navItems.map((item) => {
-                return recursiveRender(item);
-              })}
+              {renderNav(navItems)}
             </nav>
           </SheetContent>
         </Sheet>
@@ -395,10 +446,10 @@ export default function ManagementLayout({
                 </Link>
               </div>
             </div>
-            <nav className="flex-1 space-y-1 px-2 py-4">
-              {navItems.map((item) => {
-                return recursiveRender(item);
-              })}
+            {/* Con los títulos de sección el menú es más alto: en una ventana baja scrollea en
+                vez de cortar los últimos ítems. */}
+            <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-4">
+              {renderNav(navItems)}
             </nav>
           </div>
         </div>

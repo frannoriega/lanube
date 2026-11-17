@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
+import { PARTICIPANT_STATUS_LABEL } from "@/lib/constants/participants";
 import { cn } from "@/lib/utils";
+import type { ParticipantStatus } from "@/types/prisma";
 
 /**
  * The one status badge (milestone 10 / F2.6, F2.7).
@@ -65,6 +67,25 @@ export function StatusBadge({ status }: { status: string }) {
   return (
     <ToneBadge tone={known?.tone ?? "neutral"}>
       {known?.label ?? status}
+    </ToneBadge>
+  );
+}
+
+/**
+ * Estado de una inscripción a un evento. Era el mapa `STATUS_TONE` de la tabla de inscriptos;
+ * se movió acá cuando la pantalla de check-in (milestone 30) también lo necesitó.
+ */
+const PARTICIPANT_STATUS_TONE: Record<string, StatusTone> = {
+  PENDING: "warning",
+  APPROVED: "success",
+  REJECTED: "danger",
+  CANCELLED: "neutral",
+};
+
+export function ParticipantStatusBadge({ status }: { status: string }) {
+  return (
+    <ToneBadge tone={PARTICIPANT_STATUS_TONE[status] ?? "neutral"}>
+      {PARTICIPANT_STATUS_LABEL[status as ParticipantStatus] ?? status}
     </ToneBadge>
   );
 }

@@ -14,7 +14,7 @@ import { DataTableColumnPicker } from "@/components/molecules/data-table-column-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ToneBadge, type StatusTone } from "@/components/atoms/status-badge";
+import { ParticipantStatusBadge } from "@/components/atoms/status-badge";
 import {
   DECISION_SOURCE_STATUSES,
   PARTICIPANT_STATUS_LABEL,
@@ -100,18 +100,6 @@ function applicableTo(
     DECISION_SOURCE_STATUSES[decision].includes(r.status),
   );
 }
-
-/**
- * Participant status → shared tone. This was a fifth light-only `bg-*-100 text-*-800`
- * map (milestone-10 F2.6); the tones live in atoms/status-badge.tsx and define both
- * themes once. Don't reintroduce colour classes here.
- */
-const STATUS_TONE: Record<ParticipantStatus, StatusTone> = {
-  [ParticipantStatus.PENDING]: "warning",
-  [ParticipantStatus.APPROVED]: "success",
-  [ParticipantStatus.REJECTED]: "danger",
-  [ParticipantStatus.CANCELLED]: "neutral",
-};
 
 /** A sortable column header button (mirrors the admin users table). */
 function SortHeader({
@@ -297,9 +285,7 @@ export function ParticipantsTable({
         />
       ),
       cell: ({ row }) => (
-        <ToneBadge tone={STATUS_TONE[row.original.status]}>
-          {PARTICIPANT_STATUS_LABEL[row.original.status]}
-        </ToneBadge>
+        <ParticipantStatusBadge status={row.original.status} />
       ),
       meta: { mobile: "badge", label: "Estado" },
     };

@@ -20,6 +20,12 @@ export const PERMISSIONS = [
    */
   "users:profile-requests:review",
   "events:manage",
+  /**
+   * Registrar ingresos a eventos en la puerta (milestone 30): buscar inscriptos, marcar el
+   * ingreso de una sesión y registrar a quien llega sin inscripción. Separado de
+   * `events:manage` para poder tener un rol de recepción que no edite eventos.
+   */
+  "events:checkin",
   "forms:manage",
   "reports:view",
   "checkin:manage",
@@ -89,7 +95,7 @@ export const PERMISSION_GROUPS: ReadonlyArray<{
   {
     label: "Eventos y formularios",
     description: "Talleres, cursos e inscripciones.",
-    permissions: ["events:manage", "forms:manage"],
+    permissions: ["events:manage", "events:checkin", "forms:manage"],
   },
   {
     label: "Noticias",
@@ -131,6 +137,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "users:roles:manage": "Asignar roles a usuarios",
   "users:profile-requests:review": "Revisar cambios de DNI y motivo",
   "events:manage": "Gestionar eventos",
+  "events:checkin": "Registrar ingresos a eventos",
   "forms:manage": "Gestionar formularios",
   "reports:view": "Ver reportes",
   "checkin:manage": "Gestionar ingresos y egresos",

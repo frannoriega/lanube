@@ -68,6 +68,8 @@ export interface EventAdminRow {
   timeRange: string;
   form: { slug: string; opensAt: number; closesAt: number } | null;
   participants: number;
+  /** Milestone 30: muestra la acción «Check-in» en la fila. */
+  checkInEnabled: boolean;
 }
 
 const STATUS_BADGE_CLASS: Record<EventDisplayStatus, string> = {
@@ -244,6 +246,7 @@ export function EventsAdminTable({
             eventId={e.id}
             formSlug={e.form?.slug ?? null}
             formPublished={e.status === "PUBLISHED"}
+            checkInEnabled={e.checkInEnabled && e.status !== "CANCELLED"}
           />
         );
       },

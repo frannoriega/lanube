@@ -63,6 +63,9 @@ export const AUDIT_ACTIONS = {
   formUpdate: "form.update",
   formDelete: "form.delete",
   participantDecide: "participant.decide",
+  participantCheckIn: "participant.checkIn",
+  participantCheckInUndo: "participant.checkInUndo",
+  participantWalkIn: "participant.walkIn",
 
   // Contenido
   newsCreate: "news.create",

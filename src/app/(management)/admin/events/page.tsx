@@ -183,6 +183,7 @@ export default async function EventsPage({
                     }
                   : null,
                 participants: event._count.participants,
+                checkInEnabled: event.checkInEnabled,
               };
             })}
           />

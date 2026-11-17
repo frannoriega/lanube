@@ -60,8 +60,12 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 
-/** Endpoint that FILE fields POST to (fieldId + file → UploadedFile descriptor). */
-const UploadContext = createContext<string | null>(null);
+/**
+ * Endpoint that FILE fields POST to (fieldId + file → UploadedFile descriptor). Exportado (con
+ * `NodeList` y `PublicFormValues`) para el formulario de quien llega sin inscripción, en el
+ * check-in de eventos (milestone 30): mismos campos, misma validación, otra subida.
+ */
+export const UploadContext = createContext<string | null>(null);
 
 /** Human-readable file size. */
 function formatBytes(bytes: number): string {
@@ -88,7 +92,7 @@ interface PublicFormProps {
   initialAnswers?: Record<string, unknown>;
 }
 
-interface PublicFormValues {
+export interface PublicFormValues {
   email: string;
   answers: Record<string, unknown>;
 }
@@ -336,7 +340,12 @@ interface NodeListProps {
   scopePath: string[];
 }
 
-function NodeList({ nodes, control, basePath, scopePath }: NodeListProps) {
+export function NodeList({
+  nodes,
+  control,
+  basePath,
+  scopePath,
+}: NodeListProps) {
   // Watch the whole answers object so visibility recomputes on any change.
   const answers = (useWatch({ control, name: "answers" }) ?? {}) as AnswerMap;
   const scopes = scopesFrom(answers, scopePath);

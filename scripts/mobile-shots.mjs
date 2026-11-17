@@ -42,6 +42,10 @@ const ids = {
   form: q("select id from forms where is_template limit 1"),
   theme: q("select id from landing_themes limit 1"),
   role: q("select id from roles where not is_system limit 1"),
+  // Milestone 30: un evento con check-in habilitado (vacío si no hay: se saltea la toma).
+  checkinEvent: q(
+    "select id from events where check_in_enabled and deleted_at is null limit 1",
+  ),
   slug: q(
     "select ef.slug from event_forms ef join events e on e.id=ef.event_id where e.status='PUBLISHED' and e.deleted_at is null limit 1",
   ),
@@ -145,6 +149,16 @@ const SHOTS = [
     user: "admin",
     url: `/admin/events/${ids.event}/participants`,
   },
+  { name: "admin-events-checkin", user: "admin", url: "/admin/events/checkin" },
+  ...(ids.checkinEvent
+    ? [
+        {
+          name: "admin-event-checkin",
+          user: "admin",
+          url: `/admin/events/${ids.checkinEvent}/checkin`,
+        },
+      ]
+    : []),
   { name: "admin-forms", user: "admin", url: "/admin/forms" },
   { name: "admin-form-edit", user: "admin", url: `/admin/forms/${ids.form}` },
   { name: "admin-news", user: "admin", url: "/admin/news" },

@@ -95,6 +95,13 @@ const DECISION_LABELS: Record<string, string> = {
   reject: "Rechazar",
 };
 
+/** Estado de una inscripción que se admitió al registrar su ingreso (milestone 30). */
+const ADMITTED_FROM_LABELS: Record<string, string> = {
+  PENDING: "Pendiente",
+  REJECTED: "Rechazada",
+  CANCELLED: "Cancelada",
+};
+
 const PROFILE_CHANGE_FIELD_LABELS: Record<string, string> = {
   DNI: "DNI",
   REASON_TO_JOIN: "Motivo para unirse",
@@ -217,6 +224,7 @@ export const AUDIT_ENTITIES = {
       schedule: text("Horario"),
       capacity: num("Cupo", "personas"),
       requiresApproval: bool("Requiere aprobación"),
+      checkInEnabled: bool("Check-in en la puerta"),
       isFeatured: bool("Destacado"),
       summary: longText("Resumen"),
       description: longText("Descripción"),
@@ -589,6 +597,42 @@ export const AUDIT_EVENTS = {
       decision: enumOf("Decisión", DECISION_LABELS),
       decided: num("Personas alcanzadas"),
       reason: longText("Motivo"),
+    },
+  },
+
+  /**
+   * Check-in en la puerta (milestone 30). Como `participant.decide`, se auditan sobre el
+   * evento: las inscripciones no tienen entidad propia en la vista.
+   */
+  "participant.checkIn": {
+    entity: "Event",
+    kind: "custom",
+    label: "Registró un ingreso",
+    verb: "Check-in",
+    fields: {
+      participant: text("Participante"),
+      session: dateTime("Sesión"),
+      admittedFrom: enumOf("Admitida desde", ADMITTED_FROM_LABELS),
+    },
+  },
+  "participant.checkInUndo": {
+    entity: "Event",
+    kind: "custom",
+    label: "Deshizo un ingreso",
+    verb: "Check-in",
+    fields: {
+      participant: text("Participante"),
+      session: dateTime("Sesión"),
+    },
+  },
+  "participant.walkIn": {
+    entity: "Event",
+    kind: "custom",
+    label: "Registró a alguien sin inscripción",
+    verb: "Check-in",
+    fields: {
+      participant: text("Participante"),
+      session: dateTime("Sesión"),
     },
   },
 

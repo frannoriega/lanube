@@ -120,6 +120,7 @@ export const SNAPSHOTS: Partial<Record<AuditEntityType, SnapshotLoader>> = {
       schedule: formatEventTimeRange(Number(e.startTime), Number(e.endTime)),
       capacity: e.capacity,
       requiresApproval: e.requiresApproval,
+      checkInEnabled: e.checkInEnabled,
       isFeatured: e.isFeatured,
       summary: e.summary,
       description: e.description,

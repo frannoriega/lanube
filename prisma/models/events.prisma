@@ -1,42 +1,45 @@
 model Event {
-  id            String             @id @default(cuid())
-  name          String
-  description   String?
+  id               String             @id @default(cuid())
+  name             String
+  description      String?
   // Short plain-text blurb shown on the landing/event cards (the markdown `description` is
   // for the detail page). NULL => the card shows no blurb (never raw markdown).
-  summary       String?
+  summary          String?
   // Featured events lead the landing "Próximos eventos" section with extra emphasis.
   // featuredOrder sorts featured events among themselves (ascending); ignored when not featured.
-  isFeatured    Boolean            @default(false) @map("is_featured")
-  featuredOrder Int                @default(0) @map("featured_order")
-  location      String?
+  isFeatured       Boolean            @default(false) @map("is_featured")
+  featuredOrder    Int                @default(0) @map("featured_order")
+  location         String?
   // Code of a ReservationType row (FK on `code`, not `id`).
-  eventType     String             @map("event_type")
-  status        EventStatus        @default(DRAFT)
-  spaceId       String             @map("space_id")
+  eventType        String             @map("event_type")
+  status           EventStatus        @default(DRAFT)
+  spaceId          String             @map("space_id")
   // First occurrence's time-of-day window. Recurrence (cadence + span) is encoded
   // in rrule + recurrenceEnd, mirroring how recurring Reservations are stored.
-  startTime     BigInt             @map("start_time")
-  endTime       BigInt             @map("end_time")
-  rrule         String?
-  recurrenceEnd BigInt?            @map("recurrence_end")
+  startTime        BigInt             @map("start_time")
+  endTime          BigInt             @map("end_time")
+  rrule            String?
+  recurrenceEnd    BigInt?            @map("recurrence_end")
   // Optional participant cap. NULL => fall back to the resource's capacity. When
   // requiresApproval is on, this caps how many can *register* (PENDING+APPROVED), not the
   // final approved headcount.
-  capacity      Int?
+  capacity         Int?
   // When true, registrations land as PENDING and an admin approves/rejects them; when false
   // (default) they are auto-approved on submit.
-  requiresApproval Boolean         @default(false) @map("requires_approval")
-  imageUrl      String?            @map("image_url")
+  requiresApproval Boolean            @default(false) @map("requires_approval")
+  // Milestone 30: si el evento usa check-in en la puerta (pantalla /admin/events/[id]/checkin).
+  checkInEnabled   Boolean            @default(false) @map("check_in_enabled")
+  imageUrl         String?            @map("image_url")
   // Soft delete: set when the event is cancelled. Non-null => excluded from public surfaces
   // and shown as "Cancelado" in admin.
-  deletedAt     BigInt?            @map("deleted_at")
-  createdAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt     BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  space         Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  type          ReservationType    @relation(fields: [eventType], references: [code], onDelete: Restrict, onUpdate: Cascade)
-  form          EventForm?
-  participants  EventParticipant[]
+  deletedAt        BigInt?            @map("deleted_at")
+  createdAt        BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt        BigInt             @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  space            Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  type             ReservationType    @relation(fields: [eventType], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  form             EventForm?
+  participants     EventParticipant[]
+  checkIns         EventCheckIn[]
 
   @@index([spaceId])
   @@index([startTime, endTime])
@@ -70,22 +73,22 @@ model Form {
 
 // Binds a cloned Form instance to an event, with the registration window + publish state.
 model EventForm {
-  id          String   @id @default(cuid())
-  eventId     String   @unique @map("event_id")
+  id          String  @id @default(cuid())
+  eventId     String  @unique @map("event_id")
   // The cloned instance Form whose fields this binding exposes.
-  formId      String   @unique @map("form_id")
+  formId      String  @unique @map("form_id")
   // Source template id (provenance): preselects the template on edit and detects a swap.
   // Plain scalar (no FK) — the instance is a snapshot, so a deleted template may dangle.
-  templateId  String?  @map("template_id")
+  templateId  String? @map("template_id")
   // Public link key (handed to participants): /forms/[slug]
-  slug        String   @unique
-  opensAt     BigInt   @map("opens_at")
-  closesAt    BigInt   @map("closes_at")
-  isPublished Boolean  @default(false) @map("is_published")
-  createdAt   BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt   BigInt   @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  slug        String  @unique
+  opensAt     BigInt  @map("opens_at")
+  closesAt    BigInt  @map("closes_at")
+  isPublished Boolean @default(false) @map("is_published")
+  createdAt   BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt   BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  form        Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@map("event_forms")
 }
@@ -109,29 +112,32 @@ model FormField {
 }
 
 model EventParticipant {
-  id             String          @id @default(cuid())
-  eventId        String          @map("event_id")
+  id             String                      @id @default(cuid())
+  eventId        String                      @map("event_id")
   // Normalized email — the participant's primary key for an event.
   email          String
   // Original email as typed (before normalization), for display.
-  displayEmail   String?         @map("display_email")
+  displayEmail   String?                     @map("display_email")
   // Linked once/if the participant registers as a system user (matched by normalized email).
-  userId         String?         @map("user_id")
+  userId         String?                     @map("user_id")
   // Registration lifecycle. PENDING/APPROVED hold a spot; REJECTED/CANCELLED free it.
-  status         ParticipantStatus @default(APPROVED)
+  status         ParticipantStatus           @default(APPROVED)
+  // Milestone 30: inscripta por el formulario o registrada en la puerta sin inscripción.
+  source         ParticipantSource           @default(REGISTERED)
   // Admin's optional reason when approving/rejecting (shown to the participant on rejection).
-  decisionReason String?         @map("decision_reason")
+  decisionReason String?                     @map("decision_reason")
   // When the admin approved/rejected (UNIX ms). NULL until decided.
-  decidedAt      BigInt?         @map("decided_at")
+  decidedAt      BigInt?                     @map("decided_at")
   // Map of fieldId -> answer value.
   answers        Json
-  createdAt      BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
-  updatedAt      BigInt          @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
-  event          Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  registeredUser RegisteredUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      BigInt                      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt      BigInt                      @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  event          Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registeredUser RegisteredUser?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   // Enlaces para editar/cancelar sin cuenta: uno por correo que los lleva, guardados hasheados
   // (milestone 25, S5 — ver `src/lib/events/edit-token.ts`).
   editTokens     EventParticipantEditToken[]
+  checkIns       EventCheckIn[]
 
   @@unique([eventId, email])
   @@index([email])
@@ -144,6 +150,33 @@ model EventParticipant {
 /// token; el token viaja únicamente en el correo. Cada correo con enlace agrega una fila y las
 /// anteriores siguen valiendo; todas vencen cuando termina el evento (se calcula al usarlas, en
 /// `editLinkExpired`). El cron diario poda las de eventos terminados.
+/// Un ingreso a **una sesión** de un evento (milestone 30). Los eventos son semanales: la
+/// asistencia se cuenta por sesión, para ver si se mantiene o cae.
+///
+/// La sesión se identifica por su **inicio nominal** (`occurrenceStart`, el mismo
+/// `occurrenceDateMs` de `expandEventOccurrences` y de las acciones de sesión): sobrevive a
+/// una reprogramación y no puede repetirse entre dos días de la semana del mismo evento.
+/// `reservationId` es informativo y **sin FK**: editar los días de un evento borra reservas, y
+/// eso no debe borrar la asistencia ya registrada (la historia de los reportes).
+///
+/// Deshacer un ingreso borra la fila; queda en la auditoría.
+model EventCheckIn {
+  id              String           @id @default(cuid())
+  participantId   String           @map("participant_id")
+  eventId         String           @map("event_id")
+  reservationId   String           @map("reservation_id")
+  occurrenceStart BigInt           @map("occurrence_start")
+  checkedInAt     BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("checked_in_at")
+  /// `RegisteredUser.id` de quien lo registró (sin FK: la fila sobrevive a que se borre la cuenta).
+  checkedInBy     String?          @map("checked_in_by")
+  participant     EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, occurrenceStart])
+  @@index([eventId, occurrenceStart])
+  @@map("event_check_ins")
+}
+
 model EventParticipantEditToken {
   id            String           @id @default(cuid())
   participantId String           @map("participant_id")

@@ -148,6 +148,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
           recurrenceEnd: earliest.recurrenceEndMs,
           capacity: input.capacity ?? null,
           requiresApproval: input.requiresApproval ?? false,
+          checkInEnabled: input.checkInEnabled ?? false,
           imageUrl: input.imageUrl ?? null,
         },
       });
@@ -598,6 +599,7 @@ export async function updateEvent(
           spaceId: input.spaceId,
           capacity: input.capacity ?? null,
           requiresApproval: input.requiresApproval ?? false,
+          checkInEnabled: input.checkInEnabled ?? false,
           imageUrl: input.imageUrl ?? null,
           // Editing + saving revives a cancelled event.
           deletedAt: null,
@@ -994,6 +996,7 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
     endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
     capacity: event.capacity,
     requiresApproval: event.requiresApproval,
+    checkInEnabled: event.checkInEnabled,
     imageUrl: event.imageUrl ?? "",
     form: event.form
       ? {

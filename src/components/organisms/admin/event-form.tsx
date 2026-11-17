@@ -128,6 +128,7 @@ export interface EventFormDefaults {
   endTime: string;
   capacity: number | null;
   requiresApproval: boolean;
+  checkInEnabled: boolean;
   imageUrl: string;
   form: EventFormBindingDefaults | null;
 }
@@ -156,6 +157,7 @@ const EMPTY_DEFAULTS: EventInput = {
   endTime: "13:00",
   capacity: null,
   requiresApproval: false,
+  checkInEnabled: false,
   imageUrl: "",
   form: null,
 };
@@ -769,6 +771,28 @@ export function EventForm({
                             Las inscripciones quedan pendientes hasta que las
                             apruebes o rechaces. El cupo limita cuántas personas
                             pueden inscribirse (los aprobados pueden ser menos).
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="checkInEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 space-y-0 rounded-md border p-4">
+                        <div className="space-y-1">
+                          <FormLabel>Check-in en la puerta</FormLabel>
+                          <FormDescription>
+                            Registrá quién asiste a cada sesión buscando por
+                            email, y sumá a quienes lleguen sin inscripción.
                           </FormDescription>
                         </div>
                         <FormControl>
