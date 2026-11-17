@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import { reservationStatusLabel } from "@/components/atoms/status-badge";
 import { cn } from "@/lib/utils";
 import { formatTime, formatTimeShort } from "@/lib/utils/date";
 import {
@@ -471,16 +472,12 @@ export function AdminServiceDayTimeline({
                                 : "safe";
 
                             const st = reservationStatusKey(res);
-                            const statusEs =
-                              st === "PENDING"
-                                ? "pendiente"
-                                : st === "APPROVED"
-                                  ? "aprobada"
-                                  : st === "REJECTED"
-                                    ? "rechazada"
-                                    : st === "CANCELLED"
-                                      ? "cancelada"
-                                      : res.status;
+                            // La misma tabla de etiquetas que el badge (milestone 29).
+                            const statusEs = (
+                              st === "OTHER"
+                                ? String(res.status)
+                                : reservationStatusLabel(st)
+                            ).toLowerCase();
                             const aria = `${res.registeredUser.name} ${res.registeredUser.lastName}, ${formatTime(new Date(res.startTime))} a ${formatTime(new Date(res.endTime))}, ${res.actorSize} personas, ${statusEs}`;
                             const titleShort = `${formatTime(new Date(res.startTime))} – ${formatTime(new Date(res.endTime))}`;
 

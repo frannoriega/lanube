@@ -381,9 +381,11 @@ src/
   The Prisma `Reservation.registeredUser` relation is kept (joins on the column; yields
   `null` for non-USER rows). ⚠️ A plain `prisma migrate dev` may propose re-adding this FK —
   **discard that**; the hand-written migration is the source of truth.
-- **Calendar display**: `getEventOccurrencesForType()` surfaces APPROVED EVENT occurrences
-  as named, read-only cards (with an "Inscribirse" form link) instead of anonymous
-  unavailable blocks (see `resourceCalendar.ts` + `WeekCalendar.tsx`).
+- **Calendar display**: `getEventOccurrencesForSpace()` surfaces APPROVED EVENT occurrences
+  as named, read-only cards instead of anonymous unavailable blocks (see `resourceCalendar.ts` +
+  `WeekCalendar.tsx`). Since milestone 29 the detail dialog shows no status (an event is always
+  approved) and links "Ver evento" + "Inscribirse"; an event that is **not public** (draft, paused)
+  still blocks the slot but shows as «Reservado para un evento», with no name or links.
 - **Event reservations are not managed from `/admin/reservations`.** They are born `APPROVED`
   with the event and are changed with the event tooling (edit, cancel/reschedule sessions).
   Every admin reservation view — the list, the timeline, the per-day counts and the dashboard's
@@ -790,6 +792,10 @@ Full design + decisions: `docs/milestones/milestones-14-mobile-redesign.md`.
   same bug, milestone 25). `useStaticTable` now passes `autoResetPageIndex: false` as a safety
   net; a hand-rolled `useReactTable` without pagination should do the same. Don't add an
   `overflow-x-auto` table "fix" — a wrapper alone still makes a phone scroll sideways.
+- **Choosing columns** (milestone 29): `DataTableColumnPicker` + `usePersistedColumnVisibility(key)`
+  (`molecules/data-table-column-picker.tsx`) — pass the state to `useReactTable` and put the button in the
+  filter bar; the choice is per browser (`localStorage`). A column that identifies the row gets
+  `enableHiding: false`. Used by the users and participants tables.
 - **Dialogs: `ResponsiveDialog*` (`molecules/responsive-dialog.tsx`)**, same API as
   `ui/dialog` — a centered Dialog from `md`, a bottom Drawer (vaul) below. **Dialog vs page
   rule:** a form stays in a dialog only if it has ≤ ~4 simple fields, fits a phone without

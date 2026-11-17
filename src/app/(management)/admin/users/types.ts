@@ -1,3 +1,5 @@
+import type { UserPolicyDetail } from "@/lib/db/users";
+
 export type AdminUser = {
   id: string;
   name: string | null;
@@ -12,6 +14,6 @@ export type AdminUser = {
   status?: "ACTIVE" | "INACTIVE" | string | null;
   /** Milestone 19: si aceptó las políticas vigentes (misma regla que el gate). */
   policies: "UP_TO_DATE" | "PENDING";
-  /** Última aceptación de una política (ms), o null si nunca aceptó. */
-  lastPolicyAcceptedAt: number | null;
+  /** Detalle para la tarjeta de la columna «Políticas» (milestone 29). */
+  policyDetail: UserPolicyDetail;
 };

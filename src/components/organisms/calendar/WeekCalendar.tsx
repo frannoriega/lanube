@@ -1,5 +1,6 @@
 "use client";
 
+import { StatusBadge } from "@/components/atoms/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveDialog,
@@ -969,7 +970,13 @@ export function WeekCalendar({
       >
         <ResponsiveDialogContent className="sm:max-w-[480px]">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Detalle de la reserva</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>
+              {/* Un evento no es una reserva más (milestone 29): se titula con su nombre (o
+                  «Reservado para un evento» si no está publicado) y no muestra estado. */}
+              {selectedOccurrence?.reservableType === "EVENT"
+                ? selectedOccurrence.reason
+                : "Detalle de la reserva"}
+            </ResponsiveDialogTitle>
             {selectedOccurrence && (
               <ResponsiveDialogDescription>
                 {toCapitalCase(
@@ -996,31 +1003,60 @@ export function WeekCalendar({
                   "HH:mm",
                 )}
               </div>
-              <div className="text-sm">
-                <span className="font-medium">Motivo:</span>{" "}
-                <span className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
-                  {selectedOccurrence.reason}
-                </span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">Estado:</span>{" "}
-                {selectedOccurrence.status}
-              </div>
-              {selectedOccurrence.reservableType === "EVENT" &&
-                selectedOccurrence.formOpen &&
-                selectedOccurrence.formSlug && (
-                  <div className="pt-2 flex justify-end">
-                    <Button asChild>
-                      <Link
-                        href={`/forms/${selectedOccurrence.formSlug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+              {selectedOccurrence.reservableType === "EVENT" ? (
+                // Evento: siempre está aprobado, así que no se muestra el estado. Solo los
+                // publicados tienen página (y, si la inscripción está abierta, formulario).
+                selectedOccurrence.eventPublic ? (
+                  <div className="flex flex-wrap justify-end gap-2 pt-2">
+                    {selectedOccurrence.eventId && (
+                      <Button
+                        asChild
+                        variant={
+                          selectedOccurrence.formOpen ? "outline" : "default"
+                        }
                       >
-                        Inscribirse
-                      </Link>
-                    </Button>
+                        <Link
+                          href={`/events/${selectedOccurrence.eventId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Ver evento
+                        </Link>
+                      </Button>
+                    )}
+                    {selectedOccurrence.formOpen &&
+                      selectedOccurrence.formSlug && (
+                        <Button asChild>
+                          <Link
+                            href={`/forms/${selectedOccurrence.formSlug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Inscribirse
+                          </Link>
+                        </Button>
+                      )}
                   </div>
-                )}
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Este horario está reservado para un evento que todavía no se
+                    publicó.
+                  </p>
+                )
+              ) : (
+                <>
+                  <div className="text-sm">
+                    <span className="font-medium">Motivo:</span>{" "}
+                    <span className="rounded bg-muted px-2 py-1">
+                      {selectedOccurrence.reason}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">Estado:</span>
+                    <StatusBadge status={selectedOccurrence.status} />
+                  </div>
+                </>
+              )}
               {userId &&
                 selectedOccurrence.reservableType === "USER" &&
                 selectedOccurrence.reservableId === userId &&

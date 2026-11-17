@@ -25,6 +25,13 @@ export interface ReservationOccurrence {
   formSlug?: string | null;
   /** Whether the form is currently published, within its window, and not full. */
   formOpen?: boolean;
+  /**
+   * Solo en ocurrencias de eventos: si el evento es público (publicado y no cancelado), es
+   * decir si tiene página en `/events/[id]` (milestone 29). Las reservas de un evento nacen
+   * aprobadas también en borrador o pausado: bloquean el espacio igual, pero el calendario no
+   * muestra su nombre ni enlaces hasta que se publica.
+   */
+  eventPublic?: boolean;
   /** Whether this occurrence belongs to a recurring reservation (drives the cancel-scope prompt). */
   isRecurring?: boolean;
 }
@@ -56,6 +63,9 @@ export async function getRegisteredUserIdByEmail(
   });
   return user?.registeredUser?.id ?? null;
 }
+
+/** Lo que muestra el calendario en lugar del nombre de un evento no publicado. */
+export const UNPUBLISHED_EVENT_LABEL = "Reservado para un evento";
 
 interface EventOccurrenceRow {
   reservation_id: string;
@@ -96,6 +106,8 @@ export async function getEventOccurrencesForSpace(
     select: {
       id: true,
       name: true,
+      status: true,
+      deletedAt: true,
       capacity: true,
       space: { select: { capacity: true } },
       form: {
@@ -125,7 +137,25 @@ export async function getEventOccurrencesForSpace(
         now <= Number(e.form.closesAt) &&
         !isFull,
       );
-      return [e.id, { name: e.name, formSlug: e.form?.slug ?? null, formOpen }];
+      const isPublic = e.status === "PUBLISHED" && e.deletedAt == null;
+      return [
+        e.id,
+        // Un evento no publicado no expone nombre ni enlaces (milestone 29): su página daría
+        // 404 y el nombre puede ser de algo que todavía no se anunció.
+        isPublic
+          ? {
+              name: e.name,
+              formSlug: e.form?.slug ?? null,
+              formOpen,
+              isPublic,
+            }
+          : {
+              name: UNPUBLISHED_EVENT_LABEL,
+              formSlug: null,
+              formOpen: false,
+              isPublic,
+            },
+      ];
     }),
   );
 
@@ -145,13 +175,14 @@ export async function getEventOccurrencesForSpace(
     const m = meta.get(group[0].event_id);
     const base = {
       reservationId,
-      reason: m?.name ?? group[0].reason ?? "Evento",
+      reason: m?.name ?? UNPUBLISHED_EVENT_LABEL,
       status: "APPROVED",
       reservableType: "EVENT",
       reservableId: group[0].event_id,
       eventId: group[0].event_id,
       formSlug: m?.formSlug ?? null,
       formOpen: m?.formOpen ?? false,
+      eventPublic: m?.isPublic ?? false,
     };
 
     let spanStart = Number(group[0].occurrence_start_time);

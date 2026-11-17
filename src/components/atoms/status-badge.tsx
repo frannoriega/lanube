@@ -52,6 +52,14 @@ const RESERVATION_STATUSES: Record<
   CANCELLED: { tone: "neutral", label: "Cancelada" },
 };
 
+/**
+ * La etiqueta en español de un estado de reserva («Aprobada», «Pendiente»…), para usarla
+ * fuera de un badge (p. ej. un `aria-label`). Un estado desconocido se devuelve tal cual.
+ */
+export function reservationStatusLabel(status: string): string {
+  return RESERVATION_STATUSES[status]?.label ?? status;
+}
+
 export function StatusBadge({ status }: { status: string }) {
   const known = RESERVATION_STATUSES[status];
   return (

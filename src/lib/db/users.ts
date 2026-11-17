@@ -63,9 +63,54 @@ export interface GetUsersResult {
      * gate (`pendingPolicies`): "PENDING" es que la próxima vez que entre la va a frenar.
      */
     policies: "UP_TO_DATE" | "PENDING";
-    /** Cuándo aceptó una política por última vez (ms), o null si nunca. */
-    lastPolicyAcceptedAt: number | null;
+    /**
+     * Detalle para la tarjeta de la columna «Políticas» (milestone 29): la última versión que
+     * aceptó de cada política, y las que le faltan (las de `pendingPolicies`, la misma regla
+     * que el gate). Reemplazó a `lastPolicyAcceptedAt`, que solo decía la fecha.
+     */
+    policyDetail: UserPolicyDetail;
   }>;
+}
+
+/** Lo que la tabla de usuarios muestra de las políticas de una cuenta (milestone 29). */
+export interface UserPolicyDetail {
+  /** La última versión aceptada de cada política, con su título y cuándo (ms). */
+  accepted: {
+    key: string;
+    title: string;
+    version: string;
+    acceptedAt: number;
+  }[];
+  /** Las que tiene que aceptar (la versión vigente de cada una). */
+  pending: { key: string; title: string; version: string }[];
+}
+
+/**
+ * De todas las aceptaciones de una cuenta, la más reciente de cada política, en el orden del
+ * registro. Una política que ya no está en el registro se muestra con su clave como título.
+ */
+function latestAcceptancePerPolicy(
+  rows: { policyKey: string; version: string; acceptedAt: bigint }[],
+): UserPolicyDetail["accepted"] {
+  const latest = new Map<string, { version: string; acceptedAt: number }>();
+  for (const r of rows) {
+    const at = Number(r.acceptedAt);
+    const prev = latest.get(r.policyKey);
+    if (!prev || at > prev.acceptedAt)
+      latest.set(r.policyKey, { version: r.version, acceptedAt: at });
+  }
+  const order = Object.keys(POLICIES);
+  return [...latest.entries()]
+    .sort(([a], [b]) => {
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      return (ia < 0 ? order.length : ia) - (ib < 0 ? order.length : ib);
+    })
+    .map(([key, v]) => ({
+      key,
+      title: (POLICIES as Record<string, { title: string }>)[key]?.title ?? key,
+      ...v,
+    }));
 }
 
 export interface UsersSummary {
@@ -242,6 +287,11 @@ export async function getRegisteredUsers({
   const payload: GetUsersResult["users"] = rows.map(
     (user: RegisteredUserListRow) => {
       const activeBan = user.bans[0] ?? null;
+      const pending = pendingPolicies(
+        POLICIES,
+        user.user.policyAcceptances,
+        atMs,
+      );
       const isBanned =
         !!activeBan && (!activeBan.endTime || Number(activeBan.endTime) > atMs);
 
@@ -257,15 +307,15 @@ export async function getRegisteredUsers({
         updatedAt: Number(user.updatedAt),
         email: user.user.email,
         status: isBanned ? "BANNED" : "ACTIVE",
-        policies:
-          pendingPolicies(POLICIES, user.user.policyAcceptances, atMs)
-            .length === 0
-            ? "UP_TO_DATE"
-            : "PENDING",
-        lastPolicyAcceptedAt: user.user.policyAcceptances.reduce<number | null>(
-          (max, a) => Math.max(max ?? 0, Number(a.acceptedAt)),
-          null,
-        ),
+        policies: pending.length === 0 ? "UP_TO_DATE" : "PENDING",
+        policyDetail: {
+          accepted: latestAcceptancePerPolicy(user.user.policyAcceptances),
+          pending: pending.map((p) => ({
+            key: p.key,
+            title: p.title,
+            version: p.version,
+          })),
+        },
       };
     },
   );

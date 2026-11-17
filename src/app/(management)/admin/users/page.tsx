@@ -9,6 +9,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DataTable, DataTablePagination } from "@/components/ui/data-table";
+import {
+  DataTableColumnPicker,
+  usePersistedColumnVisibility,
+} from "@/components/molecules/data-table-column-picker";
 import { Input } from "@/components/ui/input";
 import { StatGrid, StatTile } from "@/components/molecules/stat-grid";
 import {
@@ -261,6 +265,11 @@ export default function AdminUsersPage() {
     [canManageRoles, currentUser?.id, roles, refetch],
   );
 
+  // Columnas a elegir (milestone 29): la tabla es ancha y cada admin mira cosas distintas.
+  // La elección se recuerda en su navegador.
+  const [columnVisibility, setColumnVisibility] =
+    usePersistedColumnVisibility("admin-users");
+
   const table = useReactTable<AdminUser>({
     data: users,
     columns,
@@ -268,7 +277,9 @@ export default function AdminUsersPage() {
     state: {
       pagination,
       sorting,
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     onSortingChange: handleSortingChange,
     manualPagination: true,
@@ -345,6 +356,7 @@ export default function AdminUsersPage() {
             </form>
 
             <div className="flex flex-wrap items-center gap-3">
+              <DataTableColumnPicker table={table} />
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   Por página

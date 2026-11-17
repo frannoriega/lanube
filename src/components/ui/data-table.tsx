@@ -355,7 +355,7 @@ export function DataTable<TData>({
                 {rows.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={table.getAllLeafColumns().length + extraCols}
+                      colSpan={table.getVisibleLeafColumns().length + extraCols}
                       className="h-32 text-center text-sm text-muted-foreground"
                     >
                       {emptyMessage}
@@ -403,7 +403,7 @@ export function DataTable<TData>({
             {isLoading && rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={table.getAllLeafColumns().length}
+                  colSpan={table.getVisibleLeafColumns().length}
                   className="h-32 text-center text-sm text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-3">
@@ -415,7 +415,7 @@ export function DataTable<TData>({
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={table.getAllLeafColumns().length}
+                  colSpan={table.getVisibleLeafColumns().length}
                   className="h-32 text-center text-sm text-muted-foreground"
                 >
                   {emptyMessage}

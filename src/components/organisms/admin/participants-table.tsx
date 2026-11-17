@@ -10,14 +10,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DataTableColumnPicker } from "@/components/molecules/data-table-column-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,7 +45,6 @@ import {
   Check,
   Download,
   Eye,
-  SlidersHorizontal,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -339,10 +331,6 @@ export function ParticipantsTable({
     initialState: { pagination: { pageSize: 20 } },
   });
 
-  const hideableColumns = table
-    .getAllLeafColumns()
-    .filter((c) => c.getCanHide());
-
   const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
 
   return (
@@ -354,31 +342,7 @@ export function ParticipantsTable({
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="sm:max-w-xs"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="w-fit">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Columnas
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
-            <DropdownMenuLabel>Mostrar columnas</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {hideableColumns.map((column) => {
-              const label = column.columnDef.meta?.label ?? column.id;
-              return (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(v) => column.toggleVisibility(!!v)}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  {label}
-                </DropdownMenuCheckboxItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <DataTableColumnPicker table={table} />
       </div>
 
       {requiresApproval && selectedRows.length > 0 && (

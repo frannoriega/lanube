@@ -1,81 +1,81 @@
 {
   ".husky/_/applypatch-msg": {
-    "mtime": 1794850377.6991305,
+    "mtime": 1794872341.766102,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/commit-msg": {
-    "mtime": 1794850377.6985161,
+    "mtime": 1794872341.7654862,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/h": {
-    "mtime": 1794850377.697485,
+    "mtime": 1794872341.764685,
     "ast_hash": "15239a01c5554e56ff745570fb583a91",
     "semantic_hash": "15239a01c5554e56ff745570fb583a91"
   },
   ".husky/_/husky.sh": {
-    "mtime": 1794850377.7016954,
+    "mtime": 1794872341.7695944,
     "ast_hash": "13871d2ab13e8423790ecb2c01c78c18",
     "semantic_hash": "13871d2ab13e8423790ecb2c01c78c18"
   },
   ".husky/_/post-applypatch": {
-    "mtime": 1794850377.6999073,
+    "mtime": 1794872341.7678928,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-checkout": {
-    "mtime": 1794850377.7006664,
+    "mtime": 1794872341.7685702,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-commit": {
-    "mtime": 1794850377.6987906,
+    "mtime": 1794872341.76585,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-merge": {
-    "mtime": 1794850377.7008646,
+    "mtime": 1794872341.76873,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-rewrite": {
-    "mtime": 1794850377.700365,
+    "mtime": 1794872341.7684212,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-applypatch": {
-    "mtime": 1794850377.6994643,
+    "mtime": 1794872341.766462,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-auto-gc": {
-    "mtime": 1794850377.7014217,
+    "mtime": 1794872341.7690723,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-commit": {
-    "mtime": 1794850377.6976867,
+    "mtime": 1794872341.7649221,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-merge-commit": {
-    "mtime": 1794850377.6979866,
+    "mtime": 1794872341.7651203,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-push": {
-    "mtime": 1794850377.7010996,
+    "mtime": 1794872341.7688982,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-rebase": {
-    "mtime": 1794850377.7001438,
+    "mtime": 1794872341.768097,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/prepare-commit-msg": {
-    "mtime": 1794850377.6982193,
+    "mtime": 1794872341.7653124,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1794857637.3882587,
-    "ast_hash": "39397a9f743819e27bfee6d5eec2abe3",
+    "mtime": 1794939112.5686598,
+    "ast_hash": "8af98f98dda1f3ecb92749c2f9821544",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   "src/app/api/admin/events/[id]/participants/route.ts": {
-    "mtime": 1793737696.3489437,
-    "ast_hash": "2cbf4a1d130388f4f5f444d45172a33a",
+    "mtime": 1794939104.335904,
+    "ast_hash": "2a044cf74433b0499dd8136a74a5e9a8",
     "semantic_hash": ""
   },
   "src/app/api/admin/events/[id]/route.ts": {
@@ -520,8 +520,8 @@
     "semantic_hash": "9f8c0bd10a4bc6be80ab25e09f6f4bd7"
   },
   "src/app/api/auth/confirm-email/route.ts": {
-    "mtime": 1793737696.354333,
-    "ast_hash": "3583a995a4aa1a4b35c34d9a06562ed8",
+    "mtime": 1794939103.8354704,
+    "ast_hash": "0c00b2d93762398c106b2fba7062416d",
     "semantic_hash": ""
   },
   "src/app/api/auth/magic-link/route.ts": {
@@ -820,7 +820,7 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/WeekCalendar.tsx": {
-    "mtime": 1794857620.9443896,
+    "mtime": 1794872565.9927008,
     "ast_hash": "75aec830fa22394762f12bd1d6813ac7",
     "semantic_hash": ""
   },
@@ -860,8 +860,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/signin/index.tsx": {
-    "mtime": 1793737696.3708768,
-    "ast_hash": "2f135313d52acee4f9f24563d751ebbf",
+    "mtime": 1794872565.993074,
+    "ast_hash": "500d6f56f0c55bc98b2e0e796bfb8557",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/index.tsx": {
@@ -4025,7 +4025,7 @@
     "semantic_hash": ""
   },
   "src/lib/reservations/user-rules.test.ts": {
-    "mtime": 1794857620.9447625,
+    "mtime": 1794872565.9940236,
     "ast_hash": "03831e6fda587e6e40f35122a2fac44a",
     "semantic_hash": ""
   },
@@ -4655,8 +4655,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1794857620.945121,
-    "ast_hash": "8cec3b54bce70b06852eb71b842a7bdd",
+    "mtime": 1794939112.5682945,
+    "ast_hash": "af43212255faed4a5e6a9180958a3cb4",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -4680,8 +4680,13 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.0.1.md": {
-    "mtime": 1794857620.945254,
-    "ast_hash": "d8ffa48e6d82248fa312db8901f4a98e",
+    "mtime": 1794872565.992166,
+    "ast_hash": "987949608d8df6c77bcc4ec8f1dc3ea6",
+    "semantic_hash": ""
+  },
+  "src/assets/changelog/1.0.2.md": {
+    "mtime": 1794939112.5743155,
+    "ast_hash": "260610f0032e0fdaf2c39b29903cb19c",
     "semantic_hash": ""
   }
 }

@@ -68,6 +68,14 @@ export const RELEASES = [
       "Al abrir el enlace de confirmación del email, el sitio redirigía a una dirección inválida y el navegador mostraba un error de conexión. Ahora vuelve a la pantalla de ingreso de La Nube.",
     file: "1.0.2.md",
   },
+  {
+    version: "1.1.0",
+    date: "2026-11-17",
+    title: "Eventos más claros en el calendario y tabla de usuarios a medida",
+    summary:
+      "Los eventos del calendario de reservas se ven como eventos, con un enlace a su página. Los estados de las reservas aparecen en español. En el panel, la tabla de usuarios permite elegir qué columnas ver y explica mejor la columna de políticas.",
+    file: "1.1.0.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

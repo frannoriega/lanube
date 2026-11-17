@@ -287,7 +287,11 @@ function OccurrenceBlock({
   const accessibleLabel = [
     occ.reason,
     `${startLabel} a ${endLabel}`,
-    own ? "Tu reserva" : "Reservado",
+    own
+      ? "Tu reserva"
+      : occ.reservableType === "EVENT"
+        ? "Evento"
+        : "Reservado",
     statusLabel,
   ]
     .filter(Boolean)

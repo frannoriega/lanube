@@ -11,7 +11,18 @@ import {
 import { NO_ROLE_LABEL } from "@/lib/rbac";
 import { type RoleOption } from "@/types/prisma";
 import { type Column, type ColumnDef } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ArrowDown, ArrowUp, ArrowUpDown, Info } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { type AdminUser } from "./types";
 import { ToneBadge, UserStatusBadge } from "@/components/atoms/status-badge";
@@ -37,6 +48,99 @@ const resolveRoleLabel = (role?: string | null) => role || NO_ROLE_LABEL;
 const resolveStatusBadge = (status?: string | null) => (
   <UserStatusBadge status={status} />
 );
+
+/**
+ * Las versiones de una política son fechas ISO (`"2025-11-16"`, ver `policies/registry.ts`):
+ * se muestran como `16/11/2025`, sin pasar por `Date` (no es un instante, no hay zona horaria).
+ * Un valor que no tenga esa forma se muestra tal cual.
+ */
+const formatPolicyVersion = (version: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(version);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : version;
+};
+
+/** Texto de ayuda del encabezado «Políticas» (redacción pedida por el usuario, milestone 29). */
+const POLICIES_COLUMN_HELP =
+  "Indica si la persona aceptó la versión vigente de las políticas.";
+
+/**
+ * Badge de la columna «Políticas» con una tarjeta flotante de detalle (milestone 29): qué
+ * versión aceptó de cada política y cuándo, y cuáles le faltan. Se abre al pasar el mouse y
+ * también al tocar o con Enter/Espacio (un tooltip no llega a pantallas táctiles ni a teclado).
+ */
+function PolicyStatusCell({ user }: { user: AdminUser }) {
+  const [open, setOpen] = useState(false);
+  const upToDate = user.policies === "UP_TO_DATE";
+  const { accepted, pending } = user.policyDetail;
+  // Solo el mouse abre/cierra al pasar: en una pantalla táctil el navegador emula
+  // `mouseenter` antes del click, y la tarjeta se abría y se cerraba en el mismo toque.
+  const hovering = useRef(false);
+  const hover = (next: boolean) => (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    hovering.current = next;
+    setOpen(next);
+  };
+  return (
+    <Popover
+      open={open}
+      // Con el mouse encima, un click no la cierra (ya estaba abierta por el hover).
+      onOpenChange={(next) => {
+        if (!next && hovering.current) return;
+        setOpen(next);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          onPointerEnter={hover(true)}
+          onPointerLeave={hover(false)}
+          aria-label={`Políticas: ${upToDate ? "al día" : "pendiente"}. Ver detalle`}
+        >
+          <ToneBadge tone={upToDate ? "success" : "warning"}>
+            {upToDate ? "Al día" : "Pendiente"}
+          </ToneBadge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-72 space-y-3 text-sm"
+        // Al abrir con el mouse, que el foco no salte a la tarjeta.
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onPointerEnter={hover(true)}
+        onPointerLeave={hover(false)}
+      >
+        {pending.length > 0 && (
+          <div className="space-y-1">
+            <p className="font-medium">Tiene que aceptar</p>
+            <ul className="space-y-0.5 text-muted-foreground">
+              {pending.map((p) => (
+                <li key={p.key}>
+                  {p.title} (versión del {formatPolicyVersion(p.version)})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {accepted.length > 0 ? (
+          <div className="space-y-1">
+            <p className="font-medium">Aceptó</p>
+            <ul className="space-y-0.5 text-muted-foreground">
+              {accepted.map((a) => (
+                <li key={a.key}>
+                  {a.title} (versión del {formatPolicyVersion(a.version)}), el{" "}
+                  {formatDate(a.acceptedAt)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="text-muted-foreground">Nunca aceptó las políticas.</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 interface DataTableColumnHeaderProps<TData> {
   column: Column<TData, unknown>;
@@ -149,6 +253,8 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   {
     accessorKey: "name",
     meta: { mobile: "title", label: "Nombre" },
+    // Identifica la fila: no se ofrece en el selector de columnas (milestone 29).
+    enableHiding: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Nombre" />
     ),
@@ -240,29 +346,27 @@ const adminUsersBaseColumns: ColumnDef<AdminUser>[] = [
   {
     // Milestone 19: si la cuenta aceptó las políticas vigentes. "Pendiente" incluye a las
     // cuentas creadas antes del milestone que todavía no volvieron a entrar.
+    // Milestone 29: los admins leían «Pendiente» como «no terminó el registro». El encabezado
+    // explica la columna y la celda es solo el badge, con el detalle en una tarjeta flotante.
     accessorKey: "policies",
     meta: { label: "Políticas" },
     header: () => (
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-        Políticas
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="flex cursor-help items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
+          >
+            Políticas
+            <Info className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="sr-only">: {POLICIES_COLUMN_HELP}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{POLICIES_COLUMN_HELP}</TooltipContent>
+      </Tooltip>
     ),
     enableSorting: false,
-    cell: ({ row }) => {
-      const { policies, lastPolicyAcceptedAt } = row.original;
-      return (
-        <div className="flex flex-col items-start gap-0.5">
-          <ToneBadge tone={policies === "UP_TO_DATE" ? "success" : "warning"}>
-            {policies === "UP_TO_DATE" ? "Al día" : "Pendiente"}
-          </ToneBadge>
-          <span className="text-xs text-muted-foreground">
-            {lastPolicyAcceptedAt
-              ? `Aceptó el ${formatDate(lastPolicyAcceptedAt)}`
-              : "Nunca aceptó"}
-          </span>
-        </div>
-      );
-    },
+    cell: ({ row }) => <PolicyStatusCell user={row.original} />,
   },
   {
     accessorKey: "createdAt",
