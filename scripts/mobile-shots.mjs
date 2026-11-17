@@ -150,6 +150,11 @@ const SHOTS = [
     url: `/admin/events/${ids.event}/participants`,
   },
   { name: "admin-events-checkin", user: "admin", url: "/admin/events/checkin" },
+  {
+    name: "admin-report-event",
+    user: "admin",
+    url: `/admin/reports/events/${ids.event}`,
+  },
   ...(ids.checkinEvent
     ? [
         {

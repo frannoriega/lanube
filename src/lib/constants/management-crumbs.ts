@@ -51,6 +51,8 @@ const SEGMENT_LABELS: Record<string, string> = {
 const SECTION_LEAF_LABELS: Record<string, Record<string, string>> = {
   news: { new: "Nueva", edit: "Editar" },
   reservations: { new: "Nueva", edit: "Editar" },
+  // `/admin/reports/events/[id]` (milestone 31): el id es el evento que se mira, no se edita.
+  reports: { edit: "Evento" },
 };
 
 /** The root crumb each shell hangs off — its own dashboard. */
@@ -65,7 +67,12 @@ const ROOTS = {
  * user shell has just the per-space route `/user/spaces/[slug]`. `/user/settings` only
  * redirects to its first section (milestone 17), so linking it would just bounce.
  */
-const NON_NAVIGABLE = new Set(["/user/spaces", "/user/settings"]);
+const NON_NAVIGABLE = new Set([
+  "/user/spaces",
+  "/user/settings",
+  // Milestone 31: solo agrupa las páginas por evento; la lista está en `/admin/reports`.
+  "/admin/reports/events",
+]);
 
 /** A segment Next.js filled in from a dynamic route param, i.e. not a known static one. */
 function isDynamic(segment: string): boolean {

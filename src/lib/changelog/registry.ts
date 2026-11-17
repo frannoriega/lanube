@@ -92,6 +92,14 @@ export const RELEASES = [
       "Algunas secciones del panel se podían abrir escribiendo su dirección aunque el rol no tuviera permiso para usarlas. Ahora cada sección comprueba el permiso antes de mostrarse.",
     file: "1.2.1.md",
   },
+  {
+    version: "1.3.0",
+    date: "2026-11-17",
+    title: "Los eventos llegan a los reportes",
+    summary:
+      "Los reportes suman una sección de eventos con sesiones, inscripciones, ocupación y asistencia del período. Cada evento tiene además su propio reporte, con un gráfico de asistencia por sesión.",
+    file: "1.3.0.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

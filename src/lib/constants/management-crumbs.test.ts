@@ -75,4 +75,14 @@ describe("managementCrumbs", () => {
       { name: "Seguridad" },
     ]);
   });
+
+  it("an event's report page: «Eventos» is not a link and the id reads «Evento»", () => {
+    expect(managementCrumbs("/admin/reports/events/abc123", "admin")).toEqual([
+      { name: "Panel", href: "/admin/dashboard" },
+      { name: "Reportes", href: "/admin/reports" },
+      // /admin/reports/events has no page of its own (milestone 31).
+      { name: "Eventos" },
+      { name: "Evento" },
+    ]);
+  });
 });

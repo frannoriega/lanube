@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReportForRange } from "@/lib/db/adminReports";
+import { getEventsReport } from "@/lib/db/eventReports";
+import { serializeJson } from "@/lib/json-bigint";
 import { prisma } from "@/lib/prisma";
 import { TZDate } from "@date-fns/tz";
 import {
@@ -31,8 +33,15 @@ async function upsertSnapshot(opts: {
   fromMs: number;
   toMs: number;
 }) {
-  const data = await getReportForRange(opts.fromMs, opts.toMs);
-  const dataJson = JSON.stringify(data);
+  // Milestone 31: el snapshot también guarda el bloque de eventos. Las reservas de un evento
+  // se podan con la retención del detalle crudo como cualquier otra, así que sin esto los
+  // meses viejos se quedarían sin cifras de sesiones (los check-ins e inscripciones no se
+  // podan, pero sin sesiones no hay contra qué contarlos).
+  const [data, events] = await Promise.all([
+    getReportForRange(opts.fromMs, opts.toMs),
+    getEventsReport(opts.fromMs, opts.toMs),
+  ]);
+  const dataJson = JSON.stringify(serializeJson({ ...data, events }));
   const id = crypto.randomUUID();
 
   await prisma.$executeRaw`

@@ -25,6 +25,9 @@ import type { DateRange } from "react-day-picker";
 import { ReportData } from "@/types/stats/report";
 import { LocalDate } from "@/components/molecules/local-date";
 import AdminReport from "@/components/templates/admin/report";
+import EventsReportSection from "@/components/templates/admin/report/events-section";
+import { LoadError } from "@/components/molecules/load-error";
+import type { EventsReport } from "@/lib/db/eventReports";
 
 const ADMIN_TZ = "America/Argentina/Buenos_Aires";
 
@@ -186,6 +189,15 @@ export default function AdminReportsPage() {
   const error = reportError
     ? apiErrorMessage(reportError, "Error al cargar el reporte")
     : null;
+
+  // Bloque «Eventos» (milestone 31): mismo período, su propio endpoint (sin comparación), así
+  // carga en paralelo y un error en uno no tapa al otro.
+  const eventsUrl = reportUrl
+    ? reportUrl
+        .replace("/api/admin/reports?", "/api/admin/reports/events?")
+        .replace(/&compareFrom=\d+&compareTo=\d+/, "")
+    : null;
+  const events = useApi<EventsReport>(eventsUrl);
 
   useEffect(() => {
     if (report) {
@@ -351,6 +363,20 @@ export default function AdminReportsPage() {
           generatedAt={generatedAt}
           activePeriodLabel={activePeriodLabel}
         />
+      )}
+
+      {events.error && (
+        <LoadError
+          message={apiErrorMessage(
+            events.error,
+            "No se pudo cargar el reporte de eventos.",
+          )}
+          onRetry={() => void events.refetch()}
+          busy={events.loading}
+        />
+      )}
+      {events.data && report && !loading && (
+        <EventsReportSection data={events.data} />
       )}
     </div>
   );

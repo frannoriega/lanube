@@ -596,6 +596,19 @@ Full design + what was built: `docs/milestones/milestones-30-event-check-in.md`.
 - Audited on the `Event` entity like `participant.decide`: `participant.checkIn` (with
   `admittedFrom`), `participant.checkInUndo`, `participant.walkIn`.
 
+### Event reports (milestone 31)
+
+Full detail: `docs/milestones/milestones-31-event-reports.md`.
+
+- `/admin/reports` has an «Eventos» block for the same period (`GET /api/admin/reports/events`, its own
+  endpoint, loaded in parallel); each row opens `/admin/reports/events/[id]` (whole-life report: attendance
+  per session, registration curve, choice-answer totals). The monthly snapshot stores it under `events`.
+- Sessions are expanded with `expandAllEventOccurrences` (not `reservation_occurrences()`, which lacks the
+  nominal start check-ins key on and cancelled sessions); a session counts in the period it **starts**.
+  Pure counts in `src/lib/events/report-stats.ts` (tested), loading in `src/lib/db/eventReports.ts`.
+- Attendance % = registered check-ins ÷ **currently** approved registrations (no status history), averaged
+  over held sessions; walk-ins are reported separately.
+
 ### Event card summary + featured
 
 - `Event.summary` (nullable, ≤200 chars, plain text) is the blurb shown on landing/event cards.
