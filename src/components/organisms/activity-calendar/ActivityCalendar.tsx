@@ -1,17 +1,16 @@
 "use client";
 
 import { LoadError } from "@/components/molecules/load-error";
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFooter,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from "@/components/molecules/responsive-dialog";
+import { StatusBadge } from "@/components/atoms/status-badge";
+import { FramedImage } from "@/components/molecules/framed-image";
 import { useServerTime } from "@/components/providers/server-time";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -29,9 +28,24 @@ import {
 } from "@/lib/calendar/activity";
 import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
 import { cn } from "@/lib/utils";
+import {
+  aggregateOccupancy,
+  occupancyLabel,
+  occupancyLevel,
+} from "@/lib/calendar/occupancy";
+import { toCapitalCase } from "@/lib/utils/string";
 import { format, isSameDay, isSameMonth, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  AlignLeft,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Loader2,
+  MapPin,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -55,19 +69,45 @@ import {
  * mantenimiento. No se reserva desde acá — para eso está el calendario de cada espacio
  * (`WeekCalendar`), que no se tocó.
  *
+ * Las tarjetas muestran **título + espacio** (sin horario: lo dice la columna de horas) y, al
+ * tocarlas, abren el detalle en un popover anclado a la tarjeta — sin modal (milestone 35).
+ *
  * - `scope="admin"`: `/api/admin/calendar` (con quién reservó y filtro por espacio).
- * - `scope="user"`: `/api/user/calendar` (lo ajeno llega como «Ocupado»).
+ * - `scope="user"`: `/api/user/calendar` (solo sus reservas y los eventos; lo ajeno no se muestra).
+ *
+ * **Admin, sin una pared de tarjetas (milestone 35):** con todos los espacios a la vez un mismo
+ * horario junta una reserva por espacio y por cupo. En día / 3 días / semana, las reservas de
+ * un mismo espacio que se pisan se resumen en un **chip de ocupación** «Coworking 12/20»
+ * (`lib/calendar/occupancy.ts`; al tocarlo, la lista de esas reservas); una reserva que no se
+ * pisa con nadie sigue siendo una tarjeta. En el **mes**, cada día muestra **conteos** (eventos,
+ * aprobadas, pendientes) en vez de chips; tocar el día lo abre. Tres **capas** (Eventos,
+ * Pendientes, Aprobadas) filtran lo que se ve. Los espacios son configurables y pueden ser
+ * muchos: por eso un espacio es un carril solo cuando está ocupado, no una columna fija.
  *
  * Pide solo el rango visible. Se navega hasta el fin del año próximo (el servidor valida lo
  * mismo). La vista elegida se recuerda en `localStorage`; sin elección previa, depende del
  * ancho (día en teléfonos).
  */
 
+type Layer = "events" | "pending" | "approved";
+const LAYERS: { value: Layer; label: string }[] = [
+  { value: "events", label: "Eventos" },
+  { value: "pending", label: "Pendientes" },
+  { value: "approved", label: "Aprobadas" },
+];
+
 const VIEW_STORAGE_KEY = "lanube:activity-calendar:view";
 const HOUR_PX = 48;
 const MONTH_MAX_CHIPS = 3;
 
 /** Colores por tipo de ítem (texto blanco ≥ 4.5:1 sobre los fondos -700, como `DayColumn`). */
+/** Color del chip de ocupación según cuán llena está la capacidad (texto blanco ≥ 4.5:1). */
+const OCCUPANCY_CLASSES = {
+  low: "bg-sky-800 text-white",
+  mid: "bg-amber-700 text-white",
+  full: "bg-red-700 text-white",
+} as const;
+
 function itemClasses(item: CalendarItem): string {
   switch (item.kind) {
     case "event":
@@ -81,8 +121,18 @@ function itemClasses(item: CalendarItem): string {
       return item.own
         ? "bg-green-700 text-white"
         : "bg-la-nube-selected text-white";
-    case "busy":
-      return "border border-border bg-muted text-muted-foreground";
+    case "occupancy":
+      // Solo pendientes (nadie aprobado todavía): el mismo trazo punteado que una reserva
+      // pendiente, para no confundirlo con un espacio libre.
+      if (item.occupancy && item.occupancy.approved === 0) {
+        return "border border-dashed border-amber-700 bg-amber-100 text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100";
+      }
+      return OCCUPANCY_CLASSES[
+        occupancyLevel(
+          item.occupancy?.approved ?? 0,
+          item.occupancy?.capacity ?? null,
+        )
+      ];
     case "closed":
       return "border border-border bg-[repeating-linear-gradient(135deg,var(--muted)_0,var(--muted)_6px,transparent_6px,transparent_12px)] bg-background text-foreground";
     case "maintenance":
@@ -96,8 +146,8 @@ function kindLabel(item: CalendarItem): string {
       return "Evento";
     case "reservation":
       return item.own ? "Tu reserva" : "Reserva";
-    case "busy":
-      return "Ocupado";
+    case "occupancy":
+      return "Ocupación";
     case "closed":
       return "Cerrado";
     case "maintenance":
@@ -131,8 +181,8 @@ export function ActivityCalendar({
   const [view, setView] = useState<CalendarView | null>(null);
   const [anchor, setAnchor] = useState<Date>(() => startOfDay(now()));
   const [space, setSpace] = useState<string>("all");
-  const [selected, setSelected] = useState<CalendarItem | null>(null);
-  const [dayList, setDayList] = useState<Date | null>(null);
+  // Capas visibles (admin). `null` = la elección automática según el espacio (ver arriba).
+  const [layers, setLayers] = useState<Layer[] | null>(null);
 
   // Vista: la guardada, o la que corresponde al ancho. En un efecto (no en el render) para no
   // leer `localStorage` en el servidor.
@@ -184,7 +234,21 @@ export function ActivityCalendar({
       })}`
     : null;
   const { data, error, loading, refetch } = useApi<ActivityCalendarData>(url);
-  const items = useMemo(() => data?.items ?? [], [data]);
+  const activeLayers: Layer[] = layers ?? ["events", "pending", "approved"];
+  const items = useMemo(() => {
+    const all = data?.items ?? [];
+    if (scope !== "admin") return all;
+    return all.filter((i) => {
+      if (i.kind === "event") return activeLayers.includes("events");
+      if (i.kind === "reservation")
+        return activeLayers.includes(
+          i.status === "PENDING" ? "pending" : "approved",
+        );
+      return true; // cierres y mantenimiento: siempre
+    });
+    // `activeLayers` se recalcula en cada render; su contenido depende de `layers`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, scope, layers]);
   const today = startOfDay(now());
 
   return (
@@ -255,7 +319,27 @@ export function ActivityCalendar({
         )}
       </div>
 
-      <Legend scope={scope} />
+      {scope === "admin" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Mostrar:</span>
+          <ToggleGroup
+            type="multiple"
+            variant="outline"
+            size="sm"
+            value={activeLayers}
+            onValueChange={(v) => setLayers(v as Layer[])}
+            aria-label="Qué mostrar"
+          >
+            {LAYERS.map((l) => (
+              <ToggleGroupItem key={l.value} value={l.value} className="px-3">
+                {l.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+      )}
+
+      <Legend scope={scope} singleSpace={space !== "all"} />
 
       {error && (
         <LoadError
@@ -272,8 +356,7 @@ export function ActivityCalendar({
             anchor={anchor}
             today={today}
             items={items}
-            onSelect={setSelected}
-            onMore={setDayList}
+            scope={scope}
             onOpenDay={(d) => {
               setAnchor(d);
               chooseView("day");
@@ -284,35 +367,34 @@ export function ActivityCalendar({
             days={days}
             today={today}
             items={items}
-            onSelect={setSelected}
+            scope={scope}
+            singleSpace={space !== "all"}
           />
         ))}
-
-      <ItemDialog
-        item={selected}
-        scope={scope}
-        onClose={() => setSelected(null)}
-      />
-      <DayListDialog
-        day={dayList}
-        items={dayList ? itemsOnDay(items, dayList) : []}
-        onClose={() => setDayList(null)}
-        onSelect={(i) => {
-          setDayList(null);
-          setSelected(i);
-        }}
-      />
     </div>
   );
 }
 
-function Legend({ scope }: { scope: "admin" | "user" }) {
+function Legend({
+  scope,
+  singleSpace,
+}: {
+  scope: "admin" | "user";
+  singleSpace: boolean;
+}) {
   const entries: { label: string; className: string }[] =
     scope === "admin"
       ? [
-          { label: "Reserva aprobada", className: "bg-la-nube-selected" },
+          ...(singleSpace
+            ? [
+                { label: "Reserva aprobada", className: "bg-la-nube-selected" },
+                { label: "Ocupación baja", className: "bg-sky-800" },
+                { label: "Ocupación media (70%+)", className: "bg-amber-700" },
+                { label: "Ocupación completa", className: "bg-red-700" },
+              ]
+            : [{ label: "Reservas aprobadas", className: "bg-sky-800" }]),
           {
-            label: "Reserva pendiente",
+            label: singleSpace ? "Reserva pendiente" : "Solo pendientes",
             className: "border border-dashed border-amber-700 bg-amber-100",
           },
           { label: "Evento", className: "bg-violet-700" },
@@ -333,7 +415,6 @@ function Legend({ scope }: { scope: "admin" | "user" }) {
             className: "border border-dashed border-amber-700 bg-amber-100",
           },
           { label: "Evento", className: "bg-violet-700" },
-          { label: "Ocupado", className: "border border-border bg-muted" },
           { label: "Cerrado", className: "border border-border bg-background" },
         ];
   return (
@@ -347,6 +428,13 @@ function Legend({ scope }: { scope: "admin" | "user" }) {
           {e.label}
         </li>
       ))}
+      {scope === "admin" && (
+        <li>
+          {singleSpace
+            ? "Los chips dicen «personas aprobadas/capacidad» y «+N» reservas pendientes."
+            : "Cada bloque cuenta las reservas de todos los espacios a esa hora; tocalo para ver cuáles."}
+        </li>
+      )}
     </ul>
   );
 }
@@ -356,15 +444,26 @@ function TimeGrid({
   days,
   today,
   items,
-  onSelect,
+  scope,
+  singleSpace,
 }: {
   days: Date[];
   today: Date;
   items: CalendarItem[];
-  onSelect: (i: CalendarItem) => void;
+  scope: Scope;
+  /** Hay un espacio elegido en el filtro: ahí una reserva suelta se ve como tarjeta. */
+  singleSpace: boolean;
 }) {
-  const timed = items.filter((i) => !i.allDay);
-  const allDay = items.filter((i) => i.allDay);
+  // Admin: las reservas de un espacio que se pisan se resumen en un chip de ocupación.
+  const shown =
+    scope === "admin"
+      ? aggregateOccupancy(items, {
+          cardsForSingles: singleSpace,
+          mode: singleSpace ? "space" : "building",
+        })
+      : items;
+  const timed = shown.filter((i) => !i.allDay);
+  const allDay = shown.filter((i) => i.allDay);
   const bounds = hourBounds(days.flatMap((d) => itemsOnDay(timed, d)));
   const hours = bounds.end - bounds.start;
   const cols = {
@@ -408,7 +507,7 @@ function TimeGrid({
               className="space-y-1 border-l border-border p-1"
             >
               {itemsOnDay(allDay, d).map((i) => (
-                <ItemChip key={i.id} item={i} onSelect={onSelect} />
+                <ItemChip key={i.id} item={i} scope={scope} />
               ))}
             </div>
           ))}
@@ -434,7 +533,7 @@ function TimeGrid({
             day={d}
             items={itemsOnDay(timed, d)}
             bounds={bounds}
-            onSelect={onSelect}
+            scope={scope}
           />
         ))}
       </div>
@@ -446,12 +545,12 @@ function DayColumn({
   day,
   items,
   bounds,
-  onSelect,
+  scope,
 }: {
   day: Date;
   items: CalendarItem[];
   bounds: { start: number; end: number };
-  onSelect: (i: CalendarItem) => void;
+  scope: Scope;
 }) {
   const hours = bounds.end - bounds.start;
   const lanes = layoutLanes(items);
@@ -472,56 +571,173 @@ function DayColumn({
         const lane = lanes.get(i.id) ?? { lane: 0, lanes: 1 };
         const width = 100 / lane.lanes;
         return (
-          <button
-            key={i.id}
-            type="button"
-            onClick={() => onSelect(i)}
-            className={cn(
-              "absolute overflow-hidden rounded px-1 py-0.5 text-left text-[11px] leading-tight shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-              itemClasses(i),
-            )}
-            style={{
-              top: `${pos.top}%`,
-              height: `max(${pos.height}%, 1.25rem)`,
-              left: `calc(${lane.lane * width}% + 1px)`,
-              width: `calc(${width}% - 2px)`,
-            }}
-            aria-label={`${kindLabel(i)}: ${i.title}, ${timeLabel(i)}${i.spaceName ? `, ${i.spaceName}` : ""}`}
-          >
-            <div className="truncate font-semibold">{i.title}</div>
-            <div className="truncate opacity-90">
-              {hm(i.startMs)}–{hm(i.endMs)}
-              {i.spaceName ? ` · ${i.spaceName}` : ""}
-            </div>
-          </button>
+          <ItemPopover key={i.id} item={i} scope={scope}>
+            {/* Un <button> centra su contenido en vertical por defecto: `justify-start` lo
+                pega arriba. Solo título y espacio: el horario lo dice la columna de horas. */}
+            <button
+              type="button"
+              className={cn(
+                // `ring-1 ring-background`: un hilo del color del fondo para que dos tramos
+                // seguidos se distingan.
+                "absolute flex flex-col items-start justify-start overflow-hidden rounded px-1.5 py-1 text-left text-[11px] leading-tight shadow-sm ring-1 ring-background focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                itemClasses(i),
+              )}
+              style={{
+                top: `${pos.top}%`,
+                height: `max(${pos.height}%, 1.25rem)`,
+                left: `calc(${lane.lane * width}% + 1px)`,
+                width: `calc(${width}% - 2px)`,
+              }}
+              aria-label={
+                i.kind === "occupancy" && i.occupancy
+                  ? i.occupancy.mode === "building"
+                    ? `${i.occupancy.approved} reservas aprobadas y ${i.occupancy.pending} pendientes, ${timeLabel(i)}`
+                    : `Ocupación de ${i.title}: ${i.occupancy.approved}${i.occupancy.capacity ? ` de ${i.occupancy.capacity}` : ""} personas aprobadas, ${i.occupancy.pending} reservas pendientes, ${timeLabel(i)}`
+                  : `${kindLabel(i)}: ${i.title}, ${timeLabel(i)}${i.spaceName ? `, ${i.spaceName}` : ""}`
+              }
+            >
+              {i.kind === "occupancy" && i.occupancy ? (
+                i.occupancy.mode === "building" ? (
+                  // Todo el edificio: cuántas reservas hay a esa hora, sin decir de qué espacio.
+                  <>
+                    <span className="w-full font-semibold tabular-nums">
+                      {i.occupancy.approved === 0
+                        ? `${i.occupancy.pending} ${i.occupancy.pending === 1 ? "pendiente" : "pendientes"}`
+                        : `${i.occupancy.approved} ${i.occupancy.approved === 1 ? "reserva" : "reservas"}`}
+                    </span>
+                    {i.occupancy.approved > 0 && i.occupancy.pending > 0 ? (
+                      <span className="w-full truncate opacity-90">
+                        {i.occupancy.pending} pend.
+                      </span>
+                    ) : null}
+                  </>
+                ) : (
+                  // Un espacio: el número primero («12/20 +2») y debajo el espacio.
+                  <>
+                    <span className="w-full font-semibold tabular-nums">
+                      {occupancyLabel(i.occupancy)}
+                    </span>
+                    <span className="w-full truncate opacity-90">
+                      {i.title}
+                    </span>
+                  </>
+                )
+              ) : (
+                <span className="w-full truncate font-semibold">{i.title}</span>
+              )}
+              {i.kind === "occupancy" ? null : i.spaceName ? (
+                <span className="w-full truncate opacity-90">
+                  {i.spaceName}
+                </span>
+              ) : null}
+            </button>
+          </ItemPopover>
         );
       })}
     </div>
   );
 }
 
-/** Una línea compacta (franja de todo el día y vista de mes). */
+/**
+ * Una línea compacta (franja de todo el día y vista de mes). El mes no tiene columna de horas,
+ * así que ahí sí lleva la hora de inicio.
+ */
 function ItemChip({
   item,
-  onSelect,
+  scope,
+  showStart = false,
 }: {
   item: CalendarItem;
-  onSelect: (i: CalendarItem) => void;
+  scope: Scope;
+  showStart?: boolean;
 }) {
+  return (
+    <ItemPopover item={item} scope={scope}>
+      <button
+        type="button"
+        className={cn(
+          "block w-full truncate rounded px-1 py-0.5 text-left text-[11px] leading-tight focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+          itemClasses(item),
+        )}
+        aria-label={`${kindLabel(item)}: ${item.title}, ${timeLabel(item)}`}
+      >
+        {showStart && !item.allDay && (
+          <span className="mr-1 opacity-90">{hm(item.startMs)}</span>
+        )}
+        {item.title}
+      </button>
+    </ItemPopover>
+  );
+}
+
+/**
+ * Conteos de un día en el mes del admin (milestone 35): en vez de una pila de chips, un número
+ * por tipo — eventos, reservas aprobadas, pendientes — con el color de su leyenda, y una marca
+ * si el día está cerrado o en mantenimiento. Tocar el día lo abre en la vista de día.
+ */
+function DayCounts({
+  day,
+  items,
+  onOpen,
+}: {
+  day: Date;
+  items: CalendarItem[];
+  onOpen: (d: Date) => void;
+}) {
+  const events = items.filter((i) => i.kind === "event").length;
+  const approved = items.filter(
+    (i) => i.kind === "reservation" && i.status === "APPROVED",
+  ).length;
+  const pending = items.filter(
+    (i) => i.kind === "reservation" && i.status === "PENDING",
+  ).length;
+  const closed = items.some((i) => i.kind === "closed");
+  const maintenance = items.some((i) => i.kind === "maintenance");
+  if (!events && !approved && !pending && !closed && !maintenance) return null;
+
+  const counts = [
+    { n: events, dot: "bg-violet-700", one: "evento", many: "eventos" },
+    {
+      n: approved,
+      dot: "bg-la-nube-selected",
+      one: "reserva aprobada",
+      many: "reservas aprobadas",
+    },
+    {
+      n: pending,
+      dot: "bg-amber-600",
+      one: "reserva pendiente",
+      many: "reservas pendientes",
+    },
+  ].filter((c) => c.n > 0);
+  const label = [
+    ...counts.map((c) => `${c.n} ${c.n === 1 ? c.one : c.many}`),
+    closed ? "cerrado" : null,
+    maintenance ? "mantenimiento" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <button
       type="button"
-      onClick={() => onSelect(item)}
-      className={cn(
-        "block w-full truncate rounded px-1 py-0.5 text-left text-[11px] leading-tight focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-        itemClasses(item),
-      )}
-      aria-label={`${kindLabel(item)}: ${item.title}, ${timeLabel(item)}`}
+      onClick={() => onOpen(day)}
+      aria-label={`${format(day, "EEEE d 'de' MMMM", { locale: es })}: ${label}`}
+      className="flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded px-1 py-0.5 text-left text-[11px] font-medium tabular-nums hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
     >
-      {!item.allDay && (
-        <span className="mr-1 opacity-90">{hm(item.startMs)}</span>
+      {counts.map((c) => (
+        <span key={c.dot} className="inline-flex items-center gap-1">
+          <span
+            aria-hidden="true"
+            className={cn("h-2 w-2 rounded-full", c.dot)}
+          />
+          {c.n}
+        </span>
+      ))}
+      {closed && <span className="text-muted-foreground">Cerrado</span>}
+      {maintenance && (
+        <span className="text-amber-700 dark:text-amber-400">Mant.</span>
       )}
-      {item.title}
     </button>
   );
 }
@@ -533,16 +749,15 @@ function MonthGrid({
   anchor,
   today,
   items,
-  onSelect,
-  onMore,
+  scope,
   onOpenDay,
 }: {
   days: Date[];
   anchor: Date;
   today: Date;
   items: CalendarItem[];
-  onSelect: (i: CalendarItem) => void;
-  onMore: (d: Date) => void;
+  scope: Scope;
+  /** Abre ese día en la vista de día (también lo hace «+N más»: no hay un modal con la lista). */
   onOpenDay: (d: Date) => void;
 }) {
   return (
@@ -592,13 +807,17 @@ function MonthGrid({
               >
                 {format(d, "d")}
               </button>
-              {shown.map((i) => (
-                <ItemChip key={i.id} item={i} onSelect={onSelect} />
-              ))}
-              {more > 0 && (
+              {scope === "admin" ? (
+                <DayCounts day={d} items={dayItems} onOpen={onOpenDay} />
+              ) : (
+                shown.map((i) => (
+                  <ItemChip key={i.id} item={i} scope={scope} showStart />
+                ))
+              )}
+              {scope !== "admin" && more > 0 && (
                 <button
                   type="button"
-                  onClick={() => onMore(d)}
+                  onClick={() => onOpenDay(d)}
                   className="w-full rounded px-1 text-left text-[11px] font-medium text-la-nube-selected hover:bg-muted dark:text-la-nube-secondary"
                 >
                   +{more} más
@@ -612,127 +831,327 @@ function MonthGrid({
   );
 }
 
-function DayListDialog({
-  day,
-  items,
-  onClose,
-  onSelect,
+type Scope = "admin" | "user";
+
+/** Franja de color de la cabecera del detalle: la misma familia que usa la leyenda. */
+function accentClass(item: CalendarItem): string {
+  switch (item.kind) {
+    case "event":
+      return "bg-violet-700";
+    case "reservation":
+      if (item.status === "PENDING") return "bg-amber-600";
+      return item.own ? "bg-green-700" : "bg-la-nube-selected";
+    case "maintenance":
+      return "bg-amber-600";
+    case "occupancy":
+      return {
+        low: "bg-sky-800",
+        mid: "bg-amber-700",
+        full: "bg-red-700",
+      }[
+        occupancyLevel(
+          item.occupancy?.approved ?? 0,
+          item.occupancy?.capacity ?? null,
+        )
+      ];
+    default:
+      return "bg-muted-foreground/50";
+  }
+}
+
+/** Ancla un popover con el detalle a la tarjeta (`children` es el botón). */
+function ItemPopover({
+  item,
+  scope,
+  children,
 }: {
-  day: Date | null;
-  items: CalendarItem[];
-  onClose: () => void;
-  onSelect: (i: CalendarItem) => void;
+  item: CalendarItem;
+  scope: Scope;
+  children: React.ReactNode;
 }) {
   return (
-    <ResponsiveDialog open={day != null} onOpenChange={(o) => !o && onClose()}>
-      <ResponsiveDialogContent>
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>
-            {day ? format(day, "EEEE d 'de' MMMM", { locale: es }) : ""}
-          </ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            {items.length} {items.length === 1 ? "actividad" : "actividades"}
-          </ResponsiveDialogDescription>
-        </ResponsiveDialogHeader>
-        <div className="max-h-[60vh] space-y-1 overflow-y-auto px-4 pb-4 md:px-0">
-          {items.map((i) => (
-            <ItemChip key={i.id} item={i} onSelect={onSelect} />
-          ))}
-        </div>
-      </ResponsiveDialogContent>
-    </ResponsiveDialog>
+    <Popover>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        collisionPadding={12}
+        className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden p-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <ItemDetails item={item} scope={scope} />
+      </PopoverContent>
+    </Popover>
   );
 }
 
-function ItemDialog({
-  item,
-  scope,
-  onClose,
-}: {
-  item: CalendarItem | null;
-  scope: "admin" | "user";
-  onClose: () => void;
-}) {
+/**
+ * El detalle de un ítem del calendario (milestone 35): franja de color, portada (eventos),
+ * título, el tipo y el estado, y una fila con ícono por dato — día, horario exacto, espacio,
+ * quién reservó, descripción —. Es lo único que muestra el horario exacto: la tarjeta de la
+ * grilla solo lleva título y espacio.
+ */
+function ItemDetails({ item, scope }: { item: CalendarItem; scope: Scope }) {
+  if (item.kind === "occupancy" && item.occupancy) {
+    return <OccupancyDetails item={item} occupancy={item.occupancy} />;
+  }
+  const start = new Date(item.startMs);
+  const showImage = item.kind === "event" && item.imageUrl;
   return (
-    <ResponsiveDialog open={item != null} onOpenChange={(o) => !o && onClose()}>
-      <ResponsiveDialogContent>
-        {item && (
-          <>
-            <ResponsiveDialogHeader>
-              <ResponsiveDialogTitle>{item.title}</ResponsiveDialogTitle>
-              <ResponsiveDialogDescription>
-                {kindLabel(item)} · {timeLabel(item)}
-                {!item.allDay &&
-                  ` · ${format(new Date(item.startMs), "EEEE d 'de' MMMM", { locale: es })}`}
-              </ResponsiveDialogDescription>
-            </ResponsiveDialogHeader>
-            <dl className="space-y-2 px-4 text-sm md:px-0">
-              {item.spaceName && <Row label="Espacio">{item.spaceName}</Row>}
-              {item.requester && <Row label="Reservó">{item.requester}</Row>}
-              {item.status && (
-                <Row label="Estado">
-                  <Badge
-                    variant={
-                      item.status === "PENDING" ? "outline" : "secondary"
-                    }
-                  >
-                    {item.status === "PENDING" ? "Pendiente" : "Aprobada"}
-                  </Badge>
-                </Row>
-              )}
-              {item.eventStatus && (
-                <Row label="Estado">
-                  <Badge variant="outline">
-                    {EVENT_STATUS_LABELS[item.eventStatus]}
-                  </Badge>
-                </Row>
-              )}
-              {item.detail && <Row label="Detalle">{item.detail}</Row>}
-              {item.kind === "busy" && (
-                <p className="text-muted-foreground">
-                  Otra persona tiene este horario reservado.
-                </p>
-              )}
-            </dl>
-            {item.kind === "event" && item.href && (
-              <ResponsiveDialogFooter>
-                {scope === "admin" && item.eventId && (
-                  <Button asChild variant="outline">
-                    <Link href={`/admin/events/${item.eventId}`}>
-                      Editar evento
-                    </Link>
-                  </Button>
-                )}
-                {item.eventStatus !== "DRAFT" &&
-                  item.eventStatus !== "PAUSED" && (
-                    <Button
-                      asChild
-                      variant={item.registrationOpen ? "brand" : "outline"}
-                    >
-                      <Link href={item.href}>
-                        {item.registrationOpen ? "Inscribirme" : "Ver evento"}
-                      </Link>
-                    </Button>
-                  )}
-              </ResponsiveDialogFooter>
+    <div className="text-sm">
+      <div className={cn("h-1.5", accentClass(item))} aria-hidden="true" />
+      {showImage ? (
+        <FramedImage
+          src={item.imageUrl!}
+          alt=""
+          sizes="320px"
+          className="h-32 w-full"
+        />
+      ) : null}
+      <div className="space-y-3 p-4">
+        <div className="space-y-1.5">
+          <h3 className="text-base leading-snug font-semibold [overflow-wrap:anywhere]">
+            {item.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{kindLabel(item)}</span>
+            {item.status && <StatusBadge status={item.status} />}
+            {item.eventStatus && (
+              <Badge variant="outline">
+                {EVENT_STATUS_LABELS[item.eventStatus]}
+              </Badge>
             )}
-          </>
+          </div>
+        </div>
+
+        <dl className="space-y-2">
+          <Row icon={CalendarDays} label="Día">
+            {item.allDay && !isSameDay(start, new Date(item.endMs))
+              ? timeLabel(item)
+              : toCapitalCase(
+                  format(start, "EEEE d 'de' MMMM", { locale: es }),
+                )}
+          </Row>
+          {!item.allDay && (
+            <Row icon={Clock} label="Horario">
+              {hm(item.startMs)} a {hm(item.endMs)}
+            </Row>
+          )}
+          {item.spaceName && (
+            <Row icon={MapPin} label="Espacio">
+              {item.spaceName}
+            </Row>
+          )}
+          {item.requester && (
+            <Row icon={User} label="Reservó">
+              {item.requester}
+            </Row>
+          )}
+          {item.description && (
+            <Row icon={AlignLeft} label="Descripción">
+              <span className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words">
+                {item.description}
+              </span>
+            </Row>
+          )}
+          {item.detail && (
+            <Row icon={AlignLeft} label="Detalle">
+              {item.detail}
+            </Row>
+          )}
+        </dl>
+
+        {item.kind === "event" && item.href && (
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            {scope === "admin" && item.eventId && (
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/admin/events/${item.eventId}`}>
+                  Editar evento
+                </Link>
+              </Button>
+            )}
+            {item.eventStatus !== "DRAFT" && item.eventStatus !== "PAUSED" && (
+              <Button
+                asChild
+                size="sm"
+                variant={item.registrationOpen ? "brand" : "outline"}
+              >
+                <Link href={item.href}>
+                  {item.registrationOpen ? "Inscribirme" : "Ver evento"}
+                </Link>
+              </Button>
+            )}
+          </div>
         )}
-      </ResponsiveDialogContent>
-    </ResponsiveDialog>
+      </div>
+    </div>
+  );
+}
+
+/** Detalle de un chip de ocupación: el resumen y la lista de las reservas que lo forman. */
+function OccupancyDetails({
+  item,
+  occupancy,
+}: {
+  item: CalendarItem;
+  occupancy: NonNullable<CalendarItem["occupancy"]>;
+}) {
+  const members = [...occupancy.members].sort((a, b) => a.startMs - b.startMs);
+  if (occupancy.mode === "building") {
+    return <BuildingDetails item={item} occupancy={occupancy} />;
+  }
+  return (
+    <div className="text-sm">
+      <div className={cn("h-1.5", accentClass(item))} aria-hidden="true" />
+      <div className="space-y-3 p-4">
+        <div>
+          <h3 className="text-base leading-snug font-semibold [overflow-wrap:anywhere]">
+            {item.title}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {toCapitalCase(
+              format(new Date(item.startMs), "EEEE d 'de' MMMM", {
+                locale: es,
+              }),
+            )}
+            {" · "}
+            {hm(item.startMs)} a {hm(item.endMs)}
+          </p>
+        </div>
+        <p>
+          <span className="text-lg font-semibold tabular-nums">
+            {occupancy.capacity
+              ? `${occupancy.approved}/${occupancy.capacity}`
+              : occupancy.approved}
+          </span>{" "}
+          <span className="text-muted-foreground">
+            personas como máximo a la vez
+            {occupancy.pending > 0
+              ? ` · ${occupancy.pending} ${occupancy.pending === 1 ? "reserva pendiente" : "reservas pendientes"}`
+              : ""}
+          </span>
+        </p>
+        <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
+          {members.map((m) => (
+            <li
+              key={m.id}
+              className="flex items-start justify-between gap-2 border-t border-border pt-2 first:border-0 first:pt-0"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium">{m.title}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {hm(m.startMs)} a {hm(m.endMs)}
+                  {m.requester ? ` · ${m.requester}` : ""}
+                  {m.actorSize && m.actorSize > 1
+                    ? ` · ${m.actorSize} personas`
+                    : ""}
+                </p>
+              </div>
+              {m.status ? <StatusBadge status={m.status} /> : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Detalle de un tramo de **todo el edificio**: las reservas de esa franja agrupadas por espacio,
+ * cada espacio con su ocupación («Coworking 3/12»). Es donde el admin ve el «qué espacio».
+ */
+function BuildingDetails({
+  item,
+  occupancy,
+}: {
+  item: CalendarItem;
+  occupancy: NonNullable<CalendarItem["occupancy"]>;
+}) {
+  const bySpace = new Map<string, CalendarItem[]>();
+  for (const m of occupancy.members) {
+    const key = m.spaceName ?? "Sin espacio";
+    bySpace.set(key, [...(bySpace.get(key) ?? []), m]);
+  }
+  const groups = [...bySpace.entries()].sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div className="text-sm">
+      <div className="h-1.5 bg-sky-800" aria-hidden="true" />
+      <div className="space-y-3 p-4">
+        <div>
+          <h3 className="text-base leading-snug font-semibold">
+            {occupancy.approved}{" "}
+            {occupancy.approved === 1 ? "reserva" : "reservas"}
+            {occupancy.pending > 0
+              ? ` · ${occupancy.pending} ${occupancy.pending === 1 ? "pendiente" : "pendientes"}`
+              : ""}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {toCapitalCase(
+              format(new Date(item.startMs), "EEEE d 'de' MMMM", {
+                locale: es,
+              }),
+            )}
+            {" · "}
+            {hm(item.startMs)} a {hm(item.endMs)}
+          </p>
+        </div>
+        <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+          {groups.map(([name, list]) => {
+            const people = list
+              .filter((m) => m.status === "APPROVED")
+              .reduce((n, m) => n + (m.actorSize ?? 1), 0);
+            const capacity = list[0].capacity;
+            return (
+              <section key={name}>
+                <h4 className="flex items-baseline justify-between gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  <span className="truncate">{name}</span>
+                  <span className="tabular-nums">
+                    {capacity ? `${people}/${capacity}` : people}
+                  </span>
+                </h4>
+                <ul className="mt-1 space-y-1.5">
+                  {[...list]
+                    .sort((a, b) => a.startMs - b.startMs)
+                    .map((m) => (
+                      <li
+                        key={m.id}
+                        className="flex items-start justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{m.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {hm(m.startMs)} a {hm(m.endMs)}
+                            {m.requester ? ` · ${m.requester}` : ""}
+                          </p>
+                        </div>
+                        {m.status ? <StatusBadge status={m.status} /> : null}
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
 function Row({
+  icon: Icon,
   label,
   children,
 }: {
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-3">
-      <dt className="w-20 shrink-0 text-muted-foreground">{label}</dt>
+    <div className="flex items-start gap-2.5">
+      <Icon
+        className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+        aria-hidden
+      />
+      <dt className="sr-only">{label}</dt>
       <dd className="min-w-0">{children}</dd>
     </div>
   );

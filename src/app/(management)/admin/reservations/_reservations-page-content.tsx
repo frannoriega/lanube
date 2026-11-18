@@ -143,7 +143,6 @@ export function ReservationsPageContent({
       </div>
 
       <AdminReservationsCardsPanel
-        variant="admin"
         spaceId={service}
         spaceName={spaceName}
         showHeading

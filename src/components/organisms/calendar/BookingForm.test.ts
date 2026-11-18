@@ -14,8 +14,8 @@ describe("bookingFormSchema", () => {
   const base = {
     startTime: "10:00",
     endTime: "11:00",
-    eventType: "MEETING",
-    reason: "Reunión de equipo",
+    title: "Reunión de equipo",
+    reason: "",
   };
 
   it("acepta una reserva válida", () => {
@@ -28,9 +28,21 @@ describe("bookingFormSchema", () => {
     expect(r.error?.issues[0].path).toEqual(["endTime"]);
   });
 
-  it("exige un motivo no vacío", () => {
+  it("exige un título no vacío", () => {
+    expect(bookingFormSchema.safeParse({ ...base, title: "   " }).success).toBe(
+      false,
+    );
+  });
+
+  it("la descripción es opcional", () => {
+    expect(bookingFormSchema.safeParse({ ...base, reason: "" }).success).toBe(
+      true,
+    );
+  });
+
+  it("limita el largo del título", () => {
     expect(
-      bookingFormSchema.safeParse({ ...base, reason: "   " }).success,
+      bookingFormSchema.safeParse({ ...base, title: "x".repeat(81) }).success,
     ).toBe(false);
   });
 });

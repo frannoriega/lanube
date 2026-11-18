@@ -15,12 +15,21 @@ export interface ReservationOccurrence {
   reservationId: string;
   occurrenceStartTime: number;
   occurrenceEndTime: number;
+  /**
+   * Lo que se lee en la tarjeta del calendario (milestone 35): el título de la reserva o el
+   * nombre del evento (o «Reservado para un evento» si no está publicado).
+   */
+  title: string;
+  /** La descripción de la reserva (la columna `reason`); "" si no tiene y en los eventos. */
   reason: string;
   status: string;
   reservableType: string;
   reservableId: string;
   /** Present for EVENT occurrences: the owning event. */
   eventId?: string;
+  /** Eventos públicos: el copete y la portada, para el detalle del calendario. */
+  eventSummary?: string | null;
+  eventImageUrl?: string | null;
   /** Public form slug, if the event has a form. */
   formSlug?: string | null;
   /** Whether the form is currently published, within its window, and not full. */
@@ -106,6 +115,8 @@ export async function getEventOccurrencesForSpace(
     select: {
       id: true,
       name: true,
+      summary: true,
+      imageUrl: true,
       status: true,
       deletedAt: true,
       capacity: true,
@@ -145,12 +156,16 @@ export async function getEventOccurrencesForSpace(
         isPublic
           ? {
               name: e.name,
+              summary: e.summary,
+              imageUrl: e.imageUrl,
               formSlug: e.form?.slug ?? null,
               formOpen,
               isPublic,
             }
           : {
               name: UNPUBLISHED_EVENT_LABEL,
+              summary: null,
+              imageUrl: null,
               formSlug: null,
               formOpen: false,
               isPublic,
@@ -175,7 +190,10 @@ export async function getEventOccurrencesForSpace(
     const m = meta.get(group[0].event_id);
     const base = {
       reservationId,
-      reason: m?.name ?? UNPUBLISHED_EVENT_LABEL,
+      title: m?.name ?? UNPUBLISHED_EVENT_LABEL,
+      reason: "",
+      eventSummary: m?.summary ?? null,
+      eventImageUrl: m?.imageUrl ?? null,
       status: "APPROVED",
       reservableType: "EVENT",
       reservableId: group[0].event_id,
@@ -228,13 +246,14 @@ export async function getCalendarDataBySpace(
   const [unavailableSlotsRaw, allUserReservations, eventOccurrences, closures] =
     await Promise.all([
       getUnavailableSlots(spaceId, startDate, endDate, userId),
-      // Solo la ventana visible, y desde ahora (las ocurrencias pasadas de esta semana no se
-      // dibujan como propias, igual que antes). Antes se pedían las próximas 500 y se filtraba
-      // acá: costaba lo mismo para cualquier semana y el techo se agotaba con muchas
-      // recurrentes (milestone 25, DB5).
+      // Solo la ventana visible, **entera**: la función SQL filtra por el inicio de cada
+      // ocurrencia, así que arrancar la ventana en «ahora» hacía desaparecer una reserva en
+      // curso (de 15:15 a 17:00, a las 15:25) y las de hoy que ya pasaron. Antes se pedían las
+      // próximas 500 y se filtraba acá: costaba lo mismo para cualquier semana y el techo se
+      // agotaba con muchas recurrentes (milestone 25, DB5).
       getUserReservationsInWindow(
         userId,
-        Math.max(nowMs(), Number(rangeStartMs)),
+        Number(rangeStartMs),
         Number(rangeEndMs),
       ),
       getEventOccurrencesForSpace(spaceId, startDate, endDate),
@@ -242,18 +261,19 @@ export async function getCalendarDataBySpace(
       getActiveClosuresForWindow(Number(rangeStartMs), Number(rangeEndMs)),
     ]);
 
-  const recurringIds = new Set(
+  // Una sola lectura trae si cada reserva es recurrente y su título (milestone 35): las
+  // funciones SQL que arman `allUserReservations` no lo devuelven.
+  const reservationMeta = new Map(
     (
       await prisma.reservation.findMany({
         where: {
           id: {
             in: [...new Set(allUserReservations.map((r) => r.reservationId))],
           },
-          isRecurring: true,
         },
-        select: { id: true },
+        select: { id: true, isRecurring: true, title: true },
       })
-    ).map((r) => r.id),
+    ).map((r) => [r.id, r]),
   );
 
   const userReservations: ReservationOccurrence[] = [];
@@ -271,11 +291,15 @@ export async function getCalendarDataBySpace(
         reservationId: res.reservationId,
         occurrenceStartTime: Number(res.occurrenceStartTime),
         occurrenceEndTime: Number(res.occurrenceEndTime),
+        // Las reservas anteriores al título lo toman de su motivo.
+        title:
+          reservationMeta.get(res.reservationId)?.title || res.reason || "",
         reason: res.reason ?? "",
         status: res.status,
         reservableType: res.reservableType as ReservableType,
         reservableId: res.reservableId,
-        isRecurring: recurringIds.has(res.reservationId),
+        isRecurring:
+          reservationMeta.get(res.reservationId)?.isRecurring ?? false,
       });
     } else if (
       res.spaceId != null &&

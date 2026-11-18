@@ -113,6 +113,14 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
   admin: [
     { name: "Panel", href: "/admin/dashboard", icon: LayoutDashboard },
     {
+      // Milestone 32: todo lo que pasa en La Nube. Va justo bajo el Panel y sin sección
+      // propia: es una vista general, no una herramienta de «Reservas».
+      name: "Calendario",
+      href: "/admin/calendar",
+      icon: CalendarRange,
+      permission: "reservations:manage",
+    },
+    {
       name: "Usuarios",
       href: "/admin/users",
       section: "Personas",
@@ -131,14 +139,6 @@ const navigation: Record<"user" | "admin", NavigationItem[]> = {
       href: "/admin/reservations",
       section: "Reservas",
       icon: Calendar,
-      permission: "reservations:manage",
-    },
-    {
-      // Milestone 32: todo lo que pasa en La Nube, en día / 3 días / semana / mes.
-      name: "Calendario",
-      href: "/admin/calendar",
-      section: "Reservas",
-      icon: CalendarRange,
       permission: "reservations:manage",
     },
     {

@@ -1,4 +1,4 @@
-import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import {
   ADMIN_TIMEZONE,
   dateKeyFromUnixMs,
@@ -89,6 +89,7 @@ function toAdminReservationListResult(
     id: row.id,
     startTime: Number(row.startTime),
     endTime: Number(row.endTime),
+    title: row.title || row.reason,
     reason: row.reason,
     status: row.status,
     createdAt: Number(row.createdAt),
@@ -232,6 +233,7 @@ export async function getApprovalPreview(id: string): Promise<ApprovalPreview> {
         id: true,
         reservableType: true,
         spaceId: true,
+        title: true,
         reason: true,
         isRecurring: true,
         createdAt: true,
@@ -292,6 +294,7 @@ export async function getApprovalPreview(id: string): Promise<ApprovalPreview> {
       institution: isUser ? row.registeredUser.institution : null,
       spaceName: row.space?.name ?? null,
       reservationTypeName: row.type.name,
+      title: row.title || row.reason,
       reason: row.reason,
       // Una reserva afectada siempre tiene buckets superpuestos (por eso se rechaza).
       actorSize: Math.max(1, ...buckets.map((b) => Number(b.actor_size))),

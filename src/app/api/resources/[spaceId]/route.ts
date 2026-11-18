@@ -59,8 +59,8 @@ export async function POST(
 
     const { spaceId } = await params;
     const body = await request.json();
-    const { startTime, endTime, reason, eventType } = body;
-    if (!startTime || !endTime || !reason)
+    const { startTime, endTime, title, reason, eventType } = body;
+    if (!startTime || !endTime || !(title || reason))
       return apiError("Faltan campos requeridos", 400);
 
     // Las reglas (grilla, pasado, anticipación, horario, tipo) viven en la función de
@@ -69,6 +69,7 @@ export async function POST(
       spaceId,
       startMs: Number(startTime),
       endMs: Number(endTime),
+      title,
       reason,
       eventType,
     });

@@ -38,7 +38,9 @@ export interface ApprovalConflict {
   institution: string | null;
   spaceName: string | null;
   reservationTypeName: string;
-  /** Lo que escribió la persona al reservar. */
+  /** El título que le puso la persona (milestone 35). */
+  title: string;
+  /** La descripción que escribió al reservar (puede estar vacía). */
   reason: string;
   /** Personas que representa la reserva (cuentan contra la capacidad). */
   actorSize: number;

@@ -6,6 +6,7 @@ import {
   dateKeyFromUnixMs,
   enumerateDateKeysInclusive,
   isValidDateKey,
+  mondayOfDateKey,
   todayDateKeyInAdminTz,
 } from "./admin-timezone";
 
@@ -74,5 +75,12 @@ describe("admin-timezone", () => {
       const { month } = currentPeriodsInAdminTz(Date.UTC(2026, 11, 15, 12));
       expect(dateKeyFromUnixMs(month.endMs)).toBe("2026-12-31");
     });
+  });
+
+  it("mondayOfDateKey devuelve el lunes de esa semana (lunes a domingo)", () => {
+    expect(mondayOfDateKey("2026-11-18")).toBe("2026-11-16"); // miércoles
+    expect(mondayOfDateKey("2026-11-16")).toBe("2026-11-16"); // el propio lunes
+    expect(mondayOfDateKey("2026-11-22")).toBe("2026-11-16"); // domingo
+    expect(mondayOfDateKey("2026-12-01")).toBe("2026-11-30"); // cruza de mes
   });
 });

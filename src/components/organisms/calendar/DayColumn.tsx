@@ -11,13 +11,21 @@
  * columna lo que ya calculó.
  */
 
+import { reservationStatusLabel } from "@/components/atoms/status-badge";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { cn } from "@/lib/utils";
 import { format, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Plus } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { BUSINESS_HOURS, fromUtcMs, getSlotStyle } from "./calendar-utils";
+import { OCCURRENCE_TONES, occurrenceTone } from "./occurrence-style";
 import type { UnavailableSlot } from "./WeekCalendar";
 
 /** Rayado gris de "no disponible" (día bloqueado o recurso lleno). */
@@ -106,12 +114,16 @@ export interface DayColumnProps {
   onPointerUpSlot: (e: React.PointerEvent<HTMLDivElement>) => void;
   /** El navegador canceló el puntero (lo tomó como scroll). */
   onPointerCancelSlot: () => void;
-  onSelectOccurrence: (occ: ReservationOccurrence) => void;
+  /** Contenido del popover de una reserva (lo arma `WeekCalendar`: ahí vive el cancelar). */
+  renderOccurrenceDetails: (
+    occ: ReservationOccurrence,
+    close: () => void,
+  ) => ReactNode;
 }
 
 /**
  * El cuerpo de un día: líneas de hora, bloques no disponibles, reservas existentes (como
- * botones que abren el detalle) y la superposición de la selección en curso.
+ * botones que abren el detalle en un popover) y la superposición de la selección en curso.
  */
 export function DayColumn({
   day,
@@ -125,7 +137,7 @@ export function DayColumn({
   onPointerMoveSlot,
   onPointerUpSlot,
   onPointerCancelSlot,
-  onSelectOccurrence,
+  renderOccurrenceDetails,
 }: DayColumnProps) {
   const hours = BUSINESS_HOURS.END - BUSINESS_HOURS.START;
   // Tramo de hoy que ya pasó, en % del alto (0 si el día es futuro; un día pasado entero ya va
@@ -221,7 +233,7 @@ export function DayColumn({
           key={idx}
           occ={occ}
           own={isOwnOccurrence(occ, userId)}
-          onSelect={() => onSelectOccurrence(occ)}
+          renderDetails={renderOccurrenceDetails}
         />
       ))}
 
@@ -238,60 +250,41 @@ export function DayColumn({
   );
 }
 
-/** Una reserva existente dentro de la columna. */
+/**
+ * Una reserva existente dentro de la columna (milestone 35).
+ *
+ * La tarjeta muestra **solo el título**, alineado arriba: el color dice el estado (hay una
+ * leyenda en el calendario) y la columna de horas dice cuándo. Al tocarla se abre el detalle
+ * en un popover anclado a la tarjeta — sin modal, como en Google Calendar.
+ */
 function OccurrenceBlock({
   occ,
   own,
-  onSelect,
+  renderDetails,
 }: {
   occ: ReservationOccurrence;
   own: boolean;
-  onSelect: () => void;
+  renderDetails: (occ: ReservationOccurrence, close: () => void) => ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
   const style = getSlotStyle({
     startTime: occ.occurrenceStartTime,
     endTime: occ.occurrenceEndTime,
   });
-  const isPending = occ.status === "PENDING";
-  const isRejected = occ.status === "REJECTED";
-  const isCancelled = occ.status === "CANCELLED";
+  const tone = occurrenceTone(occ, own);
 
-  // F2.5(c): every one of these carries `text-white`, and the old
-  // palette failed AA under it — bg-yellow-500 measured 1.92:1, the
-  // worst pair in the codebase. These are the same hues one step
-  // darker, all ≥ 4.8:1 on white.
-  const bgColor =
-    own && isPending
-      ? "bg-amber-700" // was bg-yellow-500 (1.92:1) → 5.02:1
-      : own && isRejected
-        ? "bg-red-600" // 4.83:1, already passing
-        : own && isCancelled
-          ? "bg-gray-500" // 4.83:1, already passing
-          : own
-            ? "bg-green-700" // was bg-green-600 (3.30:1) → 5.02:1
-            : "bg-la-nube-selected"; // was primary (3.77:1) → 6.38:1
-
-  const statusLabel = isPending
-    ? "Pendiente"
-    : isRejected
-      ? "Rechazada"
-      : isCancelled
-        ? "Cancelada"
-        : own
-          ? "Aprobada"
-          : null;
-  const startLabel = format(fromUtcMs(occ.occurrenceStartTime), "HH:mm");
-  const endLabel = format(fromUtcMs(occ.occurrenceEndTime), "HH:mm");
-  // The title tooltip was the only place this information existed, and
-  // it reaches neither keyboard nor touch nor screen readers.
+  const statusLabel =
+    tone === "event"
+      ? "Evento"
+      : tone === "other"
+        ? "Reservado"
+        : reservationStatusLabel(occ.status);
+  // Lo que antes solo estaba en el `title` (que no llega a teclado, touch ni lectores de
+  // pantalla): título, horario y estado.
   const accessibleLabel = [
-    occ.reason,
-    `${startLabel} a ${endLabel}`,
-    own
-      ? "Tu reserva"
-      : occ.reservableType === "EVENT"
-        ? "Evento"
-        : "Reservado",
+    occ.title,
+    `${format(fromUtcMs(occ.occurrenceStartTime), "HH:mm")} a ${format(fromUtcMs(occ.occurrenceEndTime), "HH:mm")}`,
+    own ? "Tu reserva" : null,
     statusLabel,
   ]
     .filter(Boolean)
@@ -299,47 +292,38 @@ function OccurrenceBlock({
 
   return (
     <div
-      className="absolute w-full px-1"
+      // `z-[60]`: por encima del rayado de las horas que ya pasaron (z-50), que si no tapa y
+      // bloquea el clic de una reserva en curso.
+      className="absolute z-[60] w-full px-1"
       style={{ top: style.top, height: style.height }}
       // Que tocar/clickear una reserva no arranque además una selección de horario debajo.
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {/* A real <button>: focusable, Enter/Space activated and
-          announced as a control, instead of a div+onClick that
-          keyboard users could not reach at all (F2.5b). The detail
-          dialog it opens is where cancelling lives. */}
-      <button
-        type="button"
-        className={`h-full w-full rounded ${bgColor} cursor-pointer overflow-hidden p-1 text-left text-xs text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
-        title={accessibleLabel}
-        aria-label={accessibleLabel}
-        onClick={onSelect}
-      >
-        <div className="truncate font-semibold">
-          {occ.reason}
-          {/* Glyphs stay as a redundant non-color cue, but they are
-              decorative now: the status is in the aria-label, so a
-              screen reader no longer reads "check mark button". */}
-          {own && !isRejected && !isCancelled && (
-            <span className="ml-1" aria-hidden="true">
-              ✓
+      <Popover open={open} onOpenChange={setOpen}>
+        {/* Un <button> real: foco, Enter/Espacio y anuncio como control (F2.5b). Los botones
+            centran su contenido en vertical por defecto: `justify-start` lo pega arriba. */}
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex h-full w-full cursor-pointer flex-col items-start justify-start overflow-hidden rounded px-1.5 py-1 text-left text-xs leading-tight text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+              OCCURRENCE_TONES[tone].bg,
+            )}
+            aria-label={accessibleLabel}
+          >
+            <span className="line-clamp-2 font-semibold [overflow-wrap:anywhere]">
+              {occ.title}
             </span>
-          )}
-          {own && isRejected && (
-            <span className="ml-1" aria-hidden="true">
-              ✗
-            </span>
-          )}
-        </div>
-        <div className="text-[10px]">
-          {startLabel} - {endLabel}
-          {isPending && own && (
-            <span className="ml-1" aria-hidden="true">
-              ⏳
-            </span>
-          )}
-        </div>
-      </button>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-80 max-w-[calc(100vw-2rem)]"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          {renderDetails(occ, () => setOpen(false))}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

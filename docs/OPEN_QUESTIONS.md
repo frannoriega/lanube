@@ -240,3 +240,10 @@ Contexto en
 - **Fuente de feriados**: ArgentinaDatos no es oficial. Si alguna vez falla o se equivoca de
   forma sostenida, la alternativa documentada es el endpoint del Banco Central do Brasil
   (`olinda.bcb.gov.br`, `FeriadosArgentina`); el parser es de un solo archivo.
+
+## ¿El catálogo de «tipos de reserva» queda solo para eventos? (2026-11-18, milestone 35)
+
+El formulario de reserva ya no lo pide (se usa un tipo por defecto), así que para reservas de
+personas el tipo es siempre el mismo y los reportes «por tipo» no dicen nada de ellas. Falta decidir
+si el catálogo (`/admin/reservation-types`) pasa a ser **solo de eventos** (renombrarlo «Tipos de
+evento», quitarlo de reservas y de los reportes) o se deja como está.

@@ -3,7 +3,10 @@ import { formSchemaZod } from "@/lib/events/form-schema";
 import { dateKeyTimeToMs } from "@/lib/events/plan";
 import {
   RESERVATION_REASON_MAX,
+  RESERVATION_TITLE_MAX,
+  titleFromDescription,
   validateReservationReason,
+  validateReservationTitle,
 } from "@/lib/reservations/user-rules";
 import { sessionActionSchema } from "@/lib/schemas/events";
 import { signupProfileSchema } from "@/lib/schemas/profile";
@@ -14,15 +17,37 @@ import { signupProfileSchema } from "@/lib/schemas/profile";
  * colaba antes y que la pantalla nunca habría mandado.
  */
 
-describe("motivo de la reserva", () => {
-  it("rechaza vacío y más de RESERVATION_REASON_MAX caracteres", () => {
-    expect(validateReservationReason("")).toBe("Faltan campos requeridos");
+describe("descripción de la reserva", () => {
+  it("es opcional y rechaza más de RESERVATION_REASON_MAX caracteres", () => {
+    expect(validateReservationReason("")).toBe(null);
     expect(validateReservationReason("x".repeat(RESERVATION_REASON_MAX))).toBe(
       null,
     );
     expect(
       validateReservationReason("x".repeat(RESERVATION_REASON_MAX + 1)),
     ).toContain(String(RESERVATION_REASON_MAX));
+  });
+});
+
+describe("título de la reserva (milestone 35)", () => {
+  it("es obligatorio y tiene tope", () => {
+    expect(validateReservationTitle("")).toBe("Falta el título de la reserva");
+    expect(validateReservationTitle("x".repeat(RESERVATION_TITLE_MAX))).toBe(
+      null,
+    );
+    expect(
+      validateReservationTitle("x".repeat(RESERVATION_TITLE_MAX + 1)),
+    ).toContain(String(RESERVATION_TITLE_MAX));
+  });
+
+  it("sale de la primera línea de la descripción si un cliente viejo no lo manda", () => {
+    expect(titleFromDescription("Taller de IA\nTraer notebook")).toBe(
+      "Taller de IA",
+    );
+    expect(titleFromDescription("  ")).toBe("");
+    expect(titleFromDescription("x".repeat(200))).toHaveLength(
+      RESERVATION_TITLE_MAX,
+    );
   });
 });
 

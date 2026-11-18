@@ -8,15 +8,8 @@ export interface DashboardStats {
   upcomingReservations: number;
   totalTimeThisWeek: number;
   totalTimeThisMonth: number;
-  recentReservations: Array<{
-    id: string;
-    service: string;
-    serviceType: string;
-    startTime: number;
-    endTime: number;
-    status: string;
-    reason: string | null;
-  }>;
+  /** Todas las reservas que la persona hizo alguna vez (series, no ocurrencias). */
+  totalReservations: number;
 }
 
 const HOURS_IN_MS = 1000 * 60 * 60;
@@ -41,42 +34,18 @@ export async function getDashboardStatsByUserId(
 
   // Los tres números cuentan **ocurrencias** (milestone 25, C3): una reserva semanal suma cada
   // semana que cae en el período, no una vez en la semana en que empezó la serie.
-  const [upcoming, thisWeek, thisMonth, recentReservations] = await Promise.all(
-    [
-      approvedOccurrenceTotals(Number(atMs), OPEN_END_MS, mine),
-      approvedOccurrenceTotals(week.startMs, week.endMs, mine),
-      approvedOccurrenceTotals(month.startMs, month.endMs, mine),
-      prisma.reservation.findMany({
-        select: {
-          id: true,
-          space: { select: { name: true } },
-          startTime: true,
-          endTime: true,
-          status: true,
-          reason: true,
-        },
-        where: mine,
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 10,
-      }),
-    ],
-  );
+  const [upcoming, thisWeek, thisMonth, totalReservations] = await Promise.all([
+    approvedOccurrenceTotals(Number(atMs), OPEN_END_MS, mine),
+    approvedOccurrenceTotals(week.startMs, week.endMs, mine),
+    approvedOccurrenceTotals(month.startMs, month.endMs, mine),
+    prisma.reservation.count({ where: mine }),
+  ]);
 
   return {
     upcomingReservations: upcoming.count,
     totalTimeThisWeek: toHours(thisWeek.totalMs),
     totalTimeThisMonth: toHours(thisMonth.totalMs),
-    recentReservations: recentReservations.map((reservation) => ({
-      id: reservation.id,
-      service: reservation.space?.name ?? "Servicio",
-      serviceType: reservation.space?.name ?? "Unknown",
-      startTime: Number(reservation.startTime),
-      endTime: Number(reservation.endTime),
-      status: reservation.status,
-      reason: reservation.reason ?? null,
-    })),
+    totalReservations,
   };
 }
 

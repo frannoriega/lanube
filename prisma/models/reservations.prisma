@@ -11,6 +11,10 @@ model Reservation {
   spaceId        String?                @map("space_id")
   // Code of a ReservationType row (FK on `code`, not `id`).
   eventType      String                 @map("event_type")
+  /// Nombre corto de la reserva: lo que se ve en el calendario y en las listas (milestone 35).
+  title          String                 @default("")
+  /// La **descripción** de la reserva (opcional, puede ser ""). Conserva el nombre de columna
+  /// `reason` porque lo leen las funciones SQL y el ledger; en la interfaz es «Descripción».
   reason         String
   deniedReason   String?                @map("denied_reason")
   status         ReservationStatus      @default(PENDING)

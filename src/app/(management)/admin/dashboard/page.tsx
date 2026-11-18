@@ -12,7 +12,7 @@ import {
 import { ApprovalConflictsDialog } from "@/components/organisms/admin/approval-conflicts-dialog";
 import { StatGrid, StatTile } from "@/components/molecules/stat-grid";
 import { useServerTime } from "@/components/providers/server-time";
-import { DashboardRecentReservations } from "@/components/templates/admin/dashboard-recent-reservations";
+import { AdminSpaceBoard } from "@/components/templates/admin/admin-space-board";
 import { useAdminStats } from "@/hooks/api";
 import { apiErrorMessage } from "@/lib/api/client";
 import { reviewAdminReservation } from "@/lib/api/mutations";
@@ -235,8 +235,8 @@ export default function AdminDashboard() {
         </Card>
       )}
 
-      {/* Recent reservations */}
-      <DashboardRecentReservations
+      {/* Próximas reservas: una sección por espacio, con su línea de tiempo por día */}
+      <AdminSpaceBoard
         onAction={handleReservationAction}
         processing={processing}
         refetchKey={refetchKey}

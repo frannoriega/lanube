@@ -117,3 +117,14 @@ export function adminForwardWindowRange(
   const toKey = addDaysToDateKey(fromKey, dayCount - 1);
   return { fromKey, toKey };
 }
+
+/**
+ * El lunes de la semana que contiene esa fecha (en la hora del predio). Las ventanas del
+ * tablero del admin se mueven de a semanas completas, lunes a domingo.
+ */
+export function mondayOfDateKey(dateKey: string): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const weekday = new TZDate(y, m - 1, d, 12, 0, 0, 0, ADMIN_TIMEZONE).getDay();
+  // getDay(): domingo = 0 … sábado = 6 → días desde el lunes: 6, 0, 1, … 5.
+  return addDaysToDateKey(dateKey, -((weekday + 6) % 7));
+}

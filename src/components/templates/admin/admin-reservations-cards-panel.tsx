@@ -1,15 +1,12 @@
 "use client";
 
-import { AdminReservationDetailSheet } from "@/components/organisms/admin/admin-reservation-detail-sheet";
 import { DayReservationCard } from "@/components/organisms/admin/day-reservation-card";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import { ALL_SPACES_ID, useAdminReservationsRange } from "@/hooks/api";
 import {
   adminForwardWindowRange,
-  dateKeyFromUnixMs,
   endOfDateKeyMs,
   enumerateDateKeysInclusive,
   startOfDateKeyMs,
@@ -33,7 +30,6 @@ const WINDOW_OPTIONS = [7, 14, 30, 60] as const;
 const DEFAULT_WINDOW_DAYS = 14;
 
 export function AdminReservationsCardsPanel({
-  variant,
   spaceId,
   spaceName,
   showHeading = true,
@@ -41,7 +37,6 @@ export function AdminReservationsCardsPanel({
   processing,
   refetchKey = 0,
 }: {
-  variant: "admin" | "dashboard";
   /** A space id, or `ALL_SPACES_ID` ("all") to show every space at once. */
   spaceId: string;
   spaceName: string;
@@ -59,11 +54,6 @@ export function AdminReservationsCardsPanel({
 
   const [pendingOnly, setPendingOnly] = useState(false);
   const [expandedDateKey, setExpandedDateKey] = useState<string | null>(null);
-  const [panelReservation, setPanelReservation] =
-    useState<AdminReservationListResult | null>(null);
-
-  // Only the admin (full-page) variant exposes a window-size control; the
-  // dashboard card stays at the default window to keep the widget compact.
   const [windowDays, setWindowDays] = useState<number>(DEFAULT_WINDOW_DAYS);
   const [page, setPage] = useState(1);
 
@@ -106,7 +96,6 @@ export function AdminReservationsCardsPanel({
 
   useEffect(() => {
     setExpandedDateKey(null);
-    setPanelReservation(null);
     setPage(1);
   }, [spaceId, fetchFromKey, fetchToKey]);
 
@@ -116,7 +105,7 @@ export function AdminReservationsCardsPanel({
   }, [fetchFromKey, fetchToKey]);
 
   const daysWithReservations = useMemo(
-    () => orderedDays.filter((d) => (itemsByDate[d]?.length ?? 0) > 0),
+    () => orderedDays.filter((d) => (itemsByDate[d] ?? []).length > 0),
     [orderedDays, itemsByDate],
   );
 
@@ -163,33 +152,31 @@ export function AdminReservationsCardsPanel({
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
             Próximos {windowDays} días desde hoy (Argentina). Expandí un día con
-            reservas para ver la grilla y el detalle lateral.
+            reservas para ver la grilla; tocá una reserva para ver su detalle.
           </p>
         </div>
       ) : null}
 
-      {variant === "admin" ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
-            Ventana:
-          </span>
-          <div className="flex rounded-md border border-border p-0.5 w-fit">
-            {WINDOW_OPTIONS.map((d) => (
-              <Button
-                key={d}
-                type="button"
-                variant={windowDays === d ? "secondary" : "ghost"}
-                size="sm"
-                className="rounded-sm"
-                disabled={loading}
-                onClick={() => setWindowDays(d)}
-              >
-                {d}d
-              </Button>
-            ))}
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">
+          Ventana:
+        </span>
+        <div className="flex rounded-md border border-border p-0.5 w-fit">
+          {WINDOW_OPTIONS.map((d) => (
+            <Button
+              key={d}
+              type="button"
+              variant={windowDays === d ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-sm"
+              disabled={loading}
+              onClick={() => setWindowDays(d)}
+            >
+              {d}d
+            </Button>
+          ))}
         </div>
-      ) : null}
+      </div>
 
       {loading && daysWithReservations.length === 0 ? (
         <div className="flex h-40 items-center justify-center rounded-md border border-dashed border-border">
@@ -231,7 +218,8 @@ export function AdminReservationsCardsPanel({
                   reservationsForDay={list}
                   pendingOnly={pendingOnly}
                   onPendingOnlyChange={setPendingOnly}
-                  onSelectReservation={setPanelReservation}
+                  processing={processing}
+                  onAction={wrappedOnAction}
                   disabled={loading}
                   showResourceTypeLabels={isAllSpaces}
                 />
@@ -271,24 +259,6 @@ export function AdminReservationsCardsPanel({
           ) : null}
         </>
       )}
-
-      <AdminReservationDetailSheet
-        open={!!panelReservation}
-        onOpenChange={(o) => !o && setPanelReservation(null)}
-        reservation={panelReservation}
-        sameDayReservations={
-          panelReservation
-            ? (itemsByDate[dateKeyFromReservation(panelReservation)] ?? [])
-            : []
-        }
-        onAction={wrappedOnAction}
-        processing={processing}
-        onRejected={() => setPanelReservation(null)}
-      />
     </div>
   );
-}
-
-function dateKeyFromReservation(r: AdminReservationListResult): string {
-  return dateKeyFromUnixMs(r.startTime);
 }

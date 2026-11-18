@@ -1,6 +1,5 @@
 "use client";
 
-import { StatusBadge } from "@/components/atoms/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveDialog,
@@ -14,6 +13,7 @@ import { useApi } from "@/hooks/use-api";
 import { apiErrorMessage, apiSend } from "@/lib/api/client";
 import { ReservationOccurrence } from "@/lib/db/resourceCalendar";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 import { toCapitalCase } from "@/lib/utils/string";
 import { addDays, addWeeks, format, isSameDay, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,13 +37,16 @@ import {
   LAST_BOOKABLE_START_MINUTES,
 } from "./calendar-utils";
 import { BookingForm, type BookingFormValues } from "./BookingForm";
+import { CalendarLegend } from "./CalendarLegend";
+import { CalendarSkeleton } from "./CalendarSkeleton";
+import { OccurrenceDetails } from "./OccurrenceDetails";
+import { occurrenceTone, type OccurrenceTone } from "./occurrence-style";
 import {
   DayColumn,
   DayHeaderCell,
   DayStrip,
   isOwnOccurrence,
 } from "./DayColumn";
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -74,27 +77,17 @@ export interface DragSelection {
 export interface ReservationFormData {
   startTime: Date;
   endTime: Date;
+  title: string;
+  /** La descripción (opcional): la columna `reason`. */
   reason: string;
-  eventType: string;
 }
 
 interface WeekCalendarProps {
   apiEndpoint: string; // API endpoint to fetch reservations and create them
-  eventTypes: Array<{ value: string; label: string }>;
-  defaultEventType: string;
-  title?: string;
-  description?: string;
   userId?: string; // Current user's ID for visual differentiation
 }
 
-export function WeekCalendar({
-  apiEndpoint,
-  eventTypes,
-  defaultEventType,
-  title,
-  description,
-  userId,
-}: WeekCalendarProps) {
+export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
   const { now, alignRevision } = useServerTime();
 
   // Week navigation — initialised from the server-aligned clock only once
@@ -149,13 +142,6 @@ export function WeekCalendar({
     y: number;
     dayIdx: number;
   } | null>(null);
-
-  // View details / delete dialog state
-  const [selectedOccurrence, setSelectedOccurrence] =
-    useState<ReservationOccurrence | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  // Recurring reservations ask "this occurrence only" vs. "whole series" before cancelling.
-  const [cancelScopeOpen, setCancelScopeOpen] = useState(false);
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -260,6 +246,8 @@ export function WeekCalendar({
   const {
     data: calendarData,
     error: calendarError,
+    loading: calendarLoading,
+    firstTime: calendarFirstTime,
     refetch: refetchReservations,
   } = useApi<{
     unavailableSlots?: UnavailableSlot[];
@@ -679,8 +667,8 @@ export function WeekCalendar({
       await apiSend(apiEndpoint, "POST", {
         startTime: startDateTime.getTime(),
         endTime: endDateTime.getTime(),
+        title: values.title,
         reason: values.reason,
-        eventType: values.eventType,
       });
       // Success - close dialog and reset
       setDialogOpen(false);
@@ -693,7 +681,7 @@ export function WeekCalendar({
     }
   };
 
-  /** Valores con los que abre el formulario: el horario elegido + el tipo por defecto. */
+  /** Valores con los que abre el formulario: el horario elegido, sin título ni descripción. */
   // Primer minuto reservable del día elegido (hoy: no antes de ahora). Se recalcula al abrir el
   // formulario; el submit vuelve a comparar contra el reloj, que sigue siendo la regla.
   const bookingMinStartMinutes = selection
@@ -701,8 +689,39 @@ export function WeekCalendar({
     : undefined;
 
   const bookingDefaults = useMemo<BookingFormValues>(
-    () => ({ startTime, endTime, eventType: defaultEventType, reason: "" }),
-    [startTime, endTime, defaultEventType],
+    () => ({ startTime, endTime, title: "", reason: "" }),
+    [startTime, endTime],
+  );
+
+  /**
+   * Saca de la vista lo que se acaba de cancelar, sin recargar: una ocurrencia (`occurrenceStart`
+   * presente, recurrentes) o toda la reserva.
+   */
+  const removeOccurrences = useCallback(
+    (reservationId: string, occurrenceStart?: number) => {
+      setOccurrences((prev) =>
+        prev.filter(
+          (occ) =>
+            !(
+              occ.reservationId === reservationId &&
+              (occurrenceStart === undefined ||
+                occ.occurrenceStartTime === occurrenceStart)
+            ),
+        ),
+      );
+    },
+    [],
+  );
+
+  // Tonos a la vista, para que la leyenda explique solo lo que se está mostrando.
+  const tonesInView = useMemo(
+    () =>
+      new Set<OccurrenceTone>(
+        occurrences.map((occ) =>
+          occurrenceTone(occ, isOwnOccurrence(occ, userId)),
+        ),
+      ),
+    [occurrences, userId],
   );
 
   const dragSelection = getDragSelectionStyle();
@@ -795,6 +814,9 @@ export function WeekCalendar({
           </div>
         </div>
 
+        {/* Leyenda: las tarjetas no llevan ícono de estado, el color lo dice. */}
+        <CalendarLegend present={tonesInView} />
+
         {/* Tira de días (solo vistas angostas): elegir el día que se muestra. */}
         {isNarrow && (
           <DayStrip
@@ -846,8 +868,22 @@ export function WeekCalendar({
           </div>
         </div>
 
-        {/* Calendar body */}
-        <div className="relative mb-8 flex gap-0">
+        {/* Calendar body. Mientras llegan las reservas la grilla es un esqueleto que pulsa (la
+            primera vez) o se atenúa y pulsa (al cambiar de semana), así nunca se ve vacía y se
+            toma por «todo libre». */}
+        {calendarFirstTime && !calendarError ? (
+          <CalendarSkeleton columns={visibleIdx.length} />
+        ) : null}
+        <div
+          className={cn(
+            "relative mb-8 flex gap-0",
+            calendarFirstTime && !calendarError && "hidden",
+            calendarLoading &&
+              !calendarFirstTime &&
+              "pointer-events-none animate-pulse opacity-60",
+          )}
+          aria-busy={calendarLoading}
+        >
           {/* Time labels */}
           <div
             className="relative w-14 flex-shrink-0"
@@ -922,7 +958,15 @@ export function WeekCalendar({
                     // El navegador tomó el gesto como scroll: no es un toque.
                     tapRef.current = null;
                   }}
-                  onSelectOccurrence={setSelectedOccurrence}
+                  renderOccurrenceDetails={(occ, close) => (
+                    <OccurrenceDetails
+                      occ={occ}
+                      own={isOwnOccurrence(occ, userId)}
+                      apiEndpoint={apiEndpoint}
+                      onRemoved={removeOccurrences}
+                      onClose={close}
+                    />
+                  )}
                 />
               );
             })}
@@ -934,9 +978,7 @@ export function WeekCalendar({
       <ResponsiveDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <ResponsiveDialogContent className="sm:max-w-[500px]">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>
-              {title || "Nueva Reserva"}
-            </ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Nueva reserva</ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
               {selection &&
                 `${toCapitalCase(format(selection.day, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))}`}
@@ -946,8 +988,6 @@ export function WeekCalendar({
           <BookingForm
             defaultValues={bookingDefaults}
             minStartMinutes={bookingMinStartMinutes}
-            eventTypes={eventTypes}
-            reasonLabel={description}
             submitting={submitting}
             onSubmit={handleSubmit}
             onCancel={() => {
@@ -955,250 +995,6 @@ export function WeekCalendar({
               setSelection(null);
             }}
           />
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
-
-      {/* View Reservation Details ResponsiveDialog */}
-      <ResponsiveDialog
-        open={!!selectedOccurrence}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedOccurrence(null);
-            setCancelScopeOpen(false);
-          }
-        }}
-      >
-        <ResponsiveDialogContent className="sm:max-w-[480px]">
-          <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>
-              {/* Un evento no es una reserva más (milestone 29): se titula con su nombre (o
-                  «Reservado para un evento» si no está publicado) y no muestra estado. */}
-              {selectedOccurrence?.reservableType === "EVENT"
-                ? selectedOccurrence.reason
-                : "Detalle de la reserva"}
-            </ResponsiveDialogTitle>
-            {selectedOccurrence && (
-              <ResponsiveDialogDescription>
-                {toCapitalCase(
-                  format(
-                    fromUtcMs(selectedOccurrence.occurrenceStartTime),
-                    "EEEE, d 'de' MMMM 'de' yyyy",
-                    { locale: es },
-                  ),
-                )}
-              </ResponsiveDialogDescription>
-            )}
-          </ResponsiveDialogHeader>
-          {selectedOccurrence && (
-            <div className="space-y-3">
-              <div className="text-sm">
-                <span className="font-medium">Horario:</span>{" "}
-                {format(
-                  fromUtcMs(selectedOccurrence.occurrenceStartTime),
-                  "HH:mm",
-                )}{" "}
-                -{" "}
-                {format(
-                  fromUtcMs(selectedOccurrence.occurrenceEndTime),
-                  "HH:mm",
-                )}
-              </div>
-              {selectedOccurrence.reservableType === "EVENT" ? (
-                // Evento: siempre está aprobado, así que no se muestra el estado. Solo los
-                // publicados tienen página (y, si la inscripción está abierta, formulario).
-                selectedOccurrence.eventPublic ? (
-                  <div className="flex flex-wrap justify-end gap-2 pt-2">
-                    {selectedOccurrence.eventId && (
-                      <Button
-                        asChild
-                        variant={
-                          selectedOccurrence.formOpen ? "outline" : "default"
-                        }
-                      >
-                        <Link
-                          href={`/events/${selectedOccurrence.eventId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Ver evento
-                        </Link>
-                      </Button>
-                    )}
-                    {selectedOccurrence.formOpen &&
-                      selectedOccurrence.formSlug && (
-                        <Button asChild>
-                          <Link
-                            href={`/forms/${selectedOccurrence.formSlug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Inscribirse
-                          </Link>
-                        </Button>
-                      )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Este horario está reservado para un evento que todavía no se
-                    publicó.
-                  </p>
-                )
-              ) : (
-                <>
-                  <div className="text-sm">
-                    <span className="font-medium">Motivo:</span>{" "}
-                    <span className="rounded bg-muted px-2 py-1">
-                      {selectedOccurrence.reason}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Estado:</span>
-                    <StatusBadge status={selectedOccurrence.status} />
-                  </div>
-                </>
-              )}
-              {userId &&
-                selectedOccurrence.reservableType === "USER" &&
-                selectedOccurrence.reservableId === userId &&
-                (selectedOccurrence.isRecurring ? (
-                  cancelScopeOpen ? (
-                    <div className="pt-2 space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        ¿Cancelar solo esta reserva o toda la serie?
-                      </p>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={deleting}
-                          onClick={() => setCancelScopeOpen(false)}
-                        >
-                          Volver
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleting}
-                          onClick={async () => {
-                            try {
-                              setDeleting(true);
-                              await apiSend(apiEndpoint, "DELETE", {
-                                reservationId: selectedOccurrence.reservationId,
-                                occurrenceStartTime:
-                                  selectedOccurrence.occurrenceStartTime,
-                              });
-                              toast.success("Reserva cancelada");
-                              setOccurrences((occurrences) =>
-                                occurrences.filter(
-                                  (occ) =>
-                                    !(
-                                      occ.reservationId ===
-                                        selectedOccurrence.reservationId &&
-                                      occ.occurrenceStartTime ===
-                                        selectedOccurrence.occurrenceStartTime
-                                    ),
-                                ),
-                              );
-                              setSelectedOccurrence(null);
-                              setCancelScopeOpen(false);
-                            } catch (err) {
-                              toast.error(
-                                apiErrorMessage(
-                                  err,
-                                  "No se pudo cancelar la reserva",
-                                ),
-                              );
-                            } finally {
-                              setDeleting(false);
-                            }
-                          }}
-                        >
-                          Solo esta reserva
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleting}
-                          onClick={async () => {
-                            try {
-                              setDeleting(true);
-                              await apiSend(apiEndpoint, "DELETE", {
-                                reservationId: selectedOccurrence.reservationId,
-                              });
-                              toast.success("Serie cancelada");
-                              setOccurrences((occurrences) =>
-                                occurrences.filter(
-                                  (occ) =>
-                                    occ.reservationId !==
-                                    selectedOccurrence.reservationId,
-                                ),
-                              );
-                              setSelectedOccurrence(null);
-                              setCancelScopeOpen(false);
-                            } catch (err) {
-                              toast.error(
-                                apiErrorMessage(
-                                  err,
-                                  "No se pudo cancelar la reserva",
-                                ),
-                              );
-                            } finally {
-                              setDeleting(false);
-                            }
-                          }}
-                        >
-                          Toda la serie
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="pt-2 flex justify-end">
-                      <Button
-                        variant="destructive"
-                        onClick={() => setCancelScopeOpen(true)}
-                      >
-                        Cancelar reserva
-                      </Button>
-                    </div>
-                  )
-                ) : (
-                  <div className="pt-2 flex justify-end">
-                    <Button
-                      variant="destructive"
-                      disabled={deleting}
-                      onClick={async () => {
-                        try {
-                          setDeleting(true);
-                          await apiSend(apiEndpoint, "DELETE", {
-                            reservationId: selectedOccurrence.reservationId,
-                          });
-                          toast.success("Reserva eliminada");
-                          setOccurrences((occurrences) =>
-                            occurrences.filter(
-                              (occ) =>
-                                occ.reservationId !==
-                                selectedOccurrence.reservationId,
-                            ),
-                          );
-                          setSelectedOccurrence(null);
-                        } catch (err) {
-                          toast.error(
-                            apiErrorMessage(
-                              err,
-                              "No se pudo eliminar la reserva",
-                            ),
-                          );
-                        } finally {
-                          setDeleting(false);
-                        }
-                      }}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                ))}
-            </div>
-          )}
         </ResponsiveDialogContent>
       </ResponsiveDialog>
     </>

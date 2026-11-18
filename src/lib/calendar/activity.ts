@@ -12,7 +12,7 @@ import {
 
 /**
  * Reglas **puras** del calendario de actividades (milestone 32): qué rango se puede pedir,
- * cómo se ven las reservas ajenas («Ocupado») y cómo se dibujan los días cerrados. Sin base ni
+ * qué se ve de las reservas ajenas (nada: un usuario solo ve las suyas y los eventos) y cómo se dibujan los días cerrados. Sin base ni
  * reloj propio; testeadas en `activity.test.ts`. La carga está en
  * `src/lib/db/activityCalendar.ts` y el dibujo en `organisms/activity-calendar/`.
  */
@@ -20,8 +20,8 @@ import {
 /** Qué es cada cosa del calendario. */
 export type CalendarItemKind =
   | "reservation" // una reserva (de cualquiera, para admins; la propia, para usuarios)
-  | "busy" // usuarios: lo que reservaron otros, sin nombre ni motivo
   | "event" // una sesión de un evento
+  | "occupancy" // solo admins: varias reservas de un espacio que se pisan, resumidas (cliente)
   | "closed" // día o franja cerrada
   | "maintenance"; // ventana de mantenimiento (solo admins)
 
@@ -42,6 +42,26 @@ export interface CalendarItem {
   own?: boolean;
   /** Solo admins: quién reservó («Ana Pérez», «Equipo X»). */
   requester?: string;
+  /** Solo admins (reservas): cuántas personas representa; cuenta contra la capacidad. */
+  actorSize?: number;
+  /** Solo admins (reservas): la capacidad del espacio. */
+  capacity?: number;
+  /**
+   * Chip de ocupación (`kind: "occupancy"`): lo arma el cliente con `aggregateOccupancy`, nunca
+   * viene del servidor. `approved` es el pico de personas aprobadas a la vez.
+   */
+  occupancy?: {
+    /**
+     * `space`: un chip por espacio y tramo (`approved` = personas aprobadas a esa hora, sobre
+     * `capacity`). `building`: un chip por tramo para **todo el edificio** (`approved` = cuántas
+     * reservas aprobadas hay, sin capacidad ni espacio).
+     */
+    mode: "space" | "building";
+    approved: number;
+    pending: number;
+    capacity: number | null;
+    members: CalendarItem[];
+  };
   /** Eventos. */
   eventId?: string;
   /** Solo admins: el estado del evento (borrador y pausado se distinguen). */
@@ -52,6 +72,13 @@ export interface CalendarItem {
   href?: string;
   /** Texto de apoyo (franja de un cierre, modo de un mantenimiento). */
   detail?: string;
+  /**
+   * Reservas (solo las que se ven con nombre): su descripción. Eventos: el copete. Nunca
+   * viaja para eventos no publicados en la vista de usuario.
+   */
+  description?: string;
+  /** Eventos que se anuncian: la portada, para el detalle. */
+  imageUrl?: string;
 }
 
 export interface ActivityCalendarData {
@@ -99,53 +126,6 @@ export function calendarRangeError(
     return "El calendario llega hasta el fin del año próximo";
   }
   return null;
-}
-
-/**
- * Reservas ajenas para la vista de usuario: se unen por espacio los tramos que se tocan o se
- * superponen, y salen como «Ocupado» sin nombre, motivo ni estado. Unir evita, además, una
- * pared de bloques iguales en el coworking (muchas reservas chicas a la vez).
- */
-export function mergeBusy(
-  slots: readonly {
-    spaceId: string;
-    spaceName: string;
-    startMs: number;
-    endMs: number;
-  }[],
-): CalendarItem[] {
-  const bySpace = new Map<string, typeof slots>();
-  for (const s of slots) {
-    bySpace.set(s.spaceId, [...(bySpace.get(s.spaceId) ?? []), s]);
-  }
-  const out: CalendarItem[] = [];
-  for (const [spaceId, list] of bySpace) {
-    const sorted = [...list].sort((a, b) => a.startMs - b.startMs);
-    let cur: { startMs: number; endMs: number } | null = null;
-    const flush = () => {
-      if (!cur) return;
-      out.push({
-        id: `busy:${spaceId}:${cur.startMs}`,
-        kind: "busy",
-        startMs: cur.startMs,
-        endMs: cur.endMs,
-        allDay: false,
-        title: "Ocupado",
-        spaceId,
-        spaceName: list[0].spaceName,
-      });
-    };
-    for (const s of sorted) {
-      if (cur && s.startMs <= cur.endMs) {
-        cur.endMs = Math.max(cur.endMs, s.endMs);
-      } else {
-        flush();
-        cur = { startMs: s.startMs, endMs: s.endMs };
-      }
-    }
-    flush();
-  }
-  return out.sort((a, b) => a.startMs - b.startMs);
 }
 
 const hhmm = (minutes: number) =>

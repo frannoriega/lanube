@@ -1,19 +1,22 @@
 "use client";
 
 /**
- * Formulario de "Nueva reserva" del calendario (milestone 14, propuesta 8).
+ * Formulario de "Nueva reserva" del calendario (milestone 14, propuesta 8; rediseñado en el
+ * milestone 35).
  *
- * Antes eran cuatro `useState` sueltos dentro de `WeekCalendar`, con "Hora de inicio" y
- * "Hora de fin" como dos selects en una grilla de dos columnas y los botones al final.
- * Ahora:
  *   - Es un formulario shadcn (`Form` + react-hook-form + Zod), como el resto del proyecto.
- *   - El horario es **una sola fila** "09:00 → 10:00" con la duración al lado ("1 h"), que es
- *     lo que la persona realmente está eligiendo.
- *   - Orden: Horario · Tipo · Motivo. El pie (Cancelar / Crear reserva) usa
- *     `ResponsiveDialogFooter`, así en el teléfono queda pegado abajo de la hoja.
+ *   - Como el de Google Calendar: arriba **un título** grande y sin caja (lo único obligatorio),
+ *     después el horario en **una sola fila** "09:00 → 10:00 · 1 h" y una **descripción**
+ *     opcional. Cada fila lleva su ícono, así se lee de un vistazo.
+ *   - Ya no pide el «tipo de reserva»: a quien reserva no le sirve para nada (nada del flujo
+ *     depende de él) y se elegía casi siempre el primero de la lista. El servidor le pone el
+ *     tipo por defecto; el catálogo sigue para los eventos.
+ *   - El pie (Cancelar / Crear reserva) usa `ResponsiveDialogFooter`, así en el teléfono queda
+ *     pegado abajo de la hoja.
  *
- * Las reglas de negocio que dependen del reloj (no reservar en el pasado) **no** viven acá: las sigue aplicando `WeekCalendar` en su submit,
- * para que haya un único lugar donde se decide si una reserva es válida.
+ * Las reglas de negocio que dependen del reloj (no reservar en el pasado) **no** viven acá: las
+ * sigue aplicando `WeekCalendar` en su submit, para que haya un único lugar donde se decide si
+ * una reserva es válida.
  */
 
 import { ResponsiveDialogFooter } from "@/components/molecules/responsive-dialog";
@@ -26,6 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -34,9 +38,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { RESERVATION_REASON_MAX } from "@/lib/reservations/user-rules";
+import {
+  RESERVATION_REASON_MAX,
+  RESERVATION_TITLE_MAX,
+} from "@/lib/reservations/user-rules";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight } from "lucide-react";
+import { AlignLeft, ArrowRight, Clock } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
@@ -48,16 +55,20 @@ import {
   timeToMinutes,
 } from "./calendar-utils";
 
-/** Validación del formulario: horas "HH:mm" con fin posterior al inicio, tipo y motivo. */
+/** Validación del formulario: horas "HH:mm" con fin posterior al inicio, título y descripción. */
 export const bookingFormSchema = z
   .object({
     startTime: z.string().regex(/^\d{2}:\d{2}$/),
     endTime: z.string().regex(/^\d{2}:\d{2}$/),
-    eventType: z.string().min(1, "Elegí un tipo de reserva"),
+    title: z
+      .string()
+      .trim()
+      .min(1, "Poné un título para la reserva")
+      .max(RESERVATION_TITLE_MAX, `Máximo ${RESERVATION_TITLE_MAX} caracteres`),
+    // Opcional: lo obligatorio es el título.
     reason: z
       .string()
       .trim()
-      .min(1, "Contanos para qué es la reserva")
       .max(
         RESERVATION_REASON_MAX,
         `Máximo ${RESERVATION_REASON_MAX} caracteres`,
@@ -84,8 +95,7 @@ const TIME_OPTIONS = generateTimeOptions();
 export function BookingForm({
   defaultValues,
   minStartMinutes,
-  eventTypes,
-  reasonLabel,
+  descriptionPlaceholder,
   submitting,
   onSubmit,
   onCancel,
@@ -97,9 +107,8 @@ export function BookingForm({
    * no ofrece horarios anteriores. La validación real sigue en el envío de `WeekCalendar`.
    */
   minStartMinutes?: number;
-  eventTypes: Array<{ value: string; label: string }>;
-  /** Rótulo del campo motivo (cada espacio puede personalizarlo). */
-  reasonLabel?: string;
+  /** Texto de ayuda de la descripción (cada espacio puede personalizarlo). */
+  descriptionPlaceholder?: string;
   submitting: boolean;
   onSubmit: (values: BookingFormValues) => void;
   onCancel: () => void;
@@ -117,7 +126,7 @@ export function BookingForm({
   }, [
     defaultValues.startTime,
     defaultValues.endTime,
-    defaultValues.eventType,
+    defaultValues.title,
     defaultValues.reason,
   ]);
 
@@ -165,109 +174,21 @@ export function BookingForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Horario: una fila "inicio → fin · duración". */}
-        <fieldset className="space-y-2">
-          <legend className="text-sm leading-none font-medium">Horario</legend>
-          <div className="flex flex-wrap items-start gap-2">
-            <FormField
-              control={form.control}
-              name="startTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="sr-only">Hora de inicio</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[6.5rem]">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {startOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <ArrowRight
-              className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <FormField
-              control={form.control}
-              name="endTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="sr-only">Hora de fin</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-[6.5rem]">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {endOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {duration && (
-              <span
-                className="mt-2.5 text-sm text-muted-foreground"
-                aria-live="polite"
-              >
-                · {duration}
-              </span>
-            )}
-          </div>
-        </fieldset>
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {/* Título: grande y sin caja, como en Google Calendar. */}
         <FormField
           control={form.control}
-          name="eventType"
+          name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tipo de reserva</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger className="w-full sm:w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {eventTypes.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="reason"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{reasonLabel || "Motivo de la reserva"}</FormLabel>
+              <FormLabel className="sr-only">Título</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Describe el propósito de la reserva..."
-                  rows={3}
-                  className="max-h-60"
+                <Input
+                  autoFocus
+                  autoComplete="off"
+                  placeholder="Agregá un título"
+                  maxLength={RESERVATION_TITLE_MAX}
+                  className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-lg font-medium shadow-none focus-visible:border-ring focus-visible:ring-0 dark:bg-transparent"
                   {...field}
                 />
               </FormControl>
@@ -275,6 +196,107 @@ export function BookingForm({
             </FormItem>
           )}
         />
+
+        {/* Horario: una fila "inicio → fin · duración". */}
+        <div className="flex items-start gap-3">
+          <Clock
+            className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <fieldset className="min-w-0 flex-1">
+            <legend className="sr-only">Horario</legend>
+            <div className="flex flex-wrap items-start gap-2">
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="sr-only">Hora de inicio</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[6.5rem]">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {startOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <ArrowRight
+                className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="sr-only">Hora de fin</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-[6.5rem]">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {endOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {duration && (
+                <span
+                  className="mt-2.5 text-sm text-muted-foreground"
+                  aria-live="polite"
+                >
+                  · {duration}
+                </span>
+              )}
+            </div>
+          </fieldset>
+        </div>
+
+        {/* Descripción: opcional. */}
+        <div className="flex items-start gap-3">
+          <AlignLeft
+            className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <FormField
+            control={form.control}
+            name="reason"
+            render={({ field }) => (
+              <FormItem className="min-w-0 flex-1">
+                <FormLabel className="sr-only">Descripción</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder={
+                      descriptionPlaceholder ||
+                      "Agregá una descripción (opcional)"
+                    }
+                    rows={3}
+                    className="max-h-60 resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <ResponsiveDialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>

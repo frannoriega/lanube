@@ -44,7 +44,7 @@ abajo); comparten versión y changelog (`src/assets/changelog/1.4.0.md`).
 
 ### Calendario: lo que se hizo
 
-- **Páginas:** `/admin/calendar` (ítem «Calendario» en la sección «Reservas» del menú, permiso
+- **Páginas:** `/admin/calendar` (ítem «Calendario» del menú, justo bajo «Panel» y sin sección propia —no pertenece a «Reservas»—, permiso
   `reservations:manage`, guarda de página con `requirePagePermission`) y `/user/calendar` (ítem
   «Calendario» del menú de usuario; sesión y políticas las resuelve el layout de `/user`). Miga
   `calendar: "Calendario"` en `SEGMENT_LABELS`, con test.
@@ -229,3 +229,5 @@ su versión imprimible. Y, si se puede, que el Excel se pueda ir «sumando» a u
 - **No se probó** en Excel de Microsoft ni en Google Sheets reales (no hay acceso desde acá): el
   paquete sigue el esquema de OOXML y lo abren ExcelJS y LibreOffice. Vale la pena abrir un
   archivo exportado en ambos antes de publicar.
+
+> **Actualización (milestone 35, 2026-11-18):** el detalle de un ítem ya no es un modal sino un popover anclado a la tarjeta; las tarjetas muestran título + espacio (sin horario) y «+N más» del mes lleva a la vista de día. Ver el milestone 35.

@@ -4,7 +4,6 @@ import {
   calendarRangeError,
   closureItems,
   maintenanceItems,
-  mergeBusy,
 } from "./activity";
 
 // Hora de Argentina = UTC-3.
@@ -32,28 +31,6 @@ describe("rango del calendario", () => {
     );
     expect(calendarRangeError(5, 3, now)).not.toBeNull();
     expect(calendarRangeError(NaN, 3, now)).not.toBeNull();
-  });
-});
-
-describe("mergeBusy", () => {
-  it("une por espacio lo que se superpone o se toca, sin datos de la reserva", () => {
-    const items = mergeBusy([
-      { spaceId: "s1", spaceName: "Cowork", startMs: 10, endMs: 20 },
-      { spaceId: "s1", spaceName: "Cowork", startMs: 20, endMs: 30 },
-      { spaceId: "s1", spaceName: "Cowork", startMs: 15, endMs: 25 },
-      { spaceId: "s1", spaceName: "Cowork", startMs: 40, endMs: 50 },
-      { spaceId: "s2", spaceName: "Lab", startMs: 12, endMs: 18 },
-    ]);
-    expect(items.map((i) => [i.spaceId, i.startMs, i.endMs])).toEqual([
-      ["s1", 10, 30],
-      ["s2", 12, 18],
-      ["s1", 40, 50],
-    ]);
-    for (const i of items) {
-      expect(i).toMatchObject({ kind: "busy", title: "Ocupado" });
-      expect(i).not.toHaveProperty("requester");
-      expect(i).not.toHaveProperty("status");
-    }
   });
 });
 

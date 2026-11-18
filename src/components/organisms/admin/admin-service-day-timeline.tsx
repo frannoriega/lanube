@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import { reservationStatusLabel } from "@/components/atoms/status-badge";
 import { cn } from "@/lib/utils";
 import { formatTime, formatTimeShort } from "@/lib/utils/date";
@@ -15,6 +15,7 @@ import {
   worstLoadForPendingReservation,
 } from "@/lib/admin/admin-timeline";
 import { useMemo } from "react";
+import { ReservationPopover } from "@/components/organisms/admin/reservation-popover";
 import { Separator } from "@/components/ui/separator";
 
 const LABEL_W = 132;
@@ -38,8 +39,8 @@ function reservationStatusKey(
   }
   return "OTHER";
 }
-const TRACK_H = 32;
-const BLOCK_H = 24;
+const TRACK_H = 36;
+const BLOCK_H = 28;
 const BLOCK_TOP = 4;
 
 function uniqueResources(items: AdminReservationListResult[]) {
@@ -207,14 +208,22 @@ export function AdminServiceDayTimeline({
   reservationsForCapacity,
   pendingOnly,
   showResourceTypeLabels = false,
-  onSelectReservation,
+  processing,
+  onAction,
 }: {
   dateKey: string;
   reservationsForCapacity: AdminReservationListResult[];
   pendingOnly: boolean;
   /** When true, show service type under each space name (hall header). */
   showResourceTypeLabels?: boolean;
-  onSelectReservation: (r: AdminReservationListResult) => void;
+  /** Id de la reserva que se está procesando (deshabilita sus botones). */
+  processing: string | null;
+  /** Aprobar / rechazar desde el detalle que se abre al tocar un bloque. */
+  onAction: (
+    id: string,
+    action: "APPROVED" | "REJECTED",
+    reason?: string,
+  ) => void;
 }) {
   const slotCount = timelineSlotCount();
   const gridWidth = slotCount * SLOT_WIDTH_PX;
@@ -482,33 +491,50 @@ export function AdminServiceDayTimeline({
                             const titleShort = `${formatTime(new Date(res.startTime))} – ${formatTime(new Date(res.endTime))}`;
 
                             return (
-                              <button
+                              <ReservationPopover
                                 key={res.id}
-                                type="button"
-                                className={cn(
-                                  "absolute z-[1] overflow-hidden rounded px-0 text-left",
-                                  blockVisualClass(
-                                    res,
-                                    pendingLoad,
-                                    !pendingOnly,
-                                  ),
-                                )}
-                                style={{
-                                  left: `${leftPct}%`,
-                                  width: `${widthPct}%`,
-                                  minWidth: widthPct < 8 ? 24 : undefined,
-                                  top,
-                                  height: BLOCK_H,
-                                  ...(st === "APPROVED" ||
-                                  ((st === "REJECTED" || st === "CANCELLED") &&
-                                    !pendingOnly)
-                                    ? { borderStyle: "solid" as const }
-                                    : {}),
-                                }}
-                                aria-label={aria}
-                                title={titleShort}
-                                onClick={() => onSelectReservation(res)}
-                              />
+                                reservation={res}
+                                sameDayReservations={reservationsForCapacity}
+                                processing={processing}
+                                onAction={onAction}
+                              >
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "absolute z-[1] flex items-center gap-1.5 overflow-hidden rounded px-1.5 text-left text-[11px] leading-none whitespace-nowrap",
+                                    "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                                    blockVisualClass(
+                                      res,
+                                      pendingLoad,
+                                      !pendingOnly,
+                                    ),
+                                  )}
+                                  style={{
+                                    left: `${leftPct}%`,
+                                    width: `${widthPct}%`,
+                                    minWidth: widthPct < 8 ? 28 : undefined,
+                                    top,
+                                    height: BLOCK_H,
+                                    ...(st === "APPROVED" ||
+                                    ((st === "REJECTED" ||
+                                      st === "CANCELLED") &&
+                                      !pendingOnly)
+                                      ? { borderStyle: "solid" as const }
+                                      : {}),
+                                  }}
+                                  aria-label={aria}
+                                  title={`${res.title || "Sin título"} · ${bucket.displayName} · ${titleShort}`}
+                                >
+                                  {/* Título y persona dentro del bloque; lo que no entra se corta
+                                      (el detalle completo está en el popover). */}
+                                  <span className="min-w-0 truncate font-semibold">
+                                    {res.title || "Sin título"}
+                                  </span>
+                                  <span className="min-w-0 truncate opacity-75">
+                                    {bucket.displayName}
+                                  </span>
+                                </button>
+                              </ReservationPopover>
                             );
                           })}
                         </div>

@@ -11,22 +11,44 @@ import {
 import { BOOKING_WINDOW_MESSAGES, checkBookingWindow } from "./booking-window";
 
 /**
- * Largo máximo del motivo de una reserva. Lo usan el formulario de la web (`BookingForm`), la
- * tool MCP y {@link validateReservationReason} en el servidor: antes solo lo limitaba el
- * formulario, y un POST directo a `/api/resources/[spaceId]` guardaba un motivo de cualquier
- * tamaño (auditoría de restricciones de UI, milestone 26).
+ * Largo máximo de la **descripción** de una reserva (la columna `reason`). Lo usan el
+ * formulario de la web (`BookingForm`), la tool MCP y {@link validateReservationReason} en el
+ * servidor: antes solo lo limitaba el formulario, y un POST directo a
+ * `/api/resources/[spaceId]` guardaba un texto de cualquier tamaño (auditoría de restricciones
+ * de UI, milestone 26).
  */
 export const RESERVATION_REASON_MAX = 1000;
 
+/** Largo máximo del título de una reserva (milestone 35): es lo que se lee en el calendario. */
+export const RESERVATION_TITLE_MAX = 80;
+
 /**
- * Valida el motivo ya recortado. Devuelve el mensaje en castellano o `null` si es válido.
- * Es la misma regla que el schema del formulario: no vacío y hasta {@link RESERVATION_REASON_MAX}.
+ * Valida la descripción ya recortada. Devuelve el mensaje en castellano o `null` si es válida.
+ * Desde el milestone 35 la descripción es **opcional** (lo obligatorio es el título): vacía es
+ * válida, y solo se rechaza pasarse de {@link RESERVATION_REASON_MAX}.
  */
 export function validateReservationReason(reason: string): string | null {
-  if (!reason) return "Faltan campos requeridos";
   if (reason.length > RESERVATION_REASON_MAX)
-    return `El motivo admite hasta ${RESERVATION_REASON_MAX} caracteres`;
+    return `La descripción admite hasta ${RESERVATION_REASON_MAX} caracteres`;
   return null;
+}
+
+/** Valida el título ya recortado: obligatorio y hasta {@link RESERVATION_TITLE_MAX}. */
+export function validateReservationTitle(title: string): string | null {
+  if (!title) return "Falta el título de la reserva";
+  if (title.length > RESERVATION_TITLE_MAX)
+    return `El título admite hasta ${RESERVATION_TITLE_MAX} caracteres`;
+  return null;
+}
+
+/**
+ * Título a partir de una descripción: su primera línea, recortada. Es lo que se usa cuando un
+ * cliente que no conoce el título (el conector MCP anterior al milestone 35, una API vieja)
+ * manda solo el texto de la reserva.
+ */
+export function titleFromDescription(description: string): string {
+  const firstLine = description.trim().split(/\r?\n/)[0] ?? "";
+  return firstLine.slice(0, RESERVATION_TITLE_MAX).trim();
 }
 
 /**

@@ -4,7 +4,7 @@ import { StatusIcon } from "@/components/atoms/status-icon";
 import { ReservationInfo } from "@/components/molecules/reservation-info";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import { CheckCircle, XCircle } from "lucide-react";
 import React from "react";
 

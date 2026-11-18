@@ -234,6 +234,7 @@ export function registerReservationTools(
         select: {
           id: true,
           isRecurring: true,
+          title: true,
           space: { select: { name: true } },
         },
       });
@@ -253,6 +254,7 @@ export function registerReservationTools(
             status_label: STATUS_LABELS[r.status] ?? r.status,
             recurring: m?.isRecurring ?? false,
             ...(m?.isRecurring ? { occurrence_start: toVenueIso(start) } : {}),
+            title: m?.title || r.reason,
             reason: r.reason,
           };
         }),
@@ -272,11 +274,21 @@ export function registerReservationTools(
         space_id: z.string().describe("Id del espacio (de list_spaces)"),
         start: z.string().describe(`Inicio. ${ISO_FORMAT_HINT}`),
         end: z.string().describe(`Fin, el mismo día. ${ISO_FORMAT_HINT}`),
-        reason: z
+        title: z
           .string()
           .min(3)
+          .max(80)
+          .optional()
+          .describe(
+            "Título corto de la reserva (lo que se ve en el calendario), tal como lo diría la persona. Si falta se toma de reason.",
+          ),
+        reason: z
+          .string()
           .max(500)
-          .describe("Motivo de la reserva, tal como lo diría la persona"),
+          .optional()
+          .describe(
+            "Descripción de la reserva (opcional). Si no mandás title, la primera línea hace de título.",
+          ),
         reservation_type: z
           .string()
           .optional()
@@ -300,6 +312,7 @@ export function registerReservationTools(
         spaceId: args.space_id,
         startMs,
         endMs,
+        title: args.title,
         reason: args.reason,
         eventType: args.reservation_type,
         origin: { clientName: user.clientName },

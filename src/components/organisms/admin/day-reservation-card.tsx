@@ -16,7 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import {
   peakOccupancyRatio,
   spacesInConflictCount,
@@ -50,7 +50,8 @@ export function DayReservationCard({
   reservationsForDay,
   pendingOnly,
   onPendingOnlyChange,
-  onSelectReservation,
+  processing,
+  onAction,
   disabled = false,
   className,
   showResourceTypeLabels = false,
@@ -63,7 +64,12 @@ export function DayReservationCard({
   reservationsForDay: AdminReservationListResult[];
   pendingOnly: boolean;
   onPendingOnlyChange: (pendingOnly: boolean) => void;
-  onSelectReservation: (reservation: AdminReservationListResult) => void;
+  processing: string | null;
+  onAction: (
+    id: string,
+    action: "APPROVED" | "REJECTED",
+    reason?: string,
+  ) => void;
   disabled?: boolean;
   className?: string;
   /** Show each row's space name — turn on when the list spans multiple spaces (e.g. "All"). */
@@ -193,7 +199,8 @@ export function DayReservationCard({
               reservationsForCapacity={reservationsForDay}
               pendingOnly={pendingOnly}
               showResourceTypeLabels={showResourceTypeLabels}
-              onSelectReservation={onSelectReservation}
+              processing={processing}
+              onAction={onAction}
             />
           </CardContent>
         </AccordionContent>

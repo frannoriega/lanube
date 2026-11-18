@@ -1,11 +1,11 @@
-import type { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import type { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import { TZDate } from "@date-fns/tz";
 import { ADMIN_TIMEZONE } from "@/lib/admin/admin-timezone";
 
 export const TIMELINE_FIRST_HOUR = 8;
 export const TIMELINE_LAST_HOUR = 20;
 export const SLOT_MINUTES = 15;
-export const SLOT_WIDTH_PX = 16;
+export const SLOT_WIDTH_PX = 20;
 
 const SLOT_MS = SLOT_MINUTES * 60 * 1000;
 

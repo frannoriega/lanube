@@ -40,6 +40,9 @@ export interface CreateReservationInput {
   reservableId: string;
   spaceId: string;
   eventType: EventType;
+  /** Título corto que se ve en el calendario (milestone 35). */
+  title?: string;
+  /** Descripción (la columna `reason`); puede ser "". */
   reason: string;
   startTime: Date;
   endTime: Date;
@@ -165,21 +168,32 @@ export async function createReservation(
     const recurrenceEndMs = data.recurrenceEnd
       ? dateToUnixMs(data.recurrenceEnd)
       : null;
-    await prisma.$executeRaw`
-      SELECT create_reservation(
-        ${reservationId}::text,
-        ${data.reservableType}::reservable_types,
-        ${data.reservableId}::text,
-        ${data.spaceId}::text,
-        ${data.eventType}::text,
-        ${data.reason}::text,
-        ${startMs}::bigint,
-        ${endMs}::bigint,
-        ${Boolean(data.isRecurring ?? false)}::boolean,
-        ${data.rrule || null}::text,
-        ${recurrenceEndMs}::bigint
-      )
-    `;
+    // El título se escribe en la misma transacción que la reserva en lugar de sumarle un
+    // parámetro a `create_reservation()` (milestone 35): es un dato de presentación que ninguna
+    // regla de capacidad mira, y así no hay que recrear la función SQL.
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        SELECT create_reservation(
+          ${reservationId}::text,
+          ${data.reservableType}::reservable_types,
+          ${data.reservableId}::text,
+          ${data.spaceId}::text,
+          ${data.eventType}::text,
+          ${data.reason}::text,
+          ${startMs}::bigint,
+          ${endMs}::bigint,
+          ${Boolean(data.isRecurring ?? false)}::boolean,
+          ${data.rrule || null}::text,
+          ${recurrenceEndMs}::bigint
+        )
+      `;
+      if (data.title) {
+        await tx.reservation.update({
+          where: { id: reservationId },
+          data: { title: data.title },
+        });
+      }
+    });
   } catch (error) {
     if (error instanceof Error) {
       // Translate known SQL errors into user-safe DomainErrors (surfaced as 4xx).

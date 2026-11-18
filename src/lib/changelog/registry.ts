@@ -108,6 +108,14 @@ export const RELEASES = [
       "Un calendario con todo lo que pasa en La Nube, por día, 3 días, semana o mes. Y los reportes se pueden descargar en Excel (con gráficos) o en CSV, eligiendo qué incluir; el reporte de cada evento también se puede imprimir.",
     file: "1.4.0.md",
   },
+  {
+    version: "1.5.0",
+    date: "2026-11-18",
+    title: "Reservas con título y calendarios más claros",
+    summary:
+      "Cada reserva ahora tiene un título y una descripción opcional. En los calendarios las tarjetas muestran solo el título, y el detalle se abre al tocarlas, sin ventanas encima de la pantalla.",
+    file: "1.5.0.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

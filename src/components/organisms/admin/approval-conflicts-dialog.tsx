@@ -106,8 +106,14 @@ function ConflictCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-medium">
-            {conflict.ownerName ?? conflict.reservationTypeName}
+            {conflict.title ||
+              (conflict.ownerName ?? conflict.reservationTypeName)}
           </p>
+          {conflict.title && conflict.ownerName ? (
+            <p className="text-xs text-muted-foreground">
+              {conflict.ownerName}
+            </p>
+          ) : null}
           {conflict.institution ? (
             <p className="text-xs text-muted-foreground">
               {conflict.institution}
@@ -166,13 +172,13 @@ function ConflictCard({
       </div>
 
       <div>
-        <p className="text-xs text-muted-foreground">Motivo</p>
+        <p className="text-xs text-muted-foreground">Descripción</p>
         {reason ? (
           <p className="mt-0.5 max-h-20 overflow-y-auto rounded border border-border/60 bg-muted/30 px-2 py-1 text-xs break-words whitespace-pre-wrap">
             {reason}
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground">Sin motivo</p>
+          <p className="text-xs text-muted-foreground">Sin descripción</p>
         )}
       </div>
     </li>

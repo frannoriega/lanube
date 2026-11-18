@@ -7,8 +7,8 @@ import { NextRequest } from "next/server";
 
 /**
  * Calendario de actividades de un usuario (milestone 32): `?from=<ms>&to=<ms>`. Sus reservas,
- * los eventos publicados, los días cerrados y lo que reservaron otros como «Ocupado» — esta
- * ruta **nunca** devuelve quién reservó ni el motivo de una reserva ajena
+ * los eventos publicados y los días cerrados. Las reservas ajenas **no se devuelven** (ni
+ * como «Ocupado»: milestone 35); para ver la disponibilidad está el calendario de cada espacio
  * (`getActivityCalendar`, vista `user`).
  */
 export async function GET(request: NextRequest) {

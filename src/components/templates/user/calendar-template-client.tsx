@@ -12,25 +12,16 @@ import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
 import { LayoutGrid } from "lucide-react";
 
-interface EventTypeOption {
-  value: string;
-  label: string;
-}
-
 export function CalendarTemplateClient({
   title,
   description,
   iconName,
   apiEndpoint,
-  eventTypes,
-  defaultEventType,
 }: {
   title: string;
   description: string;
   iconName?: string;
   apiEndpoint: string;
-  eventTypes: EventTypeOption[];
-  defaultEventType: string;
 }) {
   const Icon = iconName ? getSpaceIcon(iconName) : LayoutGrid;
   // Provided server-side by the layout — available on first render.
@@ -62,14 +53,7 @@ export function CalendarTemplateClient({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <WeekCalendar
-            apiEndpoint={apiEndpoint}
-            eventTypes={eventTypes}
-            defaultEventType={defaultEventType}
-            title="Nueva Reserva"
-            description="Motivo de la reserva"
-            userId={user?.id}
-          />
+          <WeekCalendar apiEndpoint={apiEndpoint} userId={user?.id} />
         </CardContent>
       </Card>
     </div>

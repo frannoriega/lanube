@@ -1,4 +1,4 @@
-import type { AdminReservationListResult } from "@/components/templates/admin/dashboard-recent-reservations";
+import type { AdminReservationListResult } from "@/lib/api/admin-reservations";
 import { describe, expect, it } from "vitest";
 import {
   TIMELINE_FIRST_HOUR,
@@ -25,6 +25,7 @@ function baseReservation(
   },
 ): AdminReservationListResult {
   return {
+    title: "",
     reason: "",
     status: "PENDING",
     createdAt: 0,

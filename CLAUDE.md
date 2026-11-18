@@ -1171,6 +1171,40 @@ Full design, decisions and verification: `docs/milestones/milestones-32-activity
 - `reports/print.css` se carga en el `layout.tsx` de la sección: aplica a `/admin/reports` y al
   reporte de cada evento (clase `admin-report`).
 
+### 23. Reservation title, calmer lists & no-modal details (milestone 35, v1.5.0)
+
+Full design and decisions: `docs/milestones/milestones-35-reservation-title-and-calmer-ui.md`.
+**Milestone status at a glance: `docs/milestones/STATUS.md`** — update it whenever a milestone is created or
+changes status (`seed` / `promoted` / `done` / `parked` / `dropped`; a `dropped` one carries its reason).
+
+- **A reservation has a `title` (required, ≤ 80) and a description (optional, ≤ 1000) — the description is the
+  `reason` column** (not renamed: SQL functions and the ledger read it). Rules in `reservations/user-rules.ts`;
+  display name = `title || reason` for rows from before the title. The title is written in the same transaction as
+  `create_reservation()` (no SQL signature change). MCP `request_reservation` still works with only `reason`
+  (`titleFromDescription`). A new read of reservations must select `title`.
+- **The booking form no longer asks for a «tipo de reserva»**; the server defaults it (`preferredTypeCode`). The
+  catalog stays for events.
+- **Admin dashboard = one section per space** (`templates/admin/admin-space-board.tsx`): this week + next
+  (navigable by weeks), days as cards (count, pending, «Se pisan»), click → day Gantt
+  (`AdminServiceDayTimeline`, blocks show title + person) → click a block → `ReservationPopover`
+  (`organisms/admin/reservation-popover.tsx`, approve/reject inside). No side drawer anywhere; the admin
+  needs overlaps in view to decide, so it is **not** a flat list like the user's.
+- **Don't open a modal to show a detail.** Details open in a **popover anchored to the card**
+  (`OccurrenceDetails`, `ItemPopover`) or **in the row** (`molecules/expandable-list.tsx`: one container with
+  dividers, never a card inside a card). Modals are kept for _creating_ from a grid slot and for confirming an
+  action with side effects. Reuse `ReservationDecisionActions` for approve/reject in place.
+- **The user's dashboard has three sections** — Eventos / Reservas / Reservas pasadas (paginated full history),
+  all per occurrence (`db/userActivity.ts`). **The user's activity calendar shows only their reservations and
+  published events** — other people's reservations are never queried (no «Ocupado»); admins get **occupancy chips** («Coworking 12/20
+  · 2 pend.», `lib/calendar/occupancy.ts`: with «Todos los espacios» **one block per time segment for the whole building** —
+  «N reservas / M pend.», no per-space lanes, so it scales with any number of spaces; per-space breakdown is in
+  its popover. With one space selected: per-space segments, a lone reservation stays a card) in the
+  time views, **per-day counts** in the month view, and Eventos/Pendientes/Aprobadas filters. A space is a lane
+  only while occupied — spaces are configurable and can be many, so never one fixed column per space.
+- **Calendar cards: title (+ space) only, top-aligned** (`flex flex-col items-start justify-start` — a `<button>`
+  centers vertically by default). Colors are the status; `occurrence-style.ts` is the single source for the space
+  calendar's cards and its `CalendarLegend`. Exact time lives in the detail.
+
 ## Testing & Seeding
 
 **Vitest Configuration** (`vitest.config.ts`):

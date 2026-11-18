@@ -1,5 +1,7 @@
 # Milestones
 
+> **Atajo:** [`STATUS.md`](./STATUS.md) lista todos con su estado (`seed` / `promoted` / `done` / `parked` / `dropped`). Consultalo primero y mantenelo al día.
+
 Forward-looking feature docs, one per milestone. Each doc states the use case,
 what needs building, and an implementation plan — not a task-by-task
 execution plan (see `docs/superpowers/plans/` for that level of detail once a
@@ -47,3 +49,6 @@ See [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) for the running list of undef
 - [`milestones-32-activity-calendar.md`](./milestones-32-activity-calendar.md) — calendario de solo lectura con todo lo que pasa en La Nube, vistas día / 3 días / semana / mes, navegable hasta fin del año siguiente. Admins ven todo; usuarios ven lo suyo, los eventos y lo ajeno como «Ocupado». **Implementado (2026-11-17), versión 1.4.0**, junto con la **exportación de reportes** a Excel (con gráficos nativos que siguen a las celdas) y CSV, eligiendo bloques y eventos, en el momento (sin cola: ~0.5 s); pensada para sumarse a una planilla propia (hojas con nombre propio, cada fila con su período o evento). La página de cada evento suma imprimir y exportar.
 - [`milestones-33-multi-space-events.md`](./milestones-33-multi-space-events.md) — eventos en varios espacios o en todo el edificio. **Postergado** por el usuario; registra su idea (una tabla de bloqueos de edificio consultada primero) y la relación con los días cerrados.
 - [`milestones-34-participant-field-and-group-check-in.md`](./milestones-34-participant-field-and-group-check-in.md) — tipo de campo «Participante» (nombre, apellido, DNI, email) para formularios y grupos, para hacer check-in de cada integrante por separado. **Postergado.**
+- [`milestones-35-reservation-title-and-calmer-ui.md`](./milestones-35-reservation-title-and-calmer-ui.md) — las reservas ganan un **título** (obligatorio; lo que se lee en los calendarios) y su motivo pasa a ser una **descripción** opcional; se saca el «tipo de reserva» del formulario (el catálogo queda para eventos); las tarjetas de ambos calendarios muestran solo el título (o título + espacio) alineado arriba, con leyenda de colores, y el detalle abre en un **popover** anclado en lugar de un modal; «Reservas recientes» (usuario y admin) pasan a filas que se abren en el lugar; el Calendario del admin sube al menú principal. **Implementado (2026-11-18)**, versión 1.5.0.
+- [`milestones-36-friends-and-invitations.md`](./milestones-36-friends-and-invitations.md) — amistades entre personas y un directorio, para invitar gente a una reserva (como Google Calendar). **Seed**; va junto con el milestone 6.
+- [`milestones-37-ideas-platform.md`](./milestones-37-ideas-platform.md) — plataforma para intercambiar ideas y propuestas (entre amigos, equipos, organizaciones o público) con votación. **Seed**; absorbe o reemplaza al milestone 7.

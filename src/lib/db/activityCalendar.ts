@@ -2,7 +2,6 @@ import { nowMs } from "@/lib/clock";
 import {
   closureItems,
   maintenanceItems,
-  mergeBusy,
   type ActivityCalendarData,
   type CalendarItem,
 } from "@/lib/calendar/activity";
@@ -20,9 +19,11 @@ import { prisma } from "@/lib/prisma";
  * si **empieza** en la ventana. Solo pendientes y aprobadas: lo rechazado o cancelado no
  * ocupa nada.
  *
- * **Privacidad (vista de usuario):** de las reservas ajenas no sale nombre, motivo, estado ni
- * id de reserva — se unen en bloques «Ocupado» por espacio (`mergeBusy`). Los eventos no
- * publicados se ven igual que en el calendario de reservas: ocupan, sin nombre.
+ * **Vista de usuario (milestone 35):** solo sus reservas y los eventos publicados (más los días
+ * cerrados). Las reservas ajenas **no se piden siquiera** a la base, y los eventos no publicados
+ * no se muestran: antes llegaban como «Ocupado» y, con todos los espacios a la vez, un mismo
+ * horario juntaba un bloque por espacio y por cupo, ilegible. Para ver la disponibilidad se usa el
+ * calendario de cada espacio.
  */
 
 interface OccurrenceRow {
@@ -30,19 +31,29 @@ interface OccurrenceRow {
   occurrence_start_time: bigint;
   occurrence_end_time: bigint;
   status: "PENDING" | "APPROVED";
+  title: string;
   reason: string;
   reservable_type: "USER" | "TEAM" | "ORGANIZATION" | "EVENT";
   reservable_id: string;
   space_id: string | null;
   space_name: string | null;
+  space_capacity: number | null;
+  actor_size: number;
   requester: string | null;
 }
 
-function loadOccurrences(fromMs: number, toMs: number, spaceId?: string) {
+function loadOccurrences(
+  fromMs: number,
+  toMs: number,
+  spaceId?: string,
+  onlyUserId?: string,
+) {
   return prisma.$queryRaw<OccurrenceRow[]>`
     SELECT o.reservation_id, o.occurrence_start_time, o.occurrence_end_time,
-           r.status::text AS status, r.reason, r.reservable_type::text AS reservable_type,
+           r.status::text AS status, r.title, r.reason, r.reservable_type::text AS reservable_type,
            r.reservable_id, r.space_id, s.name AS space_name,
+           s.capacity AS space_capacity,
+           get_actor_size(r.reservable_type, r.reservable_id) AS actor_size,
            CASE r.reservable_type
              WHEN 'USER' THEN ru.name || ' ' || ru.last_name
              WHEN 'TEAM' THEN 'Equipo ' || t.name
@@ -59,6 +70,9 @@ function loadOccurrences(fromMs: number, toMs: number, spaceId?: string) {
     LEFT JOIN organizations org
       ON r.reservable_type = 'ORGANIZATION' AND org.id = r.reservable_id
     WHERE r.status IN ('PENDING', 'APPROVED')
+      AND (${onlyUserId ?? null}::text IS NULL
+        OR r.reservable_type = 'EVENT'
+        OR (r.reservable_type = 'USER' AND r.reservable_id = ${onlyUserId ?? null}::text))
     ORDER BY o.occurrence_start_time`;
 }
 
@@ -69,6 +83,8 @@ async function loadEvents(ids: string[]) {
     select: {
       id: true,
       name: true,
+      summary: true,
+      imageUrl: true,
       status: true,
       deletedAt: true,
       capacity: true,
@@ -126,14 +142,16 @@ function eventItem(
   if (!e || e.deletedAt != null) return null;
   const isPublic = e.status === "PUBLISHED";
   if (viewer.kind === "user" && !isPublic) {
-    // Ocupa el espacio, pero no se anuncia (igual que «Reservado para un evento»).
-    return { ...base, kind: "busy", title: "Ocupado" };
+    // No se anuncia: no se muestra. (El calendario del espacio sí lo marca como ocupado.)
+    return null;
   }
   const open = isPublic && registrationOpen(e, now);
   return {
     ...base,
     kind: "event",
     title: e.name,
+    description: e.summary?.trim() || undefined,
+    imageUrl: e.imageUrl ?? undefined,
     eventId: e.id,
     eventStatus: viewer.kind === "admin" ? e.status : undefined,
     registrationOpen: open,
@@ -159,7 +177,12 @@ export async function getActivityCalendar(
   const now = nowMs();
   const spaceId = viewer.kind === "admin" ? viewer.spaceId : undefined;
   const [rows, closures, windows] = await Promise.all([
-    loadOccurrences(fromMs, toMs, spaceId),
+    loadOccurrences(
+      fromMs,
+      toMs,
+      spaceId,
+      viewer.kind === "user" ? viewer.registeredUserId : undefined,
+    ),
     getActiveClosuresForWindow(fromMs, toMs),
     viewer.kind === "admin"
       ? prisma.maintenanceWindow.findMany({
@@ -178,26 +201,11 @@ export async function getActivityCalendar(
   ]);
 
   const items: CalendarItem[] = [];
-  const othersBusy: {
-    spaceId: string;
-    spaceName: string;
-    startMs: number;
-    endMs: number;
-  }[] = [];
   for (const r of rows) {
     if (r.reservable_type === "EVENT") {
       const item = eventItem(r, events.get(r.reservable_id), viewer, now);
       if (!item) continue;
-      if (item.kind === "busy" && r.space_id) {
-        othersBusy.push({
-          spaceId: r.space_id,
-          spaceName: r.space_name ?? "",
-          startMs: item.startMs,
-          endMs: item.endMs,
-        });
-      } else {
-        items.push(item);
-      }
+      items.push(item);
       continue;
     }
     const startMs = Number(r.occurrence_start_time);
@@ -206,34 +214,30 @@ export async function getActivityCalendar(
       viewer.kind === "user" &&
       r.reservable_type === "USER" &&
       r.reservable_id === viewer.registeredUserId;
-    if (viewer.kind === "user" && !own) {
-      if (r.space_id) {
-        othersBusy.push({
-          spaceId: r.space_id,
-          spaceName: r.space_name ?? "",
-          startMs,
-          endMs,
-        });
-      }
-      continue;
-    }
+    // Defensa en profundidad: la consulta ya filtra, pero una reserva ajena nunca sale.
+    if (viewer.kind === "user" && !own) continue;
     items.push({
       id: `${r.reservation_id}:${r.occurrence_start_time}`,
       kind: "reservation",
       startMs,
       endMs,
       allDay: false,
-      title: r.reason,
+      // Las reservas anteriores al título lo toman de su motivo.
+      title: r.title || r.reason,
+      description: r.reason.trim() || undefined,
       spaceId: r.space_id ?? undefined,
       spaceName: r.space_name ?? undefined,
       status: r.status,
       own: own || undefined,
       requester:
         viewer.kind === "admin" ? (r.requester ?? undefined) : undefined,
+      // Para los chips de ocupación del admin (milestone 35): nunca viajan al usuario.
+      actorSize: viewer.kind === "admin" ? Number(r.actor_size) : undefined,
+      capacity:
+        viewer.kind === "admin" ? (r.space_capacity ?? undefined) : undefined,
     });
   }
 
-  items.push(...mergeBusy(othersBusy));
   items.push(...closureItems(closures, fromMs, toMs));
   if (viewer.kind === "admin") {
     items.push(

@@ -11,6 +11,9 @@ export interface AdminReservationListResult {
   id: string;
   startTime: number;
   endTime: number;
+  /** Título corto (milestone 35); las reservas anteriores lo toman de su motivo. */
+  title: string;
+  /** La descripción (la columna `reason`); puede ser "". */
   reason: string;
   status: string;
   createdAt: number;

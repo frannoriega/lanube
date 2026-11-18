@@ -7,14 +7,20 @@ import {
   type ReservationWithRelations,
 } from "@/lib/db/reservations";
 import { getActiveClosuresForWindow } from "@/lib/db/closedDays";
-import { getReservationTypeByCode } from "@/lib/db/reservationTypes";
+import {
+  getReservationTypeByCode,
+  listReservationTypeOptions,
+  preferredTypeCode,
+} from "@/lib/db/reservationTypes";
 import { getSpaceById } from "@/lib/db/spaces";
 import { DomainError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { unixMsToDate } from "@/lib/unix-ms";
 import {
   validateAgainstClosures,
+  titleFromDescription,
   validateReservationReason,
+  validateReservationTitle,
   validateUserReservationWindow,
 } from "./user-rules";
 
@@ -43,7 +49,10 @@ export interface RequestUserReservationInput {
   spaceId: string;
   startMs: number;
   endMs: number;
-  reason: string;
+  /** Título corto (milestone 35). Si falta, sale de la primera línea de `reason`. */
+  title?: string | null;
+  /** Descripción opcional (la columna `reason`). */
+  reason?: string | null;
   /** Código de `ReservationType`; si falta, "MEETING" (igual que la web). */
   eventType?: string | null;
   /** Presente cuando la pidió un asistente conectado por MCP (milestone 20). */
@@ -64,16 +73,28 @@ export async function requestUserReservation(
   if (!space || !space.isReservable)
     throw new DomainError("Espacio no encontrado", 404);
 
-  // Mismo largo máximo que el formulario: antes solo lo limitaba la UI.
+  // Mismos largos máximos que el formulario: antes solo los limitaba la UI. El título es lo
+  // obligatorio; la descripción es opcional. Un cliente que solo manda el texto (el conector
+  // MCP anterior al milestone 35) obtiene su título de la primera línea.
   const reason = typeof input.reason === "string" ? input.reason.trim() : "";
   const reasonViolation = validateReservationReason(reason);
   if (reasonViolation) throw new DomainError(reasonViolation);
+  const title =
+    (typeof input.title === "string" ? input.title.trim() : "") ||
+    titleFromDescription(reason);
+  const titleViolation = validateReservationTitle(title);
+  if (titleViolation) throw new DomainError(titleViolation);
 
-  const typeCode =
+  // El formulario ya no pide el tipo (milestone 35): sin uno explícito se usa «Reunión» y, si
+  // un admin la borró del catálogo, el primero que haya.
+  const explicitType =
     typeof input.eventType === "string" && input.eventType
       ? input.eventType
-      : "MEETING";
-  if (!(await getReservationTypeByCode(typeCode)))
+      : null;
+  const typeCode =
+    explicitType ??
+    preferredTypeCode(await listReservationTypeOptions(), "MEETING");
+  if (!typeCode || !(await getReservationTypeByCode(typeCode)))
     throw new DomainError("Tipo de reserva inválido");
 
   const violation = validateUserReservationWindow(
@@ -98,6 +119,7 @@ export async function requestUserReservation(
     reservableId: registeredUserId,
     spaceId: input.spaceId,
     eventType: typeCode,
+    title,
     reason,
     startTime: unixMsToDate(input.startMs),
     endTime: unixMsToDate(input.endMs),

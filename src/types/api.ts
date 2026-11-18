@@ -38,15 +38,7 @@ export interface UserDashboardStats {
   upcomingReservations: number;
   totalTimeThisWeek: number;
   totalTimeThisMonth: number;
-  recentReservations: {
-    id: string;
-    service: string;
-    serviceType: string;
-    startTime: number;
-    endTime: number;
-    status: string;
-    reason: string | null;
-  }[];
+  totalReservations: number;
 }
 
 /** GET /api/admin/checkin/current */
