@@ -53,6 +53,8 @@ cambia el estado de un milestone** (o se crea uno).
 | 35  | Título de reserva y UI más calma          | done     | v1.5.0                                                       |
 | 36  | Amistades, directorio e invitados         | seed     | idea del usuario; con el 6                                   |
 | 37  | Plataforma de ideas con votación          | seed     | idea del usuario; depende del 36                             |
+| 38  | Instrumentación (métricas, trazas, logs)  | seed     | diseño propuesto; esperan decisiones (RAM del VPS, acceso)   |
+| 39  | BI y rutas calientes                      | seed     | diseño propuesto; la capa 2 usa el Grafana del 38            |
 
 ## Ideas descartadas (`dropped`)
 
