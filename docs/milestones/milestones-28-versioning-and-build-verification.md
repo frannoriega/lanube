@@ -215,6 +215,15 @@ Con un build `standalone` real (commit en `APP_COMMIT_SHA`, base descartable com
 4. `npm test` y `npm run release:check`.
 5. Merge a `main`: CI publica la imagen, crea `v<versión>` y el servidor la despliega en su ventana.
 
+## Pasos de versión sin desplegar (2026-11-18)
+
+La guarda compara contra el **último tag publicado**, no contra la entrada anterior del registro. Las
+versiones 1.1.0 a 1.5.0 se hicieron una por cambio pero nunca llegaron a `main` de a una, y el primer
+push falló en CI con «1.0.2 → 1.5.0 no es el siguiente salto». Se plegaron en una sola **1.1.0**
+(registro, `1.1.0.md` unificado, `package.json`): los números intermedios no existieron para nadie.
+Regla práctica: lo que no está desplegado no se versiona por separado; si se acumulan varios cambios,
+un único salto desde el último tag (ver «Fold undeployed fixes»).
+
 ## Fuera de alcance
 
 - Pantalla de superadmin con la versión (el endpoint público alcanza; se puede sumar).

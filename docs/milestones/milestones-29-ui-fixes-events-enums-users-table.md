@@ -1,6 +1,6 @@
 # Milestone 29 — Arreglos de UI: eventos en el calendario, estados legibles y tabla de usuarios
 
-**Estado:** implementado (2026-11-17), versión **1.1.0**.
+**Estado:** implementado (2026-11-17), versión **1.1.0** (la 1.1.0 final también incluye los milestones 30–35, plegados antes de desplegar).
 **Tipo:** calidad. Sin cambios de modelo ni migraciones.
 
 ## Origen

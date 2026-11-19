@@ -1,6 +1,6 @@
 # Milestone 32 — Calendario de actividades
 
-**Estado:** implementado (2026-11-17), versión **1.4.0**, junto con la **exportación de reportes** a Excel y CSV (pedida en la misma sesión; ver «Exportar reportes» abajo). El diseño de arriba es el acordado; lo que cambió al implementar está en «Registro de implementación».
+**Estado:** implementado (2026-11-17), versión **1.1.0** (nació como 1.4.0), junto con la **exportación de reportes** a Excel y CSV (pedida en la misma sesión; ver «Exportar reportes» abajo). El diseño de arriba es el acordado; lo que cambió al implementar está en «Registro de implementación».
 
 ## Caso de uso
 
@@ -38,9 +38,9 @@ entero).
 
 ## Registro de implementación
 
-Implementado el 2026-11-17 en la rama `preview`, sin commit, versión **1.4.0** (MINOR: dos cosas
+Implementado el 2026-11-17 en la rama `preview`, sin commit, versión **1.4.0** en su momento (luego plegada en la **1.1.0**) (MINOR: dos cosas
 nuevas para usar). En el mismo pedido se sumó la **exportación de reportes** (sección propia más
-abajo); comparten versión y changelog (`src/assets/changelog/1.4.0.md`).
+abajo); comparten versión y changelog (`src/assets/changelog/1.1.0.md`).
 
 ### Calendario: lo que se hizo
 

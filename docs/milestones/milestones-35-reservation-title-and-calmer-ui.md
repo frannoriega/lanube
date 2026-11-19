@@ -1,6 +1,6 @@
 # Milestone 35 — Título de reserva y calendarios/listas sin ruido
 
-**Estado:** done (2026-11-18), versión 1.5.0.
+**Estado:** done (2026-11-18), versión 1.1.0 (nació como 1.5.0; ver nota en el milestone 28).
 
 ## Qué pidió el usuario (2026-11-18)
 

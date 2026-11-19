@@ -1,6 +1,6 @@
 # Milestone 30 — Check-in en eventos
 
-**Estado:** implementado (2026-11-17), versión **1.2.0**. El diseño de abajo es el acordado; lo que cambió al implementar está en «Registro de implementación».
+**Estado:** implementado (2026-11-17), versión **1.1.0** (nació como 1.2.0, ver «Versión» abajo). El diseño de abajo es el acordado; lo que cambió al implementar está en «Registro de implementación».
 **Depende de:** nada. **Alimenta:** milestone 31 (reportes de eventos: asistencia).
 
 ## Caso de uso
@@ -144,7 +144,7 @@ usuario el 2026-11-17 (ver «Quien llega sin inscripción»).
 
 ## Registro de implementación
 
-Implementado el 2026-11-17 en `main`, commit sin firmar, versión **1.2.0** (MINOR).
+Implementado el 2026-11-17 en `main`, commit sin firmar, versión **1.2.0** en su momento (MINOR; luego plegada en la **1.1.0**).
 
 ### Modelo y migración (`20261117100000_event_check_in`)
 
@@ -277,7 +277,7 @@ tabla de inscriptos (con sus respuestas) en el servidor, así que cualquier rol 
 `admin:access` — un Comunicador, o el rol de recepción que habilita este milestone — puede
 verla entrando por la URL. Se avisó al usuario, que pidió arreglarlo.
 
-**Arreglado el 2026-11-17 (versión 1.2.1).** Al revisar todas las páginas de `/admin` el
+**Arreglado el 2026-11-17 (entonces versión 1.2.1, hoy parte de la 1.1.0).** Al revisar todas las páginas de `/admin` el
 hueco era más ancho: tampoco tenían guarda formularios (en el servidor), reservas, usuarios,
 reportes, ingresos (`/admin/checkin`) e incidentes (de cliente; sus APIs sí estaban
 protegidas, así que esas solo mostraban la carcasa). Arreglo:

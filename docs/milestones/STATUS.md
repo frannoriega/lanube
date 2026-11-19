@@ -50,7 +50,7 @@ cambia el estado de un milestone** (o se crea uno).
 | 32  | Calendario de actividades y exportación   | done     |                                                              |
 | 33  | Eventos en varios espacios                | parked   | postergado por el usuario                                    |
 | 34  | Campo «Participante» y check-in grupal    | parked   | postergado por el usuario                                    |
-| 35  | Título de reserva y UI más calma          | done     | v1.5.0                                                       |
+| 35  | Título de reserva y UI más calma          | done     | v1.1.0                                                       |
 | 36  | Amistades, directorio e invitados         | seed     | idea del usuario; con el 6                                   |
 | 37  | Plataforma de ideas con votación          | seed     | idea del usuario; depende del 36                             |
 | 38  | Instrumentación (métricas, trazas, logs)  | seed     | diseño propuesto; esperan decisiones (RAM del VPS, acceso)   |

@@ -70,51 +70,12 @@ export const RELEASES = [
   },
   {
     version: "1.1.0",
-    date: "2026-11-17",
-    title: "Eventos más claros en el calendario y tabla de usuarios a medida",
-    summary:
-      "Los eventos del calendario de reservas se ven como eventos, con un enlace a su página. Los estados de las reservas aparecen en español. En el panel, la tabla de usuarios permite elegir qué columnas ver y explica mejor la columna de políticas.",
-    file: "1.1.0.md",
-  },
-  {
-    version: "1.2.0",
-    date: "2026-11-17",
-    title: "Check-in en la puerta para los eventos",
-    summary:
-      "Los eventos pueden usar check-in: en la puerta se busca a cada persona por su email y se registra su ingreso a la sesión. Quien llega sin haberse inscripto se puede registrar ahí mismo, y queda identificado como tal.",
-    file: "1.2.0.md",
-  },
-  {
-    version: "1.2.1",
-    date: "2026-11-17",
-    title: "Cada sección del panel exige su permiso",
-    summary:
-      "Algunas secciones del panel se podían abrir escribiendo su dirección aunque el rol no tuviera permiso para usarlas. Ahora cada sección comprueba el permiso antes de mostrarse.",
-    file: "1.2.1.md",
-  },
-  {
-    version: "1.3.0",
-    date: "2026-11-17",
-    title: "Los eventos llegan a los reportes",
-    summary:
-      "Los reportes suman una sección de eventos con sesiones, inscripciones, ocupación y asistencia del período. Cada evento tiene además su propio reporte, con un gráfico de asistencia por sesión.",
-    file: "1.3.0.md",
-  },
-  {
-    version: "1.4.0",
-    date: "2026-11-17",
-    title: "Calendario de actividades y reportes para descargar",
-    summary:
-      "Un calendario con todo lo que pasa en La Nube, por día, 3 días, semana o mes. Y los reportes se pueden descargar en Excel (con gráficos) o en CSV, eligiendo qué incluir; el reporte de cada evento también se puede imprimir.",
-    file: "1.4.0.md",
-  },
-  {
-    version: "1.5.0",
     date: "2026-11-18",
-    title: "Reservas con título y calendarios más claros",
+    title:
+      "Check-in en eventos, calendario de actividades, reportes descargables y reservas con título",
     summary:
-      "Cada reserva ahora tiene un título y una descripción opcional. En los calendarios las tarjetas muestran solo el título, y el detalle se abre al tocarlas, sin ventanas encima de la pantalla.",
-    file: "1.5.0.md",
+      "Los eventos tienen check-in en la puerta y llegan a los reportes, que se descargan en Excel o CSV. Hay un calendario con todo lo que pasa en La Nube, y cada reserva ahora tiene título. Además, los eventos se ven como eventos en el calendario de reservas, y cada sección del panel exige su permiso.",
+    file: "1.1.0.md",
   },
 ] as const satisfies readonly Release[];
 

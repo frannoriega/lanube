@@ -1,6 +1,6 @@
 # Milestone 31 — Eventos en los reportes
 
-**Estado:** implementado (2026-11-17), versión **1.3.0**. El diseño de abajo es el acordado; lo que cambió al implementar está en «Registro de implementación».
+**Estado:** implementado (2026-11-17), versión **1.1.0** (nació como 1.3.0). El diseño de abajo es el acordado; lo que cambió al implementar está en «Registro de implementación».
 **Depende de:** milestone 30 (check-in) para todo lo de asistencia. El resto se puede hacer
 antes.
 
@@ -55,13 +55,13 @@ evento lee de las tablas de eventos/participantes/check-ins, que no se podan.
 ## Fuera de alcance
 
 - Exportar el reporte por evento a CSV (ya existe el CSV de inscriptos). **Hecho después**, en la
-  versión 1.4.0: Excel y CSV de los reportes, ver `milestones-32-activity-calendar.md`, «Exportar
+  versión 1.1.0: Excel y CSV de los reportes, ver `milestones-32-activity-calendar.md`, «Exportar
   reportes».
 
 ## Registro de implementación
 
-Implementado el 2026-11-17 en `main`, commit sin firmar, versión **1.3.0** (MINOR). Antes,
-en el mismo pedido, se arregló la falta de guardas de página del panel (versión 1.2.1, ver el
+Implementado el 2026-11-17 en `main`, commit sin firmar, versión **1.3.0** en su momento (MINOR; luego plegada en la **1.1.0**). Antes,
+en el mismo pedido, se arregló la falta de guardas de página del panel (entonces 1.2.1, hoy parte de la 1.1.0, ver el
 milestone 30, «Hallazgo fuera de alcance»): `/admin/reports` y la página nueva por evento
 quedan detrás del `layout.tsx` de reportes (`reports:view`).
 

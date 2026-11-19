@@ -1141,7 +1141,7 @@ Full design, legal notes and the release procedure: `docs/milestones/milestones-
   its commit (provenance attested in CI). It proves client code only — server-only code can't be verified remotely;
   don't claim otherwise.
 
-### 22. Activity calendar & report exports (milestone 32, v1.4.0)
+### 22. Activity calendar & report exports (milestone 32, v1.1.0)
 
 Full design, decisions and verification: `docs/milestones/milestones-32-activity-calendar.md`.
 
@@ -1171,7 +1171,7 @@ Full design, decisions and verification: `docs/milestones/milestones-32-activity
 - `reports/print.css` se carga en el `layout.tsx` de la sección: aplica a `/admin/reports` y al
   reporte de cada evento (clase `admin-report`).
 
-### 23. Reservation title, calmer lists & no-modal details (milestone 35, v1.5.0)
+### 23. Reservation title, calmer lists & no-modal details (milestone 35, v1.1.0)
 
 Full design and decisions: `docs/milestones/milestones-35-reservation-title-and-calmer-ui.md`.
 **Milestone status at a glance: `docs/milestones/STATUS.md`** — update it whenever a milestone is created or
