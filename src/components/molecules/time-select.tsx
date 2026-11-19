@@ -30,17 +30,22 @@ export function TimeSelect({
   onChange,
   id,
   ariaLabel,
+  isEnd = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   id?: string;
   ariaLabel?: string;
+  /**
+   * Selector de una hora de **fin**: `00:00` va al final de la lista (es la medianoche que cierra
+   * el día, las 24:00) en lugar de al principio, donde sería un fin antes del inicio.
+   */
+  isEnd?: boolean;
 }) {
-  const options =
-    value && !QUARTER_HOURS.includes(value)
-      ? [value, ...QUARTER_HOURS]
-      : QUARTER_HOURS;
-
+  const grid = isEnd
+    ? [...QUARTER_HOURS.slice(1), QUARTER_HOURS[0]]
+    : QUARTER_HOURS;
+  const options = value && !grid.includes(value) ? [value, ...grid] : grid;
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger id={id} aria-label={ariaLabel} className="w-full">
@@ -49,7 +54,7 @@ export function TimeSelect({
       <SelectContent className="max-h-72">
         {options.map((t) => (
           <SelectItem key={t} value={t}>
-            {t}
+            {isEnd && t === "00:00" ? "00:00 (medianoche)" : t}
           </SelectItem>
         ))}
       </SelectContent>

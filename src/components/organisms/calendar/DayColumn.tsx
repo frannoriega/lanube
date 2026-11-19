@@ -24,7 +24,12 @@ import { format, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Plus } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { BUSINESS_HOURS, fromUtcMs, getSlotStyle } from "./calendar-utils";
+import {
+  BUSINESS_HOURS,
+  DISPLAY_HOURS,
+  fromUtcMs,
+  getSlotStyle,
+} from "./calendar-utils";
 import { OCCURRENCE_TONES, occurrenceTone } from "./occurrence-style";
 import type { UnavailableSlot } from "./WeekCalendar";
 
@@ -139,14 +144,17 @@ export function DayColumn({
   onPointerCancelSlot,
   renderOccurrenceDetails,
 }: DayColumnProps) {
-  const hours = BUSINESS_HOURS.END - BUSINESS_HOURS.START;
+  const hours = DISPLAY_HOURS.END - DISPLAY_HOURS.START;
+  // Después del cierre se ve el día entero (hasta medianoche) pero no se reserva: rayado.
+  const afterCloseTopPct =
+    ((BUSINESS_HOURS.END - DISPLAY_HOURS.START) / hours) * 100;
   // Tramo de hoy que ya pasó, en % del alto (0 si el día es futuro; un día pasado entero ya va
   // rayado por `blocked`).
   const pastHeightPct = Math.max(
     0,
     Math.min(
       100,
-      ((firstBookableMinutes - BUSINESS_HOURS.START * 60) / (hours * 60)) * 100,
+      ((firstBookableMinutes - DISPLAY_HOURS.START * 60) / (hours * 60)) * 100,
     ),
   );
   return (
@@ -180,6 +188,18 @@ export function DayColumn({
           style={{ height: `${pastHeightPct}%` }}
           title="Este horario ya pasó"
           data-testid="past-slots"
+        >
+          <div className={cn("h-full rounded", BLOCKED_STRIPES)} />
+        </div>
+      )}
+
+      {/* Después del cierre: se ve la grilla, pero no se reserva */}
+      {!blocked && (
+        <div
+          className="absolute bottom-0 z-50 w-full"
+          style={{ top: `${afterCloseTopPct}%` }}
+          title="Fuera del horario de reserva"
+          data-testid="after-close"
         >
           <div className={cn("h-full rounded", BLOCKED_STRIPES)} />
         </div>

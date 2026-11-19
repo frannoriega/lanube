@@ -24,6 +24,17 @@ export const BUSINESS_HOURS = {
   END: BOOKING_CLOSE_HOUR,
 } as const;
 
+/**
+ * Rango que **dibuja** el calendario: de la apertura a la medianoche. Es más ancho que el horario
+ * de reserva (`BUSINESS_HOURS`) a propósito: un evento que termina a las 21:00 o a las 23:00 se
+ * veía recortado. Lo que cae después del cierre se raya como «no disponible» pero se ve entero.
+ * Reservar sigue limitado a `BUSINESS_HOURS`.
+ */
+export const DISPLAY_HOURS = {
+  START: BOOKING_OPEN_HOUR,
+  END: 24,
+} as const;
+
 /** Granularidad de las reservas (y de los selects de hora), en minutos. */
 export const TIME_INTERVAL_MINUTES = 15;
 
@@ -134,9 +145,9 @@ export function generateTimeOptions(): Array<{ value: string; label: string }> {
 }
 
 /**
- * Posición vertical (en % del alto de la columna) de un bloque [start, end) en ms. Se recorta
- * al horario de atención para que un bloque que empieza antes de las 9 no se dibuje por
- * encima de la grilla.
+ * Posición vertical (en % del alto de la columna) de un bloque [start, end) en ms, sobre el rango
+ * dibujado (`DISPLAY_HOURS`: apertura a medianoche). Se recorta a ese rango; un fin exactamente
+ * a medianoche (o en otro día) cuenta como las 24:00.
  */
 export function getSlotStyle(slot: { startTime: number; endTime: number }): {
   top: string;
@@ -146,12 +157,15 @@ export function getSlotStyle(slot: { startTime: number; endTime: number }): {
   const occEnd = fromUtcMs(slot.endTime);
 
   const startMinutes = occStart.getHours() * 60 + occStart.getMinutes();
-  const endMinutes = occEnd.getHours() * 60 + occEnd.getMinutes();
+  const endsNextDay = !isSameDay(occStart, occEnd);
+  const endMinutes = endsNextDay
+    ? DISPLAY_HOURS.END * 60
+    : occEnd.getHours() * 60 + occEnd.getMinutes();
 
-  const businessStart = BUSINESS_HOURS.START * 60;
-  const totalMinutes = BUSINESS_HOURS.END * 60 - businessStart;
+  const displayStart = DISPLAY_HOURS.START * 60;
+  const totalMinutes = DISPLAY_HOURS.END * 60 - displayStart;
 
-  const top = ((startMinutes - businessStart) / totalMinutes) * 100;
+  const top = ((startMinutes - displayStart) / totalMinutes) * 100;
   const height = ((endMinutes - startMinutes) / totalMinutes) * 100;
 
   return {

@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { BUSINESS_HOURS } from "./calendar-utils";
+import { DISPLAY_HOURS } from "./calendar-utils";
 
 /**
  * Esqueleto de la grilla del calendario de un espacio mientras llegan sus reservas (milestone
@@ -8,7 +8,7 @@ import { BUSINESS_HOURS } from "./calendar-utils";
  * libre— hasta que respondía la API.
  */
 export function CalendarSkeleton({ columns }: { columns: number }) {
-  const hours = BUSINESS_HOURS.END - BUSINESS_HOURS.START;
+  const hours = DISPLAY_HOURS.END - DISPLAY_HOURS.START;
   return (
     <div
       className="relative mb-8 flex gap-0"

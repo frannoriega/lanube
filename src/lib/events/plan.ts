@@ -28,6 +28,18 @@ export function dateKeyTimeToMs(dateKey: string, hhmm: string): number {
   return new TZDate(y, m - 1, d, h, min, 0, 0, ADMIN_TIMEZONE).getTime();
 }
 
+/**
+ * Unix ms del **fin** de una sesión: igual que `dateKeyTimeToMs`, salvo que `00:00` es la
+ * medianoche que cierra ese día (las 24:00), o sea 00:00 del día siguiente. Así un evento puede
+ * terminar a medianoche sin dejar de ser «del mismo día»: lo que se guarda es un instante y la
+ * sesión sigue empezando y terminando en su día.
+ */
+export function endTimeToMs(dateKey: string, hhmm: string): number {
+  return hhmm === "00:00"
+    ? dateKeyTimeToMs(addDaysToDateKey(dateKey, 1), "00:00")
+    : dateKeyTimeToMs(dateKey, hhmm);
+}
+
 /** Weekday (0=Sun..6=Sat) of a date-key in the admin timezone. */
 export function weekdayOfDateKey(dateKey: string): number {
   const [y, m, d] = dateKey.split("-").map(Number);
@@ -59,7 +71,7 @@ export function planEventOccurrences(input: EventRecipe): OccurrencePlan[] {
     plans.push({
       reservationId: createId(),
       startMs: dateKeyTimeToMs(found, input.startTime),
-      endMs: dateKeyTimeToMs(found, input.endTime),
+      endMs: endTimeToMs(found, input.endTime),
       rrule: `FREQ=WEEKLY;BYDAY=${WEEKDAY_RRULE[weekday]}`,
       recurrenceEndMs,
     });

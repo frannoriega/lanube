@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795055328.1646688,
-    "ast_hash": "7094c72f73d4f2f4ae064d3dcb20ad14",
+    "mtime": 1795097799.0517738,
+    "ast_hash": "fe6a9720629e0a1da43111eb56f2dad4",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -745,9 +745,9 @@
     "semantic_hash": "324828f8e294c1d57a7662d7a3eff19f"
   },
   "src/components/molecules/time-select.tsx": {
-    "mtime": 1793737696.3648405,
-    "ast_hash": "c898a64284369a40041841ea3c31b3aa",
-    "semantic_hash": "c898a64284369a40041841ea3c31b3aa"
+    "mtime": 1795097783.5313253,
+    "ast_hash": "9ef9ed5c6f31d06fc7df117ce4fbdd79",
+    "semantic_hash": ""
   },
   "src/components/molecules/user-profile/index.tsx": {
     "mtime": 1793737696.3649535,
@@ -790,13 +790,13 @@
     "semantic_hash": ""
   },
   "src/components/organisms/admin/event-form.tsx": {
-    "mtime": 1795031425.36395,
-    "ast_hash": "e676d59adc55a7216a4cf2d73a387cb1",
+    "mtime": 1795097783.5315433,
+    "ast_hash": "91231b9654554a10f65de4b532fec565",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/event-sessions.tsx": {
-    "mtime": 1793737696.3678634,
-    "ast_hash": "f57718b11e7fc5bfec2c63e643d252b5",
+    "mtime": 1795097809.099753,
+    "ast_hash": "a402d9d74445561f2fed475b644a1b11",
     "semantic_hash": ""
   },
   "src/components/organisms/admin/form-picker.tsx": {
@@ -815,8 +815,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/WeekCalendar.tsx": {
-    "mtime": 1795031425.3677452,
-    "ast_hash": "07d4401072f3fedff8269fffb6821c2f",
+    "mtime": 1795097783.5323849,
+    "ast_hash": "6b74acf4695211ec91ed883b2135abd1",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/index.ts": {
@@ -1305,9 +1305,9 @@
     "semantic_hash": ""
   },
   "src/lib/events/plan.ts": {
-    "mtime": 1793737696.3896387,
-    "ast_hash": "bd3b3fc2550d0d2c2a8cf3f6c841ea0d",
-    "semantic_hash": "bd3b3fc2550d0d2c2a8cf3f6c841ea0d"
+    "mtime": 1795097775.8555505,
+    "ast_hash": "b032be85385764fd1d7f0f4fec625b67",
+    "semantic_hash": ""
   },
   "src/lib/json-bigint.ts": {
     "mtime": 1793735805.6188893,
@@ -1335,8 +1335,8 @@
     "semantic_hash": ""
   },
   "src/lib/schemas/events.ts": {
-    "mtime": 1795031425.3781192,
-    "ast_hash": "2703b7bad47b9922a91189aabc643c54",
+    "mtime": 1795097808.663283,
+    "ast_hash": "570e3b7aa6e7018a334b64c267f47aa3",
     "semantic_hash": ""
   },
   "src/lib/storage/index.ts": {
@@ -1595,8 +1595,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1795055334.842504,
-    "ast_hash": "f6a45bb31874dbbfa998e4823f2b4aa7",
+    "mtime": 1795097862.4062161,
+    "ast_hash": "f85046e723b1e6edf689a5ff7f96b8fe",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3180,18 +3180,18 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/DayColumn.tsx": {
-    "mtime": 1795031425.36716,
-    "ast_hash": "ebb19968b9f7c2a845e2fb6cb8b34a78",
+    "mtime": 1795097028.2313776,
+    "ast_hash": "5336d3c97028bfbfc310aceb1ad832dc",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/calendar-utils.test.ts": {
-    "mtime": 1794854784.316077,
-    "ast_hash": "561793b82f8bcfb696a73fe0a80a73ad",
+    "mtime": 1795097092.7728179,
+    "ast_hash": "972b3978734a8c9e4e4deed7631e3841",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/calendar-utils.ts": {
-    "mtime": 1794854784.316567,
-    "ast_hash": "a1f4ceccf030b5853d1feb78e54286ce",
+    "mtime": 1795097028.2310855,
+    "ast_hash": "e8219f576fd58a68f788ebd132f12296",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/BookingForm.test.ts": {
@@ -4645,8 +4645,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1795055346.949742,
-    "ast_hash": "495662eb501fe990128d5b0a32022098",
+    "mtime": 1795097799.052396,
+    "ast_hash": "88f201cf57e9f8e51006c11b0094e9be",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -4660,7 +4660,7 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-28-versioning-and-build-verification.md": {
-    "mtime": 1795055341.1360598,
+    "mtime": 1795058237.6463442,
     "ast_hash": "821adea1d765f66d9c19fe1ec07725f6",
     "semantic_hash": ""
   },
@@ -4685,22 +4685,22 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-29-ui-fixes-events-enums-users-table.md": {
-    "mtime": 1795055346.9691474,
+    "mtime": 1795058237.6465702,
     "ast_hash": "157c2cf949589891d46382364101950e",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-30-event-check-in.md": {
-    "mtime": 1795055334.8433437,
+    "mtime": 1795058237.646802,
     "ast_hash": "af48c8424bf3293870dd3de1a4f0547b",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-31-event-reports.md": {
-    "mtime": 1795055334.8435903,
+    "mtime": 1795058237.6470153,
     "ast_hash": "09cb8b574179675b5255978fcde5f95e",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-32-activity-calendar.md": {
-    "mtime": 1795055334.843737,
+    "mtime": 1795058237.647471,
     "ast_hash": "e0ea9748e959dcfae84f9bb60c4327c6",
     "semantic_hash": ""
   },
@@ -4715,7 +4715,7 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.1.0.md": {
-    "mtime": 1795055328.1955872,
+    "mtime": 1795097792.3489368,
     "ast_hash": "56b90829879675ff83aa6e4843f0b4fe",
     "semantic_hash": ""
   },
@@ -4985,12 +4985,12 @@
     "semantic_hash": ""
   },
   "docs/milestones/STATUS.md": {
-    "mtime": 1795055334.842995,
+    "mtime": 1795058237.646121,
     "ast_hash": "7ae240de47bbcd68b49d609dc6878c8a",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-35-reservation-title-and-calmer-ui.md": {
-    "mtime": 1795055334.843158,
+    "mtime": 1795058237.6478927,
     "ast_hash": "76263a8cb8e265ef4b7a60decf6439ba",
     "semantic_hash": ""
   },
@@ -5015,8 +5015,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/CalendarSkeleton.tsx": {
-    "mtime": 1795031425.3666425,
-    "ast_hash": "29fe938fbc1c3e57ff6ec149336fcd8f",
+    "mtime": 1795097028.231863,
+    "ast_hash": "97c9922445575036fee8f2a08d4b8eb6",
     "semantic_hash": ""
   },
   "src/components/organisms/dashboard/user-activity-sections.tsx": {
@@ -5072,6 +5072,16 @@
   "docs/milestones/milestones-39-bi-and-hot-paths.md": {
     "mtime": 1795046657.463091,
     "ast_hash": "2c701785d5e47bb5708e30fb4e718122",
+    "semantic_hash": ""
+  },
+  "src/lib/events/plan.test.ts": {
+    "mtime": 1795097834.6262488,
+    "ast_hash": "0913bca68e320daa64d9d4a8b34023d5",
+    "semantic_hash": ""
+  },
+  "src/assets/changelog/1.1.1.md": {
+    "mtime": 1795097799.0525281,
+    "ast_hash": "83c748f9a5d9abdef23e16da2dea0329",
     "semantic_hash": ""
   }
 }

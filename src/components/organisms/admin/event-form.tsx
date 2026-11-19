@@ -635,6 +635,7 @@ export function EventForm({
                                 value={field.value}
                                 onChange={field.onChange}
                                 ariaLabel="Hora de fin"
+                                isEnd
                               />
                             </FormControl>
                             <FormMessage />

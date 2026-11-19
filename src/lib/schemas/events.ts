@@ -134,10 +134,16 @@ export const eventInputSchema = z
       path: ["endDate"],
     },
   )
-  .refine((d) => d.startTime < d.endTime, {
-    message: "La hora de inicio debe ser anterior a la de fin",
-    path: ["endTime"],
-  })
+  // `00:00` como fin es la medianoche que cierra el día (24:00), por eso es válido si el evento
+  // no empieza también a las 00:00.
+  .refine(
+    (d) =>
+      d.endTime === "00:00" ? d.startTime !== "00:00" : d.startTime < d.endTime,
+    {
+      message: "La hora de inicio debe ser anterior a la de fin",
+      path: ["endTime"],
+    },
+  )
   .refine((d) => [...new Set(d.weekdays)].length === d.weekdays.length, {
     message: "Días de la semana duplicados",
     path: ["weekdays"],
@@ -177,7 +183,10 @@ export const sessionActionSchema = z.discriminatedUnion("kind", [
       path: ["newStartMs"],
     })
     .refine(
-      (d) => dateKeyFromUnixMs(d.newStartMs) === dateKeyFromUnixMs(d.newEndMs),
+      // Un fin a medianoche (00:00 del día siguiente) cierra el mismo día: se compara el
+      // último milisegundo de la sesión, no el instante de fin.
+      (d) =>
+        dateKeyFromUnixMs(d.newStartMs) === dateKeyFromUnixMs(d.newEndMs - 1),
       {
         message: "La sesión debe empezar y terminar el mismo día",
         path: ["newEndMs"],

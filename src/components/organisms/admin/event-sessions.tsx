@@ -28,6 +28,7 @@ import {
 import {
   EventRecipe,
   dateKeyTimeToMs,
+  endTimeToMs,
   planEventOccurrences,
 } from "@/lib/events/plan";
 import { cn } from "@/lib/utils";
@@ -494,13 +495,12 @@ function RescheduleDialog({
   const [end, setEnd] = useState(defaultEnd);
 
   const submit = () => {
-    if (start >= end) {
+    // `00:00` como fin es la medianoche que cierra el día: siempre es posterior al inicio.
+    if (end !== "00:00" && start >= end) {
       toast.error("El horario de fin debe ser posterior al de inicio");
       return;
     }
-    if (
-      onSubmit(dateKeyTimeToMs(dateKey, start), dateKeyTimeToMs(dateKey, end))
-    ) {
+    if (onSubmit(dateKeyTimeToMs(dateKey, start), endTimeToMs(dateKey, end))) {
       setOpen(false);
     }
   };
@@ -541,7 +541,7 @@ function RescheduleDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Hora de fin</Label>
-                <TimeSelect value={end} onChange={setEnd} />
+                <TimeSelect value={end} onChange={setEnd} isEnd />
               </div>
             </div>
           </div>

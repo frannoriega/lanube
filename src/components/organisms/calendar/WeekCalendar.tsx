@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   BUSINESS_HOURS,
+  DISPLAY_HOURS,
   daysWithinHorizon,
   firstBookableDayIndex,
   firstBookableWeekStart,
@@ -300,10 +301,12 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
 
       const startMinutes = BUSINESS_HOURS.START * 60;
       const endMinutes = BUSINESS_HOURS.END * 60;
-      const totalMinutes = endMinutes - startMinutes;
+      // La grilla dibuja hasta medianoche (`DISPLAY_HOURS`); reservar, solo hasta el cierre.
+      const displayStart = DISPLAY_HOURS.START * 60;
+      const totalMinutes = DISPLAY_HOURS.END * 60 - displayStart;
 
       const minutesFromStart = (relativeY / totalHeight) * totalMinutes;
-      const totalMinutesFromMidnight = startMinutes + minutesFromStart;
+      const totalMinutesFromMidnight = displayStart + minutesFromStart;
 
       // Round to nearest interval
       const roundedMinutes =
@@ -319,6 +322,8 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
       return {
         day: weekDays[dayIndex],
         minutes: clampedMinutes,
+        // El puntero está en la franja posterior al cierre: se ve, pero no se reserva.
+        afterClose: totalMinutesFromMidnight >= endMinutes,
       };
     },
     [weekDays],
@@ -329,7 +334,7 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
     (e: React.MouseEvent, dayIndex: number) => {
       e.preventDefault();
       const posInfo = getPositionInfo(e, dayIndex);
-      if (!posInfo) return;
+      if (!posInfo || posInfo.afterClose) return;
 
       if (
         overlapsUnavailableOrReservation(
@@ -558,9 +563,13 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
       const rect = calendarRef.current.getBoundingClientRect();
       const businessStart = BUSINESS_HOURS.START * 60;
       const businessEnd = BUSINESS_HOURS.END * 60;
+      const displayStart = DISPLAY_HOURS.START * 60;
+      const displayEnd = DISPLAY_HOURS.END * 60;
       const raw =
-        businessStart +
-        ((e.clientY - rect.top) / rect.height) * (businessEnd - businessStart);
+        displayStart +
+        ((e.clientY - rect.top) / rect.height) * (displayEnd - displayStart);
+      // Franja posterior al cierre: se ve, pero no se reserva.
+      if (raw >= businessEnd) return;
       const start = Math.max(
         businessStart,
         Math.min(
@@ -614,11 +623,10 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
     const startMinutes = Math.min(dragStart.minutes, dragCurrent.minutes);
     const endMinutes = Math.max(dragStart.minutes, dragCurrent.minutes);
 
-    const businessStart = BUSINESS_HOURS.START * 60;
-    const businessEnd = BUSINESS_HOURS.END * 60;
-    const totalMinutes = businessEnd - businessStart;
+    const displayStart = DISPLAY_HOURS.START * 60;
+    const totalMinutes = DISPLAY_HOURS.END * 60 - displayStart;
 
-    const top = ((startMinutes - businessStart) / totalMinutes) * 100;
+    const top = ((startMinutes - displayStart) / totalMinutes) * 100;
     const height = ((endMinutes - startMinutes) / totalMinutes) * 100;
 
     return {
@@ -890,18 +898,18 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
             style={{ paddingBottom: "12px" }}
           >
             {Array.from(
-              { length: BUSINESS_HOURS.END - BUSINESS_HOURS.START + 1 },
-              (_, i) => i + BUSINESS_HOURS.START,
+              { length: DISPLAY_HOURS.END - DISPLAY_HOURS.START + 1 },
+              (_, i) => i + DISPLAY_HOURS.START,
             ).map((hour) => (
               <div
                 key={hour}
                 className="absolute w-full pr-2 text-right text-xs text-gray-500 dark:text-gray-400"
                 style={{
-                  top: `${((hour - BUSINESS_HOURS.START) / (BUSINESS_HOURS.END - BUSINESS_HOURS.START)) * 100}%`,
+                  top: `${((hour - DISPLAY_HOURS.START) / (DISPLAY_HOURS.END - DISPLAY_HOURS.START)) * 100}%`,
                   transform: "translateY(-50%)",
                 }}
               >
-                {minutesToTime(hour * 60)}
+                {minutesToTime((hour * 60) % (24 * 60))}
               </div>
             ))}
           </div>
@@ -911,7 +919,7 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
             ref={calendarRef}
             className="relative grid flex-1 gap-0"
             style={{
-              minHeight: "600px",
+              minHeight: "800px",
               gridTemplateColumns: `repeat(${visibleIdx.length}, minmax(0, 1fr))`,
             }}
             onPointerUp={(e) => {

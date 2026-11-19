@@ -877,6 +877,14 @@ onSave)` + `ReorderBar` (`molecules/table-reorder.tsx`) and `DataTable`'s `reord
   (`calendar-utils.ts`, unit-tested), `DayStrip` on narrow views, tap-a-slot → booking drawer
   on touch (drag-select is mouse-only), opens on the first week/day with a slot still ahead of now (no
   minimum notice since milestone 26). Pure date logic lives in `calendar-utils.ts`; keep it there.
+- **El calendario dibuja más de lo que se reserva** (v1.1.1): la grilla va de la apertura a medianoche
+  (`DISPLAY_HOURS`, 08–24; el último rótulo se lee «00:00») y lo posterior al cierre se raya como no
+  disponible; reservar sigue siendo `BUSINESS_HOURS` (08–19) y un toque/clic después del cierre no hace
+  nada. Un evento que termina tarde se ve entero. `getSlotStyle` usa el rango dibujado.
+- **Un fin `00:00` es la medianoche que cierra el día** (v1.1.1): en la hora de fin de un evento
+  (`TimeSelect isEnd`) y en «Reprogramar» la última opción es «00:00 (medianoche)»; `endTimeToMs()`
+  (`lib/events/plan.ts`) la guarda como las 00:00 del día siguiente, y la sesión sigue siendo «del mismo
+  día» (el schema compara el último ms). Un evento no puede empezar y terminar a las 00:00.
 - **Booking horizon** (milestone 26): users can book from `now` to the end of local day today + 14 (a
   sliding window, not "this week + next"). The one rule is `src/lib/reservations/booking-horizon.ts`;
   the server enforces it in `validateUserReservationWindow` (web + MCP) and `computeFreeWindows`, and

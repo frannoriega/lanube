@@ -12,6 +12,8 @@ import {
   isDayFullyClosed,
   visibleDayCountFor,
   visibleDayIndices,
+  DISPLAY_HOURS,
+  getSlotStyle,
 } from "./calendar-utils";
 
 describe("visibleDayCountFor", () => {
@@ -188,5 +190,24 @@ describe("firstBookableMinutes", () => {
   it("antes de abrir no adelanta nada; después de cerrar queda todo atrás", () => {
     expect(firstBookableMinutes(day, at(6, 30))).toBe(8 * 60);
     expect(firstBookableMinutes(day, at(19, 30))).toBe(19 * 60);
+  });
+});
+
+describe("getSlotStyle (rango dibujado: apertura a medianoche)", () => {
+  const at = (h: number, m = 0) => new Date(2026, 10, 18, h, m).getTime();
+  const span = (DISPLAY_HOURS.END - DISPLAY_HOURS.START) * 60;
+
+  it("dibuja un evento posterior al cierre entero, sin recortarlo", () => {
+    const s = getSlotStyle({ startTime: at(20), endTime: at(23) });
+    expect(parseFloat(s.top)).toBeCloseTo(((20 - 8) * 60 * 100) / span);
+    expect(parseFloat(s.height)).toBeCloseTo((3 * 60 * 100) / span);
+  });
+
+  it("un fin a medianoche (otro día) llega al borde inferior", () => {
+    const s = getSlotStyle({
+      startTime: at(22),
+      endTime: new Date(2026, 10, 19, 0, 0).getTime(),
+    });
+    expect(parseFloat(s.top) + parseFloat(s.height)).toBeCloseTo(100);
   });
 });

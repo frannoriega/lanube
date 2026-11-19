@@ -77,6 +77,14 @@ export const RELEASES = [
       "Los eventos tienen check-in en la puerta y llegan a los reportes, que se descargan en Excel o CSV. Hay un calendario con todo lo que pasa en La Nube, y cada reserva ahora tiene título. Además, los eventos se ven como eventos en el calendario de reservas, y cada sección del panel exige su permiso.",
     file: "1.1.0.md",
   },
+  {
+    version: "1.1.1",
+    date: "2026-11-19",
+    title: "El calendario de reservas muestra el día completo",
+    summary:
+      "El calendario de cada espacio ahora llega hasta la medianoche, así los eventos que terminan tarde ya no se ven cortados; después de las 19:00 el horario se ve rayado como no disponible. Y los eventos pueden terminar a las 00:00.",
+    file: "1.1.1.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */
