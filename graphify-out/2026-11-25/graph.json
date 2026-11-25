@@ -5568,7 +5568,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_app_api_admin_events_id_checkin_route",
-      "community": 487,
+      "community": 107,
       "norm_label": "route.ts"
     },
     {
@@ -5578,7 +5578,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_app_api_admin_events_id_checkin_route_params",
-      "community": 487,
+      "community": 107,
       "norm_label": "params"
     },
     {
@@ -5588,7 +5588,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_app_api_admin_events_id_checkin_route_get",
-      "community": 487,
+      "community": 107,
       "norm_label": "get()"
     },
     {
@@ -5638,7 +5638,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_app_api_admin_events_id_checkin_walk_in_route",
-      "community": 487,
+      "community": 107,
       "norm_label": "route.ts"
     },
     {
@@ -6988,7 +6988,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_app_api_admin_spaces_reorder_route",
-      "community": 3,
+      "community": 273,
       "norm_label": "route.ts"
     },
     {
@@ -6998,7 +6998,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_app_api_admin_spaces_reorder_route_reorderschema",
-      "community": 3,
+      "community": 273,
       "norm_label": "reorderschema"
     },
     {
@@ -7008,7 +7008,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_app_api_admin_spaces_reorder_route_post",
-      "community": 3,
+      "community": 273,
       "norm_label": "post()"
     },
     {
@@ -7988,7 +7988,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_app_api_resources_spaceid_route",
-      "community": 326,
+      "community": 2,
       "norm_label": "route.ts"
     },
     {
@@ -8008,7 +8008,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_app_api_resources_spaceid_route_post",
-      "community": 326,
+      "community": 2,
       "norm_label": "post()"
     },
     {
@@ -20418,7 +20418,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_audit_emit",
-      "community": 3,
+      "community": 107,
       "norm_label": "emit.ts"
     },
     {
@@ -20428,7 +20428,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_lib_audit_emit_auditentry",
-      "community": 3,
+      "community": 107,
       "norm_label": "auditentry"
     },
     {
@@ -20438,7 +20438,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_lib_audit_emit_auditsubscriber",
-      "community": 3,
+      "community": 107,
       "norm_label": "auditsubscriber"
     },
     {
@@ -20448,7 +20448,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_lib_audit_emit_audit_subscribers",
-      "community": 3,
+      "community": 107,
       "norm_label": "audit_subscribers"
     },
     {
@@ -20458,7 +20458,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_lib_audit_emit_publish",
-      "community": 3,
+      "community": 107,
       "norm_label": "publish()"
     },
     {
@@ -20468,7 +20468,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_lib_audit_emit_commitoptions",
-      "community": 3,
+      "community": 107,
       "norm_label": "commitoptions"
     },
     {
@@ -20478,7 +20478,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "src_lib_audit_emit_auditscope",
-      "community": 3,
+      "community": 107,
       "norm_label": "auditscope"
     },
     {
@@ -20488,7 +20488,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "src_lib_audit_emit_auditscope_commit",
-      "community": 3,
+      "community": 107,
       "norm_label": ".commit()"
     },
     {
@@ -21258,7 +21258,7 @@
       "source_location": "L345",
       "_origin": "ast",
       "id": "src_lib_audit_registry_auditentitytype",
-      "community": 3,
+      "community": 107,
       "norm_label": "auditentitytype"
     },
     {
@@ -21288,7 +21288,7 @@
       "source_location": "L778",
       "_origin": "ast",
       "id": "src_lib_audit_registry_auditaction",
-      "community": 3,
+      "community": 107,
       "norm_label": "auditaction"
     },
     {
@@ -21358,7 +21358,7 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "src_lib_audit_snapshots_loadsnapshot",
-      "community": 3,
+      "community": 107,
       "norm_label": "loadsnapshot()"
     },
     {
@@ -21988,7 +21988,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "src_lib_calendar_activity_closureitems",
-      "community": 485,
+      "community": 197,
       "norm_label": "closureitems()"
     },
     {
@@ -22325,7 +22325,7 @@
       "label": "getRelease()",
       "file_type": "code",
       "source_file": "src/lib/changelog/registry.ts",
-      "source_location": "L105",
+      "source_location": "L106",
       "_origin": "ast",
       "id": "src_lib_changelog_registry_getrelease",
       "community": 171,
@@ -22335,7 +22335,7 @@
       "label": "releasesNewestFirst()",
       "file_type": "code",
       "source_file": "src/lib/changelog/registry.ts",
-      "source_location": "L110",
+      "source_location": "L111",
       "_origin": "ast",
       "id": "src_lib_changelog_registry_releasesnewestfirst",
       "community": 171,
@@ -22345,7 +22345,7 @@
       "label": "adjacentReleases()",
       "file_type": "code",
       "source_file": "src/lib/changelog/registry.ts",
-      "source_location": "L115",
+      "source_location": "L116",
       "_origin": "ast",
       "id": "src_lib_changelog_registry_adjacentreleases",
       "community": 171,
@@ -24468,7 +24468,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_lib_db_closeddays_getactiveclosuresforwindow",
-      "community": 326,
+      "community": 485,
       "norm_label": "getactiveclosuresforwindow()"
     },
     {
@@ -24748,7 +24748,7 @@
       "source_location": "L261",
       "_origin": "ast",
       "id": "src_lib_db_event_checkin_admissionrequirederror",
-      "community": 487,
+      "community": 107,
       "norm_label": "admissionrequirederror"
     },
     {
@@ -24758,7 +24758,7 @@
       "source_location": "L262",
       "_origin": "ast",
       "id": "src_lib_db_event_checkin_admissionrequirederror_constructor",
-      "community": 487,
+      "community": 107,
       "norm_label": ".constructor()"
     },
     {
@@ -26768,7 +26768,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_lib_db_reservationtypes_listreservationtypeoptions",
-      "community": 326,
+      "community": 2,
       "norm_label": "listreservationtypeoptions()"
     },
     {
@@ -26778,7 +26778,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_lib_db_reservationtypes_getreservationtypebycode",
-      "community": 326,
+      "community": 2,
       "norm_label": "getreservationtypebycode()"
     },
     {
@@ -26838,7 +26838,7 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_lib_db_reservationtypes_preferredtypecode",
-      "community": 326,
+      "community": 2,
       "norm_label": "preferredtypecode()"
     },
     {
@@ -26888,7 +26888,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_lib_db_reservations_reservationwithrelations",
-      "community": 326,
+      "community": 41,
       "norm_label": "reservationwithrelations"
     },
     {
@@ -26968,7 +26968,7 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "src_lib_db_reservations_createreservation",
-      "community": 41,
+      "community": 2,
       "norm_label": "createreservation()"
     },
     {
@@ -27088,7 +27088,7 @@
       "source_location": "L689",
       "_origin": "ast",
       "id": "src_lib_db_reservations_deletereservation",
-      "community": 326,
+      "community": 41,
       "norm_label": "deletereservation()"
     },
     {
@@ -27818,7 +27818,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "src_lib_db_spaces_reorderspaces",
-      "community": 3,
+      "community": 273,
       "norm_label": "reorderspaces()"
     },
     {
@@ -32378,7 +32378,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_mcp_availability",
-      "community": 2,
+      "community": 326,
       "norm_label": "availability.ts"
     },
     {
@@ -32388,7 +32388,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_lib_mcp_availability_busyblock",
-      "community": 2,
+      "community": 326,
       "norm_label": "busyblock"
     },
     {
@@ -32398,7 +32398,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_lib_mcp_availability_freewindow",
-      "community": 2,
+      "community": 326,
       "norm_label": "freewindow"
     },
     {
@@ -32408,7 +32408,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_lib_mcp_availability_dayavailability",
-      "community": 2,
+      "community": 326,
       "norm_label": "dayavailability"
     },
     {
@@ -32418,7 +32418,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_lib_mcp_availability_ceiltogrid",
-      "community": 2,
+      "community": 326,
       "norm_label": "ceiltogrid()"
     },
     {
@@ -32428,7 +32428,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_lib_mcp_availability_computefreewindows",
-      "community": 2,
+      "community": 326,
       "norm_label": "computefreewindows()"
     },
     {
@@ -36828,7 +36828,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_lib_reservations_booking_horizon_bookinghorizondaysfor",
-      "community": 326,
+      "community": 2,
       "norm_label": "bookinghorizondaysfor()"
     },
     {
@@ -36978,7 +36978,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_reservations_user_actions",
-      "community": 326,
+      "community": 2,
       "norm_label": "user-actions.ts"
     },
     {
@@ -36988,7 +36988,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_lib_reservations_user_actions_reservationorigininput",
-      "community": 326,
+      "community": 2,
       "norm_label": "reservationorigininput"
     },
     {
@@ -36998,7 +36998,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_lib_reservations_user_actions_requestuserreservationinput",
-      "community": 326,
+      "community": 2,
       "norm_label": "requestuserreservationinput"
     },
     {
@@ -37008,7 +37008,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "src_lib_reservations_user_actions_requestuserreservation",
-      "community": 326,
+      "community": 2,
       "norm_label": "requestuserreservation()"
     },
     {
@@ -37018,7 +37018,7 @@
       "source_location": "L151",
       "_origin": "ast",
       "id": "src_lib_reservations_user_actions_canceluserreservationinput",
-      "community": 326,
+      "community": 2,
       "norm_label": "canceluserreservationinput"
     },
     {
@@ -37118,7 +37118,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "src_lib_reservations_user_rules_validateagainstclosures",
-      "community": 197,
+      "community": 2,
       "norm_label": "validateagainstclosures()"
     },
     {
@@ -37308,7 +37308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_schemas_checkin",
-      "community": 487,
+      "community": 107,
       "norm_label": "checkin.ts"
     },
     {
@@ -37318,7 +37318,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_schemas_checkin_session",
-      "community": 487,
+      "community": 107,
       "norm_label": "session"
     },
     {
@@ -37328,7 +37328,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_lib_schemas_checkin_checkinschema",
-      "community": 487,
+      "community": 107,
       "norm_label": "checkinschema"
     },
     {
@@ -37338,7 +37338,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_lib_schemas_checkin_checkinundoschema",
-      "community": 487,
+      "community": 107,
       "norm_label": "checkinundoschema"
     },
     {
@@ -37348,7 +37348,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_lib_schemas_checkin_walkinschema",
-      "community": 487,
+      "community": 107,
       "norm_label": "walkinschema"
     },
     {
@@ -38858,7 +38858,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_unix_ms",
-      "community": 326,
+      "community": 41,
       "norm_label": "unix-ms.ts"
     },
     {
@@ -38878,7 +38878,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_lib_unix_ms_unixmstodate",
-      "community": 326,
+      "community": 41,
       "norm_label": "unixmstodate()"
     },
     {
@@ -38888,7 +38888,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_lib_unix_ms_tounixms",
-      "community": 326,
+      "community": 41,
       "norm_label": "tounixms()"
     },
     {
@@ -48698,7 +48698,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_technical_changes",
-      "community": 182,
+      "community": 457,
       "norm_label": "\ud83d\udd27 technical changes"
     },
     {
@@ -48708,7 +48708,7 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_state_management",
-      "community": 182,
+      "community": 457,
       "norm_label": "state management"
     },
     {
@@ -48718,7 +48718,7 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_component_architecture",
-      "community": 182,
+      "community": 457,
       "norm_label": "component architecture"
     },
     {
@@ -48728,7 +48728,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_position_calculations",
-      "community": 182,
+      "community": 457,
       "norm_label": "position calculations"
     },
     {
@@ -48738,7 +48738,7 @@
       "source_location": "L213",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_layout_changes",
-      "community": 182,
+      "community": 457,
       "norm_label": "layout changes"
     },
     {
@@ -48758,7 +48758,7 @@
       "source_location": "L239",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_user_flow_comparison",
-      "community": 466,
+      "community": 182,
       "norm_label": "\ud83c\udfaf user flow comparison"
     },
     {
@@ -48768,7 +48768,7 @@
       "source_location": "L241",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_v1_flow_5_steps",
-      "community": 466,
+      "community": 182,
       "norm_label": "v1 flow (5 steps)"
     },
     {
@@ -48778,7 +48778,7 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_v2_flow_4_steps",
-      "community": 466,
+      "community": 182,
       "norm_label": "v2 flow (4 steps)"
     },
     {
@@ -48858,7 +48858,7 @@
       "source_location": "L305",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_visual_design_updates",
-      "community": 182,
+      "community": 466,
       "norm_label": "\ud83c\udfa8 visual design updates"
     },
     {
@@ -48868,7 +48868,7 @@
       "source_location": "L307",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_grid_lines",
-      "community": 182,
+      "community": 466,
       "norm_label": "grid lines"
     },
     {
@@ -48878,7 +48878,7 @@
       "source_location": "L319",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_drag_overlay",
-      "community": 182,
+      "community": 466,
       "norm_label": "drag overlay"
     },
     {
@@ -48888,7 +48888,7 @@
       "source_location": "L329",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_reservation_blocks",
-      "community": 182,
+      "community": 466,
       "norm_label": "reservation blocks"
     },
     {
@@ -48958,7 +48958,7 @@
       "source_location": "L400",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_performance_considerations",
-      "community": 457,
+      "community": 182,
       "norm_label": "\ud83d\ude80 performance considerations"
     },
     {
@@ -48968,7 +48968,7 @@
       "source_location": "L402",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_potential_issues",
-      "community": 457,
+      "community": 182,
       "norm_label": "potential issues"
     },
     {
@@ -48978,7 +48978,7 @@
       "source_location": "L408",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_optimizations_applied",
-      "community": 457,
+      "community": 182,
       "norm_label": "optimizations applied"
     },
     {
@@ -48988,7 +48988,7 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_future_optimizations",
-      "community": 457,
+      "community": 182,
       "norm_label": "future optimizations"
     },
     {
@@ -49088,7 +49088,7 @@
       "source_location": "L513",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_success_metrics",
-      "community": 464,
+      "community": 182,
       "norm_label": "\ud83c\udfaf success metrics"
     },
     {
@@ -49098,7 +49098,7 @@
       "source_location": "L515",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_user_experience_metrics",
-      "community": 464,
+      "community": 182,
       "norm_label": "user experience metrics"
     },
     {
@@ -49108,7 +49108,7 @@
       "source_location": "L522",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_meeting_room_v2_changes_technical_metrics",
-      "community": 464,
+      "community": 182,
       "norm_label": "technical metrics"
     },
     {
@@ -49878,7 +49878,7 @@
       "source_location": "L446",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_reservations_crud_guide_examples",
-      "community": 70,
+      "community": 464,
       "norm_label": "examples"
     },
     {
@@ -49888,7 +49888,7 @@
       "source_location": "L448",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_reservations_crud_guide_example_1_create_and_list_recurring_reservations",
-      "community": 70,
+      "community": 464,
       "norm_label": "example 1: create and list recurring reservations"
     },
     {
@@ -49898,7 +49898,7 @@
       "source_location": "L476",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_reservations_crud_guide_example_2_cancel_one_occurrence_of_a_recurring_reservation",
-      "community": 70,
+      "community": 464,
       "norm_label": "example 2: cancel one occurrence of a recurring reservation"
     },
     {
@@ -49908,7 +49908,7 @@
       "source_location": "L500",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_reservations_crud_guide_example_3_check_resource_availability",
-      "community": 70,
+      "community": 464,
       "norm_label": "example 3: check resource availability"
     },
     {
@@ -49918,7 +49918,7 @@
       "source_location": "L545",
       "_origin": "ast",
       "id": "users_francisco_workspace_personal_lanube_docs_changes_reservations_crud_guide_example_4_api_endpoint_using_expanded_reservations",
-      "community": 70,
+      "community": 464,
       "norm_label": "example 4: api endpoint using expanded reservations"
     },
     {
@@ -60175,7 +60175,7 @@
       "label": "Para el equipo",
       "file_type": "document",
       "source_file": "src/assets/changelog/1.2.0.md",
-      "source_location": "L11",
+      "source_location": "L13",
       "_origin": "ast",
       "id": "src_assets_changelog_1_2_0_para_el_equipo",
       "community": 477,
@@ -60185,7 +60185,7 @@
       "label": "Cambios internos",
       "file_type": "document",
       "source_file": "src/assets/changelog/1.2.0.md",
-      "source_location": "L22",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "src_assets_changelog_1_2_0_cambios_internos",
       "community": 477,
@@ -64585,7 +64585,7 @@
       "weight": 1.0,
       "context": "import",
       "source": "package_devdependencies_prisma",
-      "target": "src_lib_prisma",
+      "target": "src_types_prisma",
       "confidence_score": 1.0
     },
     {
@@ -167825,7 +167825,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/changelog/registry.ts",
-      "source_location": "L115",
+      "source_location": "L116",
       "weight": 1.0,
       "source": "src_lib_changelog_registry",
       "target": "src_lib_changelog_registry_adjacentreleases",
@@ -167835,7 +167835,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/changelog/registry.ts",
-      "source_location": "L105",
+      "source_location": "L106",
       "weight": 1.0,
       "source": "src_lib_changelog_registry",
       "target": "src_lib_changelog_registry_getrelease",
@@ -167855,7 +167855,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/lib/changelog/registry.ts",
-      "source_location": "L110",
+      "source_location": "L111",
       "weight": 1.0,
       "source": "src_lib_changelog_registry",
       "target": "src_lib_changelog_registry_releasesnewestfirst",
@@ -230335,7 +230335,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/assets/changelog/1.2.0.md",
-      "source_location": "L22",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "src_assets_changelog_1_2_0",
       "target": "src_assets_changelog_1_2_0_cambios_internos",
@@ -230345,7 +230345,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/assets/changelog/1.2.0.md",
-      "source_location": "L11",
+      "source_location": "L13",
       "weight": 1.0,
       "source": "src_assets_changelog_1_2_0",
       "target": "src_assets_changelog_1_2_0_para_el_equipo",
@@ -230603,5 +230603,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "338ec98b67800985e5d419fca420e690d9234b11"
+  "built_at_commit": "b2d4168fe6d3d5680980dffcfae1d1f90045b902"
 }

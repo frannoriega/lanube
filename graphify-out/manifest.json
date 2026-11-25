@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795638988.7135696,
-    "ast_hash": "4e0e7b972dd1f07ad3d931ea0dac8d40",
+    "mtime": 1795649876.6833236,
+    "ast_hash": "653b56432d747172ceb4e23f3bc49eed",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -565,7 +565,7 @@
     "semantic_hash": ""
   },
   "src/app/api/forms/[slug]/route.ts": {
-    "mtime": 1795638769.1736135,
+    "mtime": 1795648304.8961542,
     "ast_hash": "e2d347d2f1463c86c3fb2abbeea66824",
     "semantic_hash": ""
   },
@@ -1185,7 +1185,7 @@
     "semantic_hash": ""
   },
   "src/lib/db/participants.ts": {
-    "mtime": 1795638769.1734655,
+    "mtime": 1795648304.897899,
     "ast_hash": "49dc343601ed451e0d4457135a616da3",
     "semantic_hash": ""
   },
@@ -1230,7 +1230,7 @@
     "semantic_hash": ""
   },
   "src/lib/email/event-registration.ts": {
-    "mtime": 1795638769.7027555,
+    "mtime": 1795648304.8981073,
     "ast_hash": "e01ecdc53efbda87983920c5771c6622",
     "semantic_hash": ""
   },
@@ -1595,7 +1595,7 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1795638911.2165067,
+    "mtime": 1795648304.8720658,
     "ast_hash": "ceceb914910e411fabb2f74cdb6baf95",
     "semantic_hash": ""
   },
@@ -2790,8 +2790,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1795639000.8242652,
-    "ast_hash": "c23798f29d41b8306bffb96199081266",
+    "mtime": 1795649876.7083542,
+    "ast_hash": "c4ffee98f4da61c19d6d23f3b704fd76",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -3540,7 +3540,7 @@
     "semantic_hash": ""
   },
   "src/components/organisms/settings/settings-nav.tsx": {
-    "mtime": 1795638742.007624,
+    "mtime": 1795648304.8967953,
     "ast_hash": "af6bbfbd755dd898487c2c4cccc69a83",
     "semantic_hash": ""
   },
@@ -4645,8 +4645,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1795639000.8249657,
-    "ast_hash": "b3e8c4162c482f6616324443d89c342f",
+    "mtime": 1795649876.7074656,
+    "ast_hash": "26fdb26625740638e243801ce88e2da3",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -4985,8 +4985,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/STATUS.md": {
-    "mtime": 1795639000.8239872,
-    "ast_hash": "237ab88933cf3c63c2a4e85b85e5a1cb",
+    "mtime": 1795649876.7078347,
+    "ast_hash": "a16829a62deb7eb6163601d1331a1795",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-35-reservation-title-and-calmer-ui.md": {
@@ -5115,12 +5115,12 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-45-calendar-export.md": {
-    "mtime": 1795639000.8244731,
-    "ast_hash": "c858c1c944217ef10f4f9e3171ca40c0",
+    "mtime": 1795649876.7091665,
+    "ast_hash": "1db9a01fb3b162eafd421bae5fa8ba02",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-46-whatsapp-notifications.md": {
-    "mtime": 1795638548.776101,
+    "mtime": 1795648304.8730888,
     "ast_hash": "484d1133e50b1c03d6ebaa22a8d19c35",
     "semantic_hash": ""
   },
@@ -5245,63 +5245,68 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.2.0.md": {
-    "mtime": 1795639000.8247454,
-    "ast_hash": "90f06d55fe3c695565e4e641d1dcfeab",
+    "mtime": 1795649866.67193,
+    "ast_hash": "e156fd5a187b053b90d03cb70cc09d41",
     "semantic_hash": ""
   },
   "prisma/migrations/20261125120000_calendar_feeds/migration.sql": {
-    "mtime": 1795638562.7328784,
+    "mtime": 1795648304.8950095,
     "ast_hash": "2fd5fa03fa4281f2b52736ed406b7e69",
     "semantic_hash": ""
   },
   "src/app/(management)/user/settings/calendar/page.tsx": {
-    "mtime": 1795638737.9291253,
+    "mtime": 1795648304.895394,
     "ast_hash": "d48dc8bfab5328812d2fe617360dd69f",
     "semantic_hash": ""
   },
   "src/app/api/calendar/feed/[userId]/[feed]/[file]/route.ts": {
-    "mtime": 1795638681.314403,
+    "mtime": 1795648304.8957384,
     "ast_hash": "c33acedf7efed74db1dff223c191ba4a",
     "semantic_hash": ""
   },
   "src/app/api/calendar/registration/[participantId]/[file]/route.ts": {
-    "mtime": 1795638681.319798,
+    "mtime": 1795648304.895983,
     "ast_hash": "a95a81a125ad547efe8662f589748b8c",
     "semantic_hash": ""
   },
   "src/app/api/user/calendar-feeds/route.ts": {
-    "mtime": 1795638717.591042,
+    "mtime": 1795648304.8963017,
     "ast_hash": "0c7d815de9fdb62c7298205a7f6124c7",
     "semantic_hash": ""
   },
   "src/components/organisms/settings/calendar-feeds-section.tsx": {
-    "mtime": 1795638741.9655645,
+    "mtime": 1795648304.8966277,
     "ast_hash": "74f1328c6485ff03e111ae498de69aaf",
     "semantic_hash": ""
   },
   "src/lib/calendar/feed-response.ts": {
-    "mtime": 1795638671.7595663,
+    "mtime": 1795648304.8969083,
     "ast_hash": "bbeb46d068f2abb84b606b13faa6766b",
     "semantic_hash": ""
   },
   "src/lib/calendar/ics.test.ts": {
-    "mtime": 1795638603.4235988,
+    "mtime": 1795648304.897133,
     "ast_hash": "ec0c354c5fed7693ab166f7174c49895",
     "semantic_hash": ""
   },
   "src/lib/calendar/ics.ts": {
-    "mtime": 1795638603.4040623,
+    "mtime": 1795648304.897264,
     "ast_hash": "a2216dcbebab6404233c8d55f39cda5a",
     "semantic_hash": ""
   },
   "src/lib/calendar/user-feeds.ts": {
-    "mtime": 1795638717.5792117,
+    "mtime": 1795648304.8973687,
     "ast_hash": "1170a9aa58a483f71a677a51f7301177",
     "semantic_hash": ""
   },
   "src/lib/db/calendarFeeds.ts": {
-    "mtime": 1795638672.4476311,
+    "mtime": 1795648304.8976839,
     "ast_hash": "0f3464d40aafd86acd57d47e3d677f33",
+    "semantic_hash": ""
+  },
+  "src/assets/changelog/1.3.0.md": {
+    "mtime": 1795649876.3155103,
+    "ast_hash": "8d1583782dba7062085404b772e07e6a",
     "semantic_hash": ""
   }
 }

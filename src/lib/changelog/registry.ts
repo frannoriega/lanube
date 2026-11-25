@@ -88,11 +88,18 @@ export const RELEASES = [
   {
     version: "1.2.0",
     date: "2026-11-25",
-    title:
-      "Eventos privados, equipos con check-in por persona y tu calendario en Google",
+    title: "Eventos privados, inscripción de equipos y check-in por persona",
     summary:
-      "Los eventos pueden ser privados, con lista de invitados. Los formularios inscriben equipos y la puerta registra el ingreso de cada integrante. Tus reservas y eventos se suman a Google Calendar, Apple u Outlook. Cada sesión que se cancela o reprograma lleva su motivo, las notificaciones se pueden borrar, y al compartir una noticia o un evento se ve su imagen.",
+      "Los eventos pueden ser privados, con lista de invitados. Los formularios inscriben equipos y la puerta registra el ingreso de cada integrante. Cada sesión que se cancela o reprograma lleva su motivo, las notificaciones se pueden borrar, y al compartir una noticia o un evento se ve su imagen.",
     file: "1.2.0.md",
+  },
+  {
+    version: "1.3.0",
+    date: "2026-11-25",
+    title: "Tu calendario de La Nube en Google, Apple u Outlook",
+    summary:
+      "Tus reservas y tus eventos se pueden agregar a Google Calendar, Apple u Outlook como calendarios separados que se actualizan solos, y quien gestiona reservas puede sumar uno por espacio. Al inscribirte a un evento, el correo trae «Agregar a mi calendario».",
+    file: "1.3.0.md",
   },
 ] as const satisfies readonly Release[];
 

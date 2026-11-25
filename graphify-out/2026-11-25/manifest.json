@@ -140,7 +140,7 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795638051.772054,
+    "mtime": 1795638988.7135696,
     "ast_hash": "4e0e7b972dd1f07ad3d931ea0dac8d40",
     "semantic_hash": ""
   },
@@ -2790,8 +2790,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1795638911.2172456,
-    "ast_hash": "c4ffee98f4da61c19d6d23f3b704fd76",
+    "mtime": 1795639000.8242652,
+    "ast_hash": "c23798f29d41b8306bffb96199081266",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -4645,8 +4645,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1795638051.7824533,
-    "ast_hash": "fc5e537394385335b7117ced0a25f18e",
+    "mtime": 1795639000.8249657,
+    "ast_hash": "b3e8c4162c482f6616324443d89c342f",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -4985,8 +4985,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/STATUS.md": {
-    "mtime": 1795638911.2170837,
-    "ast_hash": "a16829a62deb7eb6163601d1331a1795",
+    "mtime": 1795639000.8239872,
+    "ast_hash": "237ab88933cf3c63c2a4e85b85e5a1cb",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-35-reservation-title-and-calmer-ui.md": {
@@ -5115,8 +5115,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-45-calendar-export.md": {
-    "mtime": 1795638911.2169585,
-    "ast_hash": "226d5b25b59f2c98ba00029640e64b2a",
+    "mtime": 1795639000.8244731,
+    "ast_hash": "c858c1c944217ef10f4f9e3171ca40c0",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-46-whatsapp-notifications.md": {
@@ -5245,8 +5245,8 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.2.0.md": {
-    "mtime": 1795638051.7784724,
-    "ast_hash": "e156fd5a187b053b90d03cb70cc09d41",
+    "mtime": 1795639000.8247454,
+    "ast_hash": "90f06d55fe3c695565e4e641d1dcfeab",
     "semantic_hash": ""
   },
   "prisma/migrations/20261125120000_calendar_feeds/migration.sql": {

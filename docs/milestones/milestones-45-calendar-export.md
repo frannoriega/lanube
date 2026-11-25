@@ -1,6 +1,6 @@
 # Milestone 45 — Exportar el calendario (Google Calendar y otros)
 
-**Estado:** done (2026-11-25). Versión **1.2.0**: se planeó como 1.3.0, pero la 1.2.0 todavía no estaba desplegada y el control de versiones solo admite un salto desde la última publicada (1.1.1), así que se plegó en ella.
+**Estado:** done (2026-11-25). Versión **1.3.0**. (Se llegó a plegar en la 1.2.0 mientras esa no estaba desplegada; la 1.2.0 se publicó sin el calendario —tag `v1.2.0` en `323c751`— y el calendario sale en la 1.3.0. El changelog de la 1.2.0 volvió a lo que se publicó.)
 
 ## Pregunta del usuario
 
