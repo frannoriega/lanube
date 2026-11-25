@@ -5,6 +5,7 @@ import { listEventParticipants } from "@/lib/db/participants";
 import { logger } from "@/lib/logger";
 import { areEventEmailsSuspended } from "@/lib/maintenance/server";
 import { editLinkFootnoteHtml, freshEditLinkUrl } from "@/lib/email/edit-link";
+import { escapeHtml } from "@/lib/email/escape";
 import { notify } from "@/lib/notifications/dispatch";
 import type { EventSessionChangedData } from "@/lib/notifications/types";
 import { ParticipantStatus } from "@/types/prisma";
@@ -54,32 +55,56 @@ export interface OccurrenceChange {
   /** New window (rescheduled only). */
   newStartMs?: number;
   newEndMs?: number;
+  /** Motivo de **este** cambio (milestone 44); los restablecimientos no llevan. */
+  reason?: string | null;
 }
 
-/** All session changes from one event save, sharing a single reason. */
+/** All session changes from one event save; each change carries its own reason. */
 export interface OccurrenceBatchPayload {
   eventName: string;
-  /** Shared reason for the cancels/reschedules in this batch (restores carry none). */
-  reason?: string;
   changes: OccurrenceChange[];
 }
 
+/**
+ * Cómo se muestran los motivos de un lote (milestone 44, puro para testearlo): si todos los
+ * cambios con motivo comparten el mismo texto, se dice **una vez** («Motivo: Feriado» bajo la
+ * lista) y no en cada línea; si difieren, cada línea lleva el suyo.
+ */
+export function batchReasonLayout(changes: OccurrenceChange[]): {
+  shared: string | null;
+  perLine: boolean;
+} {
+  const reasons = changes
+    .map((c) => c.reason?.trim())
+    .filter((r): r is string => !!r);
+  if (reasons.length === 0) return { shared: null, perLine: false };
+  const distinct = new Set(reasons);
+  return distinct.size === 1
+    ? { shared: reasons[0], perLine: false }
+    : { shared: null, perLine: true };
+}
+
 /** One "<li>" line describing a change (cancel / reschedule / restore). */
-function changeLine(c: OccurrenceChange): string {
+export function changeLine(c: OccurrenceChange, withReason: boolean): string {
   const original = formatSession(c.originalStartMs, c.originalEndMs);
+  const reason =
+    withReason && c.reason?.trim()
+      ? `<br/><span style="color:#777;">Motivo: ${escapeHtml(c.reason.trim())}</span>`
+      : "";
   if (c.kind === "cancelled") {
-    return `<li style="margin-bottom:8px;"><strong style="color:#c0392b;">Cancelada</strong> — ${original}</li>`;
+    return `<li style="margin-bottom:8px;"><strong style="color:#c0392b;">Cancelada</strong> — ${original}${reason}</li>`;
   }
   if (c.kind === "restored") {
     return `<li style="margin-bottom:8px;"><strong style="color:#27ae60;">Restablecida</strong> — vuelve a su horario habitual: ${original}</li>`;
   }
   const moved = formatSession(c.newStartMs!, c.newEndMs!);
-  return `<li style="margin-bottom:8px;"><strong style="color:#b9770e;">Reprogramada</strong> — ${original} → <strong>${moved}</strong></li>`;
+  return `<li style="margin-bottom:8px;"><strong style="color:#b9770e;">Reprogramada</strong> — ${original} → <strong>${moved}</strong>${reason}</li>`;
 }
 
 /**
  * Emails every non-cancelled participant of an event **once**, summarizing all the session
- * changes from a single save (cancellations, reschedules, restores) plus the shared reason.
+ * changes from a single save (cancellations, reschedules, restores), each with its own reason
+ * (milestone 44; see `batchReasonLayout`).
  * A batch save therefore sends one email per participant rather than one per changed session.
  *
  * TODO(scale): this fans out synchronously inside the request that writes the exceptions —
@@ -118,16 +143,18 @@ export async function notifyEventParticipantsBatch(
         : "Se reprogramó una sesión"
     : "Cambios en las sesiones";
 
+  const eventName = escapeHtml(payload.eventName);
   const intro = single
-    ? `<p style="color:#555;line-height:1.6;">Hay una novedad en <strong>${payload.eventName}</strong>:</p>`
-    : `<p style="color:#555;line-height:1.6;">Hay cambios en las sesiones de <strong>${payload.eventName}</strong>:</p>`;
+    ? `<p style="color:#555;line-height:1.6;">Hay una novedad en <strong>${eventName}</strong>:</p>`
+    : `<p style="color:#555;line-height:1.6;">Hay cambios en las sesiones de <strong>${eventName}</strong>:</p>`;
 
+  const layout = batchReasonLayout(changes);
   const list = `<ul style="color:#555;line-height:1.6;padding-left:20px;">${changes
-    .map(changeLine)
+    .map((c) => changeLine(c, layout.perLine))
     .join("")}</ul>`;
 
-  const reasonLine = payload.reason
-    ? `<p style="color:#555;line-height:1.6;"><strong>Motivo:</strong> ${payload.reason}</p>`
+  const reasonLine = layout.shared
+    ? `<p style="color:#555;line-height:1.6;"><strong>Motivo:</strong> ${escapeHtml(layout.shared)}</p>`
     : "";
 
   // Mantenimiento (milestone 22): con los correos de eventos apagados no se manda ninguno,
@@ -197,7 +224,7 @@ export async function notifyEventParticipantsBatch(
         originalEndTime: change.originalEndMs,
         newStartTime: change.newStartMs,
         newEndTime: change.newEndMs,
-        reason: payload.reason ?? null,
+        reason: change.reason?.trim() || null,
       };
       try {
         await notify({

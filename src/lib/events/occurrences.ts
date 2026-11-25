@@ -172,8 +172,8 @@ export interface ExistingException {
 /**
  * A staged (unsaved) per-session change. Keyed by weekday + nominal occurrence date so it survives
  * date-range edits and is resolved to a reservation server-side only when the event is saved.
- * The reason is **not** stored per-action: cancels/reschedules share a single batch reason,
- * collected once and sent with the save (see `event-sessions.tsx`).
+ * `reason` es el motivo **de esta sesión** (milestone 44): obligatorio para cancel/reschedule al
+ * guardar; mientras se edita puede estar vacío (el panel lo pide en la fila).
  */
 export interface SessionAction {
   weekday: number;
@@ -181,19 +181,26 @@ export interface SessionAction {
   kind: "cancel" | "reschedule" | "revert";
   newStartMs?: number;
   newEndMs?: number;
+  reason?: string;
+}
+
+/** ¿Este cambio necesita motivo? Cancelar y reprogramar sí; revertir no (milestone 44). */
+export function sessionActionNeedsReason(
+  a: Pick<SessionAction, "kind">,
+): boolean {
+  return a.kind === "cancel" || a.kind === "reschedule";
 }
 
 /**
  * Final exceptions for one weekday's reservation: saved exceptions overlaid by staged actions
  * (one per date — a staged action replaces the saved one; `revert` clears it). Used to build the
- * client-side session preview before anything is persisted. `pendingReason` is the shared batch
- * reason shown against every staged cancel/reschedule (they don't carry their own).
+ * client-side session preview before anything is persisted. Each staged cancel/reschedule
+ * shows its own reason (milestone 44).
  */
 export function effectiveExceptions(
   weekday: number,
   existing: ExistingException[],
   pending: SessionAction[],
-  pendingReason: string | null = null,
 ): RawException[] {
   const byDate = new Map<string, RawException>();
   for (const ex of existing) {
@@ -220,7 +227,7 @@ export function effectiveExceptions(
         isCancelled: a.kind === "cancel",
         newStartMs: a.kind === "reschedule" ? (a.newStartMs ?? null) : null,
         newEndMs: a.kind === "reschedule" ? (a.newEndMs ?? null) : null,
-        reason: pendingReason,
+        reason: a.reason?.trim() || null,
         createdAtMs: 1,
       });
     }

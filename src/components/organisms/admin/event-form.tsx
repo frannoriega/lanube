@@ -46,9 +46,11 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/hooks/use-api";
 import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
 import { EVENT_STATUS_LABELS } from "@/lib/constants/events";
-import type {
-  ExistingException,
-  SessionAction,
+import {
+  sessionActionNeedsReason,
+  utcDateKey,
+  type ExistingException,
+  type SessionAction,
 } from "@/lib/events/occurrences";
 import { EventInput, eventInputSchema } from "@/lib/schemas/events";
 import { EventStatus, type ReservationType } from "@/types/prisma";
@@ -240,8 +242,6 @@ export function EventForm({
     mode === "edit" && searchParams.get("sessions") === "1";
   // Staged per-session changes — applied (and emailed) only when the event is saved.
   const [sessionActions, setSessionActions] = useState<SessionAction[]>([]);
-  // Single reason shared by all staged cancels/reschedules (asked once, at the end).
-  const [sessionReason, setSessionReason] = useState("");
 
   const form = useForm<EventInput>({
     resolver: zodResolver(eventInputSchema),
@@ -281,20 +281,34 @@ export function EventForm({
   const spaceId = watch("spaceId");
   const selectedResource = resources.find((r) => r.id === spaceId);
 
-  const needsSessionReason = sessionActions.some(
-    (a) => a.kind === "cancel" || a.kind === "reschedule",
+  // Cada cancelación/reprogramación lleva su motivo (milestone 44).
+  const firstMissingReason = sessionActions.find(
+    (a) => sessionActionNeedsReason(a) && !a.reason?.trim(),
   );
 
   const save = async (
     values: EventInput,
     forces: { force?: boolean; forceCapacity?: boolean } = {},
   ): Promise<boolean> => {
-    // A batch of cancels/reschedules needs the single shared reason before it can be saved.
-    if (mode === "edit" && needsSessionReason && sessionReason.trim() === "") {
-      toast.error("Indicá el motivo de los cambios de sesiones");
-      document
-        .getElementById("sesiones")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Cada cambio de sesión necesita su motivo antes de guardar: se lleva hasta el primero que
+    // falta (si su página de la lista está a la vista) o, si no, a la sección «Sesiones».
+    if (mode === "edit" && firstMissingReason) {
+      const missing = sessionActions.filter(
+        (a) => sessionActionNeedsReason(a) && !a.reason?.trim(),
+      ).length;
+      toast.error(
+        missing === 1
+          ? "Falta el motivo de un cambio de sesión"
+          : `Falta el motivo de ${missing} cambios de sesión`,
+      );
+      const field = document.getElementById(
+        `session-reason-${utcDateKey(firstMissingReason.occurrenceDateMs)}`,
+      );
+      (field ?? document.getElementById("sesiones"))?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      field?.focus({ preventScroll: true });
       return false;
     }
     try {
@@ -309,8 +323,9 @@ export function EventForm({
               ...values,
               force: forces.force ?? false,
               forceCapacity: forces.forceCapacity ?? false,
-              sessionActions,
-              sessionReason: sessionReason.trim(),
+              sessionActions: sessionActions.map((a) =>
+                a.reason === undefined ? a : { ...a, reason: a.reason.trim() },
+              ),
             },
       );
     } catch (err) {
@@ -337,7 +352,6 @@ export function EventForm({
     setDropWarning(null);
     setCapacityWarning(null);
     setSessionActions([]);
-    setSessionReason("");
     toast.success(mode === "create" ? "Evento creado" : "Evento actualizado");
     guard.release();
     router.push("/admin/events");
@@ -658,8 +672,6 @@ export function EventForm({
                     existing={existingExceptions}
                     actions={sessionActions}
                     onActionsChange={setSessionActions}
-                    reason={sessionReason}
-                    onReasonChange={setSessionReason}
                   />
                 </FormSection>
 

@@ -4,6 +4,7 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@/lib/logger";
 import { areEventEmailsSuspended } from "@/lib/maintenance/server";
 import { editLinkFootnoteHtml, freshEditLinkUrl } from "@/lib/email/edit-link";
+import { escapeHtml } from "@/lib/email/escape";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -29,13 +30,6 @@ export interface DecisionRecipient {
 }
 
 /** Escapes text interpolated into the email HTML (admin-authored reason). */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function approvedHtml(eventName: string, editLink: string): string {
   return `

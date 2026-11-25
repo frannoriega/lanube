@@ -1,5 +1,6 @@
 import type { NotificationEvent } from "../types";
 import { formatRange } from "./format";
+import { escapeHtml } from "@/lib/email/escape";
 
 export interface EmailRendered {
   subject: string;
@@ -26,14 +27,6 @@ function shell(heading: string, bodyHtml: string): string {
  * Escapa texto escrito por personas (un valor pedido, un motivo) antes de meterlo en el
  * HTML del email — sin esto, un motivo con `<a href=…>` se renderizaría como link.
  */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 const p = (text: string) =>
   `<p style="color:#555;line-height:1.6;">${text}</p>`;

@@ -73,12 +73,12 @@ describe("notifyEventParticipantsBatch", () => {
 
     const res = await notifyEventParticipantsBatch("ev1", {
       eventName: "Taller",
-      reason: "Vacaciones del docente",
       changes: [
         {
           kind: "cancelled",
           originalStartMs: START,
           originalEndMs: START + 3 * HOUR,
+          reason: "Vacaciones del docente",
         },
         {
           kind: "rescheduled",
@@ -86,6 +86,7 @@ describe("notifyEventParticipantsBatch", () => {
           originalEndMs: START + 7 * 24 * HOUR + 3 * HOUR,
           newStartMs: START + 8 * 24 * HOUR,
           newEndMs: START + 8 * 24 * HOUR + 3 * HOUR,
+          reason: "Vacaciones del docente",
         },
       ],
     });
@@ -97,7 +98,8 @@ describe("notifyEventParticipantsBatch", () => {
     const html = sendMail.mock.calls[0][0].html as string;
     expect(html).toContain("Cancelada");
     expect(html).toContain("Reprogramada");
-    expect(html).toContain("Vacaciones del docente");
+    // Mismo motivo en todos los cambios → se dice una sola vez (milestone 44).
+    expect(html.match(/Vacaciones del docente/g)?.length).toBe(1);
     // Both sessions listed in one email.
     expect((html.match(/<li/g) ?? []).length).toBe(2);
 
@@ -109,6 +111,46 @@ describe("notifyEventParticipantsBatch", () => {
       "/forms/response/tok-p2-2",
     );
     expect(html).toContain("/forms/response/request-link");
+  });
+
+  it("motivos distintos: cada línea lleva el suyo, escapado, en un solo correo (milestone 44)", async () => {
+    listEventParticipants.mockResolvedValue([
+      {
+        email: "a@x.com",
+        displayEmail: "a@x.com",
+        id: "p1",
+        status: "APPROVED",
+      },
+    ]);
+    await notifyEventParticipantsBatch("ev1", {
+      eventName: "Taller <b>",
+      changes: [
+        {
+          kind: "cancelled",
+          originalStartMs: START,
+          originalEndMs: START + 3 * HOUR,
+          reason: "Feriado",
+        },
+        {
+          kind: "cancelled",
+          originalStartMs: START + 7 * 24 * HOUR,
+          originalEndMs: START + 7 * 24 * HOUR + 3 * HOUR,
+          reason: "Paro <docente>",
+        },
+        {
+          kind: "restored",
+          originalStartMs: START + 14 * 24 * HOUR,
+          originalEndMs: START + 14 * 24 * HOUR + 3 * HOUR,
+        },
+      ],
+    });
+    expect(sendMail).toHaveBeenCalledTimes(1);
+    const html = sendMail.mock.calls[0][0].html as string;
+    expect(html).toContain("Motivo: Feriado");
+    expect(html).toContain("Motivo: Paro &lt;docente&gt;");
+    expect(html).not.toContain("<strong>Motivo:</strong>");
+    expect(html).toContain("Taller &lt;b&gt;");
+    // La campanita lleva el motivo de su cambio.
   });
 
   it("no-ops when there are no changes", async () => {

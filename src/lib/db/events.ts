@@ -448,9 +448,8 @@ export async function updateEvent(
     force?: boolean;
     /** Confirma una edición que dejaría más inscriptos que lugares (D11). */
     forceCapacity?: boolean;
+    /** Cada cancel/reschedule trae su propio motivo (milestone 44). */
     sessionActions?: SessionActionInput[];
-    /** Single reason shared by every staged cancel/reschedule in this save. */
-    sessionReason?: string;
   } = {},
 ): Promise<Event> {
   const force = opts.force ?? false;
@@ -609,24 +608,17 @@ export async function updateEvent(
       await syncEventForm(tx, id, input);
       // Apply staged per-session changes (cancel/reschedule/revert) now, so nothing persists —
       // and no participant email is sent — until the whole event save commits.
-      await applySessionActions(
-        tx,
-        id,
-        opts.sessionActions ?? [],
-        opts.sessionReason ?? "",
-        changes,
-      );
+      await applySessionActions(tx, id, opts.sessionActions ?? [], changes);
       await recomputeEventWindow(tx, id);
 
       return tx.event.findUniqueOrThrow({ where: { id } });
     });
 
     // One digest email per participant, only after the transaction commits (never on a
-    // rolled-back edit). The shared reason is carried once for the whole batch.
+    // rolled-back edit). Each change carries its own reason (milestone 44).
     if (changes.length > 0) {
       await notifyEventParticipantsBatch(id, {
         eventName: input.name,
-        reason: opts.sessionReason?.trim() || undefined,
         changes,
       });
     }
@@ -645,25 +637,24 @@ export async function updateEvent(
  * replaces any exception on that date (one per date), then records a cancel/reschedule exception or,
  * for revert, just clears it. Collects the participant notifications to send after commit. Rebuilds
  * the ledger of every touched reservation.
+ *
+ * Cada cancel/reschedule trae su motivo (milestone 44), que se guarda en su excepción y viaja con
+ * su cambio al correo. El schema ya lo exige; se vuelve a chequear acá porque es la regla de
+ * negocio y esta función no debería depender de quién la llama.
  */
 async function applySessionActions(
   tx: Prisma.TransactionClient,
   eventId: string,
   actions: SessionActionInput[],
-  reason: string,
   changes: OccurrenceChange[],
 ): Promise<void> {
   if (actions.length === 0) return;
 
-  // Every cancel/reschedule must record why (business rule); the reason is shared across the batch
-  // (stored on each exception row for admin visibility; emailed once by the caller).
-  const needsReason = actions.some(
-    (a) => a.kind === "cancel" || a.kind === "reschedule",
-  );
-  if (needsReason && reason.trim() === "") {
-    throw new DomainError("El motivo del cambio de sesiones es obligatorio");
+  for (const a of actions) {
+    if ((a.kind === "cancel" || a.kind === "reschedule") && !a.reason.trim()) {
+      throw new DomainError("Cada cambio de sesión necesita su motivo");
+    }
   }
-  const batchReason = reason.trim();
 
   const reservations = await tx.reservation.findMany({
     where: { reservableType: "EVENT", reservableId: eventId },
@@ -725,13 +716,14 @@ async function applySessionActions(
           reservationId: r.id,
           exceptionDate: BigInt(a.occurrenceDateMs),
           isCancelled: true,
-          reason: batchReason,
+          reason: a.reason.trim(),
         },
       });
       changes.push({
         kind: "cancelled",
         originalStartMs: a.occurrenceDateMs,
         originalEndMs: a.occurrenceDateMs + duration,
+        reason: a.reason.trim(),
       });
     } else if (a.kind === "reschedule") {
       await assertRescheduleFree(tx, r.id, a.newStartMs, a.newEndMs);
@@ -742,7 +734,7 @@ async function applySessionActions(
           isCancelled: false,
           newStartTime: BigInt(a.newStartMs),
           newEndTime: BigInt(a.newEndMs),
-          reason: batchReason,
+          reason: a.reason.trim(),
         },
       });
       changes.push({
@@ -751,6 +743,7 @@ async function applySessionActions(
         originalEndMs: a.occurrenceDateMs + duration,
         newStartMs: a.newStartMs,
         newEndMs: a.newEndMs,
+        reason: a.reason.trim(),
       });
     } else if (stale.length > 0) {
       // Revert only notifies if it actually removed a saved exception.

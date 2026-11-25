@@ -4,6 +4,7 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { listLinkableRegistrations } from "@/lib/db/participants";
 import { editLinkFootnoteHtml, freshEditLinkUrl } from "@/lib/email/edit-link";
 import { logger } from "@/lib/logger";
+import { escapeHtml } from "@/lib/email/escape";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -22,13 +23,6 @@ const LOGO_URL =
   "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
 /** Escapa texto interpolado en el HTML (el nombre del evento lo escribe un admin). */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * «Pedir un enlace nuevo» (milestone 25, S5): manda **un** correo con un enlace recién emitido

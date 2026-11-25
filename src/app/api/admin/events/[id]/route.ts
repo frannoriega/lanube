@@ -7,11 +7,7 @@ import {
   getEvent,
   updateEvent,
 } from "@/lib/db/events";
-import {
-  eventInputSchema,
-  sessionActionSchema,
-  sessionActionsNeedReason,
-} from "@/lib/schemas/events";
+import { eventInputSchema, sessionActionSchema } from "@/lib/schemas/events";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { z } from "zod";
 import { NextRequest } from "next/server";
@@ -61,20 +57,12 @@ export async function PUT(
     });
   }
 
-  // Single reason shared by every cancel/reschedule in this save (required when any exist).
-  const sessionReason =
-    typeof body?.sessionReason === "string" ? body.sessionReason.trim() : "";
-  if (sessionActionsNeedReason(sessionsParsed.data) && sessionReason === "") {
-    return apiError("El motivo del cambio de sesiones es obligatorio", 400);
-  }
-
   try {
     const audit = await beginAudit("Event", id);
     const event = await updateEvent(id, parsed.data, {
       force,
       forceCapacity,
       sessionActions: sessionsParsed.data,
-      sessionReason,
     });
     await audit.commit(session, AUDIT_ACTIONS.eventUpdate, {
       // Las sesiones canceladas/reprogramadas en este guardado no están en la foto del
@@ -82,7 +70,7 @@ export async function PUT(
       extra: sessionsParsed.data.length
         ? { after: { sessions: describeSessionActions(sessionsParsed.data) } }
         : undefined,
-      reason: sessionReason || null,
+      // Cada sesión lleva su motivo dentro de `sessions` (milestone 44): no hay uno del lote.
     });
     // Invalida la caché pública: el sitio público muestra los eventos (milestone 25, P2).
     revalidatePublic(PUBLIC_TAGS.events);

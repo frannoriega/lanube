@@ -470,7 +470,11 @@ text (box or button variant).
 Events stay **weekly-recurring** (one reservation per weekday). Individual sessions are
 cancelled/rescheduled as **`ReservationException`s** — the reservation machinery applies them
 (`effective_occurrence_window` + `rebuild_reservation_ledger_forward`). A **reason is required**
-for event exceptions (business rule; the `reason` column is optional). The pure occurrence logic
+for event exceptions (business rule; the `reason` column is optional) and it is **per session**
+(milestone 44): each `cancel`/`reschedule` in `sessionActions` carries its own `reason`, asked in
+its row of the panel (there is no batch `sessionReason` any more). The save still sends **one
+email per participant** listing every change with its reason (a reason shared by all changes is
+printed once — `batchReasonLayout`). Email HTML escapes user text with `src/lib/email/escape.ts`. The pure occurrence logic
 (weekly expansion + exception overlay, drop detection, and the saved-vs-staged merge
 `effectiveExceptions`) lives in `src/lib/events/occurrences.ts` (unit-tested).
 

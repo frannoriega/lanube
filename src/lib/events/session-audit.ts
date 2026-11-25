@@ -4,7 +4,8 @@ import type { SessionActionInput } from "@/lib/schemas/events";
 
 /**
  * Las sesiones tocadas en un guardado de evento, como texto para la auditoría (milestone 16):
- * "Cancelada: jue 09/07", "Reprogramada: jue 09/07 → vie 10/07 10:00–12:00".
+ * "Cancelada: jue 09/07 (motivo: Feriado)", "Reprogramada: jue 09/07 → vie 10/07 10:00–12:00
+ * (motivo: …)". Desde el milestone 44 cada cambio dice su propio motivo.
  *
  * Se formatean en el servidor, en la zona del panel (`ADMIN_TIMEZONE`): son fechas de
  * calendario del evento — la excepción documentada al formateo del lado del cliente, igual
@@ -24,11 +25,11 @@ export function describeSessionActions(
     const day = dayFmt.format(new Date(a.occurrenceDateMs));
     switch (a.kind) {
       case "cancel":
-        return `Cancelada: ${day}`;
+        return `Cancelada: ${day} (motivo: ${a.reason})`;
       case "revert":
         return `Restaurada: ${day}`;
       case "reschedule":
-        return `Reprogramada: ${day} → ${dayFmt.format(new Date(a.newStartMs))} ${formatEventTimeRange(a.newStartMs, a.newEndMs)}`;
+        return `Reprogramada: ${day} → ${dayFmt.format(new Date(a.newStartMs))} ${formatEventTimeRange(a.newStartMs, a.newEndMs)} (motivo: ${a.reason})`;
     }
   });
 }

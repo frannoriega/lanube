@@ -148,6 +148,7 @@ describe("sessionActionSchema (reprogramar una sesión)", () => {
     kind: "reschedule" as const,
     weekday: 4,
     occurrenceDateMs: dateKeyTimeToMs("2026-07-02", "10:00"),
+    reason: "Feriado",
   };
 
   it("acepta un horario del mismo día en cuartos de hora", () => {
@@ -176,6 +177,61 @@ describe("sessionActionSchema (reprogramar una sesión)", () => {
         ...base,
         newStartMs: dateKeyTimeToMs("2026-07-03", "22:00"),
         newEndMs: dateKeyTimeToMs("2026-07-04", "01:00"),
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("sessionActionSchema: motivo por sesión (milestone 44)", () => {
+  const occurrenceDateMs = dateKeyTimeToMs("2026-07-02", "10:00");
+
+  it("cancelar sin motivo (o con solo espacios) se rechaza en esa acción", () => {
+    const r = sessionActionSchema.safeParse({
+      kind: "cancel",
+      weekday: 4,
+      occurrenceDateMs,
+      reason: "   ",
+    });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].path).toEqual(["reason"]);
+    expect(
+      sessionActionSchema.safeParse({
+        kind: "cancel",
+        weekday: 4,
+        occurrenceDateMs,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("reprogramar sin motivo se rechaza", () => {
+    expect(
+      sessionActionSchema.safeParse({
+        kind: "reschedule",
+        weekday: 4,
+        occurrenceDateMs,
+        newStartMs: dateKeyTimeToMs("2026-07-03", "14:00"),
+        newEndMs: dateKeyTimeToMs("2026-07-03", "16:00"),
+      }).success,
+    ).toBe(false);
+  });
+
+  it("revertir no lleva motivo", () => {
+    expect(
+      sessionActionSchema.safeParse({
+        kind: "revert",
+        weekday: 4,
+        occurrenceDateMs,
+      }).success,
+    ).toBe(true);
+  });
+
+  it("el motivo tiene tope de 500", () => {
+    expect(
+      sessionActionSchema.safeParse({
+        kind: "cancel",
+        weekday: 4,
+        occurrenceDateMs,
+        reason: "x".repeat(501),
       }).success,
     ).toBe(false);
   });

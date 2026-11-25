@@ -13,8 +13,8 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/molecules/responsive-dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import {
   EventOccurrence,
@@ -22,6 +22,7 @@ import {
   SessionAction,
   effectiveExceptions,
   expandEventOccurrences,
+  sessionActionNeedsReason,
   utcDateKey,
   weekdayOfRrule,
 } from "@/lib/events/occurrences";
@@ -79,7 +80,9 @@ function keyToDate(key: string): Date {
  * (`actions`, por día de semana + fecha nominal) y recién se persiste —y se avisa por email a
  * los inscriptos— cuando se guarda el evento. Como ya no hay un "Guardar" propio, no hace
  * falta un borrador intermedio: el "Guardar cambios" del evento es el único commit. El motivo
- * compartido (obligatorio si hay cancelaciones o reprogramaciones) se pide acá mismo.
+ * de cada cancelación o reprogramación se pide **en su fila** (milestone 44; antes era uno solo
+ * para todo el lote, al pie): el correo sigue siendo uno por inscripto, con el motivo de cada
+ * cambio. «Usar este motivo en las demás» lo copia a los cambios que todavía no tienen uno.
  *
  * En un evento nuevo (`editable = false`) solo se muestra el resumen: las excepciones se
  * gestionan una vez creado.
@@ -89,8 +92,6 @@ export function EventSessions({
   existing,
   actions,
   onActionsChange,
-  reason,
-  onReasonChange,
   editable,
   defaultExpanded = false,
 }: {
@@ -101,9 +102,6 @@ export function EventSessions({
   /** Staged, not-yet-saved session changes. */
   actions: SessionAction[];
   onActionsChange: (next: SessionAction[]) => void;
-  /** Single reason shared by every staged cancel/reschedule. */
-  reason: string;
-  onReasonChange: (reason: string) => void;
   /** Si se pueden gestionar sesiones (solo al editar un evento ya creado). */
   editable: boolean;
   /** Abrir la lista desplegada (atajo `?sessions=1` desde la tarjeta del evento). */
@@ -121,7 +119,6 @@ export function EventSessions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const draftActions = actions;
-  const draftReason = reason;
 
   const { startDate, endDate, startTime, endTime } = recipe;
   const weekdaysKey = recipe.weekdays.join(",");
@@ -150,12 +147,7 @@ export function EventSessions({
         endMs: p.endMs,
         recurrenceEndMs: p.recurrenceEndMs,
         rrule: p.rrule,
-        exceptions: effectiveExceptions(
-          wd,
-          existing,
-          draftActions,
-          draftReason,
-        ),
+        exceptions: effectiveExceptions(wd, existing, draftActions),
       };
     });
     return expandEventOccurrences(raws, Date.now());
@@ -167,7 +159,6 @@ export function EventSessions({
     weekdaysKey,
     existing,
     draftActions,
-    draftReason,
   ]);
 
   // Staged rows are matched by calendar date so the "Sin guardar" badge survives a start-time edit
@@ -176,17 +167,31 @@ export function EventSessions({
     () => new Set(draftActions.map((a) => utcDateKey(a.occurrenceDateMs))),
     [draftActions],
   );
-  const needsReason = useMemo(
-    () =>
-      draftActions.some((a) => a.kind === "cancel" || a.kind === "reschedule"),
-    [draftActions],
-  );
+  // Cambios a los que todavía les falta el motivo (milestone 44): el resumen los cuenta.
+  const missingReasons = draftActions.filter(
+    (a) => sessionActionNeedsReason(a) && !a.reason?.trim(),
+  ).length;
   const savedDates = useMemo(
     () => new Set(existing.map((e) => utcDateKey(e.occurrenceDateMs))),
     [existing],
   );
 
+  /** El cambio staged de una fila (por fecha, como el badge «Sin guardar»). */
+  const stagedFor = (weekday: number, occurrenceDateMs: number) =>
+    draftActions.find(
+      (a) =>
+        a.weekday === weekday &&
+        utcDateKey(a.occurrenceDateMs) === utcDateKey(occurrenceDateMs),
+    );
+
+  /**
+   * Encola un cambio. Si la fila ya tenía uno (p. ej. reprogramar → cancelar), **conserva el
+   * motivo** que ya se había escrito: es la misma sesión y casi siempre el mismo porqué.
+   */
   const upsert = (a: SessionAction) => {
+    const prev = stagedFor(a.weekday, a.occurrenceDateMs);
+    if (a.reason === undefined && prev?.reason)
+      a = { ...a, reason: prev.reason };
     onActionsChange([
       ...actions.filter(
         (x) =>
@@ -196,6 +201,20 @@ export function EventSessions({
       ),
       a,
     ]);
+  };
+
+  /** Cambia el motivo del cambio staged de una fila. */
+  const setReason = (target: SessionAction, reason: string) => {
+    onActionsChange(actions.map((x) => (x === target ? { ...x, reason } : x)));
+  };
+
+  /** Copia un motivo a los demás cambios que **no** tienen uno (nunca pisa uno escrito). */
+  const copyReasonToOthers = (reason: string) => {
+    onActionsChange(
+      actions.map((x) =>
+        sessionActionNeedsReason(x) && !x.reason?.trim() ? { ...x, reason } : x,
+      ),
+    );
   };
 
   const revert = (weekday: number, occurrenceDateMs: number) => {
@@ -259,6 +278,11 @@ export function EventSessions({
                 : "No quedan sesiones por delante en estas fechas."}
             {actions.length > 0 &&
               ` · ${actions.length} cambio${actions.length === 1 ? "" : "s"} sin guardar`}
+            {missingReasons > 0 && (
+              <span className="text-destructive">
+                {` · ${missingReasons} sin motivo`}
+              </span>
+            )}
           </p>
         </div>
         {editable && total > 0 && (
@@ -342,7 +366,7 @@ export function EventSessions({
                             </Badge>
                           )}
                         </div>
-                        {occ.reason && (
+                        {occ.reason && !isPending && (
                           <p className="text-xs text-muted-foreground">
                             Motivo: {occ.reason}
                           </p>
@@ -418,6 +442,30 @@ export function EventSessions({
                           </Button>
                         )}
                       </div>
+                      {(() => {
+                        const staged = stagedFor(weekday, occ.occurrenceDateMs);
+                        if (!staged || !sessionActionNeedsReason(staged))
+                          return null;
+                        return (
+                          <SessionReasonField
+                            id={`session-reason-${utcDateKey(occ.occurrenceDateMs)}`}
+                            value={staged.reason ?? ""}
+                            onChange={(v) => setReason(staged, v)}
+                            canCopy={
+                              !!staged.reason?.trim() &&
+                              draftActions.some(
+                                (x) =>
+                                  x !== staged &&
+                                  sessionActionNeedsReason(x) &&
+                                  !x.reason?.trim(),
+                              )
+                            }
+                            onCopy={() =>
+                              copyReasonToOthers(staged.reason!.trim())
+                            }
+                          />
+                        );
+                      })()}
                     </li>
                   );
                 })}
@@ -450,27 +498,6 @@ export function EventSessions({
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-              )}
-
-              {/* One reason for the whole batch of cancels/reschedules — collected at the end,
-                sent as a single notification to participants when the event is saved. */}
-              {needsReason && (
-                <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-                  <Label htmlFor="session-reason">
-                    Motivo de los cambios *
-                  </Label>
-                  <Textarea
-                    id="session-reason"
-                    value={draftReason}
-                    onChange={(e) => onReasonChange(e.target.value)}
-                    placeholder="Ej.: Feriado / el docente no puede asistir"
-                    rows={2}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Se aplica a todas las sesiones modificadas y se avisa por
-                    email a los inscriptos al guardar el evento.
-                  </p>
                 </div>
               )}
             </>
@@ -574,5 +601,58 @@ function RescheduleDialog({
         </ResponsiveDialogContent>
       </ResponsiveDialog>
     </>
+  );
+}
+
+/**
+ * Motivo de un cambio, en su fila (milestone 44). Obligatorio: vacío se marca en rojo y el
+ * guardado del evento no sigue hasta completarlo.
+ */
+function SessionReasonField({
+  id,
+  value,
+  onChange,
+  canCopy,
+  onCopy,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  canCopy: boolean;
+  onCopy: () => void;
+}) {
+  const empty = value.trim() === "";
+  return (
+    <div className="basis-full space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor={id} className="sr-only">
+          Motivo del cambio
+        </label>
+        <Input
+          id={id}
+          value={value}
+          maxLength={500}
+          autoFocus={empty}
+          aria-invalid={empty}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Motivo (se avisa a los inscriptos): feriado, el docente no puede…"
+          className="h-8 min-w-0 flex-1 text-sm"
+        />
+        {canCopy && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs"
+            onClick={onCopy}
+          >
+            Usar este motivo en las demás
+          </Button>
+        )}
+      </div>
+      {empty && (
+        <p className="text-xs text-destructive">Indicá el motivo del cambio.</p>
+      )}
+    </div>
   );
 }

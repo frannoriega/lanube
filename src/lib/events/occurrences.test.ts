@@ -8,6 +8,7 @@ import {
   isUpcomingOccurrence,
   weekdayOfRrule,
   type RawReservation,
+  sessionActionNeedsReason,
 } from "@/lib/events/occurrences";
 import {
   EventRecipe,
@@ -165,12 +166,18 @@ describe("effectiveExceptions (saved overlaid by staged changes)", () => {
   const TH = 4; // Thursday
   const day = (k: string) => dateKeyTimeToMs(k, "10:00");
 
-  it("stages a cancel where nothing was saved (batch reason applied)", () => {
+  it("stages a cancel where nothing was saved (its own reason, milestone 44)", () => {
     const out = effectiveExceptions(
       TH,
       [],
-      [{ weekday: TH, occurrenceDateMs: day("2026-07-09"), kind: "cancel" }],
-      "Feriado",
+      [
+        {
+          weekday: TH,
+          occurrenceDateMs: day("2026-07-09"),
+          kind: "cancel",
+          reason: "Feriado",
+        },
+      ],
     );
     expect(out).toHaveLength(1);
     expect(out[0].isCancelled).toBe(true);
@@ -207,20 +214,16 @@ describe("effectiveExceptions (saved overlaid by staged changes)", () => {
     ];
     const ns = dateKeyTimeToMs("2026-07-10", "14:00");
     const ne = dateKeyTimeToMs("2026-07-10", "17:00");
-    const out = effectiveExceptions(
-      TH,
-      existing,
-      [
-        {
-          weekday: TH,
-          occurrenceDateMs: day("2026-07-09"),
-          kind: "reschedule",
-          newStartMs: ns,
-          newEndMs: ne,
-        },
-      ],
-      "nueva",
-    );
+    const out = effectiveExceptions(TH, existing, [
+      {
+        weekday: TH,
+        occurrenceDateMs: day("2026-07-09"),
+        kind: "reschedule",
+        newStartMs: ns,
+        newEndMs: ne,
+        reason: "nueva",
+      },
+    ]);
     expect(out).toHaveLength(1);
     expect(out[0].isCancelled).toBe(false);
     expect(out[0].newStartMs).toBe(ns);
@@ -240,10 +243,56 @@ describe("effectiveExceptions (saved overlaid by staged changes)", () => {
           reason: "otro día",
         },
       ],
-      [{ weekday: 1, occurrenceDateMs: day("2026-07-06"), kind: "cancel" }],
-      "x",
+      [
+        {
+          weekday: 1,
+          occurrenceDateMs: day("2026-07-06"),
+          kind: "cancel",
+          reason: "x",
+        },
+      ],
     );
     expect(out).toHaveLength(0);
+  });
+});
+
+describe("per-session reasons (milestone 44)", () => {
+  const TH = 4;
+  const day = (k: string) => dateKeyTimeToMs(k, "10:00");
+
+  it("each staged change keeps its own reason; an empty one shows as null", () => {
+    const out = effectiveExceptions(
+      TH,
+      [],
+      [
+        {
+          weekday: TH,
+          occurrenceDateMs: day("2026-07-09"),
+          kind: "cancel",
+          reason: "Feriado",
+        },
+        {
+          weekday: TH,
+          occurrenceDateMs: day("2026-07-16"),
+          kind: "cancel",
+          reason: " ",
+        },
+      ],
+    );
+    const byDate = Object.fromEntries(
+      out.map((e) => [
+        new Date(e.exceptionDateMs).toISOString().slice(0, 10),
+        e.reason,
+      ]),
+    );
+    expect(byDate["2026-07-09"]).toBe("Feriado");
+    expect(byDate["2026-07-16"]).toBeNull();
+  });
+
+  it("sessionActionNeedsReason: cancel/reschedule sí, revert no", () => {
+    expect(sessionActionNeedsReason({ kind: "cancel" })).toBe(true);
+    expect(sessionActionNeedsReason({ kind: "reschedule" })).toBe(true);
+    expect(sessionActionNeedsReason({ kind: "revert" })).toBe(false);
   });
 });
 
