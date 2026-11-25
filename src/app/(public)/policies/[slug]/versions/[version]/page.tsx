@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!found) notFound();
   if (!found.policy.versions.some((v) => v.version === version)) notFound();
   return {
-    title: `${found.policy.title} (versión del ${formatPolicyDate(version)}) | La Nube`,
+    title: `${found.policy.title} (versión del ${formatPolicyDate(version)})`,
     // Una versión archivada no debería competir en buscadores con la vigente.
     robots: { index: false },
   };

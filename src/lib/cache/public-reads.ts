@@ -14,6 +14,7 @@ import {
   searchPublishedNews,
 } from "@/lib/db/news";
 import { getSiteConfig } from "@/lib/db/siteConfig";
+import { listSitemapEntries } from "@/lib/db/sitemap";
 import { getPublicSpaces, getSpacesByKind } from "@/lib/db/spaces";
 import { logger } from "@/lib/logger";
 
@@ -111,6 +112,13 @@ export const getPublicUpcomingEventsPage = cachedRead(
   "upcoming-events-page",
   [PUBLIC_TAGS.events, PUBLIC_TAGS.spaces],
   getUpcomingPublicEventsPage,
+);
+
+/** Entradas del `sitemap.xml` (milestone 41): cambian con noticias y eventos. */
+export const getPublicSitemapEntries = cachedRead(
+  "sitemap-entries",
+  [PUBLIC_TAGS.news, PUBLIC_TAGS.events],
+  listSitemapEntries,
 );
 
 export const getPublicEventDetailCached = cachedRead(

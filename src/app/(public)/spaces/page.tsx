@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo/metadata";
 import Container from "@/components/atoms/container";
 import { Markdown } from "@/components/molecules/markdown";
 import {
@@ -26,11 +27,12 @@ import Link from "next/link";
  */
 export const revalidate = 300;
 
-export const metadata = {
-  title: "Espacios | La Nube",
+export const metadata = pageMetadata({
+  title: "Espacios",
   description:
     "Conocé los espacios de La Nube —coworking, sala de reuniones, sala de conferencias y laboratorio— y sus amenities.",
-};
+  path: "/spaces",
+});
 
 export default async function SpacesPage() {
   // Una sola consulta y dos bloques (milestone 24): los espacios, que se reservan, y las

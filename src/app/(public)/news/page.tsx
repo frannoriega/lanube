@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo/metadata";
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { Pagination } from "@/components/molecules/pagination";
@@ -12,10 +13,11 @@ import { getPublicNewsSearch } from "@/lib/cache/public-reads";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-export const metadata: Metadata = {
-  title: "Noticias — La Nube",
+export const metadata: Metadata = pageMetadata({
+  title: "Noticias",
   description: "Novedades y anuncios de la comunidad de La Nube.",
-};
+  path: "/news",
+});
 
 interface NoticiasSearchParams {
   page?: string;

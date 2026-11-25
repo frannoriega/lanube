@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo/metadata";
 import Container from "@/components/atoms/container";
 import { Markdown } from "@/components/molecules/markdown";
 import { TableOfContents } from "@/components/organisms/policies/table-of-contents";
@@ -32,10 +33,11 @@ type Params = { params: Promise<{ version: string }> };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const release = getRelease((await params).version);
   if (!release) notFound();
-  return {
-    title: `v${release.version}: ${release.title} | La Nube`,
+  return pageMetadata({
+    title: `v${release.version}: ${release.title}`,
     description: release.summary,
-  };
+    path: `/changelog/${release.version}`,
+  });
 }
 
 /** `id` del cuerpo: lo miden la píldora de progreso y el índice. */

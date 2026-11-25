@@ -1,6 +1,7 @@
 import { MaintenanceProvider } from "@/components/providers/maintenance";
 import { WhatsAppFloatButton } from "@/components/molecules/whatsapp-float-button";
 import { getPublicSiteConfig } from "@/lib/cache/public-reads";
+import { pageMetadata, SITE_NAME, siteUrl } from "@/lib/seo/metadata";
 import type { Metadata } from "next";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
@@ -17,9 +18,22 @@ const robotoMono = Roboto_Mono({
   weight: ["400", "500", "700"],
 });
 
+/**
+ * Metadatos base del sitio (milestone 41): `metadataBase` (las URLs relativas de Open Graph salen
+ * absolutas), el template del título y la vista previa por defecto. Cada página pública suma lo
+ * suyo con `pageMetadata()` (`src/lib/seo/metadata.ts`). `siteUrl()` lee env, no el pedido: el
+ * layout raíz no puede depender del pedido (milestone 25).
+ */
 export const metadata: Metadata = {
-  title: "La Nube - Polo Tecnológico",
-  description: 'Espacio de coworking e innovación "La Nube"',
+  metadataBase: new URL(siteUrl()),
+  title: {
+    default: `${SITE_NAME} · Polo Tecnológico`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  applicationName: SITE_NAME,
+  ...pageMetadata({ path: "/" }),
+  // La canónica es de cada página; la del layout se heredaría a las que no la definen.
+  alternates: undefined,
 };
 
 /**

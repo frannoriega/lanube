@@ -122,6 +122,8 @@ export interface PublicFormView {
   eventName: string;
   /** Participant-facing event description. */
   eventDescription: string | null;
+  /** Copete del evento: la meta descripción del formulario (milestone 41). */
+  eventSummary: string | null;
   eventImageUrl: string | null;
   /** Display name of the reservation type (from the catalog table). */
   eventTypeName: string;
@@ -150,6 +152,7 @@ export async function getPublicForm(
           id: true,
           name: true,
           description: true,
+          summary: true,
           imageUrl: true,
           capacity: true,
           requiresApproval: true,
@@ -199,6 +202,7 @@ export async function getPublicForm(
     eventId: eventForm.event.id,
     eventName: eventForm.event.name,
     eventDescription: eventForm.event.description,
+    eventSummary: eventForm.event.summary,
     eventImageUrl: eventForm.event.imageUrl,
     eventTypeName: eventForm.event.type.name,
     resourceName: eventForm.event.space.name,

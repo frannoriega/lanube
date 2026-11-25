@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo/metadata";
 import { PolicyDocument } from "@/components/organisms/policies/policy-document";
 import { nowMs } from "@/lib/clock";
 import { currentVersion } from "@/lib/policies/pending";
@@ -31,10 +32,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const found = getPolicyBySlug((await params).slug);
   // Slug o versión desconocidos: ni siquiera se arma metadata (la página muestra "no existe").
   if (!found) notFound();
-  return {
-    title: `${found.policy.title} | La Nube`,
+  return pageMetadata({
+    title: found.policy.title,
     description: found.policy.description,
-  };
+    path: `/policies/${found.policy.slug}`,
+  });
 }
 
 /**

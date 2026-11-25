@@ -1241,6 +1241,8 @@ export async function getUpcomingPublicEventsPage(
 export interface PublicEventDetail {
   id: string;
   name: string;
+  /** Copete de las tarjetas; también la meta descripción de la página (milestone 41). */
+  summary: string | null;
   description: string | null;
   imageUrl: string | null;
   eventType: EventType;
@@ -1318,6 +1320,7 @@ export async function getPublicEventDetail(
   return {
     id: event.id,
     name: event.name,
+    summary: event.summary,
     description: event.description,
     imageUrl: event.imageUrl,
     eventType: event.eventType,

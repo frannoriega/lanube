@@ -1,6 +1,7 @@
 # CI/CD hacia el VPS (ver deploy/README.md). En cada push a main: pruebas → imagen → deploy.
 # Secretos/variables del repositorio (Settings → Secrets and variables → Actions):
 #   vars.NEXT_PUBLIC_TURNSTILE_SITEKEY      (no hay secretos: el deploy es por pull, ver abajo)
+#   vars.NEXT_PUBLIC_SITE_URL               URL canónica del sitio (Open Graph, sitemap; milestone 41)
 name: deploy
 
 on:
@@ -103,6 +104,7 @@ jobs:
           build-args: |
             DATABASE_URL=${{ env.CI_DATABASE_URL }}
             NEXT_PUBLIC_TURNSTILE_SITEKEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -121,6 +123,7 @@ jobs:
           build-args: |
             DATABASE_URL=${{ env.CI_DATABASE_URL }}
             NEXT_PUBLIC_TURNSTILE_SITEKEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha
 

@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo/metadata";
 import Container from "@/components/atoms/container";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
 import { APP_VERSION, releasesNewestFirst } from "@/lib/changelog/registry";
@@ -11,10 +12,11 @@ import Link from "next/link";
  * del reloj ni de la base — el registro vive en el código — así que la página es estática pura
  * y solo cambia con un deploy.
  */
-export const metadata: Metadata = {
-  title: "Novedades | La Nube",
+export const metadata: Metadata = pageMetadata({
+  title: "Novedades",
   description: "Qué cambió en cada versión de La Nube.",
-};
+  path: "/changelog",
+});
 
 /**
  * Qué significa cada número de la versión, dicho para quien usa el sitio (la regla técnica

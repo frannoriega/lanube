@@ -1,3 +1,4 @@
+import { pageMetadata, toMetaDescription } from "@/lib/seo/metadata";
 import Breakout from "@/components/atoms/breakout";
 import Container from "@/components/atoms/container";
 import { LandingCard } from "@/components/templates/landing/shared/landing-card";
@@ -114,6 +115,13 @@ function SectionHeader({
     <SectionHeading eyebrow={eyebrow} title={heading} lead={lead} id={id} />
   );
 }
+
+/** Milestone 41: título, descripción (el copete institucional) y vista previa propios. */
+export const metadata = pageMetadata({
+  title: "Quiénes somos",
+  description: toMetaDescription(ABOUT_HERO_LEAD),
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

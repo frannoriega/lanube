@@ -11,7 +11,15 @@ import SpacesSection from "@/components/templates/landing/spaces";
 import { dateKeyFromUnixMs } from "@/lib/admin/admin-timezone";
 import { nowMs } from "@/lib/clock";
 import { BASE_KEYWORDS } from "@/lib/constants/hero";
-import { getPublicLandingThemes } from "@/lib/cache/public-reads";
+import {
+  getPublicLandingThemes,
+  getPublicSiteConfig,
+} from "@/lib/cache/public-reads";
+import {
+  jsonLdScript,
+  organizationJsonLd,
+  pageMetadata,
+} from "@/lib/seo/metadata";
 import {
   parseEmojiList,
   resolveActiveTheme,
@@ -27,9 +35,16 @@ import {
 // Next exige un literal: `public-cache.test.ts` comprueba que sea igual a PUBLIC_REVALIDATE_SECONDS.
 export const revalidate = 300;
 
+/** Canónica y vista previa de la portada (milestone 41): la descripción por defecto del sitio. */
+export const metadata = pageMetadata({ path: "/" });
+
 export default async function Home() {
   const now = nowMs();
-  const theme = resolveActiveTheme(await getPublicLandingThemes(), now);
+  const [themes, siteConfig] = await Promise.all([
+    getPublicLandingThemes(),
+    getPublicSiteConfig(),
+  ]);
+  const theme = resolveActiveTheme(themes, now);
   const emojis = theme ? parseEmojiList(theme.emojiList) : [];
   const heroKeywords = theme
     ? resolveHeroKeywords(
@@ -55,6 +70,14 @@ export default async function Home() {
   // Eventos y Noticias se quitó tras revisarla (ver `StatsBand`).
   return (
     <>
+      {/* Datos estructurados (milestone 41). Va fuera del contenedor de secciones: no es un hijo
+          que cuente en el nth-child de las franjas (ver el comentario de arriba). */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript(organizationJsonLd(siteConfig)),
+        }}
+      />
       {theme?.entranceEffect === "EMOJI_SHOWER" && emojis.length > 0 ? (
         <EmojiShower
           emojis={emojis}

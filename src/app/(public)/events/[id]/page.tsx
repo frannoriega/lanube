@@ -6,6 +6,8 @@ import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { nowMs } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { MapPin, Tag } from "lucide-react";
+import { pageMetadata, toMetaDescription } from "@/lib/seo/metadata";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Fact } from "./event-fact";
 import { EventScheduleFacts, EventSessionList } from "./event-schedule";
@@ -21,6 +23,27 @@ export const revalidate = 300;
 
 export function generateStaticParams() {
   return [];
+}
+
+/**
+ * Vista previa al compartir (milestone 41): nombre, copete y portada del evento. Comparte la
+ * lectura cacheada con la página. El copete es texto plano; si falta, el comienzo de la
+ * descripción sin markdown.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getPublicEventDetailCached(id);
+  if (!event) return { title: "Evento no encontrado" };
+  return pageMetadata({
+    title: event.name,
+    description: toMetaDescription(event.summary || event.description),
+    path: `/events/${event.id}`,
+    image: event.imageUrl,
+  });
 }
 
 /**

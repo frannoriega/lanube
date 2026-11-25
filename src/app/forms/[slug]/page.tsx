@@ -3,8 +3,34 @@ import {
   FormMessageCard,
 } from "@/components/organisms/forms/form-page";
 import { PublicForm } from "@/components/organisms/forms/public-form";
-import { getPublicForm } from "@/lib/db/participants";
+import { getPublicForm as readPublicForm } from "@/lib/db/participants";
+import { pageMetadata, toMetaDescription } from "@/lib/seo/metadata";
 import { Info } from "lucide-react";
+import type { Metadata } from "next";
+import { cache } from "react";
+
+/** Una sola lectura por pedido para la metadata y la página (se lee la base en cada pedido). */
+const getPublicForm = cache(readPublicForm);
+
+/**
+ * Vista previa al compartir el enlace de inscripción (milestone 41): el evento, no el nombre
+ * interno del formulario. Es la página que más se comparte por WhatsApp.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const form = await getPublicForm(slug);
+  if (!form) return { title: "Formulario no encontrado" };
+  return pageMetadata({
+    title: `Inscripción: ${form.eventName}`,
+    description: toMetaDescription(form.eventSummary || form.eventDescription),
+    path: `/forms/${form.slug}`,
+    image: form.eventImageUrl,
+  });
+}
 
 const CLOSED_MESSAGES: Record<string, string> = {
   closed: "Las inscripciones no están abiertas en este momento.",

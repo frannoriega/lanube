@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo/metadata";
 import Container from "@/components/atoms/container";
 import { SectionHeading } from "@/components/templates/landing/shared/section-heading";
 import { nowMs } from "@/lib/clock";
@@ -18,10 +19,11 @@ import Link from "next/link";
  */
 export const revalidate = 300;
 
-export const metadata = {
-  title: "Políticas | La Nube",
+export const metadata = pageMetadata({
+  title: "Políticas",
   description: "Las políticas que rigen el uso de La Nube.",
-};
+  path: "/policies",
+});
 
 /**
  * Índice de políticas (milestone 19): una tarjeta por política con su fecha de vigencia.

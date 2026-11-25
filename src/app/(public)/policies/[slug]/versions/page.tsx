@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const found = getPolicyBySlug((await params).slug);
   // Slug o versión desconocidos: ni siquiera se arma metadata (la página muestra "no existe").
   if (!found) notFound();
-  return { title: `Versiones: ${found.policy.title} | La Nube` };
+  return { title: `Versiones: ${found.policy.title}` };
 }
 
 /**

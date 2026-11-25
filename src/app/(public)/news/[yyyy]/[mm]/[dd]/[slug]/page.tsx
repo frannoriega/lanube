@@ -15,6 +15,7 @@ import {
 } from "@/lib/cache/public-reads";
 import { readingMinutes } from "@/lib/news/reading-time";
 import { authorDisplayName, newsDetailPath } from "@/lib/news/url";
+import { pageMetadata, toMetaDescription } from "@/lib/seo/metadata";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -51,11 +52,19 @@ export async function generateMetadata({
   const post =
     (await getPublicNewsBySlug(slug)) ??
     (await getPublicNewsByRetiredSlug(slug));
-  if (!post) return { title: "Noticia no encontrada — La Nube" };
-  return {
-    title: `${post.title} — La Nube`,
-    description: post.summary,
-  };
+  if (!post) return { title: "Noticia no encontrada" };
+  // Vista previa con la portada de la noticia (milestone 41). Una noticia vieja sin portada cae
+  // en la imagen de marca, nunca en el escudo municipal.
+  return pageMetadata({
+    title: post.title,
+    description: toMetaDescription(post.summary),
+    path: newsDetailPath(post),
+    image: post.coverImageUrl,
+    type: "article",
+    publishedTime: new Date(
+      Number(post.publishedAt ?? post.createdAt),
+    ).toISOString(),
+  });
 }
 
 /** Id del contenedor del cuerpo: `ReadingProgress` mide el avance sobre este elemento. */

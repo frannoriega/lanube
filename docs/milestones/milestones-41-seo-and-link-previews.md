@@ -1,6 +1,6 @@
 # Milestone 41 — SEO y vista previa al compartir
 
-**Estado:** promoted (2026-11-25). Versión 1.2.0.
+**Estado:** done (2026-11-25). Versión 1.2.0.
 
 ## Qué pidió el usuario (2026-11-25)
 
@@ -82,14 +82,45 @@ la sección de miembros/espacios de la portada, se puede marcar ese bloque con `
 
 ## Criterios de aceptación
 
-- [ ] El HTML de una noticia y de un evento tiene `og:title`, `og:description`, `og:image`
+- [x] El HTML de una noticia y de un evento tiene `og:title`, `og:description`, `og:image`
       absolutos con su propia imagen (test sobre `generateMetadata` + verificación con un
       depurador de Open Graph sobre el deploy de preview).
-- [ ] Ninguna página pública usa el escudo municipal como `og:image`.
-- [ ] La portada tiene una meta descripción propia; `robots.txt` y `sitemap.xml` responden.
-- [ ] `public-cache.test.ts` sigue verde (el layout raíz no lee el pedido).
-- [ ] Los eventos privados no aparecen en el sitemap y su formulario es `noindex`.
+- [x] Ninguna página pública usa el escudo municipal como `og:image`.
+- [x] La portada tiene una meta descripción propia; `robots.txt` y `sitemap.xml` responden.
+- [x] `public-cache.test.ts` sigue verde (el layout raíz no lee el pedido).
+- [ ] Los eventos privados no aparecen en el sitemap y su formulario es `noindex` (milestone 43).
 
 ## Registro
 
-(Sin implementar.)
+Implementado el 2026-11-25.
+
+- `src/lib/seo/metadata.ts`: `siteUrl()`/`absoluteUrl()`, `DEFAULT_DESCRIPTION`, `DEFAULT_OG_IMAGE`,
+  `toMetaDescription()`, `pageMetadata()`, `organizationJsonLd()` y `jsonLdScript()` (escapa `<`
+  para que un texto de la base no cierre el `<script>`). Tests en `metadata.test.ts`.
+- **Descripción por defecto** (139 caracteres): «Polo Tecnológico de Concepción del Uruguay:
+  coworking, laboratorio y salas para reservar, eventos y formación en economía del conocimiento.»
+  — para que el usuario la ajuste si quiere; vive en una constante.
+- **Cambio frente al diseño — imagen por defecto:** en lugar de `opengraph-image.tsx` (generada en el
+  servidor) es un **PNG estático** `public/og-default.png` generado una vez con
+  `scripts/og-default.mjs` (Playwright, isologo en una píldora clara sobre el degradé de marca). Es
+  más simple, no gasta servidor y no depende de cómo Next hereda las imágenes de archivo entre
+  segmentos. Por lo mismo, una **noticia sin portada** usa la imagen de marca y no una generada con
+  su patrón (las portadas son obligatorias desde el milestone 15; solo las viejas no tienen).
+- `metadataBase`, `title.template` («%s · La Nube») y la vista previa por defecto en el layout raíz;
+  los títulos de las páginas perdieron su sufijo a mano («| La Nube», «— La Nube»).
+- `generateMetadata` nuevo en `/events/[id]` y `/forms/[slug]` (este con `cache()` de React para no
+  leer dos veces); `summary` se sumó a `PublicEventDetail` y `PublicFormView`. Metadatos propios en
+  portada, Quiénes somos, Espacios, Noticias, Novedades y Políticas.
+- `robots.ts` y `sitemap.ts` (lectura cacheada `getPublicSitemapEntries`, tags de noticias y
+  eventos; `src/lib/db/sitemap.ts`). JSON-LD `Organization` en la portada, desde la configuración
+  del sitio, fuera del contenedor de franjas.
+- `NEXT_PUBLIC_SITE_URL`: `env.example`, build-arg en `deploy/Dockerfile`, variable del repo en
+  `.github/workflows/deploy.yml` y `deploy/README.md` §5. **Hay que crear la variable en GitHub
+  antes del próximo deploy** (sin ella cae en `NEXTAUTH_URL`).
+- Verificado contra el servidor local: portada, noticia y evento con `og:*` absolutos, `robots.txt`
+  y `sitemap.xml`. Next 15 transmite la metadata de las páginas dinámicas al final del `<body>` para
+  navegadores y en el `<head>` para bots (detecta su user agent), así que los depuradores de Open
+  Graph la ven.
+- Pendiente en producción: pedir la reindexación en Search Console; si Google sigue armando el
+  fragmento con la sección de miembros, evaluar `data-nosnippet` (no se hizo).
+- Los eventos privados (sitemap, `noindex`) llegan con el milestone 43.

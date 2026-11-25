@@ -173,9 +173,10 @@ administrador), algoritmos criptográficos modernos y registro detallado.
 
 En el repositorio, en _Settings → Secrets and variables → Actions_:
 
-| Nombre                                   | Valor                                                                   |
-| ---------------------------------------- | ----------------------------------------------------------------------- |
-| variable `NEXT_PUBLIC_TURNSTILE_SITEKEY` | La _sitekey_ real de Turnstile (se incorpora al _bundle_ al construir). |
+| Nombre                                   | Valor                                                                                                                                                                                                                                                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| variable `NEXT_PUBLIC_TURNSTILE_SITEKEY` | La _sitekey_ real de Turnstile (se incorpora al _bundle_ al construir).                                                                                                                                                                                                      |
+| variable `NEXT_PUBLIC_SITE_URL`          | URL pública del sitio, sin barra final (p. ej. `https://lanube.example`). Sale en las etiquetas Open Graph, la canónica, `robots.txt` y `sitemap.xml` (milestone 41). Sin ella se usan `NEXTAUTH_URL` y después `localhost`, y las vistas previas al compartir quedan rotas. |
 
 No se requieren secretos: el despliegue es por extracción. Para que el servidor pueda descargar las
 imágenes, el paquete `lanube` en GHCR debe ser público (recomendado, ya que la imagen no contiene

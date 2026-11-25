@@ -28,8 +28,12 @@ ARG DATABASE_URL
 ARG GIT_SHA=""
 # NEXT_PUBLIC_* se incrusta en el bundle en el build: no alcanza con ponerlo en el .env del servidor.
 ARG NEXT_PUBLIC_TURNSTILE_SITEKEY
+# URL canónica (milestone 41): las páginas públicas se prerenderizan en el build y sus etiquetas
+# Open Graph, la canónica y el sitemap necesitan URLs absolutas.
+ARG NEXT_PUBLIC_SITE_URL
 ENV DATABASE_URL=$DATABASE_URL \
   NEXT_PUBLIC_TURNSTILE_SITEKEY=$NEXT_PUBLIC_TURNSTILE_SITEKEY \
+  NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
   NEXT_OUTPUT=standalone \
   APP_COMMIT_SHA=$GIT_SHA
 COPY . .

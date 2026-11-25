@@ -1073,6 +1073,15 @@ spaces,themes,site-config,reservation-types}` by the same test. Without it the s
   `/events/[id]` and news details are ISR on first visit (`generateStaticParams` → `[]`); `/news`
   stays dynamic (`searchParams`) but its data comes from the cache. The build needs the DB
   (it already does, for migrations).
+- **SEO / share previews (milestone 41): every public page builds its metadata with
+  `pageMetadata()`** (`src/lib/seo/metadata.ts`) — never a hand-rolled `openGraph` (Next merges
+  metadata shallowly: a page's `openGraph` replaces the layout's whole object, dropping
+  `siteName`/`locale`/the default image). Titles go **without** the « · La Nube» suffix (the root
+  `title.template` adds it). Pages with their own image pass it (`image:`); the fallback is the
+  static brand image `public/og-default.png` (`scripts/og-default.mjs`), **never** the municipal
+  crest. Absolute URLs come from `siteUrl()` (`NEXT_PUBLIC_SITE_URL`, a build-time repo variable),
+  never the request. `robots.ts` / `sitemap.ts` live in `src/app/`; a new public page goes into
+  `STATIC_PATHS` of the sitemap.
 - **The global CSP in `next.config.ts` overrides route headers.** A route that needs its own CSP
   must be excluded from the global rule's `source` (today only the participant-file proxy;
   `src/lib/security-headers.test.ts`).
