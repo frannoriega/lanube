@@ -1,6 +1,6 @@
 # Milestone 45 — Exportar el calendario (Google Calendar y otros)
 
-**Estado:** promoted (2026-11-25). Versión 1.3.0.
+**Estado:** done (2026-11-25). Versión **1.2.0**: se planeó como 1.3.0, pero la 1.2.0 todavía no estaba desplegada y el control de versiones solo admite un salto desde la última publicada (1.1.1), así que se plegó en ella.
 
 ## Pregunta del usuario
 
@@ -74,4 +74,31 @@ app por Google y mantenimiento por proveedor (Outlook aparte). El ICS cubre el c
 
 ## Registro
 
-(Sin implementar.)
+Implementado el 2026-11-25.
+
+- Migración `20261125120000_calendar_feeds`: `registered_users.calendar_feed_enabled` y
+  `calendar_feed_version` (apagado por defecto).
+- `src/lib/calendar/ics.ts` (puro: escape, plegado a 75 octetos sin cortar caracteres, UTC, `COLOR`
+  por calendario y por ítem, `X-APPLE-CALENDAR-COLOR`, `REFRESH-INTERVAL`), `feed-token.ts` (firmas
+  HMAC, enlaces de Google `calendar/r?cid=` y `webcal://`), `feed-response.ts` (404 seco, límite de
+  120 lecturas por hora y enlace —no por IP: Google lee desde muchas—), `user-feeds.ts`.
+- `src/lib/db/calendarFeeds.ts`: «Mis reservas» (desde el calendario de actividades de la persona),
+  «Mis eventos» (inscripciones vigentes por cuenta **o** por email; UID por inicio nominal, así una
+  sesión reprogramada se mueve en lugar de duplicarse; las canceladas quedan con `STATUS:CANCELLED`
+  y «Cancelada ·»), por espacio (reservas con «Reservó: …», eventos —los sin publicar marcados—,
+  cierres de día entero o por franja) y el de una inscripción. Colores: aprobada `green`, pendiente
+  `darkorange`, evento `rebeccapurple`, reservado `steelblue`, cierre `gray`.
+- Rutas: `GET /api/calendar/feed/<persona>/<feed>/<firma>.ics` y
+  `GET /api/calendar/registration/<inscripción>/<firma>.ics`; `GET/POST /api/user/calendar-feeds`
+  (`enable` / `disable` / `regenerate`). Configuración → «Calendario» (`CalendarFeedsSection`), con la
+  advertencia en los feeds de espacio y la confirmación de regenerar/desactivar en el lugar.
+- Correo de confirmación de inscripción: «Agregar a Google Calendar · Apple / Outlook» y
+  `sesiones.ics` adjunto (si falla, el correo sale sin el bloque). De paso, el nombre del evento se
+  escapa en ese HTML. `SubmitResult.participantId` nuevo.
+- Tests: `src/lib/calendar/ics.test.ts`.
+- **Verificado localmente:** `sa1` ve «Mis reservas, Mis eventos» + 4 espacios, `u1` solo los dos
+  propios; los feeds responden `text/calendar` con nombre, colores y la reserva pendiente como
+  `TENTATIVE`; una firma inventada o un enlace anterior a «Regenerar» dan 404; una inscripción nueva
+  recibió el correo con los dos enlaces y el adjunto, y su feed tiene las 29 sesiones del evento.
+- **Pendiente:** probar con Google/Apple de verdad en un deploy de preview (Google necesita una URL
+  pública por HTTPS; `localhost` no le sirve) y confirmar cuánto tarda en refrescar.

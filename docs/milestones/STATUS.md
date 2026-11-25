@@ -60,7 +60,7 @@ cambia el estado de un milestone** (o se crea uno).
 | 42  | Reservar más allá de dos semanas          | done     | permiso nuevo, ventana de un año; v1.2.0                     |
 | 43  | Eventos privados e invitados              | done     | lista opcional que restringe; v1.2.0                         |
 | 44  | Motivo por sesión                         | done     | un correo por participante sigue igual; v1.2.0               |
-| 45  | Exportar el calendario (ICS)              | promoted | feeds por categoría y por espacio; v1.3.0                    |
+| 45  | Exportar el calendario (ICS)              | done     | v1.2.0; falta probar con Google en un deploy público         |
 | 46  | Notificaciones por WhatsApp               | parked   | el usuario averigua cuenta y costos; plantillas propuestas   |
 
 ## Ideas descartadas (`dropped`)

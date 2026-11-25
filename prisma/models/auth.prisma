@@ -58,6 +58,10 @@ model RegisteredUser {
   /// seeded USER role is what the UI assigns, but NULL is treated identically so a
   /// deleted-and-unreassigned row can never accidentally read as privileged.
   roleId           String?               @map("role_id")
+  /// Milestone 45: suscripciones de calendario (ICS). Encendidas o no, y la versión que firma los
+  /// enlaces (`src/lib/calendar/feed-token.ts`): «Regenerar enlaces» la sube y los viejos mueren.
+  calendarFeedEnabled Boolean           @default(false) @map("calendar_feed_enabled")
+  calendarFeedVersion Int               @default(0) @map("calendar_feed_version")
   createdAt        BigInt               @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
   updatedAt        BigInt                @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
   bans             Ban[]

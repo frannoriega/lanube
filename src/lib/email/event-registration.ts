@@ -3,7 +3,17 @@ import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@/lib/logger";
 import { areEventEmailsSuspended } from "@/lib/maintenance/server";
-import { editLinkFootnoteHtml, editLinkUrl } from "@/lib/email/edit-link";
+import {
+  editLinkFootnoteHtml,
+  editLinkUrl,
+  emailBaseUrl,
+} from "@/lib/email/edit-link";
+import { escapeHtml } from "@/lib/email/escape";
+import {
+  registrationFeedPath,
+  subscribeLinks,
+} from "@/lib/calendar/feed-token";
+import { registrationFeedIcs } from "@/lib/db/calendarFeeds";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_SERVER_HOST,
@@ -25,6 +35,11 @@ export async function sendEventRegistrationEmail(
   editToken: string,
   /** Manual-approval events: reinforce that registering doesn't guarantee a spot. */
   requiresApproval = false,
+  /**
+   * La inscripción (milestone 45): suma «Agregar a mi calendario» (suscripción a las sesiones de
+   * este evento, que se actualiza sola) y un `.ics` adjunto de respaldo.
+   */
+  participantId?: string,
 ): Promise<{ success: boolean; error?: string }> {
   // Mantenimiento (milestone 22): con los correos de eventos apagados no se manda nada.
   if (await areEventEmailsSuspended()) {
@@ -35,6 +50,44 @@ export async function sendEventRegistrationEmail(
   const logoUrl =
     "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
+  // Calendario (milestone 45). Si algo falla acá, el correo sale igual sin el bloque.
+  let calendarBlock = "";
+  let attachments: {
+    filename: string;
+    content: string;
+    contentType: string;
+  }[] = [];
+  if (participantId) {
+    try {
+      const feedUrl = `${emailBaseUrl()}${registrationFeedPath(participantId)}`;
+      const { google, webcal } = subscribeLinks(feedUrl);
+      calendarBlock = `
+          <div style="text-align: center; margin: 24px 0 8px;">
+            <a href="${google}" style="color: #4E87C2; font-weight: bold; margin: 0 8px;">Agregar a Google Calendar</a>
+            ·
+            <a href="${webcal}" style="color: #4E87C2; font-weight: bold; margin: 0 8px;">Apple / Outlook</a>
+          </div>
+          <p style="color: #666; font-size: 13px; line-height: 1.5; text-align: center;">
+            Se agrega como un calendario con las sesiones del evento y se actualiza solo si alguna cambia.
+            También te adjuntamos las sesiones en un archivo .ics.
+          </p>`;
+      const ics = await registrationFeedIcs(participantId);
+      if (ics)
+        attachments = [
+          {
+            filename: "sesiones.ics",
+            content: ics,
+            contentType: "text/calendar; charset=utf-8",
+          },
+        ];
+    } catch (err) {
+      logger.warn("registration email: calendar block skipped", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  const safeEventName = escapeHtml(eventName);
+
   const subject = requiresApproval
     ? `Inscripción recibida: ${eventName} - La Nube`
     : `Inscripción confirmada: ${eventName} - La Nube`;
@@ -42,11 +95,11 @@ export async function sendEventRegistrationEmail(
     ? "¡Inscripción recibida!"
     : "¡Inscripción confirmada!";
   const intro = requiresApproval
-    ? `Recibimos tu inscripción a <strong>${eventName}</strong>. Este evento tiene cupos
+    ? `Recibimos tu inscripción a <strong>${safeEventName}</strong>. Este evento tiene cupos
        limitados y las inscripciones están sujetas a aprobación, así que
        <strong>inscribirte no garantiza tu lugar</strong>. Te avisaremos por email cuando
        tu inscripción sea revisada. Mientras tanto, podés editarla o cancelarla:`
-    : `Te inscribiste a <strong>${eventName}</strong>. Podés editar o cancelar tu
+    : `Te inscribiste a <strong>${safeEventName}</strong>. Podés editar o cancelar tu
        inscripción en cualquier momento con el siguiente botón:`;
 
   try {
@@ -54,6 +107,7 @@ export async function sendEventRegistrationEmail(
       from: FROM_EMAIL,
       to: [email],
       subject,
+      attachments,
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -78,6 +132,7 @@ export async function sendEventRegistrationEmail(
             Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
             <a href="${editLink}" style="color: #4E87C2;">${editLink}</a>
           </p>
+          ${calendarBlock}
           ${editLinkFootnoteHtml()}
         </div>
 

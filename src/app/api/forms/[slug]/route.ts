@@ -117,6 +117,7 @@ export async function POST(
           result.eventName,
           result.token,
           result.requiresApproval ?? false,
+          result.participantId,
         );
       } catch (err) {
         logger.error("forms/[slug] POST confirmation email failed", err, {

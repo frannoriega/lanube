@@ -627,6 +627,22 @@ Full design: `docs/milestones/milestones-34-participant-field-and-group-check-in
   walk-in team checks in all its people. Reports' attendance reference (`approvedRegistered`) counts
   **people** of approved registrations. No emails go to team members (user decision).
 
+### Calendar subscriptions (milestone 45)
+
+Full design: `docs/milestones/milestones-45-calendar-export.md`.
+
+- ICS feeds people add to Google/Apple/Outlook; **each feed is its own calendar** (own color and
+  toggle): «Mis reservas», «Mis eventos» and, with `reservations:manage`, one per space — no
+  "whole building" feed (user decision). Content lives in `src/lib/db/calendarFeeds.ts`, the ICS
+  writer is the pure `src/lib/calendar/ics.ts` (UTC times, stable UIDs, RFC 7986 `COLOR` with CSS
+  names — most clients ignore per-item color, so the calendar is the color).
+- **No token table:** links carry an HMAC (`NEXTAUTH_SECRET`) over the person, the feed and
+  `RegisteredUser.calendarFeedVersion` (`src/lib/calendar/feed-token.ts`); «Regenerar enlaces» bumps
+  the version, `calendarFeedEnabled` turns them all off. Public routes under `/api/calendar/**`
+  answer a bare 404 on any failure and re-check admin permissions on every read.
+- The registration confirmation email carries a per-registration feed (signed by participant id, read
+  only — never the edit link) plus a `.ics` attachment. Settings → «Calendario».
+
 ### Event reports (milestone 31)
 
 Full detail: `docs/milestones/milestones-31-event-reports.md`.

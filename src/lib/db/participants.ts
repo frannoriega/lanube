@@ -251,6 +251,8 @@ export interface SubmitResult {
   errors?: Record<string, string>;
   message?: string;
   token?: string;
+  /** La inscripción creada o reactivada (para el calendario del correo, milestone 45). */
+  participantId?: string;
   eventName?: string;
   /** Whether the event requires manual approval (drives the confirmation copy + email). */
   requiresApproval?: boolean;
@@ -435,6 +437,7 @@ async function submitFormTx(
     return {
       ok: true,
       token,
+      participantId,
       eventName: eventForm.event.name,
       requiresApproval: eventForm.event.requiresApproval,
     };

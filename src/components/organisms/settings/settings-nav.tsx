@@ -7,6 +7,7 @@ import {
   KeyRound,
   UserRound,
   type LucideIcon,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,6 +44,12 @@ export const SETTINGS_SECTIONS: ReadonlyArray<{
     title: "Seguridad",
     description: "Passkeys, recuperación y asistentes",
     icon: KeyRound,
+  },
+  {
+    href: "/user/settings/calendar",
+    title: "Calendario",
+    description: "Google Calendar, Apple y Outlook",
+    icon: CalendarDays,
   },
   {
     href: "/user/settings/account",

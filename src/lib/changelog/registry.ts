@@ -88,9 +88,10 @@ export const RELEASES = [
   {
     version: "1.2.0",
     date: "2026-11-25",
-    title: "Eventos privados, inscripción de equipos y check-in por persona",
+    title:
+      "Eventos privados, equipos con check-in por persona y tu calendario en Google",
     summary:
-      "Los eventos pueden ser privados, con lista de invitados. Los formularios inscriben equipos y la puerta registra el ingreso de cada integrante. Cada sesión que se cancela o reprograma lleva su motivo, las notificaciones se pueden borrar, y al compartir una noticia o un evento se ve su imagen.",
+      "Los eventos pueden ser privados, con lista de invitados. Los formularios inscriben equipos y la puerta registra el ingreso de cada integrante. Tus reservas y eventos se suman a Google Calendar, Apple u Outlook. Cada sesión que se cancela o reprograma lleva su motivo, las notificaciones se pueden borrar, y al compartir una noticia o un evento se ve su imagen.",
     file: "1.2.0.md",
   },
 ] as const satisfies readonly Release[];

@@ -482,8 +482,16 @@
   "480": "server.ts",
   "481": "admin-page-guards.test.ts",
   "482": "📊 Performance",
+  "483": "auditEventDef",
+  "484": "csv.ts",
   "485": "activityCalendar.ts",
+  "486": "auth.ts",
+  "488": "getSpacesByKind",
+  "489": "Milestone 27 — Mis reservas: historial y listado propio",
   "490": "Milestone 36 — Amistades, directorio e invitados a una reserva",
+  "491": "Milestone 33 — Eventos en varios espacios / todo el edificio",
   "492": "og-default.mjs",
-  "493": "unsaved-changes.ts"
+  "493": "unsaved-changes.ts",
+  "494": "page.tsx",
+  "495": "emoji-shower.tsx"
 }
