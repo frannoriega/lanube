@@ -47,7 +47,12 @@ import {
   type FormNode,
   type FormSchema,
   isGroupNode,
+  isParticipantNode,
   type InputNode,
+  PARTICIPANT_FIELD_TYPES,
+  type ParticipantField,
+  type ParticipantFieldType,
+  type ParticipantNode,
 } from "@/lib/events/form-schema";
 import { FormFieldType } from "@/types/prisma";
 import { createId } from "@paralleldrive/cuid2";
@@ -58,6 +63,7 @@ import {
   FileText,
   Repeat,
   Trash2,
+  UserRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -85,9 +91,15 @@ const splitLines = (s: string) =>
 const numOrNull = (s: string) => (s.trim() === "" ? null : Number(s));
 
 // Fields shared by every input editor (top-level input OR group child).
+/**
+ * Marca de un **integrante** en el constructor (milestone 34): se elige como un tipo más
+ * («Participante») pero se guarda como un nodo `participant`, no como un campo.
+ */
+const PARTICIPANT_TYPE = "PARTICIPANT" as const;
+
 const inputShape = {
   id: z.string(),
-  type: z.enum(FormFieldType),
+  type: z.union([z.enum(FormFieldType), z.literal(PARTICIPANT_TYPE)]),
   label: z.string().trim().min(1, { message: "La etiqueta es obligatoria" }),
   placeholder: z.string().max(200),
   required: z.boolean(),
@@ -112,7 +124,7 @@ const splitExtensions = (s: string) =>
 
 function refineInput(
   f: {
-    type: FormFieldType;
+    type: FormFieldType | typeof PARTICIPANT_TYPE;
     optionsText: string;
     minText: string;
     maxText: string;
@@ -121,6 +133,8 @@ function refineInput(
   },
   ctx: z.RefinementCtx,
 ) {
+  // Un integrante no tiene opciones ni límites: su forma es la de la sección «Participante».
+  if (f.type === PARTICIPANT_TYPE) return;
   if (SELECT_FIELD_TYPES.includes(f.type)) {
     if (splitLines(f.optionsText).length < 1)
       ctx.addIssue({
@@ -211,11 +225,66 @@ const builderFieldSchema = z
     }
   });
 
+/** Un dato de la forma del participante, como lo edita el constructor (milestone 34). */
+const participantFieldEditorSchema = z
+  .object({
+    key: z.string(),
+    type: z.enum(PARTICIPANT_FIELD_TYPES),
+    label: z.string().trim().min(1, { message: "La etiqueta es obligatoria" }),
+    required: z.boolean(),
+    optionsText: z.string(),
+  })
+  .superRefine((f, ctx) => {
+    if (f.type === "SINGLE_SELECT" && splitLines(f.optionsText).length < 1)
+      ctx.addIssue({
+        code: "custom",
+        message: "Agregá al menos una opción",
+        path: ["optionsText"],
+      });
+  });
+
 const builderSchema = z.object({
   name: z.string().trim().min(1, { message: "El nombre es obligatorio" }),
   description: z.string().max(2000),
+  participant: z
+    .array(participantFieldEditorSchema)
+    .max(12, { message: "Hasta 12 datos por participante" }),
   fields: z.array(builderFieldSchema),
 });
+
+type ParticipantFieldEditor = z.infer<typeof participantFieldEditorSchema>;
+
+/** Atajos de un clic para la forma del participante. */
+const PARTICIPANT_PRESETS: Array<{
+  label: string;
+  type: ParticipantFieldType;
+}> = [
+  { label: "Nombre", type: "SHORT_TEXT" },
+  { label: "Apellido", type: "SHORT_TEXT" },
+  { label: "DNI", type: "DNI" },
+  { label: "Teléfono", type: "PHONE" },
+  { label: "Fecha de nacimiento", type: "DATE" },
+];
+
+function participantFieldToEditor(f: ParticipantField): ParticipantFieldEditor {
+  return {
+    key: f.key,
+    type: f.type,
+    label: f.label,
+    required: f.required,
+    optionsText: (f.options ?? []).join("\n"),
+  };
+}
+
+function editorToParticipantField(f: ParticipantFieldEditor): ParticipantField {
+  return {
+    key: f.key,
+    type: f.type,
+    label: f.label.trim(),
+    required: f.required,
+    options: f.type === "SINGLE_SELECT" ? splitLines(f.optionsText) : null,
+  };
+}
 
 type BuilderValues = z.infer<typeof builderSchema>;
 type BuilderChild = z.infer<typeof childSchema>;
@@ -258,6 +327,17 @@ function newField(kind: "input" | "group"): BuilderValues["fields"][number] {
 // Load / save mapping (builder values <-> FormSchema)
 // ---------------------------------------------------------------------------
 
+/** Un integrante como entrada del constructor (tipo «Participante»). */
+function participantNodeToEditor(n: ParticipantNode): BuilderChild {
+  return {
+    ...newChild(),
+    id: n.id,
+    type: PARTICIPANT_TYPE,
+    label: n.label,
+    required: n.required,
+  };
+}
+
 function inputNodeToEditor(n: InputNode): BuilderChild {
   const c = n.constraints;
   return {
@@ -281,7 +361,9 @@ function nodeToBuilderField(n: FormNode): BuilderValues["fields"][number] {
   const cond = parseVisibleWhen(n.visibleWhen);
   if (!isGroupNode(n)) {
     return {
-      ...inputNodeToEditor(n),
+      ...(isParticipantNode(n)
+        ? participantNodeToEditor(n)
+        : inputNodeToEditor(n)),
       kind: "input",
       condField: cond.field,
       condOp: cond.op,
@@ -317,14 +399,19 @@ function nodeToBuilderField(n: FormNode): BuilderValues["fields"][number] {
     repeatMax: n.repeat?.max != null ? String(n.repeat.max) : "",
     countFrom: n.repeat?.countFrom ?? "",
     itemLabel: n.repeat?.itemLabel ?? "",
-    children: n.children
-      .filter((c): c is InputNode => c.kind === "input")
-      .map(inputNodeToEditor),
+    children: n.children.flatMap((c) =>
+      c.kind === "input"
+        ? [inputNodeToEditor(c)]
+        : isParticipantNode(c)
+          ? [participantNodeToEditor(c)]
+          : [],
+    ),
   };
 }
 
 /** Builds the per-type constraints bag for an input editor (null when the type has none). */
 function editorToConstraints(f: BuilderChild): InputNode["constraints"] {
+  if (f.type === PARTICIPANT_TYPE) return null;
   if (NUMERIC_FIELD_TYPES.includes(f.type)) {
     return {
       min: numOrNull(f.minText),
@@ -351,7 +438,23 @@ function editorToConstraints(f: BuilderChild): InputNode["constraints"] {
 function editorToInputNode(
   f: BuilderChild & { condField?: string; condOp?: string; condValue?: string },
   withVisibility: boolean,
-): InputNode {
+): InputNode | ParticipantNode {
+  const visibleWhen = withVisibility
+    ? buildVisibleWhen({
+        field: f.condField ?? "",
+        op: f.condOp ?? "eq",
+        value: f.condValue ?? "",
+      })
+    : null;
+  if (f.type === PARTICIPANT_TYPE) {
+    return {
+      kind: "participant",
+      id: f.id,
+      label: f.label.trim(),
+      required: f.required,
+      visibleWhen,
+    };
+  }
   return {
     kind: "input",
     id: f.id,
@@ -413,7 +516,7 @@ export function FormTemplateBuilder({
 
   const form = useForm<BuilderValues>({
     resolver: zodResolver(builderSchema),
-    defaultValues: { name: "", description: "", fields: [] },
+    defaultValues: { name: "", description: "", participant: [], fields: [] },
   });
   const { control, handleSubmit, reset, formState } = form;
   const { fields, append, remove, replace } = useFieldArray({
@@ -465,6 +568,9 @@ export function FormTemplateBuilder({
     reset({
       name: template.name ?? "",
       description: template.description ?? "",
+      participant: (template.schema?.participant?.fields ?? []).map(
+        participantFieldToEditor,
+      ),
       fields: (template.schema?.nodes ?? []).map(nodeToBuilderField),
     });
   }, [template, reset]);
@@ -475,6 +581,9 @@ export function FormTemplateBuilder({
       description: values.description.trim() || null,
       schema: {
         version: 1 as const,
+        participant: {
+          fields: values.participant.map(editorToParticipantField),
+        },
         nodes: values.fields.map(builderFieldToNode),
       },
     };
@@ -555,14 +664,19 @@ export function FormTemplateBuilder({
             />
           </FormSection>
 
+          <ParticipantShapeSection control={looseControl} />
+
           <FormSection
             id="campos"
             title="Campos"
             description="Tocá un campo para editarlo. El orden de la lista es el del formulario."
           >
             <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Email</span> —
-              siempre presente y obligatorio (clave del participante).
+              <span className="font-medium text-foreground">
+                Quien inscribe
+              </span>{" "}
+              — siempre el primero: su email (obligatorio) y los datos de la
+              sección «Participante».
             </div>
 
             {reordering ? (
@@ -688,6 +802,20 @@ export function FormTemplateBuilder({
                     onClick={() => addField("group")}
                   >
                     Agregar grupo repetible
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      append({
+                        ...newField("input"),
+                        type: PARTICIPANT_TYPE,
+                        label: "Integrante",
+                      });
+                      openNext.current = true;
+                    }}
+                  >
+                    <UserRound className="mr-1 h-4 w-4" /> Agregar participante
                   </Button>
                   <Button
                     type="button"
@@ -838,6 +966,7 @@ function InputFieldEditor({
   showType?: boolean;
 }) {
   const type = useWatch({ control, name: `${namePrefix}.type` }) as string;
+  const isParticipant = type === PARTICIPANT_TYPE;
 
   return (
     <div className="space-y-3">
@@ -881,19 +1010,30 @@ function InputFieldEditor({
         )}
       />
 
-      <FormField
-        control={control}
-        name={`${namePrefix}.placeholder`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Texto de ayuda (opcional)</FormLabel>
-            <FormControl>
-              <Input {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {isParticipant && (
+        <p className="rounded-md border bg-background p-2 text-xs text-muted-foreground">
+          Un integrante más de la inscripción: pide su email y los datos de la
+          sección «Participante». Para equipos de varias personas, ponelo dentro
+          de un grupo repetible. No cuenta para el cupo (el cupo es de
+          inscripciones).
+        </p>
+      )}
+
+      {!isParticipant && (
+        <FormField
+          control={control}
+          name={`${namePrefix}.placeholder`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Texto de ayuda (opcional)</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       {SELECT_FIELD_TYPES.includes(type as FormFieldType) && (
         <FormField
@@ -1134,14 +1274,30 @@ function GroupChildren({
           />
         </div>
       ))}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => append(newChild())}
-      >
-        Agregar campo al grupo
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => append(newChild())}
+        >
+          Agregar campo al grupo
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            append({
+              ...newChild(),
+              type: PARTICIPANT_TYPE,
+              label: "Integrante",
+            })
+          }
+        >
+          <UserRound className="mr-1 h-4 w-4" /> Agregar participante
+        </Button>
+      </div>
     </div>
   );
 }
@@ -1299,10 +1455,12 @@ function VisibilityEditor({
   const allFields = (useWatch({ control, name: "fields" }) ?? []) as Array<{
     id: string;
     label: string;
+    type?: string;
   }>;
+  // Un integrante (milestone 34) no es una respuesta comparable: no puede ser condición.
   const earlier = allFields
     .slice(0, index)
-    .filter((ff) => ff.label.trim() !== "");
+    .filter((ff) => ff.label.trim() !== "" && ff.type !== PARTICIPANT_TYPE);
   const condField = useWatch({
     control,
     name: `${namePrefix}.condField`,
@@ -1393,5 +1551,178 @@ function VisibilityEditor({
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Forma del participante (milestone 34)
+// ---------------------------------------------------------------------------
+
+const PARTICIPANT_TYPE_LABELS: Record<ParticipantFieldType, string> = {
+  SHORT_TEXT: "Texto corto",
+  DNI: "DNI",
+  PHONE: "Teléfono",
+  DATE: "Fecha",
+  SINGLE_SELECT: "Selección única",
+};
+
+/**
+ * Qué es «un participante» en este formulario: el email (fijo) y los datos que se elijan. La
+ * misma forma la completa quien inscribe y cada integrante que se agregue con «Agregar
+ * participante». En el check-in se busca por cualquiera de estos datos.
+ */
+function ParticipantShapeSection({
+  control,
+}: {
+  control: Control<FieldValues>;
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "participant",
+    keyName: "shapeKey",
+  });
+  const current = (useWatch({ control, name: "participant" }) ??
+    []) as ParticipantFieldEditor[];
+  const used = new Set(current.map((f) => f.label.trim().toLowerCase()));
+
+  const add = (label: string, type: ParticipantFieldType) =>
+    append({
+      key: createId(),
+      type,
+      label,
+      required: true,
+      optionsText: "",
+    } satisfies ParticipantFieldEditor);
+
+  return (
+    <FormSection
+      id="participante"
+      title="Participante"
+      description="Qué datos se piden de cada persona: de quien inscribe y de cada integrante que agregues. Sirven para buscar en el check-in."
+    >
+      <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">Email</span> — siempre
+        presente y obligatorio.
+      </div>
+
+      {fields.length > 0 && (
+        <ul className="divide-y rounded-md border">
+          {fields.map((item, i) => (
+            <li
+              key={(item as { shapeKey: string }).shapeKey}
+              className="space-y-2 bg-card p-3"
+            >
+              <div className="flex flex-wrap items-start gap-2">
+                <FormField
+                  control={control}
+                  name={`participant.${i}.label`}
+                  render={({ field }) => (
+                    <FormItem className="min-w-0 flex-1">
+                      <FormLabel className="sr-only">Dato</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej.: Nombre" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name={`participant.${i}.type`}
+                  render={({ field }) => (
+                    <FormItem className="w-40">
+                      <FormLabel className="sr-only">Tipo</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PARTICIPANT_FIELD_TYPES.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {PARTICIPANT_TYPE_LABELS[t]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name={`participant.${i}.required`}
+                  render={({ field }) => (
+                    <FormItem className="flex h-9 items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-xs">Obligatorio</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  aria-label="Quitar dato"
+                  onClick={() => remove(i)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+              {current[i]?.type === "SINGLE_SELECT" && (
+                <FormField
+                  control={control}
+                  name={`participant.${i}.optionsText`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">
+                        Opciones (una por línea)
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea rows={2} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {PARTICIPANT_PRESETS.filter(
+          (p) => !used.has(p.label.toLowerCase()),
+        ).map((p) => (
+          <Button
+            key={p.label}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => add(p.label, p.type)}
+          >
+            + {p.label}
+          </Button>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => add("", "SHORT_TEXT")}
+        >
+          + Otro dato
+        </Button>
+      </div>
+    </FormSection>
   );
 }

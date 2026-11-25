@@ -51,6 +51,10 @@ export async function POST(
         participant: participant.displayEmail,
         participantId: participant.id,
         session: checkInSession.startMs,
+        // Milestone 34: quienes entraron con esta inscripción (el equipo, si lo hay).
+        ...(participant.members.length > 1
+          ? { members: participant.members.map((m) => m.displayEmail) }
+          : {}),
       },
     });
     // Ocupa un lugar: cambia el «quedan N» de las tarjetas públicas.

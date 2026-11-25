@@ -447,7 +447,7 @@ function eventSheet(
     tables.push({
       csvName: `evento-${slug}-asistencia`,
       title: "Asistencia por sesión",
-      note: `La referencia son los inscriptos aprobados hoy (${e.approvedRegistered}): el estado de una inscripción no tiene historia.`,
+      note: `La referencia son las personas de las inscripciones aprobadas hoy (${e.approvedRegistered}; con equipos, cada integrante): el estado de una inscripción no tiene historia.`,
       columns: [
         eventCol,
         col("session", "Sesión", "datetime"),

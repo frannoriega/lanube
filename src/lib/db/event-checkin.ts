@@ -15,7 +15,12 @@ import {
   defaultCheckInSession,
 } from "@/lib/events/checkin";
 import { pruneAnswers, validateForm } from "@/lib/events/form-engine";
-import type { FormSchema } from "@/lib/events/form-schema";
+import {
+  type FormSchema,
+  type ParticipantField,
+  participantFields,
+} from "@/lib/events/form-schema";
+import { syncRegistrationMembers } from "@/lib/db/participantMembers";
 import { expandAllEventOccurrences } from "@/lib/events/occurrences";
 import { prisma } from "@/lib/prisma";
 import { ParticipantSource, ParticipantStatus } from "@/types/prisma";
@@ -35,6 +40,9 @@ import { Prisma } from "@/generated/prisma/client";
  *   inscripción pública) y queda `APPROVED` con `source = WALK_IN`, sin chequear cupo ni
  *   ventana de inscripción, y **sin correo** (decisiones del usuario, 2026-11-17). Ocupa un
  *   lugar en las sesiones siguientes como cualquier inscripto.
+ * - **Milestone 34:** el ingreso es por **persona** (`EventParticipantMember`): quien inscribe o
+ *   cada integrante de un equipo. «Dejar pasar» sigue siendo de la inscripción entera (mira su
+ *   estado). Quien llega sin inscripción con su equipo ingresa con todos sus integrantes.
  */
 
 /** El evento como lo necesita la pantalla de check-in. */
@@ -43,29 +51,47 @@ export interface CheckInEventView {
   name: string;
   /** El formulario del evento (para registrar a quien llega sin inscripción), o `null`. */
   schema: FormSchema | null;
+  /** La forma del participante (milestone 34): columnas y búsqueda de la puerta. */
+  participantFields: ParticipantField[];
   sessions: CheckInSession[];
   /** La que la pantalla muestra al abrir (`defaultCheckInSession`). */
   defaultSession: number | null;
 }
 
-/** Una inscripción, como la muestra la puerta. */
+/** Una persona de una inscripción, como la muestra la puerta (milestone 34). */
+export interface CheckInMember {
+  id: string;
+  role: "PRIMARY" | "MEMBER";
+  /** «Integrante 2 — Persona»; null para quien inscribe. */
+  label: string | null;
+  email: string;
+  displayEmail: string;
+  /** Datos de la forma del participante (nombre, DNI…), por clave. */
+  data: Record<string, unknown>;
+  /** Si ingresó a la sesión consultada, y cuándo (ms). */
+  checkedInAt: number | null;
+}
+
+/** Una inscripción, como la muestra la puerta: estado, origen y sus personas. */
 export interface CheckInParticipant {
   id: string;
   email: string;
   displayEmail: string;
   status: ParticipantStatus;
   source: ParticipantSource;
-  /** Si ingresó a la sesión consultada, y cuándo (ms). */
+  /** Quien inscribe primero, después los integrantes en el orden del formulario. */
+  members: CheckInMember[];
+  /** Si **quien inscribe** ingresó a la sesión (compatibilidad con la vista anterior). */
   checkedInAt: number | null;
 }
 
 /** Totales de una sesión para el contador de la pantalla. */
 export interface CheckInSummary {
-  /** Inscriptos aprobados (por el formulario) — la base contra la que se compara. */
+  /** Personas de inscripciones aprobadas (por el formulario) — la base contra la que se compara. */
   registeredApproved: number;
-  /** Ingresaron, de los inscriptos por el formulario. */
+  /** Ingresaron, de esas personas. */
   registeredCheckedIn: number;
-  /** Ingresaron sin inscripción previa (`WALK_IN`). */
+  /** Personas que ingresaron sin inscripción previa (`WALK_IN`). */
   walkInsCheckedIn: number;
 }
 
@@ -139,34 +165,58 @@ export async function getCheckInEvent(
 ): Promise<CheckInEventView> {
   const event = await loadCheckInEvent(eventId);
   const sessions = await loadSessions(eventId);
+  const schema = event.form ? formSchema(event.form.form) : null;
   return {
     id: event.id,
     name: event.name,
-    schema: event.form ? formSchema(event.form.form) : null,
+    schema,
+    participantFields: schema ? participantFields(schema) : [],
     sessions,
     defaultSession:
       defaultCheckInSession(sessions, nowMs())?.occurrenceStart ?? null,
   };
 }
 
+/** Lo que se lee de una inscripción para la puerta: sus personas con el ingreso a la sesión. */
+function participantInclude(occurrenceStart: number) {
+  return {
+    members: {
+      orderBy: { position: "asc" as const },
+      include: {
+        checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
+      },
+    },
+  } satisfies Prisma.EventParticipantInclude;
+}
+
 type ParticipantRow = Prisma.EventParticipantGetPayload<{
-  include: { checkIns: true };
+  include: ReturnType<typeof participantInclude>;
 }>;
 
 /**
- * La inscripción como la ve la puerta: **solo el email** (y estado, origen, ingreso). No se
- * muestra nada de las respuestas: el formulario puede ser cualquiera y no hay un campo
- * «nombre» confiable (el campo «Participante» del milestone 34 lo resolvería).
+ * La inscripción como la ve la puerta: email, estado, origen y sus **personas** con los datos
+ * de la forma del participante (milestone 34). Nunca las demás respuestas del formulario (pueden
+ * ser cualquier cosa; regla del milestone 30).
  */
 function toView(p: ParticipantRow): CheckInParticipant {
-  const checkIn = p.checkIns[0];
+  const members: CheckInMember[] = p.members.map((m) => ({
+    id: m.id,
+    role: m.role === "MEMBER" ? "MEMBER" : "PRIMARY",
+    label: m.label,
+    email: m.email,
+    displayEmail: m.displayEmail,
+    data: (m.data ?? {}) as Record<string, unknown>,
+    checkedInAt: m.checkIns[0] ? Number(m.checkIns[0].checkedInAt) : null,
+  }));
+  const primary = members.find((m) => m.role === "PRIMARY");
   return {
     id: p.id,
     email: p.email,
     displayEmail: p.displayEmail ?? p.email,
     status: p.status as ParticipantStatus,
     source: p.source as ParticipantSource,
-    checkedInAt: checkIn ? Number(checkIn.checkedInAt) : null,
+    members,
+    checkedInAt: primary?.checkedInAt ?? null,
   };
 }
 
@@ -179,9 +229,7 @@ export async function listCheckInParticipants(
   await loadCheckInEvent(eventId);
   const rows = await prisma.eventParticipant.findMany({
     where: { eventId },
-    include: {
-      checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
-    },
+    include: participantInclude(occurrenceStart),
     orderBy: { createdAt: "asc" },
   });
   const participants = rows.map((r) => toView(r));
@@ -190,13 +238,16 @@ export async function listCheckInParticipants(
     registeredCheckedIn: 0,
     walkInsCheckedIn: 0,
   };
+  // Se cuentan **personas** (milestone 34): un equipo de 5 aprobado son 5 esperados.
   for (const p of participants) {
     const walkIn = p.source === ParticipantSource.WALK_IN;
-    if (!walkIn && p.status === ParticipantStatus.APPROVED)
-      summary.registeredApproved++;
-    if (p.checkedInAt != null) {
-      if (walkIn) summary.walkInsCheckedIn++;
-      else summary.registeredCheckedIn++;
+    for (const m of p.members) {
+      if (!walkIn && p.status === ParticipantStatus.APPROVED)
+        summary.registeredApproved++;
+      if (m.checkedInAt != null) {
+        if (walkIn) summary.walkInsCheckedIn++;
+        else summary.registeredCheckedIn++;
+      }
     }
   }
   return { participants, summary };
@@ -220,6 +271,8 @@ export class AdmissionRequiredError extends DomainError {
 /** Lo que la ruta necesita para auditar un ingreso. */
 export interface CheckInResult {
   participant: CheckInParticipant;
+  /** Las personas a las que se les registró el ingreso en este pedido. */
+  checkedIn: CheckInMember[];
   /** El estado antes del ingreso, si hubo que admitir (para la auditoría). */
   admittedFrom: ParticipantStatus | null;
   session: CheckInSession;
@@ -228,15 +281,16 @@ export interface CheckInResult {
 }
 
 /**
- * Registra el ingreso de una inscripción a una sesión. Idempotente: si ya había ingresado,
- * devuelve el ingreso existente sin tocar nada (dos admins en la puerta, o un doble toque).
- * Si la inscripción no está aprobada y no vino `admit`, lanza `AdmissionRequiredError`.
+ * Registra el ingreso de personas de una inscripción a una sesión (milestone 34): las
+ * `memberIds` dadas (una persona, o «todo el equipo»); sin `memberIds`, quien inscribe.
+ * Idempotente: quien ya había ingresado se deja como está (dos admins en la puerta, o un doble
+ * toque). Si la inscripción no está aprobada y no vino `admit`, lanza `AdmissionRequiredError`.
  */
 export async function checkInParticipant(
   eventId: string,
   participantId: string,
   occurrenceStart: number,
-  opts: { admit: boolean; adminId: string },
+  opts: { admit: boolean; adminId: string; memberIds?: string[] },
 ): Promise<CheckInResult & { alreadyCheckedIn: boolean }> {
   const event = await loadCheckInEvent(eventId);
   const session = await openSession(eventId, occurrenceStart);
@@ -244,14 +298,19 @@ export async function checkInParticipant(
   return prisma.$transaction(async (tx) => {
     const p = await tx.eventParticipant.findFirst({
       where: { id: participantId, eventId },
-      include: {
-        checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
-      },
+      include: participantInclude(occurrenceStart),
     });
     if (!p) throw new DomainError("Inscripción no encontrada", 404);
-    if (p.checkIns.length > 0) {
+    const targets = opts.memberIds?.length
+      ? p.members.filter((m) => opts.memberIds!.includes(m.id))
+      : p.members.filter((m) => m.role === "PRIMARY");
+    if (targets.length === 0)
+      throw new DomainError("Persona no encontrada en la inscripción", 404);
+    const pending = targets.filter((m) => m.checkIns.length === 0);
+    if (pending.length === 0) {
       return {
         participant: toView(p),
+        checkedIn: [],
         admittedFrom: null,
         session,
         eventName: event.name,
@@ -274,24 +333,28 @@ export async function checkInParticipant(
       });
     }
 
-    await tx.eventCheckIn.create({
-      data: {
+    await tx.eventCheckIn.createMany({
+      data: pending.map((m) => ({
         participantId: p.id,
+        memberId: m.id,
         eventId,
         reservationId: session.reservationId,
         occurrenceStart: BigInt(occurrenceStart),
         checkedInBy: opts.adminId,
-      },
+      })),
+      // Otro admin pudo marcar a alguien entre la lectura y esta escritura.
+      skipDuplicates: true,
     });
 
     const updated = await tx.eventParticipant.findUniqueOrThrow({
       where: { id: p.id },
-      include: {
-        checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
-      },
+      include: participantInclude(occurrenceStart),
     });
+    const view = toView(updated);
+    const pendingIds = new Set(pending.map((m) => m.id));
     return {
-      participant: toView(updated),
+      participant: view,
+      checkedIn: view.members.filter((m) => pendingIds.has(m.id)),
       admittedFrom,
       session,
       eventName: event.name,
@@ -308,24 +371,39 @@ export async function undoCheckIn(
   eventId: string,
   participantId: string,
   occurrenceStart: number,
-): Promise<{ participant: CheckInParticipant; eventName: string } | null> {
+  /** La persona (milestone 34); sin ella, quien inscribe. */
+  memberId?: string,
+): Promise<{
+  participant: CheckInParticipant;
+  member: CheckInMember;
+  eventName: string;
+} | null> {
   const event = await loadCheckInEvent(eventId);
+  const target = await prisma.eventParticipantMember.findFirst({
+    where: {
+      participantId,
+      eventId,
+      ...(memberId ? { id: memberId } : { role: "PRIMARY" }),
+    },
+    select: { id: true },
+  });
+  if (!target) return null;
   const deleted = await prisma.eventCheckIn.deleteMany({
     where: {
       eventId,
-      participantId,
+      memberId: target.id,
       occurrenceStart: BigInt(occurrenceStart),
     },
   });
   if (deleted.count === 0) return null;
   const p = await prisma.eventParticipant.findUniqueOrThrow({
     where: { id: participantId },
-    include: {
-      checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
-    },
+    include: participantInclude(occurrenceStart),
   });
+  const view = toView(p);
   return {
-    participant: toView(p),
+    participant: view,
+    member: view.members.find((m) => m.id === target.id)!,
     eventName: event.name,
   };
 }
@@ -378,9 +456,7 @@ export async function registerWalkIn(
 
     const existing = await tx.eventParticipant.findUnique({
       where: { eventId_email: { eventId, email } },
-      include: {
-        checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
-      },
+      include: participantInclude(occurrenceStart),
     });
     if (existing) return { ok: false, existing: toView(existing) };
 
@@ -393,29 +469,62 @@ export async function registerWalkIn(
         source: ParticipantSource.WALK_IN,
         decidedAt: BigInt(nowMs()),
         answers: cleaned as Prisma.InputJsonValue,
-        checkIns: {
-          create: {
-            eventId,
-            reservationId: session.reservationId,
-            occurrenceStart: BigInt(occurrenceStart),
-            checkedInBy: adminId,
-          },
-        },
       },
-      include: {
-        checkIns: { where: { occurrenceStart: BigInt(occurrenceStart) } },
-      },
+      select: { id: true },
     });
+    // Integrantes (milestone 34): las mismas reglas que una inscripción pública; si alguno ya
+    // está en otra inscripción, no se crea nada y la puerta lo dice.
+    const sync = await syncRegistrationMembers(tx, {
+      participantId: created.id,
+      eventId,
+      primaryEmail: email,
+      primaryDisplayEmail: displayEmail.trim(),
+      schema: schema ?? { version: 1, nodes: [] },
+      answers: cleaned,
+    });
+    if (!sync.ok) throw new WalkInMemberError(sync.message);
+    // Llegaron juntos: ingresan todas las personas de la inscripción.
+    const members = await tx.eventParticipantMember.findMany({
+      where: { participantId: created.id },
+      select: { id: true },
+    });
+    await tx.eventCheckIn.createMany({
+      data: members.map((m) => ({
+        participantId: created.id,
+        memberId: m.id,
+        eventId,
+        reservationId: session.reservationId,
+        occurrenceStart: BigInt(occurrenceStart),
+        checkedInBy: adminId,
+      })),
+    });
+    const full = await tx.eventParticipant.findUniqueOrThrow({
+      where: { id: created.id },
+      include: participantInclude(occurrenceStart),
+    });
+    const view = toView(full);
     return {
       ok: true,
       result: {
-        participant: toView(created),
+        participant: view,
+        checkedIn: view.members,
         admittedFrom: null,
         session,
         eventName: event.name,
       },
     };
   });
+}
+
+/**
+ * Un integrante del walk-in ya está en otra inscripción (milestone 34): deshace la transacción;
+ * la ruta lo devuelve como un 409 legible.
+ */
+export class WalkInMemberError extends DomainError {
+  constructor(message: string) {
+    super(message, 409);
+    this.name = "WalkInMemberError";
+  }
 }
 
 /** Para la subida de archivos de quien llega sin inscripción: el formulario y su slug. */

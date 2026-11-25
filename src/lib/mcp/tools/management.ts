@@ -64,20 +64,22 @@ const PROFILE_STATUS_LABELS: Record<string, string> = {
 /** El árbol de un formulario, simplificado para leerlo (sin condiciones internas). */
 function describeNodes(nodes: FormNode[]): unknown[] {
   return nodes.map((n) =>
-    n.kind === "input"
-      ? {
-          question: n.label,
-          type: n.type,
-          required: n.required,
-          ...(n.options?.length ? { options: n.options } : {}),
-          ...(n.visibleWhen ? { conditional: true } : {}),
-        }
-      : {
-          group: n.label ?? "Grupo",
-          ...(n.repeat ? { repeats: true } : {}),
-          ...(n.visibleWhen ? { conditional: true } : {}),
-          fields: describeNodes(n.children),
-        },
+    n.kind === "participant"
+      ? { participant: n.label, required: n.required }
+      : n.kind === "input"
+        ? {
+            question: n.label,
+            type: n.type,
+            required: n.required,
+            ...(n.options?.length ? { options: n.options } : {}),
+            ...(n.visibleWhen ? { conditional: true } : {}),
+          }
+        : {
+            group: n.label ?? "Grupo",
+            ...(n.repeat ? { repeats: true } : {}),
+            ...(n.visibleWhen ? { conditional: true } : {}),
+            fields: describeNodes(n.children),
+          },
   );
 }
 

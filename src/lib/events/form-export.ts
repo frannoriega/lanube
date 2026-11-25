@@ -9,6 +9,9 @@ import { collectUploadedFiles } from "@/lib/events/form-files";
 import {
   type FormSchema,
   isUploadedFile,
+  PARTICIPANT_EMAIL_KEY,
+  participantFields,
+  PRIMARY_PARTICIPANT_KEY,
   type UploadedFile,
 } from "@/lib/events/form-schema";
 
@@ -25,6 +28,12 @@ export function answerToString(value: unknown): string {
   if (isUploadedFile(value)) return value.name;
   if (Array.isArray(value)) return value.map(answerToString).join(", ");
   if (typeof value === "boolean") return value ? "Sí" : "No";
+  // Un integrante (milestone 34): «email · dato · dato», no el JSON.
+  if (typeof value === "object" && PARTICIPANT_EMAIL_KEY in value)
+    return Object.values(value as Record<string, unknown>)
+      .map(answerToString)
+      .filter((s) => s !== "")
+      .join(" · ");
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
@@ -32,13 +41,22 @@ export function answerToString(value: unknown): string {
 /** Stable leaf columns for a schema (top-level inputs + one-level group children). */
 export function exportColumns(schema: FormSchema): ExportColumn[] {
   const cols: ExportColumn[] = [];
+  // Datos de quien inscribe (milestone 34): una columna por dato de la forma.
+  for (const f of participantFields(schema)) {
+    cols.push({
+      key: `${PRIMARY_PARTICIPANT_KEY}.${f.key}`,
+      label: f.label,
+      path: [PRIMARY_PARTICIPANT_KEY, f.key],
+    });
+  }
   for (const node of schema.nodes) {
-    if (node.kind === "input") {
+    if (node.kind === "input" || node.kind === "participant") {
+      // Un integrante es una sola columna «email · datos» (ver `answerToString`).
       cols.push({ key: node.id, label: node.label, path: [node.id] });
     } else {
       const groupLabel = node.label ?? "Grupo";
       for (const child of node.children) {
-        if (child.kind === "input") {
+        if (child.kind === "input" || child.kind === "participant") {
           cols.push({
             key: `${node.id}.${child.id}`,
             label: `${groupLabel} — ${child.label}`,

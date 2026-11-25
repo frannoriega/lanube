@@ -150,12 +150,73 @@ export interface GroupNode extends NodeBase {
   repeat?: RepeatConfig | null;
 }
 
-export type FormNode = InputNode | GroupNode;
+// ---------------------------------------------------------------------------
+// Participante (milestone 34)
+// ---------------------------------------------------------------------------
+
+/**
+ * Tipos que puede tener un dato de la **forma del participante**: datos de una persona, nunca
+ * archivos ni números sueltos. El email no está acá: es fijo, obligatorio y siempre el primero.
+ */
+export const PARTICIPANT_FIELD_TYPES = [
+  "SHORT_TEXT",
+  "DNI",
+  "PHONE",
+  "DATE",
+  "SINGLE_SELECT",
+] as const satisfies readonly FieldType[];
+
+export type ParticipantFieldType = (typeof PARTICIPANT_FIELD_TYPES)[number];
+
+/** Un dato de la forma del participante (nombre, apellido, DNI…). */
+export interface ParticipantField {
+  /** Clave estable dentro del formulario (la respuesta se guarda con ella): sobrevive renombrar. */
+  key: string;
+  type: ParticipantFieldType;
+  label: string;
+  required: boolean;
+  /** Opciones de un SINGLE_SELECT. */
+  options?: string[] | null;
+}
+
+/**
+ * Qué es «un participante» en este formulario (milestone 34): el email (fijo) más estos datos.
+ * La misma forma la usan quien inscribe y cada integrante que se agregue.
+ */
+export interface ParticipantShape {
+  fields: ParticipantField[];
+}
+
+/**
+ * Un integrante más de la inscripción (milestone 34): se agrega como cualquier campo, suelto o
+ * dentro de un grupo repetible («Integrantes», de 0 a N). Su respuesta es un objeto
+ * `{ email, <key>: valor }` con la forma del formulario. Quien inscribe **no** es un nodo: es el
+ * email de la inscripción más `answers[PRIMARY_PARTICIPANT_KEY]` (ver `form-engine.ts`).
+ */
+export interface ParticipantNode extends NodeBase {
+  kind: "participant";
+  label: string;
+  /** Opcional = se puede dejar entero en blanco; si se completa algo, va la forma completa. */
+  required: boolean;
+}
+
+export type FormNode = InputNode | GroupNode | ParticipantNode;
 
 export interface FormSchema {
   version: 1;
+  /** Forma del participante (milestone 34). Ausente = solo el email (formularios anteriores). */
+  participant?: ParticipantShape | null;
   nodes: FormNode[];
 }
+
+/**
+ * Clave reservada de las respuestas donde van los datos de **quien inscribe** (además del email
+ * de la inscripción). Empieza con `__` para no chocar nunca con un id de nodo (cuid2).
+ */
+export const PRIMARY_PARTICIPANT_KEY = "__primary";
+
+/** Clave del email dentro de la respuesta de un participante. */
+export const PARTICIPANT_EMAIL_KEY = "email";
 
 // ---------------------------------------------------------------------------
 // Zod (recursive). Validates a schema document on write; the API re-runs this
@@ -268,12 +329,61 @@ const groupNodeSchema: z.ZodType<GroupNode> = z.lazy(() =>
   }),
 );
 
+const participantNodeSchema: z.ZodType<ParticipantNode> = z.object({
+  kind: z.literal("participant"),
+  id: z.string().min(1),
+  label: z
+    .string()
+    .trim()
+    .min(1, { message: "La etiqueta es obligatoria" })
+    .max(200),
+  required: z.boolean(),
+  visibleWhen: conditionSchema.nullable().optional(),
+});
+
+const participantFieldSchema: z.ZodType<ParticipantField> = z
+  .object({
+    key: z
+      .string()
+      .min(1)
+      .max(64)
+      .refine((k) => k !== PARTICIPANT_EMAIL_KEY && !k.startsWith("__"), {
+        message: "Clave reservada",
+      }),
+    type: z.enum(PARTICIPANT_FIELD_TYPES),
+    label: z
+      .string()
+      .trim()
+      .min(1, { message: "La etiqueta es obligatoria" })
+      .max(120),
+    required: z.boolean(),
+    options: z.array(z.string().trim().min(1)).nullable().optional(),
+  })
+  .superRefine((f, ctx) => {
+    if (f.type === "SINGLE_SELECT" && (!f.options || f.options.length < 1))
+      ctx.addIssue({
+        code: "custom",
+        message: "Agregá al menos una opción",
+        path: ["options"],
+      });
+  });
+
+export const participantShapeSchema: z.ZodType<ParticipantShape> = z.object({
+  fields: z
+    .array(participantFieldSchema)
+    .max(12, { message: "Hasta 12 datos por participante" })
+    .refine((fs) => new Set(fs.map((f) => f.key)).size === fs.length, {
+      message: "Claves repetidas",
+    }),
+});
+
 export const formNodeSchema: z.ZodType<FormNode> = z.lazy(() =>
-  z.union([inputNodeSchema, groupNodeSchema]),
+  z.union([inputNodeSchema, groupNodeSchema, participantNodeSchema]),
 );
 
 export const formSchemaZod: z.ZodType<FormSchema> = z.object({
   version: z.literal(1),
+  participant: participantShapeSchema.nullable().optional(),
   nodes: z.array(formNodeSchema),
 });
 
@@ -286,4 +396,25 @@ export function isInputNode(node: FormNode): node is InputNode {
 
 export function isGroupNode(node: FormNode): node is GroupNode {
   return node.kind === "group";
+}
+
+export function isParticipantNode(node: FormNode): node is ParticipantNode {
+  return node.kind === "participant";
+}
+
+/** Los datos de la forma (sin el email), o ninguno en un formulario anterior al milestone 34. */
+export function participantFields(schema: FormSchema): ParticipantField[] {
+  return schema.participant?.fields ?? [];
+}
+
+/** Un dato de la forma como `InputNode`, para validarlo con las mismas reglas que un campo. */
+export function participantFieldAsInput(f: ParticipantField): InputNode {
+  return {
+    kind: "input",
+    id: f.key,
+    type: f.type,
+    label: f.label,
+    required: f.required,
+    options: f.options ?? null,
+  };
 }

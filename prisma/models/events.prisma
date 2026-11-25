@@ -45,6 +45,7 @@ model Event {
   participants     EventParticipant[]
   checkIns         EventCheckIn[]
   invitees         EventInvitee[]
+  members          EventParticipantMember[]
 
   @@index([spaceId])
   @@index([startTime, endTime])
@@ -143,6 +144,8 @@ model EventParticipant {
   // (milestone 25, S5 — ver `src/lib/events/edit-token.ts`).
   editTokens     EventParticipantEditToken[]
   checkIns       EventCheckIn[]
+  // Milestone 34: quien inscribe (PRIMARY) + integrantes cargados con campos «Participante».
+  members        EventParticipantMember[]
 
   @@unique([eventId, email])
   @@index([email])
@@ -167,7 +170,10 @@ model EventParticipant {
 /// Deshacer un ingreso borra la fila; queda en la auditoría.
 model EventCheckIn {
   id              String           @id @default(cuid())
+  /// La inscripción (para agrupar y para «dejar pasar», que mira su estado).
   participantId   String           @map("participant_id")
+  /// Milestone 34: el ingreso es de una **persona** de la inscripción (quien inscribe o un integrante).
+  memberId        String           @map("member_id")
   eventId         String           @map("event_id")
   reservationId   String           @map("reservation_id")
   occurrenceStart BigInt           @map("occurrence_start")
@@ -175,9 +181,11 @@ model EventCheckIn {
   /// `RegisteredUser.id` de quien lo registró (sin FK: la fila sobrevive a que se borre la cuenta).
   checkedInBy     String?          @map("checked_in_by")
   participant     EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  member          EventParticipantMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
   event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@unique([participantId, occurrenceStart])
+  @@unique([memberId, occurrenceStart])
+  @@index([participantId])
   @@index([eventId, occurrenceStart])
   @@map("event_check_ins")
 }
@@ -211,4 +219,36 @@ model EventInvitee {
 
   @@unique([eventId, email])
   @@map("event_invitees")
+}
+
+/// Una persona de una inscripción (milestone 34): quien inscribe (`PRIMARY`, su email es el de la
+/// inscripción) o un integrante (`MEMBER`) cargado con un campo «Participante». Se reescribe desde
+/// las respuestas al inscribirse, editar o registrar en la puerta. El check-in es por integrante.
+/// Un email está en una sola inscripción **activa** del evento: lo controla `submitForm` (no es un
+/// UNIQUE de base porque una inscripción cancelada o rechazada libera los emails de su equipo).
+model EventParticipantMember {
+  id            String           @id @default(cuid())
+  participantId String           @map("participant_id")
+  eventId       String           @map("event_id")
+  /// `PRIMARY` | `MEMBER` (CHECK en la base).
+  role          String
+  /// Normalizado, como `EventParticipant.email`.
+  email         String
+  displayEmail  String           @map("display_email")
+  /// «Integrante 2 — Persona»; NULL para quien inscribe.
+  label         String?
+  /// De qué nodo de las respuestas salió (`"grupo.1.nodo"`); NULL para quien inscribe.
+  nodePath      String?          @map("node_path")
+  /// Datos de la forma del participante, por clave (nombre, DNI…).
+  data          Json             @default("{}")
+  position      Int              @default(0)
+  createdAt     BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  updatedAt     BigInt           @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("updated_at")
+  participant   EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  checkIns      EventCheckIn[]
+
+  @@unique([participantId, email])
+  @@index([eventId, email])
+  @@map("event_participant_members")
 }

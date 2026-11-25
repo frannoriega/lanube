@@ -35,6 +35,13 @@ import {
   type FormSchema,
   type InputNode,
   isGroupNode,
+  isParticipantNode,
+  PARTICIPANT_EMAIL_KEY,
+  participantFieldAsInput,
+  type ParticipantField,
+  participantFields,
+  type ParticipantNode,
+  PRIMARY_PARTICIPANT_KEY,
   type UploadedFile,
 } from "@/lib/events/form-schema";
 import { registerEmailSchema } from "@/lib/schemas/auth";
@@ -66,6 +73,12 @@ import { z } from "zod";
  * check-in de eventos (milestone 30): mismos campos, misma validación, otra subida.
  */
 export const UploadContext = createContext<string | null>(null);
+
+/**
+ * Forma del participante del formulario (milestone 34): la necesitan los bloques de integrantes
+ * en cualquier profundidad del árbol. Exportado para el formulario de la puerta (walk-in).
+ */
+export const ParticipantShapeContext = createContext<ParticipantField[]>([]);
 
 /** Human-readable file size. */
 function formatBytes(bytes: number): string {
@@ -256,29 +269,21 @@ export function PublicForm({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {notice}
 
-          <FormField
+          <PrimaryParticipantBlock
+            fields={participantFields(schema)}
             control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Email <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input type="email" disabled={mode === "edit"} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            emailDisabled={mode === "edit"}
           />
 
           <UploadContext.Provider value={uploadUrl}>
-            <NodeList
-              nodes={schema.nodes}
-              control={form.control}
-              basePath="answers"
-              scopePath={[]}
-            />
+            <ParticipantShapeContext.Provider value={participantFields(schema)}>
+              <NodeList
+                nodes={schema.nodes}
+                control={form.control}
+                basePath="answers"
+                scopePath={[]}
+              />
+            </ParticipantShapeContext.Provider>
           </UploadContext.Provider>
 
           <AreaMaintenanceNotice area="events" />
@@ -368,6 +373,148 @@ export function NodeList({
   );
 }
 
+/**
+ * Quien inscribe (milestone 34): el email de la inscripción y, si el formulario define una forma
+ * del participante, sus datos (en `answers.__primary`). Es siempre lo primero del formulario.
+ * Exportado para el formulario de la puerta (walk-in).
+ */
+export function PrimaryParticipantBlock({
+  fields,
+  control,
+  emailDisabled = false,
+}: {
+  fields: ParticipantField[];
+  control: Control<PublicFormValues>;
+  emailDisabled?: boolean;
+}) {
+  const email = (
+    <FormField
+      control={control}
+      name="email"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>
+            Email <span className="text-destructive">*</span>
+          </FormLabel>
+          <FormControl>
+            <Input type="email" disabled={emailDisabled} {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+  if (fields.length === 0) return email;
+  return (
+    <fieldset className="space-y-4 rounded-md border p-4">
+      <legend className="px-1 text-sm font-medium">Tus datos</legend>
+      {email}
+      {fields.map((f) => (
+        <ParticipantDataField
+          key={f.key}
+          field={f}
+          control={control}
+          name={`answers.${PRIMARY_PARTICIPANT_KEY}.${f.key}`}
+        />
+      ))}
+    </fieldset>
+  );
+}
+
+/** Un dato de la forma del participante, con las mismas entradas que un campo común. */
+function ParticipantDataField({
+  field: f,
+  control,
+  name,
+}: {
+  field: ParticipantField;
+  control: Control<PublicFormValues>;
+  name: string;
+}) {
+  return (
+    <FormField
+      control={control}
+      name={name as `answers.${string}`}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>
+            {f.label}
+            {f.required && <span className="text-destructive"> *</span>}
+          </FormLabel>
+          <FormControl>
+            <FieldInput
+              field={participantFieldAsInput(f)}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+/**
+ * Un integrante más (milestone 34): su email y los datos de la forma. Si es opcional se puede
+ * dejar entero en blanco; si se completa algo, va completo (lo valida el motor).
+ */
+function ParticipantBlock({
+  node,
+  control,
+  basePath,
+}: {
+  node: ParticipantNode;
+  control: Control<PublicFormValues>;
+  basePath: string;
+}) {
+  const fields = useContext(ParticipantShapeContext);
+  const base = `${basePath}.${node.id}`;
+  // Una regla a la izquierda y no otra caja: suele ir dentro del ítem de un grupo repetible,
+  // que ya es una caja (nada de «card dentro de card»).
+  return (
+    <fieldset className="space-y-4 border-l-2 border-la-nube-primary/40 pl-4">
+      <legend className="mb-2 text-sm font-medium">
+        {node.label}
+        {node.required ? (
+          <span className="text-destructive"> *</span>
+        ) : (
+          <span className="font-normal text-muted-foreground"> (opcional)</span>
+        )}
+      </legend>
+      <FormField
+        control={control}
+        name={`${base}.${PARTICIPANT_EMAIL_KEY}` as `answers.${string}`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Email
+              {node.required && <span className="text-destructive"> *</span>}
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="email"
+                value={(field.value as string | undefined) ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      {fields.map((f) => (
+        <ParticipantDataField
+          key={f.key}
+          field={f}
+          control={control}
+          name={`${base}.${f.key}`}
+        />
+      ))}
+    </fieldset>
+  );
+}
+
 function NodeRenderer({
   node,
   control,
@@ -379,6 +526,12 @@ function NodeRenderer({
   basePath: string;
   scopePath: string[];
 }) {
+  if (isParticipantNode(node)) {
+    return (
+      <ParticipantBlock node={node} control={control} basePath={basePath} />
+    );
+  }
+
   if (!isGroupNode(node)) {
     // BOOLEAN renders as a checkbox with the label beside it (not a label above a control).
     if (node.type === FormFieldType.BOOLEAN) {

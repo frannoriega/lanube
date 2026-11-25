@@ -179,8 +179,22 @@ function loadParticipants(eventIds: string[]) {
       userId: true,
       answers: true,
       registeredUser: { select: { createdAt: true } },
+      // Milestone 34: personas de la inscripción (quien inscribe + integrantes).
+      _count: { select: { members: true } },
     },
   });
+}
+
+/**
+ * Personas de las inscripciones aprobadas por el formulario (milestone 34): la referencia de la
+ * asistencia, porque el check-in es por persona. Sin equipos es igual a la cantidad de
+ * inscripciones aprobadas (cada una tiene a quien inscribe). Una inscripción vieja sin filas de
+ * integrantes cuenta como una persona.
+ */
+function approvedPeople(ps: ParticipantRow[]): number {
+  return ps
+    .filter((p) => !isWalkIn(p) && p.status === ParticipantStatus.APPROVED)
+    .reduce((acc, p) => acc + Math.max(1, p._count.members), 0);
 }
 
 type ParticipantRow = Awaited<ReturnType<typeof loadParticipants>>[number];
@@ -271,9 +285,7 @@ export async function getEventsReport(
     const holding = ps.filter((p) =>
       SPOT_HOLDING_STATUSES.includes(p.status as ParticipantStatus),
     ).length;
-    const approvedRegistered = ps.filter(
-      (p) => !isWalkIn(p) && p.status === ParticipantStatus.APPROVED,
-    ).length;
+    const approvedRegistered = approvedPeople(ps);
     const capacity = effectiveCapacity(e);
     const attendance = attendanceBySession(
       occ.filter((o) => o.startMs >= fromMs && o.startMs <= toMs),
@@ -431,7 +443,10 @@ export interface EventReport {
   /** Inscripciones por el formulario, por estado actual. */
   byStatus: Record<ParticipantStatus, number>;
   walkIns: number;
-  /** Inscriptos por el formulario hoy aprobados: la referencia del gráfico de asistencia. */
+  /**
+   * Personas de las inscripciones aprobadas hoy (milestone 34: cada integrante de un equipo
+   * cuenta): la referencia del gráfico de asistencia, porque el check-in es por persona.
+   */
   approvedRegistered: number;
   withAccount: number;
   accountAfter: number;
@@ -467,7 +482,8 @@ export async function getEventReport(
     SPOT_HOLDING_STATUSES.includes(p.status as ParticipantStatus),
   );
   const capacity = effectiveCapacity(e);
-  const approvedRegistered = byStatus[ParticipantStatus.APPROVED];
+  // Personas (no inscripciones): la referencia contra los ingresos, que son por persona.
+  const approvedRegistered = approvedPeople(participants);
   const attendance = attendanceBySession(occ, toCheckInRows(checkIns), now);
   const schema = e.form ? formSchema(e.form.form) : null;
 

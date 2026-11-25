@@ -1,6 +1,6 @@
 # Milestone 34 — Campo «Participante» y check-in de equipos
 
-**Estado:** promoted (2026-11-25), versión 1.2.0. Estuvo postergado (2026-11-17); el usuario lo
+**Estado:** done (2026-11-25), versión 1.2.0. Estuvo postergado (2026-11-17); el usuario lo
 retomó con un diseño propio el 2026-11-25. La idea original se conserva al final.
 
 ## Qué pidió el usuario (2026-11-25)
@@ -119,18 +119,18 @@ retomó con un diseño propio el 2026-11-25. La idea original se conserva al fin
 
 ## Criterios de aceptación
 
-- [ ] Constructor: la sección «Participante» define la forma; el primer nodo es el participante
+- [x] Constructor: la sección «Participante» define la forma; el primer nodo es el participante
       principal y no se puede borrar; se pueden agregar participantes sueltos y dentro de un grupo
       repetible.
-- [ ] Formularios e inscripciones existentes siguen funcionando tras la migración (test de la
+- [x] Formularios e inscripciones existentes siguen funcionando tras la migración (test de la
       migración de datos con un fixture).
-- [ ] Inscribir un equipo de 5 ocupa **un** lugar del cupo.
-- [ ] Un email repetido (en la misma inscripción o en otra activa) se rechaza; tras cancelar la
+- [x] Inscribir un equipo de 5 ocupa **un** lugar del cupo.
+- [x] Un email repetido (en la misma inscripción o en otra activa) se rechaza; tras cancelar la
       otra inscripción, se acepta.
-- [ ] Check-in: buscar por DNI o apellido encuentra al integrante; marcar a uno no marca al resto;
+- [x] Check-in: buscar por DNI o apellido encuentra al integrante; marcar a uno no marca al resto;
       «todo el equipo» marca a los que faltan.
-- [ ] Reportes: asistencia por integrantes, con test en `report-stats.ts`.
-- [ ] Solo quien inscribe recibe correos.
+- [x] Reportes: asistencia por integrantes, con test en `report-stats.ts`.
+- [x] Solo quien inscribe recibe correos.
 
 ## Idea original (2026-11-17, conservada)
 
@@ -143,4 +143,55 @@ forma).
 
 ## Registro
 
-(Sin implementar.)
+Implementado el 2026-11-25.
+
+### Cambios frente al diseño (decididos al implementar)
+
+- **La forma vive en el JSON del formulario** (`Form.schema.participant`), no en una columna
+  `Form.participantShape`: el árbol ya es la fuente de verdad del formulario, así no hace falta
+  migrar formularios (los viejos no la tienen = solo email) y viaja sola al clonar la plantilla.
+- **Quien inscribe no es un nodo del árbol.** Es el email de la inscripción (el que ya pedía el
+  formulario) más `answers.__primary` con los datos de la forma. Así no cambió el contrato de la
+  API (`email` sigue arriba), ni las inscripciones viejas, ni el walk-in. Para quien arma el
+  formulario se ve igual: un bloque fijo «Quien inscribe» siempre primero; en el formulario público,
+  «Tus datos» (email + datos de la forma).
+- **Integrantes en el constructor:** se eligen como un tipo más («Participante») o con «Agregar
+  participante» (arriba o dentro de un grupo); se guardan como nodos `kind: "participant"`. No pueden
+  ser condición de visibilidad de otro campo.
+- **Walk-in de un equipo:** ingresan todas sus personas (llegaron juntas).
+- **Reportes:** `approvedRegistered` pasó a contar **personas** de inscripciones aprobadas (sin
+  equipos es igual que antes); los textos de la página y del Excel lo dicen.
+
+### Qué se construyó
+
+- `form-schema.ts`: `ParticipantShape`, `ParticipantField`, `ParticipantNode`,
+  `PRIMARY_PARTICIPANT_KEY`, Zod (`participantShapeSchema`, hasta 12 datos, claves únicas y no
+  reservadas). `form-engine.ts`: validación de quien inscribe y de cada integrante (uno opcional
+  entero en blanco no existe), poda a email + claves de la forma, `extractMembers()` (ruta y etiqueta
+  «Integrante N — Persona») y `hasMemberNodes()`; `schemaToPublicFields` los saltea; el clon conserva
+  la forma. `form-export.ts`: columnas de quien inscribe y una por integrante («email · datos»).
+  También `form-files.ts`, la foto de auditoría de un formulario y la descripción del conector MCP.
+- Migración `20261125110000_participant_members`: tabla `event_participant_members` (rol con
+  CHECK), un `PRIMARY` por cada inscripción existente (id determinista `pm_<inscripción>`),
+  `event_check_ins.member_id` (rellenado con ese PRIMARY, `NOT NULL`, FK) y el único pasa a
+  `(member_id, occurrence_start)`. Verificado localmente: 6 inscripciones → 6 personas, ningún
+  ingreso sin persona.
+- `syncRegistrationMembers()` en `submitForm` (con `MemberRuleError` para deshacer la transacción),
+  `updateParticipantAnswers` (ahora en una transacción con el mismo advisory lock) y `registerWalkIn`;
+  regla de re-aprobación en `decideParticipants`.
+- Check-in: `CheckInMember`, `checkInParticipant(..., { memberIds })`, `undoCheckIn(..., memberId)`,
+  contador por personas; rutas y schemas aceptan `memberIds` / `memberId` (sin ellos, quien inscribe:
+  compatibilidad); una entrada de auditoría por persona que ingresa (con `requestId` común) y el
+  walk-in audita a su equipo. Pantalla: una fila por persona, columnas de la forma, búsqueda por
+  cualquier dato (sin acentos, mayúsculas ni puntos), «Todo el equipo (N)», «Dejar pasar» avisa que
+  aprueba la inscripción entera.
+- Formulario público: `PrimaryParticipantBlock` («Tus datos») y `ParticipantBlock` (regla lateral, no
+  una caja dentro de otra); `ParticipantShapeContext` (también lo usa el walk-in).
+- Constructor: sección «Participante» (email fijo, datos con tipo/obligatorio/opciones, atajos
+  Nombre/Apellido/DNI/Teléfono/Fecha de nacimiento/Otro dato) y «Agregar participante».
+- Tests: `participants-engine.test.ts` (validación, poda, extracción, legado, clon, exportación).
+- **Verificado contra el servidor local** (plantilla «Nombre + DNI» con un grupo «Integrantes»):
+  un equipo de 3 y uno de 2 con cupo 2 → el tercero recibe «cupo máximo» (el cupo cuenta
+  inscripciones); un email repetido dentro de la inscripción y uno ya inscripto en otro equipo dan
+  409 con su mensaje; la puerta lista 5 personas con Nombre/DNI, buscar «32.333.444» trae el equipo
+  de Carla, registrar a una persona y después «Todo el equipo (2)» deja «3 de 5».

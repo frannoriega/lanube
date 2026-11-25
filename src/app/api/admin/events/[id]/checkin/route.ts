@@ -1,3 +1,4 @@
+import { createId } from "@paralleldrive/cuid2";
 import { requirePermission } from "@/lib/api-auth";
 import { apiCatch, apiError, apiSuccess } from "@/lib/api/response";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
@@ -46,7 +47,12 @@ export async function POST(request: NextRequest, { params }: Params) {
     return apiError("Datos inválidos", 400, { issues: parsed.error.issues });
   }
   try {
-    const { session: occurrenceStart, participantId, admit } = parsed.data;
+    const {
+      session: occurrenceStart,
+      participantId,
+      memberIds,
+      admit,
+    } = parsed.data;
     const result = await checkInParticipant(
       id,
       participantId,
@@ -54,22 +60,31 @@ export async function POST(request: NextRequest, { params }: Params) {
       {
         admit,
         adminId: session.userId,
+        memberIds,
       },
     );
     if (!result.alreadyCheckedIn) {
-      await emitAudit(session, AUDIT_ACTIONS.participantCheckIn, {
-        entityId: id,
-        context: {
-          Evento: result.eventName,
-          Participante: result.participant.displayEmail,
-        },
-        after: {
-          participant: result.participant.displayEmail,
-          participantId,
-          session: result.session.startMs,
-          admittedFrom: result.admittedFrom,
-        },
-      });
+      // Una entrada por persona que ingresó (milestone 34), como los bulk: un mismo pedido.
+      const requestId = createId();
+      for (const m of result.checkedIn) {
+        await emitAudit(session, AUDIT_ACTIONS.participantCheckIn, {
+          entityId: id,
+          requestId,
+          context: {
+            Evento: result.eventName,
+            Participante: m.displayEmail,
+            ...(m.role === "MEMBER"
+              ? { Inscripción: result.participant.displayEmail }
+              : {}),
+          },
+          after: {
+            participant: m.displayEmail,
+            participantId,
+            session: result.session.startMs,
+            admittedFrom: result.admittedFrom,
+          },
+        });
+      }
       // Admitir a alguien cambia cuántos lugares quedan en las tarjetas públicas.
       if (result.admittedFrom) revalidatePublic(PUBLIC_TAGS.events);
     }
@@ -96,15 +111,20 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     return apiError("Datos inválidos", 400, { issues: parsed.error.issues });
   }
   try {
-    const { session: occurrenceStart, participantId } = parsed.data;
-    const undone = await undoCheckIn(id, participantId, occurrenceStart);
+    const { session: occurrenceStart, participantId, memberId } = parsed.data;
+    const undone = await undoCheckIn(
+      id,
+      participantId,
+      occurrenceStart,
+      memberId,
+    );
     if (!undone) return apiError("No había un ingreso registrado", 404);
-    const { participant, eventName } = undone;
+    const { participant, member, eventName } = undone;
     await emitAudit(session, AUDIT_ACTIONS.participantCheckInUndo, {
       entityId: id,
-      context: { Evento: eventName, Participante: participant.displayEmail },
+      context: { Evento: eventName, Participante: member.displayEmail },
       before: {
-        participant: participant.displayEmail,
+        participant: member.displayEmail,
         participantId,
         session: occurrenceStart,
       },

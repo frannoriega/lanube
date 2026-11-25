@@ -14,6 +14,7 @@ import {
   Ratio,
   Sigma,
   Type,
+  UserRound,
 } from "lucide-react";
 
 /** Human-readable (Spanish) labels for each form field type. */
@@ -31,6 +32,8 @@ export const FIELD_TYPE_LABELS: Record<string, string> = {
   DNI: "DNI",
   FILE: "Archivo",
   BOOLEAN: "Casilla de aceptación",
+  // Milestone 34: un integrante más (email + la forma del participante). No es un `FieldType`.
+  PARTICIPANT: "Participante",
 };
 
 /** Icon per field type, for compact previews. */
@@ -48,6 +51,7 @@ export const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   DNI: IdCard,
   FILE: Paperclip,
   BOOLEAN: CheckSquare,
+  PARTICIPANT: UserRound,
 };
 
 export function fieldTypeLabel(type: string): string {

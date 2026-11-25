@@ -15,20 +15,15 @@ import {
 } from "@/components/molecules/responsive-dialog";
 import {
   NodeList,
+  ParticipantShapeContext,
+  PrimaryParticipantBlock,
   type PublicFormValues,
   UploadContext,
 } from "@/components/organisms/forms/public-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable, DataTablePagination } from "@/components/ui/data-table";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -41,12 +36,18 @@ import { useApi } from "@/hooks/use-api";
 import { ApiError, apiErrorMessage, apiSend } from "@/lib/api/client";
 import type {
   CheckInEventView,
+  CheckInMember,
   CheckInParticipant,
   CheckInSummary,
 } from "@/lib/db/event-checkin";
+import { answerToString } from "@/lib/events/form-export";
 import { ADMISSION_PROMPT, type CheckInSession } from "@/lib/events/checkin";
 import { type AnswerMap, validateForm } from "@/lib/events/form-engine";
-import type { FormSchema } from "@/lib/events/form-schema";
+import {
+  type FormSchema,
+  type ParticipantField,
+  participantFields,
+} from "@/lib/events/form-schema";
 import { registerEmailSchema } from "@/lib/schemas/auth";
 import { ParticipantSource, ParticipantStatus } from "@/types/prisma";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +75,11 @@ import { z } from "zod";
  * ser largo: la regla «diálogo vs. página» del milestone 14 lo deja fuera de un diálogo).
  *
  * Todo se hace sobre **una sesión** (por defecto, la de hoy).
+ *
+ * **Milestone 34:** la tabla es de **personas** — quien inscribe y cada integrante de un equipo —
+ * con una columna por dato de la forma del participante de ese formulario (nombre, DNI…) y el
+ * buscador mira todos esos datos. Si una persona de un equipo coincide, se ve el equipo entero,
+ * y en la fila de quien inscribió hay «Todo el equipo» para marcar de una a los que faltan.
  */
 
 type ListData = { participants: CheckInParticipant[]; summary: CheckInSummary };
@@ -143,6 +149,7 @@ export function EventCheckIn({ eventId }: { eventId: string }) {
   }
 
   const { sessions, schema, name } = event.data;
+  const shape = event.data.participantFields ?? [];
   const summary = list.data?.summary;
 
   return (
@@ -234,6 +241,7 @@ export function EventCheckIn({ eventId }: { eventId: string }) {
             />
           ) : (
             <ParticipantsTable
+              shape={shape}
               data={list.data?.participants ?? []}
               loading={list.firstTime}
               query={query}
@@ -261,52 +269,95 @@ function SourceBadge({ source }: { source: string }) {
   ) : null;
 }
 
+/** Una fila de la tabla: una persona de una inscripción (milestone 34). */
+interface MemberRow {
+  key: string;
+  participant: CheckInParticipant;
+  member: CheckInMember;
+}
+
+/** Texto comparable: minúsculas, sin acentos, sin puntos (un DNI «30.111.222» = «30111222»). */
+function normalizeSearch(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\./g, "");
+}
+
+/** Todo lo buscable de una persona: emails y cada dato de la forma. */
+function memberHaystack(m: CheckInMember): string {
+  return normalizeSearch(
+    [
+      m.displayEmail,
+      m.email,
+      ...Object.values(m.data).map(answerToString),
+    ].join(" "),
+  );
+}
+
 function CheckInCell({
-  participant: p,
+  row: { participant: p, member: m },
   canCheckIn,
   actions,
 }: {
-  participant: CheckInParticipant;
+  row: MemberRow;
   canCheckIn: boolean;
   actions: CheckInActions;
 }) {
   const busy = actions.busyId === p.id;
-  if (p.checkedInAt != null) {
+  const missing = p.members.filter((x) => x.checkedInAt == null);
+  // «Todo el equipo», en la fila de quien inscribió, si falta más de una persona.
+  const team =
+    m.role === "PRIMARY" && p.members.length > 1 && missing.length > 1 ? (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={busy || !canCheckIn}
+        onClick={() => actions.checkIn(p, missing)}
+      >
+        Todo el equipo ({missing.length})
+      </Button>
+    ) : null;
+  if (m.checkedInAt != null) {
     return (
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <span className="flex items-center gap-1 text-sm font-medium text-green-700 dark:text-green-400">
           <CheckCircle2 className="h-4 w-4" aria-hidden />
-          Ingresó {timeLabel(p.checkedInAt)}
+          Ingresó {timeLabel(m.checkedInAt)}
         </span>
         <Button
           variant="ghost"
           size="sm"
           disabled={busy}
-          onClick={() => actions.undo(p)}
-          aria-label={`Deshacer el ingreso de ${p.displayEmail}`}
+          onClick={() => actions.undo(p, m)}
+          aria-label={`Deshacer el ingreso de ${m.displayEmail}`}
         >
           <Undo2 className="h-4 w-4" />
           <span className="sr-only sm:not-sr-only sm:ml-1">Deshacer</span>
         </Button>
+        {team}
       </div>
     );
   }
   return (
-    <div className="flex justify-end">
+    <div className="flex flex-wrap justify-end gap-2">
       <Button
         size="sm"
         disabled={busy || !canCheckIn}
-        onClick={() => actions.checkIn(p)}
+        onClick={() => actions.checkIn(p, [m])}
       >
         {p.status === ParticipantStatus.APPROVED
           ? "Registrar ingreso"
           : "Dejar pasar…"}
       </Button>
+      {team}
     </div>
   );
 }
 
 function ParticipantsTable({
+  shape,
   data,
   loading,
   query,
@@ -315,6 +366,7 @@ function ParticipantsTable({
   actions,
   onWalkIn,
 }: {
+  shape: ParticipantField[];
   data: CheckInParticipant[];
   loading: boolean;
   query: string;
@@ -326,34 +378,64 @@ function ParticipantsTable({
   // Identidad estable para TanStack (milestones 22/25): solo cambia con los datos o la búsqueda.
   // Busca en el email tal como se escribió y en el normalizado (`ana.perez@gmail.com` también
   // aparece buscando `anaperez`).
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return data;
-    return data.filter(
-      (p) => p.displayEmail.toLowerCase().includes(q) || p.email.includes(q),
-    );
+  // Milestone 34: una fila por persona, y se busca en sus emails y en todos los datos de la
+  // forma del participante. Si coincide alguien de un equipo, se muestra el equipo entero.
+  const rows = useMemo<MemberRow[]>(() => {
+    const q = normalizeSearch(query.trim());
+    const out: MemberRow[] = [];
+    for (const p of data) {
+      if (q && !p.members.some((m) => memberHaystack(m).includes(q))) continue;
+      for (const m of p.members)
+        out.push({ key: m.id, participant: p, member: m });
+    }
+    return out;
   }, [data, query]);
 
-  const columns = useMemo<ColumnDef<CheckInParticipant, unknown>[]>(
+  const columns = useMemo<ColumnDef<MemberRow, unknown>[]>(
     () => [
       {
         id: "email",
-        header: "Email",
-        meta: { mobile: "title", label: "Email" },
-        cell: ({ row }) => (
-          <span className="break-all font-medium">
-            {row.original.displayEmail}
-          </span>
-        ),
+        header: "Persona",
+        meta: { mobile: "title", label: "Persona" },
+        cell: ({ row }) => {
+          const { member: m, participant: p } = row.original;
+          return (
+            <div className={m.role === "MEMBER" ? "pl-4" : undefined}>
+              <span className="break-all font-medium">{m.displayEmail}</span>
+              {m.role === "MEMBER" ? (
+                <p className="text-xs text-muted-foreground">
+                  {m.label} · equipo de {p.displayEmail}
+                </p>
+              ) : p.members.length > 1 ? (
+                <p className="text-xs text-muted-foreground">
+                  Inscribió a un equipo de {p.members.length}
+                </p>
+              ) : null}
+            </div>
+          );
+        },
       },
+      // Una columna por dato de la forma del participante de este formulario.
+      ...shape.map(
+        (f): ColumnDef<MemberRow, unknown> => ({
+          id: `data-${f.key}`,
+          header: f.label,
+          meta: { label: f.label },
+          cell: ({ row }) => (
+            <span className="text-sm">
+              {answerToString(row.original.member.data[f.key]) || "—"}
+            </span>
+          ),
+        }),
+      ),
       {
         id: "status",
         header: "Estado",
         meta: { mobile: "badge", label: "Estado" },
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-1">
-            <ParticipantStatusBadge status={row.original.status} />
-            <SourceBadge source={row.original.source} />
+            <ParticipantStatusBadge status={row.original.participant.status} />
+            <SourceBadge source={row.original.participant.source} />
           </div>
         ),
       },
@@ -363,14 +445,14 @@ function ParticipantsTable({
         meta: { mobile: "actions", label: "Ingreso" },
         cell: ({ row }) => (
           <CheckInCell
-            participant={row.original}
+            row={row.original}
             canCheckIn={canCheckIn}
             actions={actions}
           />
         ),
       },
     ],
-    [canCheckIn, actions],
+    [canCheckIn, actions, shape],
   );
 
   const table = useReactTable({
@@ -378,7 +460,8 @@ function ParticipantsTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getRowId: (r) => r.id,
+    getRowId: (r) => r.key,
+    autoResetPageIndex: false,
     initialState: { pagination: { pageIndex: 0, pageSize: PAGE_SIZE } },
   });
 
@@ -395,14 +478,20 @@ function ParticipantsTable({
           />
           <Input
             type="search"
-            inputMode="email"
             autoCapitalize="none"
             autoComplete="off"
-            placeholder="Buscar por email"
+            placeholder={
+              shape.length > 0
+                ? `Buscar por email, ${shape
+                    .slice(0, 2)
+                    .map((f) => f.label.toLowerCase())
+                    .join(", ")}…`
+                : "Buscar por email"
+            }
             className="pl-9"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            aria-label="Buscar inscriptos por email"
+            aria-label="Buscar personas por email o por sus datos"
           />
         </div>
         <Button
@@ -447,8 +536,9 @@ function ParticipantsTable({
 
 interface CheckInActions {
   busyId: string | null;
-  checkIn: (p: CheckInParticipant) => void;
-  undo: (p: CheckInParticipant) => void;
+  /** Registra el ingreso de esas personas de la inscripción (una, o «todo el equipo»). */
+  checkIn: (p: CheckInParticipant, members: CheckInMember[]) => void;
+  undo: (p: CheckInParticipant, m: CheckInMember) => void;
   /** El diálogo de «dejar pasar»: se monta una vez, en la pantalla. */
   dialog: React.ReactNode;
 }
@@ -460,20 +550,34 @@ function useCheckInActions(
   onChange: (p: CheckInParticipant) => void,
 ): CheckInActions {
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [admitting, setAdmitting] = useState<CheckInParticipant | null>(null);
+  const [admitting, setAdmitting] = useState<{
+    participant: CheckInParticipant;
+    members: CheckInMember[];
+  } | null>(null);
 
-  const send = async (p: CheckInParticipant, admit: boolean) => {
+  const send = async (
+    p: CheckInParticipant,
+    members: CheckInMember[],
+    admit: boolean,
+  ) => {
     if (session == null) return;
     setBusyId(p.id);
     try {
       const res = await apiSend<{
         participant: CheckInParticipant;
         alreadyCheckedIn: boolean;
-      }>(base, "POST", { session, participantId: p.id, admit });
+      }>(base, "POST", {
+        session,
+        participantId: p.id,
+        memberIds: members.map((m) => m.id),
+        admit,
+      });
       toast.success(
         res.alreadyCheckedIn
           ? "Ya tenía el ingreso registrado"
-          : "Ingreso registrado",
+          : members.length > 1
+            ? `Ingreso registrado (${members.length} personas)`
+            : "Ingreso registrado",
       );
       onChange(res.participant);
     } catch (err) {
@@ -486,7 +590,7 @@ function useCheckInActions(
           : undefined;
       if (fresh) {
         onChange(fresh);
-        setAdmitting(fresh);
+        setAdmitting({ participant: fresh, members });
         return;
       }
       toast.error(apiErrorMessage(err, "No se pudo registrar el ingreso"));
@@ -495,19 +599,20 @@ function useCheckInActions(
     }
   };
 
-  const checkIn = (p: CheckInParticipant) => {
-    if (p.status !== ParticipantStatus.APPROVED) setAdmitting(p);
-    else void send(p, false);
+  const checkIn = (p: CheckInParticipant, members: CheckInMember[]) => {
+    if (p.status !== ParticipantStatus.APPROVED)
+      setAdmitting({ participant: p, members });
+    else void send(p, members, false);
   };
 
-  const undo = async (p: CheckInParticipant) => {
+  const undo = async (p: CheckInParticipant, m: CheckInMember) => {
     if (session == null) return;
     setBusyId(p.id);
     try {
       const res = await apiSend<{ participant: CheckInParticipant }>(
         base,
         "DELETE",
-        { session, participantId: p.id },
+        { session, participantId: p.id, memberId: m.id },
       );
       toast.success("Ingreso deshecho");
       onChange(res.participant);
@@ -518,10 +623,11 @@ function useCheckInActions(
     }
   };
 
+  const admittingP = admitting?.participant ?? null;
   const prompt =
-    admitting && admitting.status !== ParticipantStatus.APPROVED
+    admittingP && admittingP.status !== ParticipantStatus.APPROVED
       ? ADMISSION_PROMPT[
-          admitting.status as Exclude<
+          admittingP.status as Exclude<
             ParticipantStatus,
             ParticipantStatus.APPROVED
           >
@@ -537,7 +643,10 @@ function useCheckInActions(
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>¿Dejar pasar?</ResponsiveDialogTitle>
           <ResponsiveDialogDescription className="break-all">
-            {admitting?.displayEmail}
+            {admittingP?.displayEmail}
+            {admittingP && admittingP.members.length > 1
+              ? ` (equipo de ${admittingP.members.length}: se aprueba la inscripción entera)`
+              : ""}
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
         <p className="text-sm">{prompt}</p>
@@ -547,9 +656,9 @@ function useCheckInActions(
           </Button>
           <Button
             onClick={() => {
-              const p = admitting;
+              const a = admitting;
               setAdmitting(null);
-              if (p) void send(p, true);
+              if (a) void send(a.participant, a.members, true);
             }}
           >
             Dejar pasar y registrar ingreso
@@ -559,7 +668,7 @@ function useCheckInActions(
     </ResponsiveDialog>
   );
 
-  return { busyId, checkIn, undo: (p) => void undo(p), dialog };
+  return { busyId, checkIn, undo: (p, m) => void undo(p, m), dialog };
 }
 
 // ---------------------------------------------------------------------------
@@ -658,35 +767,29 @@ function WalkInForm({
           <h2 className="text-lg font-semibold">Registrar sin inscripción</h2>
           <p className="text-sm text-muted-foreground">
             Completá el formulario del evento con la persona. Queda inscripta
-            (sin importar el cupo) y con su ingreso a esta sesión. No se le
-            manda ningún correo.
+            (sin importar el cupo) y con su ingreso a esta sesión —ella y, si el
+            formulario lo pide, su equipo—. No se le manda ningún correo.
           </p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
+            {/* Quien llega (y su equipo, si el formulario lo pide): milestone 34. */}
+            <PrimaryParticipantBlock
+              fields={schema ? participantFields(schema) : []}
               control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Email <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input type="email" autoCapitalize="none" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
             />
             {schema && (
               <UploadContext.Provider value={`${base}/upload`}>
-                <NodeList
-                  nodes={schema.nodes}
-                  control={form.control}
-                  basePath="answers"
-                  scopePath={[]}
-                />
+                <ParticipantShapeContext.Provider
+                  value={participantFields(schema)}
+                >
+                  <NodeList
+                    nodes={schema.nodes}
+                    control={form.control}
+                    basePath="answers"
+                    scopePath={[]}
+                  />
+                </ParticipantShapeContext.Provider>
               </UploadContext.Provider>
             )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

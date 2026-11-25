@@ -12,13 +12,19 @@ const session = z.number().int().positive({ message: "Sesión inválida" });
 export const checkInSchema = z.object({
   session,
   participantId: z.string().min(1),
+  /**
+   * Las personas de la inscripción que ingresan (milestone 34): una, o «todo el equipo». Sin
+   * esto, quien inscribe (pedidos anteriores).
+   */
+  memberIds: z.array(z.string().min(1)).max(100).optional(),
   admit: z.boolean().default(false),
 });
 
-/** Deshacer un ingreso. */
+/** Deshacer un ingreso (de una persona; sin `memberId`, quien inscribe). */
 export const checkInUndoSchema = z.object({
   session,
   participantId: z.string().min(1),
+  memberId: z.string().min(1).optional(),
 });
 
 /** Registrar a alguien que llegó sin inscripción, con el formulario del evento. */

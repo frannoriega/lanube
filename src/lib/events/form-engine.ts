@@ -25,6 +25,12 @@ import {
   type GroupNode,
   type InputNode,
   isGroupNode,
+  isParticipantNode,
+  PARTICIPANT_EMAIL_KEY,
+  participantFieldAsInput,
+  participantFields,
+  type ParticipantField,
+  PRIMARY_PARTICIPANT_KEY,
 } from "@/lib/events/form-schema";
 import { createId } from "@paralleldrive/cuid2";
 
@@ -305,8 +311,175 @@ export function validateForm(
   answers: AnswerMap,
 ): FormValidationResult {
   const errors: Record<string, string> = {};
-  validateNodes(schema.nodes, [answers ?? {}], "", errors);
+  const fields = participantFields(schema);
+  // Datos de quien inscribe (milestone 34): el email es el de la inscripción (se valida aparte),
+  // acá solo lo que pide la forma del participante.
+  validateParticipantData(
+    fields,
+    asMap((answers ?? {})[PRIMARY_PARTICIPANT_KEY]),
+    `${PRIMARY_PARTICIPANT_KEY}.`,
+    errors,
+  );
+  validateNodes(schema.nodes, [answers ?? {}], "", errors, fields);
   return { ok: Object.keys(errors).length === 0, errors };
+}
+
+// ---------------------------------------------------------------------------
+// Participantes (milestone 34)
+// ---------------------------------------------------------------------------
+
+/** Formato mínimo de un email de integrante (la normalización completa la hace el servidor). */
+const MEMBER_EMAIL_RE = /^[^\s@<>(),;:"]+@[^\s@<>(),;:"]+\.[^\s@<>(),;:"]+$/;
+
+function asMap(value: unknown): AnswerMap {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as AnswerMap)
+    : {};
+}
+
+/** Valida los datos de la forma (sin el email) de un participante. */
+function validateParticipantData(
+  fields: ParticipantField[],
+  value: AnswerMap,
+  prefix: string,
+  errors: Record<string, string>,
+): void {
+  for (const f of fields) {
+    const err = validateScalar(participantFieldAsInput(f), value[f.key]);
+    if (err) errors[`${prefix}${f.key}`] = err;
+  }
+}
+
+/** ¿El participante quedó entero en blanco? (un integrante opcional se puede omitir). */
+export function isParticipantBlank(
+  fields: ParticipantField[],
+  value: unknown,
+): boolean {
+  const v = asMap(value);
+  return (
+    isEmpty(v[PARTICIPANT_EMAIL_KEY]) && fields.every((f) => isEmpty(v[f.key]))
+  );
+}
+
+/**
+ * Un integrante: si es obligatorio, o si se completó algo, lleva un email válido y los datos
+ * obligatorios de la forma. Uno opcional entero en blanco no se valida (no existe).
+ */
+function validateParticipant(
+  required: boolean,
+  fields: ParticipantField[],
+  value: unknown,
+  prefix: string,
+  errors: Record<string, string>,
+): void {
+  if (!required && isParticipantBlank(fields, value)) return;
+  const v = asMap(value);
+  const email = v[PARTICIPANT_EMAIL_KEY];
+  if (isEmpty(email))
+    errors[`${prefix}${PARTICIPANT_EMAIL_KEY}`] = "El email es obligatorio";
+  else if (typeof email !== "string" || !MEMBER_EMAIL_RE.test(email.trim()))
+    errors[`${prefix}${PARTICIPANT_EMAIL_KEY}`] = "Email inválido";
+  validateParticipantData(fields, v, prefix, errors);
+}
+
+/** Lo que se guarda de un participante: el email y las claves de la forma, nada más. */
+function pickParticipant(
+  fields: ParticipantField[],
+  value: unknown,
+  withEmail: boolean,
+): AnswerMap {
+  const v = asMap(value);
+  const out: AnswerMap = {};
+  if (withEmail && v[PARTICIPANT_EMAIL_KEY] !== undefined)
+    out[PARTICIPANT_EMAIL_KEY] =
+      typeof v[PARTICIPANT_EMAIL_KEY] === "string"
+        ? (v[PARTICIPANT_EMAIL_KEY] as string).trim()
+        : v[PARTICIPANT_EMAIL_KEY];
+  for (const f of fields) if (v[f.key] !== undefined) out[f.key] = v[f.key];
+  return out;
+}
+
+/** Un integrante materializado desde las respuestas (para la tabla `event_participant_members`). */
+export interface ExtractedMember {
+  /** De qué nodo salió: `"nodeId"` o `"grupoId.2.nodeId"` (ítem de un grupo repetible). */
+  nodePath: string;
+  /** Etiqueta para mostrar («Integrante 2»). */
+  label: string;
+  /** Email como se tipeó (el servidor lo normaliza). */
+  email: string;
+  /** Datos de la forma, por clave. */
+  data: AnswerMap;
+}
+
+/**
+ * Los integrantes **además** de quien inscribe, en el orden del formulario (milestone 34). Solo
+ * nodos visibles y no en blanco; las respuestas ya tienen que estar validadas y podadas.
+ */
+export function extractMembers(
+  schema: FormSchema,
+  answers: AnswerMap,
+): ExtractedMember[] {
+  const fields = participantFields(schema);
+  const out: ExtractedMember[] = [];
+  const walk = (
+    nodes: FormNode[],
+    scopes: AnswerMap[],
+    prefix: string,
+    itemLabel: string | null,
+  ) => {
+    const scope = scopes[0] ?? {};
+    for (const node of nodes) {
+      if (!isVisible(node, scopes)) continue;
+      if (isParticipantNode(node)) {
+        const value = scope[node.id];
+        if (isParticipantBlank(fields, value)) continue;
+        const v = asMap(value);
+        out.push({
+          nodePath: `${prefix}${node.id}`,
+          label: itemLabel ? `${itemLabel} — ${node.label}` : node.label,
+          email: String(v[PARTICIPANT_EMAIL_KEY] ?? "").trim(),
+          data: pickParticipant(fields, v, false),
+        });
+        continue;
+      }
+      if (!isGroupNode(node)) continue;
+      const raw = scope[node.id];
+      if (node.repeat) {
+        const items = Array.isArray(raw) ? (raw as AnswerMap[]) : [];
+        items.forEach((item, i) => {
+          const label = (
+            node.repeat?.itemLabel ||
+            node.label ||
+            "Elemento {{n}}"
+          ).replace("{{n}}", String(i + 1));
+          walk(
+            node.children,
+            [item ?? {}, ...scopes],
+            `${prefix}${node.id}.${i}.`,
+            label,
+          );
+        });
+      } else {
+        walk(
+          node.children,
+          [asMap(raw), ...scopes],
+          `${prefix}${node.id}.`,
+          itemLabel,
+        );
+      }
+    }
+  };
+  walk(schema.nodes, [answers ?? {}], "", null);
+  return out;
+}
+
+/** ¿El formulario tiene algún integrante además de quien inscribe? (inscripción de equipos). */
+export function hasMemberNodes(schema: FormSchema): boolean {
+  const walk = (nodes: FormNode[]): boolean =>
+    nodes.some(
+      (n) => isParticipantNode(n) || (isGroupNode(n) && walk(n.children)),
+    );
+  return walk(schema.nodes);
 }
 
 function validateNodes(
@@ -314,10 +487,22 @@ function validateNodes(
   scopes: AnswerMap[],
   prefix: string,
   errors: Record<string, string>,
+  fields: ParticipantField[] = [],
 ): void {
   const scope = scopes[0] ?? {};
   for (const node of nodes) {
     if (!isVisible(node, scopes)) continue;
+
+    if (isParticipantNode(node)) {
+      validateParticipant(
+        node.required,
+        fields,
+        scope[node.id],
+        `${prefix}${node.id}.`,
+        errors,
+      );
+      continue;
+    }
 
     if (!isGroupNode(node)) {
       const err = validateScalar(node, scope[node.id]);
@@ -350,6 +535,7 @@ function validateNodes(
           [item ?? {}, ...scopes],
           `${prefix}${node.id}.${index}.`,
           errors,
+          fields,
         );
       });
     } else {
@@ -359,6 +545,7 @@ function validateNodes(
         [child, ...scopes],
         `${prefix}${node.id}.`,
         errors,
+        fields,
       );
     }
   }
@@ -372,14 +559,35 @@ export function pruneAnswers(
   schema: FormSchema,
   answers: AnswerMap,
 ): AnswerMap {
-  return pruneNodes(schema.nodes, [answers ?? {}]);
+  const fields = participantFields(schema);
+  const out = pruneNodes(schema.nodes, [answers ?? {}], fields);
+  // Datos de quien inscribe (milestone 34): solo las claves de la forma.
+  if (fields.length > 0) {
+    const primary = pickParticipant(
+      fields,
+      (answers ?? {})[PRIMARY_PARTICIPANT_KEY],
+      false,
+    );
+    if (Object.keys(primary).length > 0) out[PRIMARY_PARTICIPANT_KEY] = primary;
+  }
+  return out;
 }
 
-function pruneNodes(nodes: FormNode[], scopes: AnswerMap[]): AnswerMap {
+function pruneNodes(
+  nodes: FormNode[],
+  scopes: AnswerMap[],
+  fields: ParticipantField[],
+): AnswerMap {
   const scope = scopes[0] ?? {};
   const out: AnswerMap = {};
   for (const node of nodes) {
     if (!isVisible(node, scopes)) continue;
+
+    if (isParticipantNode(node)) {
+      if (!isParticipantBlank(fields, scope[node.id]))
+        out[node.id] = pickParticipant(fields, scope[node.id], true);
+      continue;
+    }
 
     if (!isGroupNode(node)) {
       if (scope[node.id] !== undefined) out[node.id] = scope[node.id];
@@ -390,13 +598,14 @@ function pruneNodes(nodes: FormNode[], scopes: AnswerMap[]): AnswerMap {
     if (node.repeat) {
       const items = Array.isArray(raw) ? (raw as AnswerMap[]) : [];
       out[node.id] = items.map((item) =>
-        pruneNodes(node.children, [item ?? {}, ...scopes]),
+        pruneNodes(node.children, [item ?? {}, ...scopes], fields),
       );
     } else {
-      out[node.id] = pruneNodes(node.children, [
-        (raw as AnswerMap) ?? {},
-        ...scopes,
-      ]);
+      out[node.id] = pruneNodes(
+        node.children,
+        [(raw as AnswerMap) ?? {}, ...scopes],
+        fields,
+      );
     }
   }
   return out;
@@ -417,6 +626,9 @@ export function schemaToPublicFields(schema: FormSchema): PublicFormField[] {
     for (const node of nodes) {
       if (isGroupNode(node)) {
         walk(node.children);
+      } else if (isParticipantNode(node)) {
+        // Un integrante no es un campo plano (milestone 34): lo muestran las vistas de integrantes.
+        continue;
       } else {
         out.push({
           id: node.id,
@@ -520,5 +732,10 @@ export function cloneSchemaWithNewIds(schema: FormSchema): FormSchema {
       return { ...n, id: remap(n.id), visibleWhen };
     });
 
-  return { version: 1, nodes: clone(schema.nodes) };
+  // La forma del participante viaja tal cual: sus claves son locales al formulario.
+  return {
+    version: 1,
+    ...(schema.participant ? { participant: schema.participant } : {}),
+    nodes: clone(schema.nodes),
+  };
 }

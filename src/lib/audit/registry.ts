@@ -634,6 +634,8 @@ export const AUDIT_EVENTS = {
     fields: {
       participant: text("Participante"),
       session: dateTime("Sesión"),
+      /** Milestone 34: el equipo que entró con esa inscripción. */
+      members: setOf("Integrantes"),
     },
   },
   /**

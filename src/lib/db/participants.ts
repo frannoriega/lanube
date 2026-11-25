@@ -1,3 +1,4 @@
+import { syncRegistrationMembers } from "@/lib/db/participantMembers";
 import { nowMs } from "@/lib/clock";
 import { DomainError } from "@/lib/errors";
 import { normalizeEmailForIdentityServer } from "@/lib/email/identity-server";
@@ -256,7 +257,27 @@ export interface SubmitResult {
 }
 
 /** Registers a participant for an event by its form slug. */
+/**
+ * Una regla de integrantes que no se cumple (milestone 34) **dentro** de la transacción de la
+ * inscripción: se lanza para deshacerla entera (si no, quedaría la inscripción sin sus
+ * integrantes) y se convierte en un `{ ok: false, message }` afuera.
+ */
+class MemberRuleError extends Error {}
+
 export async function submitForm(
+  slug: string,
+  displayEmail: string,
+  answers: Record<string, unknown>,
+): Promise<SubmitResult> {
+  try {
+    return await submitFormTx(slug, displayEmail, answers);
+  } catch (e) {
+    if (e instanceof MemberRuleError) return { ok: false, message: e.message };
+    throw e;
+  }
+}
+
+async function submitFormTx(
   slug: string,
   displayEmail: string,
   answers: Record<string, unknown>,
@@ -396,6 +417,17 @@ export async function submitForm(
       });
       participantId = created.id;
     }
+    // Integrantes (milestone 34): quien inscribe + los cargados con campos «Participante». Un
+    // email repetido o ya inscripto en otra inscripción activa deshace todo.
+    const sync = await syncRegistrationMembers(tx, {
+      participantId,
+      eventId: eventForm.event.id,
+      primaryEmail: email,
+      primaryDisplayEmail: displayEmail,
+      schema,
+      answers: cleaned,
+    });
+    if (!sync.ok) throw new MemberRuleError(sync.message);
     // El enlace del correo de confirmación: en la misma transacción que la inscripción, así no
     // queda una inscripción sin enlace ni un enlace sin inscripción.
     const token = await issueEditToken(participantId, tx);
@@ -525,6 +557,7 @@ export async function updateParticipantAnswers(
         select: {
           form: {
             select: {
+              slug: true,
               form: {
                 select: {
                   schema: true,
@@ -557,10 +590,31 @@ export async function updateParticipantAnswers(
   );
   if (!cleaned) return { ok: false, message: INVALID_FILE_MESSAGE };
 
-  await prisma.eventParticipant.update({
-    where: { id: participant.id },
-    data: { answers: cleaned as Prisma.InputJsonValue },
-  });
+  // Respuestas + integrantes juntos (milestone 34), bajo el mismo lock que la inscripción para
+  // que la regla «un email en una sola inscripción activa» no se cuele entre dos envíos.
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (participant.event.form?.slug) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`event-form:${participant.event.form.slug}`}, 0))`;
+      }
+      await tx.eventParticipant.update({
+        where: { id: participant.id },
+        data: { answers: cleaned as Prisma.InputJsonValue },
+      });
+      const sync = await syncRegistrationMembers(tx, {
+        participantId: participant.id,
+        eventId: participant.eventId,
+        primaryEmail: participant.email,
+        primaryDisplayEmail: participant.displayEmail ?? participant.email,
+        schema,
+        answers: cleaned,
+      });
+      if (!sync.ok) throw new MemberRuleError(sync.message);
+    });
+  } catch (e) {
+    if (e instanceof MemberRuleError) return { ok: false, message: e.message };
+    throw e;
+  }
   return { ok: true };
 }
 
@@ -725,6 +779,34 @@ export async function decideParticipants(
             `No hay lugar para volver a aprobar a ${reapproving} inscripción(es) rechazada(s): ` +
               `${free === 0 ? "el cupo está lleno" : `quedan ${free} lugar(es)`}. ` +
               "Elegí a quién aprobar o rechazá a otra persona antes.",
+            409,
+          );
+        }
+        // Milestone 34: una inscripción rechazada liberó los emails de su equipo; si mientras
+        // tanto alguno se inscribió en otra, volver a aprobarla lo duplicaría. Todo o nada, como
+        // el cupo.
+        const rejectedIds = affected
+          .filter((p) => p.status === ParticipantStatus.REJECTED)
+          .map((p) => p.id);
+        const theirMembers = await tx.eventParticipantMember.findMany({
+          where: { participantId: { in: rejectedIds } },
+          select: { email: true, displayEmail: true },
+        });
+        const clash = await tx.eventParticipantMember.findFirst({
+          where: {
+            eventId,
+            email: { in: theirMembers.map((m) => m.email) },
+            participantId: { notIn: rejectedIds },
+            participant: { status: { in: SPOT_HOLDING_STATUSES } },
+          },
+          select: { email: true },
+        });
+        if (clash) {
+          const who =
+            theirMembers.find((m) => m.email === clash.email)?.displayEmail ??
+            clash.email;
+          throw new DomainError(
+            `No se puede volver a aprobar: ${who} ya está en otra inscripción activa del evento.`,
             409,
           );
         }

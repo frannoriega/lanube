@@ -590,10 +590,12 @@ Full design + what was built: `docs/milestones/milestones-30-event-check-in.md`.
   = `occurrenceDateMs`, same key as session actions). `reservationId` has **no FK**: editing an event's
   weekdays deletes reservations and must not delete recorded attendance. Only sessions of today or
   earlier (by day, admin tz) and never a cancelled one. Pure rules in `src/lib/events/checkin.ts`.
-- **The screen is one table**: session + counter, then the participants table (**email only**, status,
-  check-in button) with a client-side email search; no form answers are shown (forms can be anything; a
-  reliable name is milestone 34). An empty search offers «Registrar sin inscripción» with that email.
-  Group registrations check in whoever registered.
+- **The screen is one table of people** (milestone 34): session + counter (people, not registrations),
+  then one row per **person** — whoever registered and each team member — with one column per field of
+  the form's **participant shape** (name, DNI…) and a client-side search over emails and all those
+  fields (accent-, case- and dot-insensitive). Other form answers are never shown. A match on one team
+  member shows the whole team; the registrant's row has «Todo el equipo (N)». An empty search offers
+  «Registrar sin inscripción» with that email.
 - **Walk-ins** (`EventParticipant.source = WALK_IN`, a source, not a status): the admin fills the
   event's full form; the person becomes `APPROVED` **without capacity/window checks and without any
   email**, and holds a spot for later sessions (user decisions). Same rule for checking in a
@@ -601,6 +603,29 @@ Full design + what was built: `docs/milestones/milestones-30-event-check-in.md`.
   and becomes `APPROVED` — no `decideParticipants`, no email. Undoing a check-in never reverts that.
 - Audited on the `Event` entity like `participant.decide`: `participant.checkIn` (with
   `admittedFrom`), `participant.checkInUndo`, `participant.walkIn`.
+
+### Participant field & team registrations (milestone 34)
+
+Full design: `docs/milestones/milestones-34-participant-field-and-group-check-in.md`.
+
+- **Participant shape** = `Form.schema.participant.fields` (JSON, no migration): what is asked of each
+  person besides the fixed email (types: short text, DNI, phone, date, single select). Missing = email
+  only (older forms). **Whoever registers is implicit**, not a node: the registration email plus
+  `answers.__primary` (`PRIMARY_PARTICIPANT_KEY`). Extra people are `kind: "participant"` nodes, alone or
+  inside a repeating group; their answer is `{ email, <key>: value }`. The builder picks them as the
+  «Participante» type. Every walker of the form tree must handle the third node kind (TypeScript forces
+  it: `FormNode = InputNode | GroupNode | ParticipantNode`).
+- **People are materialized** in `event_participant_members` (`PRIMARY`/`MEMBER`) by
+  `syncRegistrationMembers()` (`src/lib/db/participantMembers.ts`) on submit, edit-by-link and walk-in,
+  inside the registration transaction (after the form's advisory lock). Rules: an email is in **one
+  active** registration of the event and once per registration (409 with a readable message; the
+  whole registration rolls back); removing a person who already checked in is blocked; re-approving a
+  REJECTED registration whose member is now elsewhere is refused (all-or-nothing). **Capacity still
+  counts registrations** (a team of 5 is one spot) — `SPOT_HOLDING_STATUSES` is unchanged.
+- **Check-ins are per person**: `EventCheckIn.memberId` (unique with `occurrenceStart`);
+  `participantId` stays for grouping and for «dejar pasar», which admits the whole registration. A
+  walk-in team checks in all its people. Reports' attendance reference (`approvedRegistered`) counts
+  **people** of approved registrations. No emails go to team members (user decision).
 
 ### Event reports (milestone 31)
 

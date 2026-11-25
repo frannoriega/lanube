@@ -162,7 +162,7 @@ export default function EventReportView({ data }: { data: EventReport }) {
       {showAttendance && (
         <ChartCard
           title="Asistencia por sesión"
-          description={`Cuántas personas registraron su ingreso en cada sesión. La línea marca los inscriptos aprobados hoy (${data.approvedRegistered}): el estado de una inscripción no tiene historia, así que es la referencia actual, no la de cada fecha.`}
+          description={`Cuántas personas registraron su ingreso en cada sesión. La línea marca las personas de las inscripciones aprobadas hoy (${data.approvedRegistered}; con equipos, cuenta a cada integrante): el estado de una inscripción no tiene historia, así que es la referencia actual, no la de cada fecha.`}
         >
           {data.attendance.length === 0 ? (
             <Empty>Todavía no pasó ninguna sesión.</Empty>

@@ -39,6 +39,18 @@ function flattenFormFields(nodes: FormNode[], section: string | null = null) {
       out.push(...flattenFormFields(node.children, label));
       continue;
     }
+    if (node.kind === "participant") {
+      // Un integrante (milestone 34) se audita como una pregunta más, de tipo «Participante».
+      out.push({
+        id: node.id,
+        label: node.label,
+        section,
+        type: "PARTICIPANT",
+        required: node.required,
+        options: [],
+      });
+      continue;
+    }
     out.push({
       id: node.id,
       label: node.label,

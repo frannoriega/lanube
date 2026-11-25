@@ -27,7 +27,11 @@ export function findFileNode(
       if (isGroupNode(node)) {
         const hit = walk(node.children);
         if (hit) return hit;
-      } else if (node.id === fieldId && node.type === "FILE") {
+      } else if (
+        node.kind === "input" &&
+        node.id === fieldId &&
+        node.type === "FILE"
+      ) {
         return node;
       }
     }
