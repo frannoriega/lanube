@@ -49,17 +49,17 @@ cambia el estado de un milestone** (o se crea uno).
 | 31  | Reportes de eventos                       | done     |                                                              |
 | 32  | Calendario de actividades y exportación   | done     |                                                              |
 | 33  | Eventos en varios espacios                | parked   | postergado por el usuario                                    |
-| 34  | Campo «Participante» y check-in grupal    | promoted | retomado con diseño del usuario; v1.2.0                      |
+| 34  | Campo «Participante» y check-in grupal    | done     | equipos + check-in por persona; v1.2.0                       |
 | 35  | Título de reserva y UI más calma          | done     | v1.1.0                                                       |
 | 36  | Amistades, directorio e invitados         | seed     | idea del usuario; con el 6                                   |
 | 37  | Plataforma de ideas con votación          | seed     | idea del usuario; depende del 36                             |
 | 38  | Instrumentación (métricas, trazas, logs)  | seed     | diseño propuesto; esperan decisiones (RAM del VPS, acceso)   |
 | 39  | BI y rutas calientes                      | seed     | diseño propuesto; la capa 2 usa el Grafana del 38            |
-| 40  | Arreglos de la v1.2.0                     | promoted | temas, auth, reportes, reprogramar, notificaciones; v1.2.0   |
-| 41  | SEO y vista previa al compartir           | promoted | Open Graph, meta descripción, sitemap; v1.2.0                |
-| 42  | Reservar más allá de dos semanas          | promoted | permiso nuevo, ventana de un año; v1.2.0                     |
-| 43  | Eventos privados e invitados              | promoted | lista opcional que restringe; v1.2.0                         |
-| 44  | Motivo por sesión                         | promoted | un correo por participante sigue igual; v1.2.0               |
+| 40  | Arreglos de la v1.2.0                     | done     | temas, auth, reportes, reprogramar, notificaciones; v1.2.0   |
+| 41  | SEO y vista previa al compartir           | done     | crear `NEXT_PUBLIC_SITE_URL` en GitHub antes del deploy      |
+| 42  | Reservar más allá de dos semanas          | done     | permiso nuevo, ventana de un año; v1.2.0                     |
+| 43  | Eventos privados e invitados              | done     | lista opcional que restringe; v1.2.0                         |
+| 44  | Motivo por sesión                         | done     | un correo por participante sigue igual; v1.2.0               |
 | 45  | Exportar el calendario (ICS)              | seed     | idea futura del usuario                                      |
 | 46  | Notificaciones por WhatsApp               | seed     | idea futura del usuario; depende de Meta Business            |
 

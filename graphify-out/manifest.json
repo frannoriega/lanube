@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795098009.4870505,
-    "ast_hash": "fe6a9720629e0a1da43111eb56f2dad4",
+    "mtime": 1795636770.951785,
+    "ast_hash": "4e0e7b972dd1f07ad3d931ea0dac8d40",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -2790,8 +2790,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1795633246.5170853,
-    "ast_hash": "815bfc7fff35cf2cd3ab3651a14ef7cf",
+    "mtime": 1795636798.3880367,
+    "ast_hash": "59c06423211eac8cb7b6179064d8dcf0",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-1-admin-reservations-browsing.md": {
@@ -4645,8 +4645,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1795098009.4896612,
-    "ast_hash": "88f201cf57e9f8e51006c11b0094e9be",
+    "mtime": 1795636784.9678912,
+    "ast_hash": "fc5e537394385335b7117ced0a25f18e",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -4985,8 +4985,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/STATUS.md": {
-    "mtime": 1795633246.5164807,
-    "ast_hash": "9ab2b11326926ee838fb79629fdecead",
+    "mtime": 1795636798.3872035,
+    "ast_hash": "2263a6edf3e6fe9124bd48563db6729e",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-35-reservation-title-and-calmer-ui.md": {
@@ -5242,6 +5242,11 @@
   "src/lib/events/participants-engine.test.ts": {
     "mtime": 1795636117.8154268,
     "ast_hash": "a3cfab4f8d67dae110b91058f1063854",
+    "semantic_hash": ""
+  },
+  "src/assets/changelog/1.2.0.md": {
+    "mtime": 1795636784.9510295,
+    "ast_hash": "e156fd5a187b053b90d03cb70cc09d41",
     "semantic_hash": ""
   }
 }

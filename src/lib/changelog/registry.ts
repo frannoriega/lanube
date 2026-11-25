@@ -85,6 +85,14 @@ export const RELEASES = [
       "El calendario de cada espacio ahora llega hasta la medianoche, así los eventos que terminan tarde ya no se ven cortados; después de las 19:00 el horario se ve rayado como no disponible. Y los eventos pueden terminar a las 00:00.",
     file: "1.1.1.md",
   },
+  {
+    version: "1.2.0",
+    date: "2026-11-25",
+    title: "Eventos privados, inscripción de equipos y check-in por persona",
+    summary:
+      "Los eventos pueden ser privados, con lista de invitados. Los formularios inscriben equipos y la puerta registra el ingreso de cada integrante. Cada sesión que se cancela o reprograma lleva su motivo, las notificaciones se pueden borrar, y al compartir una noticia o un evento se ve su imagen.",
+    file: "1.2.0.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */
