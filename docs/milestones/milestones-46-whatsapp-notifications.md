@@ -1,6 +1,6 @@
 # Milestone 46 — Notificaciones por WhatsApp
 
-**Estado:** seed (2026-11-25). Idea futura del usuario; **no** entra en la 1.2.0.
+**Estado:** parked (2026-11-25). Lo pausó el usuario: La Nube ya tendría una cuenta de WhatsApp Business y el usuario está averiguando los detalles y si el costo por mensaje lo justifica.
 
 ## Pregunta del usuario
 
@@ -35,9 +35,36 @@ su renderer; ningún lugar que dispara una notificación cambia. Lo que cuesta n
   una cola (la misma deuda `TODO(scale)` de los correos).
 - Webhook de estados (entregado/leído/fallido) para no reintentar a ciegas.
 
+## Plantillas propuestas (2026-11-25)
+
+Categoría «Utility» (no marketing), idioma `es_AR`. Las variables (`{{n}}`) no admiten saltos de
+línea, así que un lote de cambios se resume con una cantidad y un enlace.
+
+1. `reserva_aprobada` — «Tu reserva **{{1}}** en {{2}} para el {{3}} fue **aprobada**. ¡Te
+   esperamos!» Botón «Ver mis reservas» → `/user/dashboard`. Ejemplo: Reunión de equipo · Sala de
+   reuniones · martes 2/12 de 10:00 a 11:00.
+2. `reserva_rechazada` — «Tu reserva **{{1}}** en {{2}} para el {{3}} no pudo ser aprobada.
+   Motivo: {{4}}. Podés pedir otro horario desde la web.» Botón «Reservar otro horario».
+3. `evento_cambio_sesion` (un cambio) — «Hay un cambio en **{{1}}**: la sesión del {{2}} {{3}}.
+   Motivo: {{4}}.» ({{3}} = «fue cancelada» / «pasa al jueves 4/12 de 10:00 a 12:00»). Botón «Ver
+   mi inscripción» con el enlace como sufijo variable.
+4. `evento_cambios_sesiones` (lote) — «Hubo {{1}} cambios en las sesiones de **{{2}}**
+   (cancelaciones o nuevos horarios). Te mandamos el detalle por correo y lo podés ver en tu
+   inscripción.» Mismo botón.
+5. `inscripcion_aprobada` — «¡Listo! Tu inscripción a **{{1}}** fue aprobada. La primera sesión es
+   el {{2}}.» Mismo botón.
+6. `codigo_verificacion` — categoría «Authentication», con el texto fijo de Meta: «{{1}} es tu
+   código de verificación. Por tu seguridad, no lo compartas.» y botón de copiar código.
+
+Ojo: el botón «Ver mi inscripción» lleva un enlace de edición (una credencial, milestone 25 S5) a
+un chat que se reenvía más que un correo. Alternativa: enlazar a la página del evento y pedir
+ingreso (deja afuera a quien no tiene cuenta). Si el presupuesto aprieta, 1 y 4 cubren lo más útil.
+
 ## Preguntas abiertas
 
-- ¿Quién es dueño de la cuenta de Meta Business (La Nube / la municipalidad)?
+- La Nube tendría WhatsApp Business: el usuario pide los detalles (¿cuenta de la plataforma de Meta o solo la app?).
 - ¿Qué avisos valen el costo? (propuesta: aprobación/rechazo de reservas y cambios de sesión de
   eventos inscriptos).
-- La nota de memoria lo ubicaba después de la migración a Rust; confirmar si sigue siendo así.
+- La nota de memoria lo ubicaba después de la migración a Rust; el usuario lo confirma con ellos.
+- ¿Los inscriptos sin cuenta (solo email) reciben algo? Hoy no tendrían teléfono.
+- ¿El costo por mensaje lo justifica? Puede que no se haga.

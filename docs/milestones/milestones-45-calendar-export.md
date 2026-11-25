@@ -1,6 +1,6 @@
 # Milestone 45 — Exportar el calendario (Google Calendar y otros)
 
-**Estado:** seed (2026-11-25). Idea futura del usuario; **no** entra en la 1.2.0.
+**Estado:** promoted (2026-11-25). Versión 1.3.0.
 
 ## Pregunta del usuario
 
@@ -36,7 +36,42 @@ Sincronizar con la **API de Google Calendar** (OAuth, escribir en el calendario 
 actualización inmediata, pero suma OAuth contra Google, refresh tokens a guardar, verificación de la
 app por Google y mantenimiento por proveedor (Outlook aparte). El ICS cubre el caso con mucho menos.
 
-## Preguntas abiertas
+## Decisiones del usuario (2026-11-25)
 
-- ¿Incluir las reservas pendientes?
-- ¿Un feed para admins con todo el edificio (calendario de actividades)?
+1. **Las reservas pendientes se incluyen.** Llevan «⏳ Pendiente ·» delante del título y
+   `STATUS:TENTATIVE` (lo único que se ve en todos los clientes).
+2. **Color:** se escribe el `COLOR` de RFC 7986 en cada ítem y en cada calendario (nombres de
+   color CSS, que es lo que pide la RFC), con los mismos tonos de la página. Aviso dado: Google,
+   Outlook y (en la práctica) Apple ignoran el color por ítem de una suscripción; el color real lo
+   da **cada calendario**, que la persona elige. Por eso:
+3. **Un calendario por feed, cada uno se activa o desactiva por separado:** «Mis reservas» y «Mis
+   eventos» para todos; para admins, **uno por espacio** («La Nube — <espacio>»). **Sin** un
+   «todo el edificio»: se obtiene activando todos los de espacio.
+4. **El correo de confirmación de inscripción** lleva «Agregar a mi calendario» (suscripción a ese
+   evento, que se actualiza sola si cambian sesiones) y un `.ics` adjunto de respaldo. Funciona sin
+   cuenta.
+5. WhatsApp (46) queda en pausa.
+
+## Diseño
+
+- **Tokens sin tabla nueva:** cada enlace es `…/<id>/<firma>.ics` con firma HMAC (con
+  `NEXTAUTH_SECRET`). Para los feeds de una persona la firma incluye una **versión**
+  (`RegisteredUser.calendarFeedVersion`): «Regenerar enlaces» la sube y los viejos dejan de andar;
+  `calendarFeedEnabled` los apaga. El feed de una inscripción se firma con su id (solo muestra el
+  calendario de ese evento; no permite editar nada — por eso no es el enlace de edición).
+- **Rutas públicas** (las abre Google sin sesión): `GET /api/calendar/feed/<userId>/<feed>/<firma>.ics`
+  (`feed` = `reservations`, `events` o `space-<spaceId>`) y
+  `GET /api/calendar/registration/<participantId>/<firma>.ics`. Los permisos de admin se
+  comprueban **en cada lectura** (`reservations:manage`, el mismo del calendario de actividades): si
+  la persona pierde el rol, el feed queda vacío. Límite por enlace.
+- **Contenido** (ventana: 30 días atrás a un año adelante): reservas propias (pendientes y
+  aprobadas), sesiones de eventos donde la persona tiene una inscripción vigente (las canceladas con
+  `STATUS:CANCELLED`), y por espacio todo lo de ese espacio (reservas con título y quién reservó,
+  eventos, cierres). Horas en UTC (`…Z`), así no hace falta `VTIMEZONE`. UID estable por ocurrencia.
+- **Configuración → «Calendario»** (`/user/settings/calendar`): activar, la lista de feeds con
+  «Agregar a Google Calendar» (`calendar.google.com/calendar/r?cid=…`) y el enlace `webcal://`,
+  regenerar y desactivar. Los de espacio dicen que muestran datos de otras personas.
+
+## Registro
+
+(Sin implementar.)
