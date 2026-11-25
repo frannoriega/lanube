@@ -1,3 +1,7 @@
+import {
+  bookingHorizonDaysFor,
+  horizonLabel,
+} from "@/lib/reservations/booking-horizon";
 import "server-only";
 import { formatMinutes } from "@/lib/closed-days/closures";
 import {
@@ -87,7 +91,7 @@ export function registerReservationTools(
           booking_url: `${ctx.origin}/user/spaces/${s.slug}`,
         })),
         reservation_types: types.map((t) => ({ code: t.code, name: t.name })),
-        booking_rules: `Lunes a viernes de ${formatMinutes(BOOKING_OPEN_MINUTES)} a ${formatMinutes(BOOKING_CLOSE_MINUTES)} (hora de Argentina), en intervalos de 15 minutos, desde ahora y hasta 2 semanas adelante, y nunca en un día cerrado (feriados, vacaciones: get_availability indica el motivo). Toda reserva queda pendiente de aprobación.`,
+        booking_rules: `Lunes a viernes de ${formatMinutes(BOOKING_OPEN_MINUTES)} a ${formatMinutes(BOOKING_CLOSE_MINUTES)} (hora de Argentina), en intervalos de 15 minutos, desde ahora y hasta ${horizonLabel(bookingHorizonDaysFor(ctx.permissions))} adelante, y nunca en un día cerrado (feriados, vacaciones: get_availability indica el motivo). Toda reserva queda pendiente de aprobación.`,
       });
     },
   );
@@ -181,6 +185,8 @@ export function registerReservationTools(
         busy,
         nowMs: nowMs(),
         minDurationMs: (args.min_duration_minutes ?? 15) * 60 * 1000,
+        // El horizonte de esta persona según su rol (milestone 42).
+        horizonDays: bookingHorizonDaysFor(ctx.permissions),
       });
       return ok({
         space: { id: space.id, name: space.name },
@@ -316,6 +322,7 @@ export function registerReservationTools(
         reason: args.reason,
         eventType: args.reservation_type,
         origin: { clientName: user.clientName },
+        horizonDays: bookingHorizonDaysFor(ctx.permissions),
       });
       return ok({
         reservation_id: reservation.id,

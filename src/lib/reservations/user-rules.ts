@@ -5,6 +5,7 @@ import {
 } from "@/lib/closed-days/closures";
 import { isOnLedgerGrid } from "@/lib/constants/reservations";
 import {
+  BOOKING_HORIZON_DAYS,
   bookingHorizonMessage,
   isBeyondBookingHorizon,
 } from "./booking-horizon";
@@ -64,6 +65,8 @@ export function validateUserReservationWindow(
   startMs: number,
   endMs: number,
   nowMs: number,
+  /** Días de horizonte de quien reserva: `bookingHorizonDaysFor(permisos)` (milestone 42). */
+  horizonDays: number = BOOKING_HORIZON_DAYS,
 ): string | null {
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs))
     return "startTime y endTime deben ser milisegundos UTC válidos";
@@ -79,10 +82,10 @@ export function validateUserReservationWindow(
 
   if (startMs < nowMs) return "No se pueden hacer reservas en el pasado";
 
-  // Horizonte de dos semanas, deslizante y por día local (milestone 26): pasado el último día
-  // reservable no puede haber reservas de usuarios, así los eventos del equipo nunca las pisan.
-  if (isBeyondBookingHorizon(startMs, nowMs))
-    return bookingHorizonMessage(nowMs);
+  // Horizonte deslizante y por día local (milestone 26): dos semanas, o un año con el permiso
+  // `reservations:extended-horizon` (milestone 42).
+  if (isBeyondBookingHorizon(startMs, nowMs, horizonDays))
+    return bookingHorizonMessage(nowMs, horizonDays);
 
   // Sin anticipación mínima (desde el milestone 26): vale cualquier turno que empiece desde
   // `now` en adelante. Hasta entonces se exigían 24 h de margen.

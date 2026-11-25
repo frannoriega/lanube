@@ -1,3 +1,4 @@
+import { bookingHorizonDaysFor } from "@/lib/reservations/booking-horizon";
 import { requireActiveSession } from "@/lib/api-auth";
 import { getCalendarDataBySpace } from "@/lib/db/resourceCalendar";
 import { getRegisteredUserById } from "@/lib/db/users";
@@ -72,6 +73,8 @@ export async function POST(
       title,
       reason,
       eventType,
+      // Horizonte de la persona según su rol (milestone 42), de la sesión ya validada.
+      horizonDays: bookingHorizonDaysFor(session),
     });
 
     return apiSuccess(reservation, { status: 201 });

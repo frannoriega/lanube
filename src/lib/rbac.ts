@@ -11,6 +11,12 @@ export const PERMISSIONS = [
   /** Enter the /admin section at all. */
   "admin:access",
   "reservations:manage",
+  /**
+   * Reservar con hasta un año de anticipación en lugar de dos semanas (milestone 42). Pensado
+   * para roles de gestión (los que arman la agenda de eventos). No implica `admin:access`, no
+   * saltea la aprobación ni el horario. Ver `reservations/booking-horizon.ts`.
+   */
+  "reservations:extended-horizon",
   "users:manage",
   /** Assign a role to a user. Distinct from roles:manage (defining what a role can do). */
   "users:roles:manage",
@@ -86,6 +92,7 @@ export const PERMISSION_GROUPS: ReadonlyArray<{
     description: "El día a día del espacio.",
     permissions: [
       "reservations:manage",
+      "reservations:extended-horizon",
       "checkin:manage",
       "incidents:manage",
       "closed-days:manage",
@@ -133,6 +140,7 @@ export const PERMISSION_GROUPS: ReadonlyArray<{
 export const PERMISSION_LABELS: Record<Permission, string> = {
   "admin:access": "Acceder al panel",
   "reservations:manage": "Gestionar reservas",
+  "reservations:extended-horizon": "Reservar con hasta un año de anticipación",
   "users:manage": "Gestionar usuarios",
   "users:roles:manage": "Asignar roles a usuarios",
   "users:profile-requests:review": "Revisar cambios de DNI y motivo",

@@ -86,9 +86,18 @@ export interface ReservationFormData {
 interface WeekCalendarProps {
   apiEndpoint: string; // API endpoint to fetch reservations and create them
   userId?: string; // Current user's ID for visual differentiation
+  /**
+   * Días de horizonte de quien reserva: `bookingHorizonDaysFor(permisos)` (milestone 42). Solo
+   * acota la navegación; el servidor lo vuelve a aplicar con los permisos de la sesión.
+   */
+  horizonDays?: number;
 }
 
-export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
+export function WeekCalendar({
+  apiEndpoint,
+  userId,
+  horizonDays,
+}: WeekCalendarProps) {
   const { now, alignRevision } = useServerTime();
 
   // Week navigation — initialised from the server-aligned clock only once
@@ -179,8 +188,8 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
    * Los de afuera no se dibujan; `shownDays` es lo que ven las columnas y la tira de días.
    */
   const shownDays = useMemo(
-    () => weekDays.slice(0, daysWithinHorizon(weekDays, now())),
-    [weekDays, now],
+    () => weekDays.slice(0, daysWithinHorizon(weekDays, now(), horizonDays)),
+    [weekDays, now, horizonDays],
   );
   // Último día dibujado de la semana: cierra el rango del encabezado (viernes salvo en la última página).
   const lastShownDay = shownDays[shownDays.length - 1] ?? weekDays[0];
@@ -203,7 +212,10 @@ export function WeekCalendar({ apiEndpoint, userId }: WeekCalendarProps) {
    * reservable, y de ella solo se dibujan los días que entran.
    */
   const todayWeekStart = useMemo(() => firstBookableWeekStart(now()), [now]);
-  const maxWeekStart = useMemo(() => horizonWeekStart(now()), [now]);
+  const maxWeekStart = useMemo(
+    () => horizonWeekStart(now(), horizonDays),
+    [now, horizonDays],
+  );
   const canGoNext = !!(
     currentWeekStart && addWeeks(currentWeekStart, 1) <= maxWeekStart
   );

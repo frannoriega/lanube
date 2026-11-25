@@ -892,7 +892,12 @@ onSave)` + `ReorderBar` (`molecules/table-reorder.tsx`) and `DataTable`'s `reord
 - **Booking horizon** (milestone 26): users can book from `now` to the end of local day today + 14 (a
   sliding window, not "this week + next"). The one rule is `src/lib/reservations/booking-horizon.ts`;
   the server enforces it in `validateUserReservationWindow` (web + MCP) and `computeFreeWindows`, and
-  the calendar drops (doesn't grey) days past it. Past days stay greyed. Booking hours are
+  the calendar drops (doesn't grey) days past it. Roles with **`reservations:extended-horizon`** (milestone 42) get a
+  sliding **365-day** horizon instead: a person's horizon always comes from
+  `bookingHorizonDaysFor(permissions)` (session on the web, `ctx.permissions` in MCP, the `user`
+  object in the calendar) and is passed down as `horizonDays` — never compare against the constants.
+  It is meant for management roles (the ones who also schedule events), so the "no user booking past
+  the horizon" guarantee is knowingly relaxed for them. Past days stay greyed. Booking hours are
   `BOOKING_OPEN/CLOSE_HOUR` in `booking-window.ts` (08–19); there is no minimum notice.
 - **Mobile screenshots:** `node scripts/mobile-shots.mjs <name> [filter]` (Playwright, signs
   in as `u1` / `sa1`) captures every route at phone 390 (light + dark) / tablet 820 /

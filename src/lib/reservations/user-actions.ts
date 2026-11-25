@@ -57,6 +57,11 @@ export interface RequestUserReservationInput {
   eventType?: string | null;
   /** Presente cuando la pidió un asistente conectado por MCP (milestone 20). */
   origin?: ReservationOriginInput;
+  /**
+   * Días de horizonte de quien reserva, de **sus** permisos: `bookingHorizonDaysFor(...)`
+   * (milestone 42). Sin valor, el de cualquier usuario (dos semanas).
+   */
+  horizonDays?: number;
 }
 
 /**
@@ -101,6 +106,7 @@ export async function requestUserReservation(
     input.startMs,
     input.endMs,
     nowMs(),
+    input.horizonDays,
   );
   if (violation) throw new DomainError(violation);
 

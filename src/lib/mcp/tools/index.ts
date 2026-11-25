@@ -32,7 +32,7 @@ export function buildMcpServer(ctx: McpToolContext): McpServer {
         "Cualquier persona puede consultar el contacto, las políticas y «quiénes somos», y gestionar sus propias reservas. " +
         "Quien tiene permisos de gestión puede además consultar (solo lectura) lo que su rol le permite, y redactar borradores de noticias. " +
         "Las fechas de entrada van en ISO 8601 con offset (hora de Argentina, -03:00) o YYYY-MM-DD según la tool. " +
-        `Las reservas solo se pueden pedir de lunes a viernes de ${formatMinutes(BOOKING_OPEN_MINUTES)} a ${formatMinutes(BOOKING_CLOSE_MINUTES)}, en intervalos de 15 minutos, con hasta 2 semanas de anticipación y nunca en un día cerrado (feriados, vacaciones, cierres por horario: get_availability indica el motivo); quedan pendientes hasta que el equipo las aprueba. ` +
+        `Las reservas solo se pueden pedir de lunes a viernes de ${formatMinutes(BOOKING_OPEN_MINUTES)} a ${formatMinutes(BOOKING_CLOSE_MINUTES)}, en intervalos de 15 minutos, con hasta 2 semanas de anticipación (o hasta 1 año si el rol de la persona lo permite) y nunca en un día cerrado (feriados, vacaciones, cierres por horario: get_availability indica el motivo); quedan pendientes hasta que el equipo las aprueba. ` +
         "Antes de pedir o cancelar una reserva, confirmá con la persona espacio, día y horario. " +
         "Antes de crear o editar un borrador de noticia, mostrá la vista previa completa y pedí confirmación explícita. " +
         "Nada se publica ni se decide desde acá: publicar noticias y aprobar o rechazar cualquier cosa se hace en el panel web, con los links que devuelven las herramientas.",

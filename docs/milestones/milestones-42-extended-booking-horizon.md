@@ -1,6 +1,6 @@
 # Milestone 42 — Reservar más allá de las dos semanas (permiso)
 
-**Estado:** promoted (2026-11-25). Versión 1.2.0.
+**Estado:** done (2026-11-25). Versión 1.2.0.
 
 ## Qué pidió el usuario (2026-11-25)
 
@@ -56,12 +56,30 @@ bloqueo extra por esto.
 
 ## Criterios de aceptación
 
-- [ ] Test puro: horizonte 14 vs 365 según permisos (incluye superadmin).
-- [ ] Sin el permiso, reservar a 15 días → 400 con el mensaje de siempre; con el permiso, a 300 días
+- [x] Test puro: horizonte 14 vs 365 según permisos (incluye superadmin).
+- [x] Sin el permiso, reservar a 15 días → 400 con el mensaje de siempre; con el permiso, a 300 días
       → PENDING; a 366 → 400 con el mensaje del año.
-- [ ] El calendario muestra días hasta el horizonte de la persona.
-- [ ] `access.test.ts` / matriz MCP sin cambios de acceso; el conector respeta el horizonte nuevo.
+- [x] El calendario muestra días hasta el horizonte de la persona.
+- [x] `access.test.ts` / matriz MCP sin cambios de acceso; el conector respeta el horizonte nuevo.
 
 ## Registro
 
-(Sin implementar.)
+Implementado el 2026-11-25.
+
+- Permiso `reservations:extended-horizon` («Reservar con hasta un año de anticipación»), en el grupo
+  «Operación» del checklist de roles. No está en ningún rol sembrado; el superadmin lo tiene implícito.
+  No hace falta tocar `FORBIDDEN_PERMISSIONS` del conector: ninguna tool lo **pide**, solo lo **lee**.
+- `booking-horizon.ts`: `EXTENDED_BOOKING_HORIZON_DAYS = 365`, `bookingHorizonDaysFor(permisos)` y
+  `horizonLabel()`; todas las funciones reciben `days` (por defecto 14). El comentario del módulo
+  documenta el riesgo aceptado por el usuario.
+- Servidor: `validateUserReservationWindow(…, horizonDays)`, `requestUserReservation({ horizonDays })`
+  — la web lo resuelve de la sesión (`POST /api/resources/[spaceId]`), el conector de
+  `ctx.permissions` (`request_reservation`, `get_availability` vía `computeFreeWindows({ horizonDays })`
+  y el texto de `booking_rules`). La instrucción general del servidor MCP dice «hasta 2 semanas (o
+  hasta 1 año si el rol de la persona lo permite)».
+- Calendario: `WeekCalendar` recibe `horizonDays` (de `bookingHorizonDaysFor(user)` en
+  `CalendarTemplateClient`); `isDayBeyondHorizon` / `horizonWeekStart` / `daysWithinHorizon` lo usan.
+- Tests en `booking-horizon.test.ts` (permisos, último día, mensaje, regla de la ventana).
+- Verificado contra el servidor local: `u1` pidiendo una reserva a 3 meses → 400 «hasta 2 semanas…
+  hasta el 09/12/2026»; `sa1` → 201 (la reserva de prueba se borró); el calendario de `sa1` avanza
+  semanas más allá de las dos.

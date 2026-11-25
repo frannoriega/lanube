@@ -96,16 +96,24 @@ export function firstBookableMinutes(day: Date, clock: Date): number {
  * —se acorta el calendario— en lugar de mostrarse rayados; los pasados, en cambio, sí se
  * muestran rayados (`isDayFullyBlocked`) para no perder la referencia de la semana.
  */
-export function isDayBeyondHorizon(day: Date, clock: Date): boolean {
+export function isDayBeyondHorizon(
+  day: Date,
+  clock: Date,
+  /** Días de horizonte de quien reserva (milestone 42); por defecto, dos semanas. */
+  horizonDays?: number,
+): boolean {
   // Se compara por fecha de calendario (`YYYY-MM-DD`) y no por instante: `day` es la medianoche
   // en la zona del navegador y el horizonte se calcula en la del predio; las fechas no dependen
   // de la diferencia entre ambas.
-  return format(day, "yyyy-MM-dd") > bookingHorizonLastDateKey(clock.getTime());
+  return (
+    format(day, "yyyy-MM-dd") >
+    bookingHorizonLastDateKey(clock.getTime(), horizonDays)
+  );
 }
 
 /** Lunes de la semana que contiene el último día reservable: la última página del calendario. */
-export function horizonWeekStart(clock: Date): Date {
-  const [y, m, d] = bookingHorizonLastDateKey(clock.getTime())
+export function horizonWeekStart(clock: Date, horizonDays?: number): Date {
+  const [y, m, d] = bookingHorizonLastDateKey(clock.getTime(), horizonDays)
     .split("-")
     .map(Number);
   return startOfWeek(new Date(y, m - 1, d), { weekStartsOn: 1 });
@@ -115,8 +123,13 @@ export function horizonWeekStart(clock: Date): Date {
  * Cuántos de los días de `weekDays` (lunes a viernes, en orden) están dentro del horizonte.
  * Los que quedan afuera son siempre un sufijo, así que alcanza con contar el prefijo.
  */
-export function daysWithinHorizon(weekDays: Date[], clock: Date): number {
-  return weekDays.filter((d) => !isDayBeyondHorizon(d, clock)).length;
+export function daysWithinHorizon(
+  weekDays: Date[],
+  clock: Date,
+  horizonDays?: number,
+): number {
+  return weekDays.filter((d) => !isDayBeyondHorizon(d, clock, horizonDays))
+    .length;
 }
 
 export function minutesToTime(minutes: number): string {

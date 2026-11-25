@@ -42,7 +42,8 @@ function ceilToGrid(ms: number): number {
 /**
  * Para cada día hábil entre `fromDayMs` (medianoche local, inclusive) y `toDayMs` (medianoche
  * local, exclusive), los tramos libres dentro del horario de apertura, descontando `busy`, lo
- * que cae antes de `nowMs` o después del horizonte de dos semanas, y los tramos de menos de `minDurationMs`.
+ * que cae antes de `nowMs` o después del horizonte de la persona (dos semanas, o un año con
+ * `reservations:extended-horizon`: milestone 42), y los tramos de menos de `minDurationMs`.
  */
 export function computeFreeWindows(input: {
   fromDayMs: number;
@@ -50,10 +51,12 @@ export function computeFreeWindows(input: {
   busy: BusyBlock[];
   nowMs: number;
   minDurationMs?: number;
+  /** Días de horizonte de quien pregunta (milestone 42); por defecto, dos semanas. */
+  horizonDays?: number;
 }): DayAvailability[] {
   const minDuration = input.minDurationMs ?? LEDGER_SLOT_MS;
   const earliest = ceilToGrid(input.nowMs);
-  const horizonEndMs = bookingHorizonEndMs(input.nowMs);
+  const horizonEndMs = bookingHorizonEndMs(input.nowMs, input.horizonDays);
   const busy = [...input.busy].sort((a, b) => a.startMs - b.startMs);
   const days: DayAvailability[] = [];
 
@@ -62,7 +65,7 @@ export function computeFreeWindows(input: {
   while (cursor.getTime() < input.toDayMs) {
     const weekday = cursor.getDay();
     const dayStartMs = cursor.getTime();
-    // Pasado el horizonte de dos semanas no se ofrece nada (el servidor lo rechazaría).
+    // Pasado el horizonte de la persona no se ofrece nada (el servidor lo rechazaría).
     if (dayStartMs >= horizonEndMs) break;
     if (weekday !== 0 && weekday !== 6) {
       const open = new TZDate(

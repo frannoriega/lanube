@@ -10,6 +10,7 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query";
 import useUser from "@/hooks/use-user";
 import { getSpaceIcon } from "@/lib/constants/spaces";
+import { bookingHorizonDaysFor } from "@/lib/reservations/booking-horizon";
 import { LayoutGrid } from "lucide-react";
 
 export function CalendarTemplateClient({
@@ -53,7 +54,11 @@ export function CalendarTemplateClient({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <WeekCalendar apiEndpoint={apiEndpoint} userId={user?.id} />
+          <WeekCalendar
+            apiEndpoint={apiEndpoint}
+            userId={user?.id}
+            horizonDays={bookingHorizonDaysFor(user)}
+          />
         </CardContent>
       </Card>
     </div>
