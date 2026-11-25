@@ -715,9 +715,9 @@ Shared event labels (type + weekday) live in `src/lib/constants/events.ts`.
   `text-la-nube-primary` measures 3.06:1 on the light background and fails AA at
   body size. It is fine for borders, icons, spinners, gradient stops, and large
   bold text (≥18.66px, where 3:1 is the AA threshold).
-- **Remaining gap: the auth pages have no `dark:` classes at all**
-  (`signin`/`reset`/`signup`), so they render light-theme colors in dark mode.
-  Tracked in `docs/OPEN_QUESTIONS.md` as a design pass, not a mechanical sweep.
+- **The auth pages force the light theme** (`auth/layout.tsx`, `forcedTheme="light"`), so their
+  missing `dark:` classes don't show. Their primary action is the `brand` Button and it is disabled
+  only while submitting — never until the form is valid (it read as broken; milestone 40, F2).
 
 ### 10. Navigation
 

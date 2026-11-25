@@ -132,7 +132,8 @@ export function maintenanceAreaLabel(id: string): string {
  *   escritura del conector consultan la ventana). `/api/mcp` además es siempre POST.
  * - `/api/maintenance`, `/api/admin/maintenance`: el aviso y el propio panel — si no, no se
  *   podría apagar el mantenimiento.
- * - `/api/user/notifications`: marcar como leída la campanita; perder eso no importa.
+ * - `/api/user/notifications`: marcar como leída o borrar avisos de la campanita (milestone 40);
+ *   perder eso no importa (en el peor caso un aviso borrado reaparece).
  * - `/api/session`, `/api/dev`: lecturas y utilidades de desarrollo.
  *
  * ⚠️ Es una **lista de excepciones**: una ruta nueva que escribe queda bloqueada sola. Eso

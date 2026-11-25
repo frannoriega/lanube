@@ -58,3 +58,20 @@ export async function markNotificationsRead(
     data: { readAt: BigInt(Date.now()) },
   });
 }
+
+/**
+ * Borra notificaciones **propias** (milestone 40, F5): las `ids` dadas, o todas si se omiten.
+ * Borrado real y no un `dismissedAt`: un aviso in-app es efímero, no es evidencia de nada (la
+ * auditoría vive en `audit_logs` y el correo, si hubo, ya salió). El `recipientId` en el `where`
+ * es lo que impide borrar avisos ajenos: un id de otra persona simplemente no coincide.
+ * Devuelve cuántas se borraron.
+ */
+export async function deleteNotifications(
+  recipientId: string,
+  ids?: readonly string[],
+): Promise<number> {
+  const { count } = await prisma.notification.deleteMany({
+    where: { recipientId, ...(ids ? { id: { in: [...ids] } } : {}) },
+  });
+  return count;
+}

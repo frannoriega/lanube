@@ -139,7 +139,16 @@ export function LandingThemeForm({
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(v) => {
+                            field.onChange(v);
+                            // Los errores de la otra rama ya no aplican (milestone 40, F1).
+                            form.clearErrors([
+                              "startMonthDay",
+                              "endMonthDay",
+                              "startDate",
+                              "endDate",
+                            ]);
+                          }}
                         />
                       </FormControl>
                     </FormItem>

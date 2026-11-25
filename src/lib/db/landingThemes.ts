@@ -81,7 +81,10 @@ export interface LandingThemeInput {
   heroKeywordsMode: "APPEND" | "REPLACE";
 }
 
-/** Normalizes the input so only the fields matching `recurring` are persisted. */
+/**
+ * Normalizes the input so only the fields matching `recurring` are persisted. `""` cuenta como
+ * vacío (el formulario manda `""` en los campos que no usa; milestone 40, F1).
+ */
 function toWriteData(input: LandingThemeInput) {
   return {
     name: input.name,
@@ -90,8 +93,8 @@ function toWriteData(input: LandingThemeInput) {
     // el default 0 (abajo de la lista); al editar no se toca.
     ...(input.priority !== undefined ? { priority: input.priority } : {}),
     recurring: input.recurring,
-    startMonthDay: input.recurring ? (input.startMonthDay ?? null) : null,
-    endMonthDay: input.recurring ? (input.endMonthDay ?? null) : null,
+    startMonthDay: input.recurring ? input.startMonthDay || null : null,
+    endMonthDay: input.recurring ? input.endMonthDay || null : null,
     startDate: input.recurring
       ? null
       : input.startDate != null
@@ -104,9 +107,7 @@ function toWriteData(input: LandingThemeInput) {
         : null,
     entranceEffect: input.entranceEffect,
     emojiList:
-      input.entranceEffect === "EMOJI_SHOWER"
-        ? (input.emojiList ?? null)
-        : null,
+      input.entranceEffect === "EMOJI_SHOWER" ? input.emojiList || null : null,
     particleCount:
       input.entranceEffect === "EMOJI_SHOWER"
         ? (input.particleCount ?? null)

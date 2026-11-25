@@ -84,6 +84,9 @@ export default function ResetPage() {
             <h1 className="text-2xl font-bold">Reestablece tu contraseña</h1>
             <Form {...form}>
               <form
+                // POST explícito (milestone 40, F2): si se envía antes de que cargue el JS, un GET
+                // pondría el email y la contraseña en la URL (historial, logs del servidor).
+                method="post"
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4 w-full"
               >

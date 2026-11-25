@@ -350,12 +350,15 @@ export function EventSessions({
                       </div>
 
                       {/* Buttons by state: reschedule is always available; a live session can be
-                        cancelled; a cancelled one can be reverted to its regular slot. */}
+                        cancelled; a cancelled or rescheduled one can be reverted to its regular
+                        slot (staged → se descarta; guardado → se encola un `revert`). */}
                       <div className="flex shrink-0 items-center gap-1">
                         <RescheduleDialog
-                          defaultDateKey={dateKeyFromUnixMs(occ.startMs)}
-                          defaultStart={toHHmm(occ.startMs)}
-                          defaultEnd={toHHmm(occ.endMs)}
+                          // Siempre desde el horario **original** de la sesión (milestone 40, F4):
+                          // antes arrancaba en `occ.startMs`, que en una reprogramada es el nuevo.
+                          nominalStartMs={occ.occurrenceDateMs}
+                          nominalEndMs={occ.nominalEndMs}
+                          isRescheduled={occ.status === "rescheduled"}
                           onSubmit={(newStartMs, newEndMs) => {
                             // Cheap client guard: don't let a reschedule land on another (non-cancelled)
                             // session of this event. The server enforces the full cross-booking check.
@@ -400,7 +403,8 @@ export function EventSessions({
                             Cancelar
                           </Button>
                         )}
-                        {occ.status === "cancelled" && (
+                        {(occ.status === "cancelled" ||
+                          occ.status === "rescheduled") && (
                           <Button
                             type="button"
                             variant="ghost"
@@ -478,21 +482,36 @@ export function EventSessions({
 }
 
 function RescheduleDialog({
-  defaultDateKey,
-  defaultStart,
-  defaultEnd,
+  nominalStartMs,
+  nominalEndMs,
+  isRescheduled,
   onSubmit,
 }: {
-  defaultDateKey: string;
-  defaultStart: string;
-  defaultEnd: string;
+  /** Horario regular (nominal) de la sesión: el diálogo siempre arranca acá. */
+  nominalStartMs: number;
+  nominalEndMs: number;
+  /** La sesión ya está reprogramada (guardada o sin guardar): se muestra el horario original. */
+  isRescheduled: boolean;
   /** Returns true if the reschedule was accepted; false keeps the dialog open (e.g. a clash). */
   onSubmit: (newStartMs: number, newEndMs: number) => boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [dateKey, setDateKey] = useState(defaultDateKey);
-  const [start, setStart] = useState(defaultStart);
-  const [end, setEnd] = useState(defaultEnd);
+  const [dateKey, setDateKey] = useState(() =>
+    dateKeyFromUnixMs(nominalStartMs),
+  );
+  const [start, setStart] = useState(() => toHHmm(nominalStartMs));
+  const [end, setEnd] = useState(() => toHHmm(nominalEndMs));
+
+  /**
+   * Abrir resetea el estado al horario original (milestone 40, F4). Antes se inicializaba una
+   * sola vez, así que reprogramar → cancelar → «Reprogramar» mostraba la reprogramación vieja.
+   */
+  const openDialog = () => {
+    setDateKey(dateKeyFromUnixMs(nominalStartMs));
+    setStart(toHHmm(nominalStartMs));
+    setEnd(toHHmm(nominalEndMs));
+    setOpen(true);
+  };
 
   const submit = () => {
     // `00:00` como fin es la medianoche que cierra el día: siempre es posterior al inicio.
@@ -507,12 +526,7 @@ function RescheduleDialog({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" variant="ghost" size="sm" onClick={openDialog}>
         <CalendarClock className="h-4 w-4" />
         Reprogramar
       </Button>
@@ -522,6 +536,13 @@ function RescheduleDialog({
             <ResponsiveDialogTitle>Reprogramar sesión</ResponsiveDialogTitle>
             <ResponsiveDialogDescription>
               Elegí la nueva fecha y horario. Se aplica al guardar el evento.
+              {isRescheduled && (
+                <>
+                  {" "}
+                  Horario original: <LocalDate ms={nominalStartMs} /> ·{" "}
+                  {toHHmm(nominalStartMs)}–{toHHmm(nominalEndMs)}.
+                </>
+              )}
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           <div className="space-y-4">

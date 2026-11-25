@@ -154,6 +154,21 @@ const emojiListSchema = z
     message: "Máximo 12 emojis distintos",
   });
 
+/**
+ * Un campo de texto opcional que acepta `""` como «vacío» (milestone 40, F1). El formulario
+ * arranca esos campos en `""` y la rama que no se usa (mes-día en un tema no recurrente, emojis
+ * sin lluvia) nunca los toca: antes el regex/`min(1)` fallaba sobre un campo vacío que nadie
+ * mira, y como en Zod 4 los refinamientos del objeto no corren cuando un campo ya falló, el
+ * formulario quedaba bloqueado con un error en un campo que la rama activa no dibuja. Se usa
+ * una unión con `""` (y no `z.preprocess`) para que el tipo de entrada siga siendo `string`.
+ */
+function blankable<T extends z.ZodTypeAny>(schema: T) {
+  return z
+    .union([z.literal(""), schema])
+    .nullable()
+    .optional();
+}
+
 export const landingThemeInputSchema = z
   .object({
     name: z
@@ -166,12 +181,12 @@ export const landingThemeInputSchema = z
     // edita. Opcional y se ignora al editar (ver `toWriteData`).
     priority: z.number().int().min(0).max(100).optional(),
     recurring: z.boolean(),
-    startMonthDay: monthDaySchema.optional().nullable(),
-    endMonthDay: monthDaySchema.optional().nullable(),
+    startMonthDay: blankable(monthDaySchema),
+    endMonthDay: blankable(monthDaySchema),
     startDate: z.number().int().optional().nullable(),
     endDate: z.number().int().optional().nullable(),
     entranceEffect: z.enum(["NONE", "EMOJI_SHOWER"]),
-    emojiList: emojiListSchema.optional().nullable(),
+    emojiList: blankable(emojiListSchema),
     particleCount: z.number().int().min(5).max(150).optional().nullable(),
     heroEyebrowOverride: z.string().trim().max(120).optional().nullable(),
     heroKeywords: z
@@ -185,28 +200,37 @@ export const landingThemeInputSchema = z
       .nullable(),
     heroKeywordsMode: z.enum(["APPEND", "REPLACE"]),
   })
-  .refine((v) => !v.recurring || (!!v.startMonthDay && !!v.endMonthDay), {
-    message: "Definí el inicio y fin del período recurrente",
-    path: ["startMonthDay"],
-  })
-  .refine((v) => v.recurring || (v.startDate != null && v.endDate != null), {
-    message: "Definí el rango de fechas",
-    path: ["startDate"],
-  })
-  .refine(
-    (v) =>
-      v.recurring ||
-      v.startDate == null ||
-      v.endDate == null ||
-      v.startDate <= v.endDate,
-    {
-      message: "La fecha de inicio debe ser anterior a la de fin",
-      path: ["endDate"],
-    },
-  )
-  .refine((v) => v.entranceEffect !== "EMOJI_SHOWER" || !!v.emojiList, {
-    message: "Elegí al menos un emoji para la lluvia",
-    path: ["emojiList"],
+  // Reglas cruzadas: solo se valida la rama activa (recurrente → mes-día; si no → fechas), y el
+  // error va a un campo que esa rama dibuja.
+  .superRefine((v, ctx) => {
+    if (v.recurring) {
+      if (!v.startMonthDay || !v.endMonthDay) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Definí el inicio y fin del período recurrente",
+          path: ["startMonthDay"],
+        });
+      }
+    } else if (v.startDate == null || v.endDate == null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Definí el rango de fechas",
+        path: ["startDate"],
+      });
+    } else if (v.startDate > v.endDate) {
+      ctx.addIssue({
+        code: "custom",
+        message: "La fecha de inicio debe ser anterior a la de fin",
+        path: ["endDate"],
+      });
+    }
+    if (v.entranceEffect === "EMOJI_SHOWER" && !v.emojiList) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Elegí al menos un emoji para la lluvia",
+        path: ["emojiList"],
+      });
+    }
   });
 
 export type LandingThemeInput = z.infer<typeof landingThemeInputSchema>;

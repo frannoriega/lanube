@@ -30,6 +30,8 @@ export interface RawReservation {
 export interface EventOccurrence {
   reservationId: string;
   occurrenceDateMs: number;
+  /** Fin del horario **regular** (nominal) de la sesión; `occurrenceDateMs` es su inicio. */
+  nominalEndMs: number;
   startMs: number;
   endMs: number;
   status: OccurrenceStatus;
@@ -99,6 +101,7 @@ export function expandEventOccurrences(
       out.push({
         reservationId: r.id,
         occurrenceDateMs: occ,
+        nominalEndMs: occ + duration,
         startMs: s,
         endMs: e,
         status,

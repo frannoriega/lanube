@@ -1,6 +1,6 @@
 # Milestone 40 — Arreglos de la v1.2.0
 
-**Estado:** promoted (2026-11-25). Sale en la **versión 1.2.0**, junto con los milestones 34, 41, 42,
+**Estado:** done (2026-11-25). Sale en la **versión 1.2.0**, junto con los milestones 34, 41, 42,
 43 y 44 (una sola entrada de changelog para todo).
 
 ## Qué pidió el usuario (2026-11-25)
@@ -47,10 +47,10 @@ recurrente nunca los toca. Entonces:
 
 ### Criterios de aceptación
 
-- [ ] Test del schema: no recurrente con `startMonthDay: ""` y fechas válidas → válido.
-- [ ] Test: recurrente con fechas `null` y mes-día válidos → válido; sin mes-día → error en
+- [x] Test del schema: no recurrente con `startMonthDay: ""` y fechas válidas → válido.
+- [x] Test: recurrente con fechas `null` y mes-día válidos → válido; sin mes-día → error en
       `startMonthDay`.
-- [ ] Crear y editar un tema no recurrente desde `/admin/themes/new` funciona en el navegador.
+- [x] Crear y editar un tema no recurrente desde `/admin/themes/new` funciona en el navegador.
 
 ## F2 — Pantalla de ingreso/registro: botones y validación
 
@@ -86,10 +86,10 @@ tokens, y se leen como deshabilitadas. Las páginas de auth además **no tienen 
 
 ### Criterios de aceptación
 
-- [ ] Ninguna acción habilitada de las vistas de auth se ve deshabilitada (revisado con
+- [x] Ninguna acción habilitada de las vistas de auth se ve deshabilitada (revisado con
       `scripts/mobile-shots.mjs`, claro y oscuro).
-- [ ] Una sola regla de contraseña, con test.
-- [ ] `src/lib/contrast.test.ts` sigue verde.
+- [x] Una sola regla de contraseña, con test.
+- [x] `src/lib/contrast.test.ts` sigue verde.
 
 ## F3 — Reportes: fechas futuras
 
@@ -112,8 +112,8 @@ tokens, y se leen como deshabilitadas. Las páginas de auth además **no tienen 
 
 ### Criterios de aceptación
 
-- [ ] Se puede elegir un rango que termine (o empiece) en el futuro y el reporte lo muestra.
-- [ ] El export del mismo rango funciona.
+- [x] Se puede elegir un rango que termine (o empiece) en el futuro y el reporte lo muestra.
+- [x] El export del mismo rango funciona.
 
 ## F4 — Reprogramar: deshacer y fecha original
 
@@ -140,10 +140,10 @@ tokens, y se leen como deshabilitadas. Las páginas de auth además **no tienen 
 
 ### Criterios de aceptación
 
-- [ ] Reprogramar (sin guardar) → «Revertir» vuelve la fila a su estado anterior.
-- [ ] Sesión reprogramada guardada → «Revertir» + guardar la deja en su horario regular (y avisa
+- [x] Reprogramar (sin guardar) → «Revertir» vuelve la fila a su estado anterior.
+- [x] Sesión reprogramada guardada → «Revertir» + guardar la deja en su horario regular (y avisa
       «restaurada», como hoy con las canceladas).
-- [ ] Reprogramar → cancelar → «Reprogramar» abre con la fecha y horario originales.
+- [x] Reprogramar → cancelar → «Reprogramar» abre con la fecha y horario originales.
 
 ## F5 — Borrar notificaciones
 
@@ -168,10 +168,47 @@ El modelo `Notification` (`prisma/models/notifications.prisma`) tiene `readAt`; 
 
 ### Criterios de aceptación
 
-- [ ] Borrar una la saca de la lista y del contador; recargar no la trae.
-- [ ] «Borrar todas» deja la campana vacía con su estado vacío.
-- [ ] No se puede borrar una notificación ajena (test de la consulta).
+- [x] Borrar una la saca de la lista y del contador; recargar no la trae.
+- [x] «Borrar todas» deja la campana vacía con su estado vacío.
+- [x] No se puede borrar una notificación ajena (test de la consulta).
 
 ## Registro
 
-(Sin implementar.)
+Implementado el 2026-11-25.
+
+- **F1:** `blankable()` en `src/lib/schemas/config.ts` (unión con `""`, no `z.preprocess`, para que el
+  tipo de entrada del formulario siga siendo `string`) para `startMonthDay`/`endMonthDay`/`emojiList`;
+  las reglas cruzadas pasaron a un `superRefine` que valida solo la rama activa. Se encontró el mismo
+  problema en `emojiList` (efecto «Ninguno» con la lista vacía): arreglado igual. `toWriteData`
+  (`db/landingThemes.ts`) trata `""` como vacío. El switch «Recurrente» limpia los errores de la otra
+  rama. Tests en `config.test.ts`.
+- **F2 — hallazgos y cómo quedaron** (`signin-screen.tsx`, `/auth/signup`, `schemas/auth.ts`):
+  - Los botones principales eran `bg-slate-200 text-black` **y además** quedaban deshabilitados hasta
+    que el formulario fuera válido (ingreso, registro, envío de enlace), así que se veían grises y
+    apagados. Ahora son `variant="brand"` y solo se deshabilitan mientras se envía (o si el área está
+    en mantenimiento); los errores se muestran al tocar/enviar. «Crear una cuenta» era idéntico al
+    botón principal: pasó a `outline` (acción secundaria). El de passkey perdió sus colores a mano.
+  - Modos distintos: registro validaba con `mode: "all"`, el resto al enviar. Las cuatro vistas y el
+    perfil usan `mode: "onTouched"`.
+  - El ingreso exigía «al menos 8 caracteres» en la contraseña: ahora solo que no esté vacía (el error
+    de credenciales sigue siendo genérico). El servidor (`authorize`) usa el mismo schema.
+  - La confirmación de contraseña repetía las reglas de largo (dos mensajes «al menos 8»): ahora solo
+    «Repetí la contraseña» y «Las contraseñas no coinciden».
+  - **Hallazgo durante la verificación:** los `<form>` de auth no tenían `method`, así que un envío
+    antes de que cargue el JS (red lenta, recién desplegado) hacía un GET y dejaba el email y la
+    **contraseña en la URL** (historial, logs). Ahora los seis formularios de auth llevan
+    `method="post"`.
+  - Textos en voseo («Ingresá», «Accedé»), enlaces con el color de marca (`text-la-nube-selected`) en
+    lugar de `text-blue-900`.
+  - Las páginas de auth fuerzan el tema claro (`auth/layout.tsx`, `forcedTheme="light"`), así que la
+    deuda de modo oscuro de `OPEN_QUESTIONS.md` no aplica a ellas; los inputs `bg-slate-200` quedan
+    (dan contraste sobre la tarjeta de vidrio).
+- **F3:** el servidor nunca recortaba a «hoy» (solo limita el largo a 366 días); se sacaron
+  `disabled`/`toDate` del calendario del rango personalizado.
+- **F4:** `EventOccurrence.nominalEndMs` (fin del horario regular); el diálogo recibe el horario
+  nominal y **resetea su estado al abrirse**; «Revertir» también para reprogramadas; el diálogo de una
+  reprogramada muestra el horario original.
+- **F5:** `deleteNotifications()` (`db/notifications.ts`), `DELETE /api/user/notifications` y
+  `DELETE /api/user/notifications/[id]` (404 indistinto para ajenas/inexistentes), «×» por aviso y
+  «Borrar todas» con confirmación en el popover. El comentario de `READ_ONLY_EXEMPT_PREFIXES` dice que
+  borrar también queda exento.

@@ -51,6 +51,8 @@ export default function SignUpPage() {
       institution: "",
       reasonToJoin: "",
     },
+    // Mismo modo que las vistas de ingreso/registro (milestone 40, F2).
+    mode: "onTouched",
   });
   const [loading, setLoading] = useState(false);
   const [characterCount, setCharacterCount] = useState(0);
@@ -122,6 +124,9 @@ export default function SignUpPage() {
         <CardContent>
           <Form {...form}>
             <form
+              // POST explícito (milestone 40, F2): si se envía antes de que cargue el JS, un GET
+              // pondría el email y la contraseña en la URL (historial, logs del servidor).
+              method="post"
               onSubmit={form.handleSubmit(handleSubmit)}
               className="space-y-4"
             >
@@ -139,7 +144,7 @@ export default function SignUpPage() {
                         <Input {...field} className="bg-slate-200" />
                       </FormControl>
                       <FormDescription className="sr-only">
-                        Ingresa tu nombre
+                        Ingresá tu nombre
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -155,7 +160,7 @@ export default function SignUpPage() {
                         <Input {...field} className="bg-slate-200" />
                       </FormControl>
                       <FormDescription className="sr-only">
-                        Ingresa tu apellido
+                        Ingresá tu apellido
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -186,7 +191,7 @@ export default function SignUpPage() {
                         />
                       </FormControl>
                       <FormDescription className="sr-only">
-                        Ingresa tu DNI
+                        Ingresá tu DNI
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -202,7 +207,7 @@ export default function SignUpPage() {
                         <Input {...field} className="bg-slate-200" />
                       </FormControl>
                       <FormDescription className="sr-only">
-                        Ingresa tu institución
+                        Ingresá tu institución
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -225,14 +230,19 @@ export default function SignUpPage() {
                         {characterCount}/500
                       </p>
                       <FormDescription className="sr-only">
-                        Ingresa tu motivo para unirse
+                        Ingresá tu motivo para unirte
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                variant="brand"
+                className="w-full"
+                disabled={loading}
+              >
                 {loading ? "Completando..." : "Completar Perfil"}
               </Button>
             </form>

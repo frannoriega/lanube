@@ -123,6 +123,10 @@ describe("expandEventOccurrences", () => {
     expect(moved?.status).toBe("rescheduled");
     expect(moved?.startMs).toBe(newStart);
     expect(moved?.endMs).toBe(newEnd);
+    // El horario regular sigue disponible: «Reprogramar» arranca de ahí (milestone 40, F4).
+    expect(moved?.occurrenceDateMs).toBe(START + 3 * WEEK);
+    expect(moved?.nominalEndMs).toBeGreaterThan(START + 3 * WEEK);
+    expect(moved?.nominalEndMs).not.toBe(newEnd);
   });
 
   it("applies the latest exception per date when several exist", () => {

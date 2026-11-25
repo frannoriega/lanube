@@ -16,6 +16,7 @@ function occ(
   return {
     reservationId: "r",
     occurrenceDateMs: startMs,
+    nominalEndMs: startMs + 3 * 3_600_000,
     startMs,
     endMs: startMs + 3 * 3_600_000,
     status,

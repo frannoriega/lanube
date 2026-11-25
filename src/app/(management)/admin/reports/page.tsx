@@ -318,8 +318,9 @@ export default function AdminReportsPage() {
                       selected={customRange}
                       onSelect={setCustomRange}
                       numberOfMonths={2}
-                      disabled={{ after: now() }}
-                      toDate={now()}
+                      // Sin tope en hoy (milestone 40, F3): hay reservas y sesiones futuras.
+                      // Un período sin datos muestra los vacíos normales del reporte; el
+                      // servidor solo limita el largo del rango (366 días).
                     />
                   </PopoverContent>
                 </Popover>

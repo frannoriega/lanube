@@ -34,9 +34,28 @@ const passwordSchema = z
   .min(8, { message: "La contraseña debe tener al menos 8 caracteres" })
   .max(PASSWORD_MAX, { message: MSG_PASSWORD_MAX });
 
+/**
+ * Contraseña al **ingresar** (milestone 40, F2): solo que no esté vacía (y el tope). Exigir acá el
+ * mínimo de 8 de una contraseña nueva daba un error de «al menos 8 caracteres» al tipear la
+ * propia, como si fuera una regla de ingreso; si está mal, el error es el genérico de credenciales.
+ */
+const signInPasswordSchema = z
+  .string()
+  .min(1, { message: "Ingresá tu contraseña" })
+  .max(PASSWORD_MAX, { message: MSG_PASSWORD_MAX });
+
+/**
+ * Confirmación de una contraseña nueva: solo tiene que coincidir (lo chequea el `refine` de cada
+ * schema, en este campo). Antes repetía las reglas de largo y mostraba «al menos 8 caracteres»
+ * dos veces, una en cada campo.
+ */
+const passwordConfirmationSchema = z
+  .string()
+  .min(1, { message: "Repetí la contraseña" });
+
 export const signInSchema = z.object({
   email: authEmailSchema,
-  password: passwordSchema,
+  password: signInPasswordSchema,
 });
 
 /** Registration: validate like sign-in but keep the trimmed raw string for `display_email` (no dot-strip transform). */
@@ -69,7 +88,7 @@ export const registerSchema = z
   .object({
     email: registerEmailSchema,
     password: passwordSchema,
-    passwordConfirmation: passwordSchema,
+    passwordConfirmation: passwordConfirmationSchema,
     captcha: z
       .string()
       .min(1, { message: "Por favor completá la verificación de seguridad" }),
@@ -99,7 +118,7 @@ export const resetSchema = z.object({
 export const newPasswordSchema = z
   .object({
     password: passwordSchema,
-    passwordConfirmation: passwordSchema,
+    passwordConfirmation: passwordConfirmationSchema,
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: "Las contraseñas no coinciden",
@@ -118,7 +137,7 @@ export const recoverySchema = z
     email: authEmailSchema,
     code: z.string().trim().min(1, { message: "Ingresá un código" }),
     password: passwordSchema,
-    passwordConfirmation: passwordSchema,
+    passwordConfirmation: passwordConfirmationSchema,
     captcha: z
       .string()
       .min(1, { message: "Por favor completá la verificación de seguridad" }),

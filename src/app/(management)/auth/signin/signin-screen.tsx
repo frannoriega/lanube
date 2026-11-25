@@ -91,12 +91,16 @@ export function SignInScreen({
     }
   }, [searchParams, router, callbackUrl]);
 
+  // Las cuatro vistas validan igual (milestone 40, F2): al salir de un campo y, desde ahí, al
+  // escribir; el botón principal solo se deshabilita mientras se envía (antes algunos quedaban
+  // grises hasta que el formulario era válido y parecían rotos).
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: standardSchemaResolver(signInSchema),
     defaultValues: {
       email: "",
       password: "",
     },
+    mode: "onTouched",
   });
   // Además de lo que valida `registerSchema`, del lado del cliente se exige tildar cada
   // política requerida (el servidor lo vuelve a chequear contra el registro).
@@ -116,7 +120,7 @@ export function SignInScreen({
       captcha: "",
       acceptedPolicies: [],
     },
-    mode: "all",
+    mode: "onTouched",
   });
   const resetForm = useForm<z.infer<typeof resetSchema>>({
     resolver: standardSchemaResolver(resetSchema),
@@ -124,6 +128,7 @@ export function SignInScreen({
       email: "",
       captcha: "",
     },
+    mode: "onTouched",
   });
   // Recuperar la cuenta con un código de recuperación (milestone 17).
   const recoveryForm = useForm<z.infer<typeof recoverySchema>>({
@@ -135,6 +140,7 @@ export function SignInScreen({
       passwordConfirmation: "",
       captcha: "",
     },
+    mode: "onTouched",
   });
   const [error, setError] = useState<boolean>(false);
   // Passkeys (milestone 17). `null` hasta montar: la detección mira `window`.
@@ -368,6 +374,9 @@ export function SignInScreen({
           >
             <Form {...form}>
               <form
+                // POST explícito (milestone 40, F2): si se envía antes de que cargue el JS, un GET
+                // pondría el email y la contraseña en la URL (historial, logs del servidor).
+                method="post"
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
@@ -408,7 +417,7 @@ export function SignInScreen({
                             <Link
                               href="#"
                               onClick={() => setScreen("reset")}
-                              className="text-sm text-center text-blue-900"
+                              className="text-sm text-center text-la-nube-selected"
                             >
                               Olvidé mi contraseña
                             </Link>
@@ -421,11 +430,10 @@ export function SignInScreen({
                 />
                 <Button
                   type="submit"
-                  className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                  variant="brand"
+                  className="w-full font-semibold py-6 text-lg"
                   size="lg"
-                  disabled={
-                    !form.formState.isValid || form.formState.isSubmitting
-                  }
+                  disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting
                     ? "Iniciando sesión..."
@@ -442,7 +450,7 @@ export function SignInScreen({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-slate-400 bg-white hover:bg-slate-100 text-slate-900 font-semibold py-6 text-base"
+                className="w-full font-semibold py-6 text-base"
                 size="lg"
                 onClick={onPasskeySignIn}
                 disabled={passkeyBusy}
@@ -454,17 +462,17 @@ export function SignInScreen({
             <div className="flex flex-row w-full h-fit items-center gap-2">
               <Separator
                 orientation="horizontal"
-                className="flex-1 bg-slate-800"
+                className="flex-1 bg-border"
               />
-              <span className="text-slate-800 font-semibold">ó</span>
+              <span className="font-semibold text-muted-foreground">ó</span>
               <Separator
                 orientation="horizontal"
-                className="flex-1 bg-slate-800"
+                className="flex-1 bg-border"
               />
             </div>
             <Button
               variant="outline"
-              className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+              className="w-full font-semibold py-6 text-lg"
               size="lg"
               onClick={() => setScreen("register")}
             >
@@ -485,6 +493,9 @@ export function SignInScreen({
             <AreaMaintenanceNotice area="signup" />
             <Form {...registerForm}>
               <form
+                // POST explícito (milestone 40, F2): si se envía antes de que cargue el JS, un GET
+                // pondría el email y la contraseña en la URL (historial, logs del servidor).
+                method="post"
                 onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
                 className="space-y-4"
               >
@@ -601,12 +612,11 @@ export function SignInScreen({
                 />
                 <Button
                   type="submit"
-                  className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                  variant="brand"
+                  className="w-full font-semibold py-6 text-lg"
                   size="lg"
                   disabled={
-                    signupBlocked ||
-                    registerForm.formState.isSubmitting ||
-                    !registerForm.formState.isValid
+                    signupBlocked || registerForm.formState.isSubmitting
                   }
                 >
                   {registerForm.formState.isSubmitting
@@ -638,6 +648,9 @@ export function SignInScreen({
             <AreaMaintenanceNotice area="password-recovery" />
             <Form {...resetForm}>
               <form
+                // POST explícito (milestone 40, F2): si se envía antes de que cargue el JS, un GET
+                // pondría el email y la contraseña en la URL (historial, logs del servidor).
+                method="post"
                 onSubmit={resetForm.handleSubmit(onResetSubmit)}
                 className="space-y-4"
               >
@@ -691,13 +704,10 @@ export function SignInScreen({
                 />
                 <Button
                   type="submit"
-                  className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                  variant="brand"
+                  className="w-full font-semibold py-6 text-lg"
                   size="lg"
-                  disabled={
-                    recoveryBlocked ||
-                    resetForm.formState.isSubmitting ||
-                    !resetForm.formState.isValid
-                  }
+                  disabled={recoveryBlocked || resetForm.formState.isSubmitting}
                 >
                   {resetForm.formState.isSubmitting
                     ? "Enviando..."
@@ -708,7 +718,7 @@ export function SignInScreen({
             <button
               type="button"
               onClick={() => setScreen("recovery")}
-              className="text-sm text-center text-blue-900 underline-offset-4 hover:underline"
+              className="text-sm text-center text-la-nube-selected underline-offset-4 hover:underline"
             >
               ¿Ya no tenés acceso a tu email? Usá un código de recuperación
             </button>
@@ -738,6 +748,9 @@ export function SignInScreen({
             </p>
             <Form {...recoveryForm}>
               <form
+                // POST explícito (milestone 40, F2): si se envía antes de que cargue el JS, un GET
+                // pondría el email y la contraseña en la URL (historial, logs del servidor).
+                method="post"
                 onSubmit={recoveryForm.handleSubmit(onRecoverySubmit)}
                 className="space-y-4"
               >
@@ -854,7 +867,8 @@ export function SignInScreen({
                 />
                 <Button
                   type="submit"
-                  className="w-full bg-slate-200 hover:bg-slate-300 text-black font-semibold py-6 text-lg"
+                  variant="brand"
+                  className="w-full font-semibold py-6 text-lg"
                   size="lg"
                   disabled={recoveryForm.formState.isSubmitting}
                 >
@@ -889,7 +903,7 @@ export function SignInScreen({
             signing out lands), so it can't rely on browser history to get home. */}
         <Link
           href="/"
-          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-blue-900 transition-opacity hover:opacity-80"
+          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-la-nube-selected transition-opacity hover:opacity-80"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver al inicio
@@ -919,7 +933,7 @@ export function SignInScreen({
               <AnimatePresence mode="wait">{renderScreen()}</AnimatePresence>
             </div>
             <p className="text-sm text-center">
-              Accede a nuestros espacios de trabajo, laboratorio y salas
+              Accedé a nuestros espacios de trabajo, laboratorio y salas
             </p>
             <div className="flex w-full justify-center">
               <Link href="/policies/privacy" className="text-sm text-center">
