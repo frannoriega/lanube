@@ -157,6 +157,8 @@ export function registerManagementTools(
             ...eventSchedule(e),
             registrations: e._count.participants,
             featured: e.isFeatured,
+            // Privado (milestone 43): no se lista en público; se comparte por el formulario.
+            private: e.isPrivate,
             admin_url: `${ctx.origin}/admin/events/${e.id}`,
           };
         }),
@@ -203,6 +205,7 @@ export function registerManagementTools(
         ...eventSchedule(e),
         capacity: e.capacity ?? e.space.capacity,
         requires_approval: e.requiresApproval,
+        private: e.isPrivate,
         registration: e.form
           ? {
               opens_at: iso(e.form.opensAt),

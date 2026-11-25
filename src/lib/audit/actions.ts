@@ -66,6 +66,9 @@ export const AUDIT_ACTIONS = {
   participantCheckIn: "participant.checkIn",
   participantCheckInUndo: "participant.checkInUndo",
   participantWalkIn: "participant.walkIn",
+  eventInviteesAdd: "event.inviteesAdd",
+  eventInviteesRemove: "event.inviteesRemove",
+  eventInvitationsSend: "event.invitationsSend",
 
   // Contenido
   newsCreate: "news.create",

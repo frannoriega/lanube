@@ -94,8 +94,10 @@ describe("caché del sitio público (milestone 25, P2)", () => {
 
   it("toda ruta admin que escribe contenido público invalida su tag", () => {
     // Las subidas solo guardan un archivo (el registro se escribe después, en su propia ruta);
-    // pedir revisión de una noticia no la publica.
-    const NOT_PUBLIC = /\/(upload|attachment|request)\/route\.ts$/;
+    // pedir revisión de una noticia no la publica; la lista de invitados de un evento privado
+    // (milestone 43) no se muestra en ningún lado del sitio público.
+    const NOT_PUBLIC =
+      /\/(upload|attachment|request)\/route\.ts$|\/invitees\/(send\/)?route\.ts$/;
     const dirs = [
       "events",
       "news",

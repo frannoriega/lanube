@@ -87,6 +87,7 @@ async function loadEvents(ids: string[]) {
       imageUrl: true,
       status: true,
       deletedAt: true,
+      isPrivate: true,
       capacity: true,
       space: { select: { capacity: true } },
       form: {
@@ -129,6 +130,8 @@ function eventItem(
   e: EventMeta | undefined,
   viewer: CalendarViewer,
   now: number,
+  /** Eventos donde quien mira tiene una inscripción vigente (para los privados, milestone 43). */
+  registeredEventIds: ReadonlySet<string>,
 ): CalendarItem | null {
   const base = {
     id: `${row.reservation_id}:${row.occurrence_start_time}`,
@@ -140,7 +143,11 @@ function eventItem(
   };
   // Un evento cancelado borra sus reservas; si quedara alguna, no se muestra.
   if (!e || e.deletedAt != null) return null;
-  const isPublic = e.status === "PUBLISHED";
+  // Un privado (milestone 43) se muestra al usuario solo si está inscripto; para el resto no
+  // existe, como un borrador.
+  const isPublic =
+    e.status === "PUBLISHED" &&
+    (!e.isPrivate || viewer.kind === "admin" || registeredEventIds.has(e.id));
   if (viewer.kind === "user" && !isPublic) {
     // No se anuncia: no se muestra. (El calendario del espacio sí lo marca como ocupado.)
     return null;
@@ -158,7 +165,12 @@ function eventItem(
     href: isPublic
       ? open && e.form
         ? `/forms/${e.form.slug}`
-        : `/events/${e.id}`
+        : e.isPrivate
+          ? // Un privado no tiene página pública (milestone 43): el admin va al panel.
+            viewer.kind === "admin"
+            ? `/admin/events/${e.id}`
+            : undefined
+          : `/events/${e.id}`
       : viewer.kind === "admin"
         ? `/admin/events/${e.id}`
         : undefined,
@@ -200,10 +212,35 @@ export async function getActivityCalendar(
     ),
   ]);
 
+  // Privados a los que esta persona está inscripta (milestone 43): los ve en su calendario.
+  const privateIds = [...events.values()]
+    .filter((e) => e.isPrivate)
+    .map((e) => e.id);
+  const registeredEventIds = new Set(
+    viewer.kind === "user" && privateIds.length > 0
+      ? (
+          await prisma.eventParticipant.findMany({
+            where: {
+              eventId: { in: privateIds },
+              userId: viewer.registeredUserId,
+              status: { in: SPOT_HOLDING_STATUSES },
+            },
+            select: { eventId: true },
+          })
+        ).map((p) => p.eventId)
+      : [],
+  );
+
   const items: CalendarItem[] = [];
   for (const r of rows) {
     if (r.reservable_type === "EVENT") {
-      const item = eventItem(r, events.get(r.reservable_id), viewer, now);
+      const item = eventItem(
+        r,
+        events.get(r.reservable_id),
+        viewer,
+        now,
+        registeredEventIds,
+      );
       if (!item) continue;
       items.push(item);
       continue;

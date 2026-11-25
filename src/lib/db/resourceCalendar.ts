@@ -1,3 +1,4 @@
+import { isEventPubliclyListed } from "@/lib/events/visibility";
 import {
   getUnavailableSlots,
   getUserReservationsInWindow,
@@ -119,6 +120,7 @@ export async function getEventOccurrencesForSpace(
       imageUrl: true,
       status: true,
       deletedAt: true,
+      isPrivate: true,
       capacity: true,
       space: { select: { capacity: true } },
       form: {
@@ -148,7 +150,8 @@ export async function getEventOccurrencesForSpace(
         now <= Number(e.form.closesAt) &&
         !isFull,
       );
-      const isPublic = e.status === "PUBLISHED" && e.deletedAt == null;
+      // Privado (milestone 43) = como no publicado: ocupa el horario sin nombre ni enlaces.
+      const isPublic = isEventPubliclyListed(e);
       return [
         e.id,
         // Un evento no publicado no expone nombre ni enlaces (milestone 29): su página daría

@@ -225,6 +225,7 @@ export const AUDIT_ENTITIES = {
       capacity: num("Cupo", "personas"),
       requiresApproval: bool("Requiere aprobación"),
       checkInEnabled: bool("Check-in en la puerta"),
+      isPrivate: bool("Privado"),
       isFeatured: bool("Destacado"),
       summary: longText("Resumen"),
       description: longText("Descripción"),
@@ -633,6 +634,41 @@ export const AUDIT_EVENTS = {
     fields: {
       participant: text("Participante"),
       session: dateTime("Sesión"),
+    },
+  },
+  /**
+   * Lista de invitados de un evento privado (milestone 43). Sobre el evento, como las
+   * decisiones y el check-in: los invitados no tienen entidad propia en la vista.
+   */
+  "event.inviteesAdd": {
+    entity: "Event",
+    kind: "custom",
+    label: "Agregó invitados",
+    verb: "Invitados",
+    fields: {
+      invitees: setOf("Invitados"),
+      count: num("Cantidad"),
+    },
+  },
+  "event.inviteesRemove": {
+    entity: "Event",
+    kind: "custom",
+    label: "Quitó invitados",
+    verb: "Invitados",
+    fields: {
+      invitees: setOf("Invitados"),
+      count: num("Cantidad"),
+    },
+  },
+  "event.invitationsSend": {
+    entity: "Event",
+    kind: "custom",
+    label: "Mandó invitaciones",
+    verb: "Invitaciones",
+    fields: {
+      invitees: setOf("Enviadas a"),
+      count: num("Enviadas"),
+      failed: num("Fallidas"),
     },
   },
 

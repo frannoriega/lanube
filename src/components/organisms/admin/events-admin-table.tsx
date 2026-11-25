@@ -45,7 +45,7 @@ import {
   type RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Star, StarOff, Trash2 } from "lucide-react";
+import { ArrowUpDown, Star, StarOff, Trash2, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -60,6 +60,8 @@ export interface EventAdminRow {
   spaceName: string;
   status: EventDisplayStatus;
   isFeatured: boolean;
+  /** Privado (milestone 43): no se lista en público. */
+  isPrivate: boolean;
   startMs: number;
   /** Última fecha (fin de la recurrencia), o `null` si es de un solo día. */
   lastMs: number | null;
@@ -169,6 +171,12 @@ export function EventsAdminTable({
               </div>
               <div className="text-xs font-normal text-muted-foreground">
                 {e.typeName} · {e.spaceName}
+                {e.isPrivate ? (
+                  <span className="ml-1.5 inline-flex items-center gap-1 rounded border px-1.5 py-px align-middle text-[11px] font-medium">
+                    <Lock className="h-3 w-3" aria-hidden />
+                    Privado
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>

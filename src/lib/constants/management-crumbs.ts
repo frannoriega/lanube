@@ -44,6 +44,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   new: "Nuevo",
   edit: "Editar",
   participants: "Participantes",
+  invitees: "Invitados",
 };
 
 /**

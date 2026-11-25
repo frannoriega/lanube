@@ -23,10 +23,9 @@ function shell(heading: string, bodyHtml: string): string {
       </div>`;
 }
 
-/**
- * Escapa texto escrito por personas (un valor pedido, un motivo) antes de meterlo en el
- * HTML del email — sin esto, un motivo con `<a href=…>` se renderizaría como link.
- */
+// Todo texto escrito por personas (un valor pedido, un motivo) pasa por `escapeHtml`
+// (`src/lib/email/escape.ts`) antes de meterse en el HTML: si no, un motivo con `<a href=…>` se
+// renderizaría como link.
 
 const p = (text: string) =>
   `<p style="color:#555;line-height:1.6;">${text}</p>`;

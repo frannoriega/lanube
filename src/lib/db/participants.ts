@@ -122,6 +122,8 @@ export interface PublicFormView {
   eventName: string;
   /** Participant-facing event description. */
   eventDescription: string | null;
+  /** Evento privado (milestone 43): la página se comparte pero no se indexa. */
+  isPrivate: boolean;
   /** Copete del evento: la meta descripción del formulario (milestone 41). */
   eventSummary: string | null;
   eventImageUrl: string | null;
@@ -158,6 +160,7 @@ export async function getPublicForm(
           requiresApproval: true,
           status: true,
           deletedAt: true,
+          isPrivate: true,
           endTime: true,
           recurrenceEnd: true,
           rrule: true,
@@ -211,7 +214,34 @@ export async function getPublicForm(
     schema: formSchema(eventForm.form),
     spotsLeft,
     requiresApproval: eventForm.event.requiresApproval,
+    isPrivate: eventForm.event.isPrivate,
   };
+}
+
+/** Inscripción a un evento privado con un email fuera de la lista de invitados (milestone 43). */
+export const NOT_INVITED_MESSAGE =
+  "Este correo no está en la lista de invitados de este evento. Si te invitaron, usá el correo al que te llegó la invitación.";
+
+/**
+ * ¿Este email se puede inscribir? Siempre sí, salvo en un evento **privado** que tiene al menos un
+ * invitado: ahí tiene que estar en la lista (milestone 43). La lista no restringe nada si el
+ * evento es público. `email` ya viene normalizado.
+ */
+export async function isInvitedToRegister(
+  tx: Prisma.TransactionClient,
+  e: {
+    eventId: string;
+    isPrivate: boolean;
+    inviteeCount: number;
+    email: string;
+  },
+): Promise<boolean> {
+  if (!e.isPrivate || e.inviteeCount === 0) return true;
+  const hit = await tx.eventInvitee.findUnique({
+    where: { eventId_email: { eventId: e.eventId, email: e.email } },
+    select: { id: true },
+  });
+  return hit !== null;
 }
 
 export interface SubmitResult {
@@ -261,12 +291,14 @@ export async function submitForm(
             deletedAt: true,
             endTime: true,
             recurrenceEnd: true,
+            isPrivate: true,
             space: { select: { capacity: true } },
             _count: {
               select: {
                 participants: {
                   where: { status: { in: SPOT_HOLDING_STATUSES } },
                 },
+                invitees: true,
               },
             },
           },
@@ -287,6 +319,20 @@ export async function submitForm(
     if (lastOccurrence < now) return { ok: false, status: "closed" };
     if (Number(eventForm.opensAt) > now || now > Number(eventForm.closesAt))
       return { ok: false, status: "closed" };
+
+    // Evento privado con lista de invitados (milestone 43): solo esos emails se inscriben. Sin
+    // lista, cualquiera con el enlace. El mensaje dice si el email está en la lista; se acepta
+    // (quien lo prueba ya tiene el enlace, y la ruta tiene captcha y límite por IP y email).
+    if (
+      !(await isInvitedToRegister(tx, {
+        eventId: eventForm.event.id,
+        isPrivate: eventForm.event.isPrivate,
+        inviteeCount: eventForm.event._count.invitees,
+        email,
+      }))
+    ) {
+      return { ok: false, message: NOT_INVITED_MESSAGE };
+    }
 
     const capacity = await resolveCapacity(eventForm.event);
     if (capacity > 0 && eventForm.event._count.participants >= capacity)

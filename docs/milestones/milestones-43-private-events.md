@@ -1,6 +1,6 @@
 # Milestone 43 — Eventos privados e invitados
 
-**Estado:** promoted (2026-11-25). Versión 1.2.0. Se combina con el milestone 34 (participantes):
+**Estado:** done (2026-11-25). Versión 1.2.0. Se combina con el milestone 34 (participantes):
 ver «Relación con el 34».
 
 ## Qué pidió el usuario (2026-11-25)
@@ -100,16 +100,16 @@ la inscripción (es el mismo dato).
 
 ## Criterios de aceptación
 
-- [ ] Un evento privado publicado no aparece en landing, `/events`, sitemap ni MCP público, y
+- [x] Un evento privado publicado no aparece en landing, `/events`, sitemap ni MCP público, y
       `/events/[id]` da 404; el enlace del formulario funciona.
-- [ ] Con lista: un email fuera de la lista no se puede inscribir (test de `submitForm`); sin lista,
+- [x] Con lista: un email fuera de la lista no se puede inscribir (test de `submitForm`); sin lista,
       sí.
-- [ ] Pegar 50 emails con repetidos e inválidos agrega solo los válidos y lo informa.
-- [ ] «Enviar invitaciones» manda un correo por invitado y registra `invitedAt`; en mantenimiento de
+- [x] Pegar 50 emails con repetidos e inválidos agrega solo los válidos y lo informa.
+- [x] «Enviar invitaciones» manda un correo por invitado y registra `invitedAt`; en mantenimiento de
       `event-emails` no manda y lo dice.
-- [ ] Quien está inscripto ve el evento privado en su calendario; otro usuario ve «Reservado para un
+- [x] Quien está inscripto ve el evento privado en su calendario; otro usuario ve «Reservado para un
       evento».
-- [ ] Auditoría de cambios de privacidad, invitados y envíos.
+- [x] Auditoría de cambios de privacidad, invitados y envíos.
 
 ## Preguntas abiertas
 
@@ -118,4 +118,37 @@ la inscripción (es el mismo dato).
 
 ## Registro
 
-(Sin implementar.)
+Implementado el 2026-11-25.
+
+- Migración `20261125100000_private_events`: `events.is_private` (default `false`, compatible hacia
+  atrás) y la tabla `event_invitees`. Modelo `EventInvitee`.
+- **Una regla de visibilidad:** `PUBLIC_EVENT_WHERE` / `isEventPubliclyListed()`
+  (`src/lib/events/visibility.ts`), usada en `getUpcomingPublicEvents(Page)`, `getPublicEventDetail`
+  (404), el sitemap y el calendario de un espacio (`resourceCalendar.ts`: un privado se ve como
+  «Reservado para un evento»). «Eventos disponibles» del tablero (`listAvailableEvents`) muestra un
+  privado solo a quien está en su lista de invitados. El calendario de actividades muestra un privado
+  a quien tiene una inscripción vigente con su cuenta (`userId`), y no enlaza a `/events/[id]`.
+- `eventInputSchema.isPrivate` (opcional) + refine «un evento privado no se puede destacar»; el switch
+  «Privado» del formulario apaga y deshabilita «Destacar»; `setEventsFeatured` no destaca privados
+  (el bulk lo informa como salteado). Chip «Privado» en la lista de eventos; `private` en las tools de
+  gestión del conector.
+- `/forms/[slug]`: `PublicFormView.isPrivate` → `noindex` en su metadata (con vista previa al
+  compartir, milestone 41).
+- `submitForm` → `isInvitedToRegister()` (después de las comprobaciones de ventana y antes del cupo):
+  409 con `NOT_INVITED_MESSAGE`. El check-in en la puerta (walk-in) no lo aplica, a propósito.
+- Invitados: `src/lib/events/invitees.ts` (puro: `parseInviteeList` — coma, punto y coma, renglones,
+  «Nombre <email>», `mailto:`; inválidos y repetidos informados), `src/lib/db/eventInvitees.ts`
+  (normaliza con `normalizeEmailForIdentityServer`, como las inscripciones), rutas
+  `GET/POST/DELETE /api/admin/events/[id]/invitees` y `POST …/invitees/send` (tope 200 por llamada,
+  `remaining` para seguir), correo `src/lib/email/event-invitation.ts` (sin enlace de edición), página
+  `/admin/events/[id]/invitees` (`InviteesManager`: pegar, buscar, seleccionar, mandar/reenviar,
+  quitar; avisos si el evento es público, no tiene formulario o no está publicado). Botón «Invitados»
+  en la sección Publicación del evento cuando es privado. Crumb «Invitados».
+- Auditoría: campo `isPrivate` del evento y eventos `event.inviteesAdd`, `event.inviteesRemove`,
+  `event.invitationsSend`. Las rutas de invitados se exceptuaron en `public-cache.test.ts` (no cambian
+  nada del sitio público), con el motivo.
+- Tests: `visibility.test.ts`, `invitees.test.ts`, `invitees-gate.test.ts`, `event-invitation.test.ts`.
+- Verificado contra el servidor local con un evento de prueba privado y publicado: `/events/[id]` → 404,
+  no aparece en la portada ni en el sitemap, el formulario lleva `noindex`; con un invitado, un email
+  ajeno recibe 409 con el mensaje y el invitado pasa el control; «Mandar» dejó el correo en Mailpit y
+  la fila quedó «Invitado» con la fecha.

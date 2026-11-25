@@ -29,8 +29,6 @@ export interface DecisionRecipient {
   displayEmail: string | null;
 }
 
-/** Escapes text interpolated into the email HTML (admin-authored reason). */
-
 function approvedHtml(eventName: string, editLink: string): string {
   return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

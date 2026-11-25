@@ -121,6 +121,7 @@ export const SNAPSHOTS: Partial<Record<AuditEntityType, SnapshotLoader>> = {
       capacity: e.capacity,
       requiresApproval: e.requiresApproval,
       checkInEnabled: e.checkInEnabled,
+      isPrivate: e.isPrivate,
       isFeatured: e.isFeatured,
       summary: e.summary,
       description: e.description,

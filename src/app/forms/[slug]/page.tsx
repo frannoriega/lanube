@@ -29,6 +29,8 @@ export async function generateMetadata({
     description: toMetaDescription(form.eventSummary || form.eventDescription),
     path: `/forms/${form.slug}`,
     image: form.eventImageUrl,
+    // Privado (milestone 43): vista previa sí (se comparte por WhatsApp), buscadores no.
+    noindex: form.isPrivate,
   });
 }
 

@@ -22,8 +22,6 @@ const FROM_EMAIL = "La Nube <no-responder@cdeluruguay.gob.ar>";
 const LOGO_URL =
   "https://hbdpirnnyofbhbjx.public.blob.vercel-storage.com/email/logo.png";
 
-/** Escapa texto interpolado en el HTML (el nombre del evento lo escribe un admin). */
-
 /**
  * «Pedir un enlace nuevo» (milestone 25, S5): manda **un** correo con un enlace recién emitido
  * por cada inscripción activa de ese correo en un evento que no terminó. Si no hay ninguna, no

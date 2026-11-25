@@ -170,6 +170,7 @@ export default async function EventsPage({
                   event.deletedAt ? Number(event.deletedAt) : null,
                 ),
                 isFeatured: event.isFeatured,
+                isPrivate: event.isPrivate,
                 startMs: Number(event.startTime),
                 lastMs: event.recurrenceEnd
                   ? Number(event.recurrenceEnd)

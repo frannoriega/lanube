@@ -1,4 +1,5 @@
 import "server-only";
+import { PUBLIC_EVENT_WHERE } from "@/lib/events/visibility";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -20,7 +21,8 @@ export async function listSitemapEntries() {
       orderBy: { publishedAt: "desc" },
     }),
     prisma.event.findMany({
-      where: { status: "PUBLISHED", deletedAt: null },
+      // Los privados no se anuncian (milestone 43).
+      where: PUBLIC_EVENT_WHERE,
       select: { id: true, updatedAt: true },
       orderBy: { startTime: "desc" },
     }),

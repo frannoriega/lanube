@@ -211,6 +211,15 @@ export async function listAvailableEvents(
     where: {
       status: "PUBLISHED",
       deletedAt: null,
+      // Privados (milestone 43): solo si esta persona está en su lista de invitados.
+      AND: [
+        {
+          OR: [
+            { isPrivate: false },
+            { invitees: { some: { email: normalizedEmail } } },
+          ],
+        },
+      ],
       OR: [
         { recurrenceEnd: { gte: nowBig } },
         { recurrenceEnd: null, endTime: { gte: nowBig } },

@@ -77,6 +77,9 @@ export const eventInputSchema = z
       .nullable(),
     // Featured events lead the landing section; featuredOrder sorts them (ascending).
     isFeatured: z.boolean(),
+    // Milestone 43: privado = no se lista en público; se llega por el enlace del formulario.
+    // Opcional para clientes que no lo mandan (queda público).
+    isPrivate: z.boolean().optional(),
     // Milestone 14: se ordena con "Reordenar destacados" en la lista; opcional e ignorado al editar.
     featuredOrder: z.number().int().min(0).optional(),
     // Code of a ReservationType row; existence is validated server-side (FK).
@@ -147,6 +150,11 @@ export const eventInputSchema = z
   .refine((d) => [...new Set(d.weekdays)].length === d.weekdays.length, {
     message: "Días de la semana duplicados",
     path: ["weekdays"],
+  })
+  // Destacar es mostrar en la portada: contradice a un evento privado (milestone 43).
+  .refine((d) => !(d.isPrivate && d.isFeatured), {
+    message: "Un evento privado no se puede destacar en el inicio",
+    path: ["isFeatured"],
   });
 
 export type EventInput = z.infer<typeof eventInputSchema>;

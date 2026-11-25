@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
           id,
           reason:
             action === "feature"
-              ? "Ya estaba destacado o está cancelado"
+              ? "Ya estaba destacado, está cancelado o es privado"
               : "No estaba destacado",
         });
         continue;

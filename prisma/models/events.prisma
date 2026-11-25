@@ -29,6 +29,10 @@ model Event {
   requiresApproval Boolean            @default(false) @map("requires_approval")
   // Milestone 30: si el evento usa check-in en la puerta (pantalla /admin/events/[id]/checkin).
   checkInEnabled   Boolean            @default(false) @map("check_in_enabled")
+  // Milestone 43: un evento privado no se lista en ninguna superficie pública (portada,
+  // /events, sitemap, calendarios de otras personas) aunque esté publicado; se llega por el
+  // enlace del formulario. Si tiene invitados (`invitees`), solo ellos se pueden inscribir.
+  isPrivate        Boolean            @default(false) @map("is_private")
   imageUrl         String?            @map("image_url")
   // Soft delete: set when the event is cancelled. Non-null => excluded from public surfaces
   // and shown as "Cancelado" in admin.
@@ -40,6 +44,7 @@ model Event {
   form             EventForm?
   participants     EventParticipant[]
   checkIns         EventCheckIn[]
+  invitees         EventInvitee[]
 
   @@index([spaceId])
   @@index([startTime, endTime])
@@ -187,4 +192,23 @@ model EventParticipantEditToken {
 
   @@index([participantId])
   @@map("event_participant_edit_tokens")
+}
+
+/// Invitado a un evento privado (milestone 43). Con al menos uno, solo esos emails se pueden
+/// inscribir (`submitForm`); la lista no restringe nada si el evento no es privado. `email` va
+/// normalizado con las mismas reglas que los participantes; `displayEmail` es lo tipeado.
+model EventInvitee {
+  id           String  @id @default(cuid())
+  eventId      String  @map("event_id")
+  email        String
+  displayEmail String  @map("display_email")
+  /// Último envío exitoso de la invitación (UNIX ms); NULL si nunca se mandó.
+  invitedAt    BigInt? @map("invited_at")
+  /// Cuántas veces se le mandó (reenviar suma).
+  inviteCount  Int     @default(0) @map("invite_count")
+  createdAt    BigInt  @default(dbgenerated("((EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint)")) @map("created_at")
+  event        Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, email])
+  @@map("event_invitees")
 }

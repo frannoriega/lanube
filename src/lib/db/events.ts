@@ -1,4 +1,8 @@
 import {
+  isEventPubliclyListed,
+  PUBLIC_EVENT_WHERE,
+} from "@/lib/events/visibility";
+import {
   ADMIN_TIMEZONE,
   dateKeyFromUnixMs,
   endOfDateKeyMs,
@@ -149,6 +153,7 @@ export async function createEvent(input: EventInput): Promise<Event> {
           capacity: input.capacity ?? null,
           requiresApproval: input.requiresApproval ?? false,
           checkInEnabled: input.checkInEnabled ?? false,
+          isPrivate: input.isPrivate ?? false,
           imageUrl: input.imageUrl ?? null,
         },
       });
@@ -599,6 +604,7 @@ export async function updateEvent(
           capacity: input.capacity ?? null,
           requiresApproval: input.requiresApproval ?? false,
           checkInEnabled: input.checkInEnabled ?? false,
+          isPrivate: input.isPrivate ?? false,
           imageUrl: input.imageUrl ?? null,
           // Editing + saving revives a cancelled event.
           deletedAt: null,
@@ -979,6 +985,7 @@ export function eventToFormDefaults(event: EventWithFormBinding) {
     description: event.description ?? "",
     summary: event.summary ?? "",
     isFeatured: event.isFeatured,
+    isPrivate: event.isPrivate,
     eventType: event.eventType,
     status: event.status,
     spaceId: event.spaceId,
@@ -1057,8 +1064,8 @@ export async function getUpcomingPublicEvents(
 
   const events = await prisma.event.findMany({
     where: {
-      status: "PUBLISHED",
-      deletedAt: null,
+      // Publicado, no cancelado y **no privado** (milestone 43).
+      ...PUBLIC_EVENT_WHERE,
       OR: [
         { recurrenceEnd: { gte: now } },
         { recurrenceEnd: null, endTime: { gte: now } },
@@ -1141,8 +1148,8 @@ export async function getUpcomingPublicEventsPage(
   const nowNum = nowMs();
   const now = BigInt(nowNum);
   const where = {
-    status: "PUBLISHED" as const,
-    deletedAt: null,
+    // Publicado, no cancelado y **no privado** (milestone 43).
+    ...PUBLIC_EVENT_WHERE,
     OR: [
       { recurrenceEnd: { gte: now } },
       { recurrenceEnd: null, endTime: { gte: now } },
@@ -1284,7 +1291,8 @@ export async function getPublicEventDetail(
     },
   });
 
-  if (!event || event.status !== "PUBLISHED" || event.deletedAt !== null) {
+  // Un evento privado no tiene página pública (404): se llega por su formulario (milestone 43).
+  if (!event || !isEventPubliclyListed(event)) {
     return null;
   }
 
@@ -1361,7 +1369,13 @@ export async function setEventsFeatured(
 ): Promise<string[]> {
   return prisma.$transaction(async (tx) => {
     const targets = await tx.event.findMany({
-      where: { id: { in: ids }, deletedAt: null, isFeatured: !featured },
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+        isFeatured: !featured,
+        // Un evento privado no se destaca (milestone 43); quitarlo sí se puede.
+        ...(featured ? { isPrivate: false } : {}),
+      },
       select: { id: true },
     });
     const changing = ids.filter((id) => targets.some((t) => t.id === id));

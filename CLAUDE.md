@@ -615,6 +615,25 @@ Full detail: `docs/milestones/milestones-31-event-reports.md`.
 - Attendance % = registered check-ins ÷ **currently** approved registrations (no status history), averaged
   over held sessions; walk-ins are reported separately.
 
+### Private events & invitees (milestone 43)
+
+Full design: `docs/milestones/milestones-43-private-events.md`.
+
+- `Event.isPrivate`: a published private event is **not listed anywhere public** (landing, `/events`,
+  `/events/[id]` → 404, sitemap, other people's calendars, «Eventos disponibles»); it is reached
+  through its form link (`/forms/[slug]`, `noindex`). **One rule:** `PUBLIC_EVENT_WHERE` /
+  `isEventPubliclyListed()` (`src/lib/events/visibility.ts`) — a new public read of events uses it,
+  never its own `status`/`deletedAt` check. A private event can't be featured (schema refine; bulk
+  «Destacar» skips it).
+- People registered to a private event still see it in their own calendar (activity calendar checks
+  their spot-holding registration); the space calendar shows it as «Reservado para un evento».
+- **Invitees** (`event_invitees`, `/admin/events/[id]/invitees`, `events:manage`): optional. With at
+  least one, `submitForm` only accepts listed emails (`isInvitedToRegister`, normalized like
+  participants); without a list, anyone with the link. The list never restricts a public event.
+  Walk-ins at the door are not checked. «Mandar invitaciones» (`…/invitees/send`) emails the form link
+  (no edit link), records `invitedAt` per successful send, respects the `event-emails` maintenance
+  area, max 200 per call. Audited as `event.inviteesAdd|inviteesRemove|invitationsSend`.
+
 ### Event card summary + featured
 
 - `Event.summary` (nullable, ≤200 chars, plain text) is the blurb shown on landing/event cards.

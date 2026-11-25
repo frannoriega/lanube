@@ -71,7 +71,7 @@ const SELECTABLE_STATUSES: EventStatus[] = [
 import { EventSessions } from "@/components/organisms/admin/event-sessions";
 import { useServerTime } from "@/components/providers/server-time";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight, Users, MailPlus } from "lucide-react";
 import Link from "next/link";
 import { DeleteEventButton } from "@/components/organisms/admin/delete-event-button";
 import {
@@ -120,6 +120,7 @@ export interface EventFormDefaults {
   description: string;
   summary: string;
   isFeatured: boolean;
+  isPrivate: boolean;
   eventType: string;
   status: string;
   spaceId: string;
@@ -149,6 +150,7 @@ const EMPTY_DEFAULTS: EventInput = {
   description: "",
   summary: "",
   isFeatured: false,
+  isPrivate: false,
   eventType: "",
   status: EventStatus.DRAFT,
   spaceId: "",
@@ -869,22 +871,55 @@ export function EventForm({
 
                   <FormField
                     control={control}
+                    name="isPrivate"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 space-y-0">
+                        <div className="space-y-1">
+                          <FormLabel>Privado</FormLabel>
+                          <FormDescription>
+                            No aparece en la página de eventos ni en el inicio,
+                            aunque esté publicado. Se inscribe quien tenga el
+                            enlace (o solo los invitados, si cargás una lista).
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value ?? false}
+                            onCheckedChange={(v) => {
+                              field.onChange(v);
+                              // Destacar lo muestra en la portada: no aplica a un privado.
+                              if (v)
+                                setValue("isFeatured", false, {
+                                  shouldDirty: true,
+                                });
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
                     name="isFeatured"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between gap-4 space-y-0">
                         <div className="space-y-1">
                           <FormLabel>Destacar en el inicio</FormLabel>
                           <FormDescription>
-                            Encabeza la sección de eventos. El orden entre
-                            destacados se cambia desde la lista.
+                            {watch("isPrivate")
+                              ? "Un evento privado no se destaca."
+                              : "Encabeza la sección de eventos. El orden entre destacados se cambia desde la lista."}
                           </FormDescription>
                         </div>
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
+                            disabled={watch("isPrivate") ?? false}
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -898,6 +933,15 @@ export function EventForm({
                       <Link href={`/admin/events/${eventId}/participants`}>
                         <Users className="h-4 w-4" />
                         Participantes ({participantCount ?? 0})
+                      </Link>
+                    </Button>
+                  )}
+
+                  {mode === "edit" && eventId && watch("isPrivate") && (
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href={`/admin/events/${eventId}/invitees`}>
+                        <MailPlus className="h-4 w-4" />
+                        Invitados
                       </Link>
                     </Button>
                   )}

@@ -815,8 +815,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/WeekCalendar.tsx": {
-    "mtime": 1795098009.489092,
-    "ast_hash": "6b74acf4695211ec91ed883b2135abd1",
+    "mtime": 1795634932.0484002,
+    "ast_hash": "4e527023861c264fc1debdb95ac01b88",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/index.ts": {
@@ -930,8 +930,8 @@
     "semantic_hash": ""
   },
   "src/components/templates/user/calendar-template-client.tsx": {
-    "mtime": 1795031425.3695426,
-    "ast_hash": "7bfb1493fef7be9e38069a7715e30059",
+    "mtime": 1795634932.0485673,
+    "ast_hash": "5bc50e4006415d859875de5fb61103c1",
     "semantic_hash": ""
   },
   "src/components/ui/accordion.tsx": {
@@ -1595,8 +1595,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1795634822.7311032,
-    "ast_hash": "d54ee14df85140015389417735ba4487",
+    "mtime": 1795635165.9556093,
+    "ast_hash": "a3da31452109ddd2e32fd1a686f9268c",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -1925,8 +1925,8 @@
     "semantic_hash": ""
   },
   "src/app/api/resources/[spaceId]/route.ts": {
-    "mtime": 1795031425.3588457,
-    "ast_hash": "1994ff58ddec51abeab458740bb2a176",
+    "mtime": 1795634915.5355992,
+    "ast_hash": "820a33b6d15c844822188d1c17757353",
     "semantic_hash": ""
   },
   "src/app/api/spaces/route.ts": {
@@ -2120,8 +2120,8 @@
     "semantic_hash": ""
   },
   "src/lib/rbac.ts": {
-    "mtime": 1795031425.3744059,
-    "ast_hash": "df35e471be99ee59567d5f272aada8ef",
+    "mtime": 1795634915.5344062,
+    "ast_hash": "a7f8067068eb501cdf84395f82cda7ce",
     "semantic_hash": ""
   },
   "src/lib/schemas/config.ts": {
@@ -3190,8 +3190,8 @@
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/calendar-utils.ts": {
-    "mtime": 1795098009.4894905,
-    "ast_hash": "e8219f576fd58a68f788ebd132f12296",
+    "mtime": 1795634932.0479765,
+    "ast_hash": "4888bf9f668ab8d14daaac5a24aa0bde",
     "semantic_hash": ""
   },
   "src/components/organisms/calendar/BookingForm.test.ts": {
@@ -3935,8 +3935,8 @@
     "semantic_hash": ""
   },
   "src/lib/mcp/availability.ts": {
-    "mtime": 1794851589.1461093,
-    "ast_hash": "1d8d935e1ab6f9cf813af4fbf1278344",
+    "mtime": 1795634932.0476196,
+    "ast_hash": "2718af368de97561f50d4306e6fb9304",
     "semantic_hash": ""
   },
   "src/lib/mcp/format.ts": {
@@ -4010,8 +4010,8 @@
     "semantic_hash": ""
   },
   "src/lib/reservations/user-actions.ts": {
-    "mtime": 1795031425.3772547,
-    "ast_hash": "626772a3e553893145b2c3378f2b69fc",
+    "mtime": 1795634915.534858,
+    "ast_hash": "c9ee637bf7dcf6d20634cc675ed81daf",
     "semantic_hash": ""
   },
   "src/lib/reservations/user-rules.test.ts": {
@@ -4020,8 +4020,8 @@
     "semantic_hash": ""
   },
   "src/lib/reservations/user-rules.ts": {
-    "mtime": 1795031425.3775816,
-    "ast_hash": "79b7d9e99995b39fadc49ecc10306c89",
+    "mtime": 1795634915.5346687,
+    "ast_hash": "3dccbf2e6df2946d7df0ffa0de66e15f",
     "semantic_hash": ""
   },
   "src/lib/signin/callback-url.test.ts": {
@@ -4055,8 +4055,8 @@
     "semantic_hash": ""
   },
   "src/lib/mcp/tools/index.ts": {
-    "mtime": 1794851589.1463518,
-    "ast_hash": "4cd1752318b2266f94e694a46fcce067",
+    "mtime": 1795634932.0475302,
+    "ast_hash": "e3d7a688fda07cdbf9743d798ed7174c",
     "semantic_hash": ""
   },
   "src/lib/mcp/tools/management.ts": {
@@ -4075,8 +4075,8 @@
     "semantic_hash": ""
   },
   "src/lib/mcp/tools/reservations.ts": {
-    "mtime": 1795031425.3741715,
-    "ast_hash": "6823afacf9b417dcb9e1ca42746118ae",
+    "mtime": 1795634932.0472865,
+    "ast_hash": "1a7334523c14d19d0b27ea82dd2bf415",
     "semantic_hash": ""
   },
   "src/lib/mcp/tools/shared.ts": {
@@ -4585,13 +4585,13 @@
     "semantic_hash": ""
   },
   "src/lib/reservations/booking-horizon.test.ts": {
-    "mtime": 1794851589.1466799,
-    "ast_hash": "74a0ddf6c7e5d8bd9fab9f37f568b852",
+    "mtime": 1795634952.774873,
+    "ast_hash": "5503a0ced7641d8c4eb7d93645d89e70",
     "semantic_hash": ""
   },
   "src/lib/reservations/booking-horizon.ts": {
-    "mtime": 1794851589.1467519,
-    "ast_hash": "e8f36c9af2fdcb72d275edeef6d2d3b6",
+    "mtime": 1795634932.0467434,
+    "ast_hash": "35b26585576f8cf96769a87765e37a3d",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-27-my-reservations-history.md": {
@@ -5100,8 +5100,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-42-extended-booking-horizon.md": {
-    "mtime": 1795633576.8552847,
-    "ast_hash": "4ec56c940a861a78be24a4049ad46903",
+    "mtime": 1795635165.9559221,
+    "ast_hash": "dedbe01156a4e5505c1d9550685eab47",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-43-private-events.md": {
@@ -5167,6 +5167,11 @@
   "src/lib/email/escape.ts": {
     "mtime": 1795634292.6418886,
     "ast_hash": "bb4078f25bf50104d9c91664399d70ef",
+    "semantic_hash": ""
+  },
+  "scripts/.tmp-m42.mjs": {
+    "mtime": 1795635138.0651364,
+    "ast_hash": "702544798a09b087035b5d2f074083d2",
     "semantic_hash": ""
   }
 }
