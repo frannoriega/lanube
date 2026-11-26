@@ -101,6 +101,14 @@ export const RELEASES = [
       "Tus reservas y tus eventos se pueden agregar a Google Calendar, Apple u Outlook como calendarios separados que se actualizan solos, y quien gestiona reservas puede sumar uno por espacio. Al inscribirte a un evento, el correo trae «Agregar a mi calendario».",
     file: "1.3.0.md",
   },
+  {
+    version: "1.3.1",
+    date: "2026-11-26",
+    title: "El sello nuevo de la Municipalidad y una vista previa más prolija",
+    summary:
+      "El sitio usa el sello nuevo de la Municipalidad de Concepción del Uruguay, con los colores de La Nube en modo claro y oscuro. La imagen que aparece al compartir un enlace muestra el logo y, debajo, el sello junto a «Municipalidad de Concepción del Uruguay».",
+    file: "1.3.1.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

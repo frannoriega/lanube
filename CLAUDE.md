@@ -1148,7 +1148,11 @@ spaces,themes,site-config,reservation-types}` by the same test. Without it the s
   `siteName`/`locale`/the default image). Titles go **without** the « · La Nube» suffix (the root
   `title.template` adds it). Pages with their own image pass it (`image:`); the fallback is the
   static brand image `public/og-default.png` (`scripts/og-default.mjs`), **never** the municipal
-  crest. Absolute URLs come from `siteUrl()` (`NEXT_PUBLIC_SITE_URL`, a build-time repo variable),
+  seal on its own (since v1.3.1 the brand image carries the seal small, next to «Municipalidad de /
+  Concepción del Uruguay»). The municipal seal on the site is `atoms/logos/municipio`: a CSS mask
+  over the text color (`municipio-seal.png`, white on transparent), brand blue in light mode and
+  `la-nube-secondary` in dark — never a fixed-color image.
+  Absolute URLs come from `siteUrl()` (`NEXT_PUBLIC_SITE_URL`, a build-time repo variable),
   never the request. `robots.ts` / `sitemap.ts` live in `src/app/`; a new public page goes into
   `STATIC_PATHS` of the sitemap.
 - **The global CSP in `next.config.ts` overrides route headers.** A route that needs its own CSP

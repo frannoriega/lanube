@@ -1,6 +1,6 @@
 import Container from "@/components/atoms/container";
 import LogoLaNube from "@/components/atoms/logos/lanube";
-import LogoMunicipioCrest from "@/components/atoms/logos/municipio/crest";
+import LogoMunicipio from "@/components/atoms/logos/municipio";
 import { ThemeToggle } from "@/components/molecules/theme";
 import { links } from "@/lib/constants/nav";
 import Link from "next/link";
@@ -48,7 +48,7 @@ export default function Header() {
               aria-label="Municipalidad de Concepción del Uruguay"
               className="shrink-0 opacity-90 transition-opacity hover:opacity-100"
             >
-              <LogoMunicipioCrest size={40} />
+              <LogoMunicipio size={44} />
             </Link>
           </div>
         </Container>

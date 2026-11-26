@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795649876.6833236,
-    "ast_hash": "653b56432d747172ceb4e23f3bc49eed",
+    "mtime": 1795702106.2089214,
+    "ast_hash": "514d2cdd8d04b9cc8ce0e52448bc658a",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -650,9 +650,9 @@
     "semantic_hash": "0f87433a62b88d68cd889822fff2bbf8"
   },
   "src/components/atoms/logos/municipio/index.tsx": {
-    "mtime": 1793737651.017054,
-    "ast_hash": "15214ae735cfe55faf86f54ea0a55aba",
-    "semantic_hash": "15214ae735cfe55faf86f54ea0a55aba"
+    "mtime": 1795702476.4281738,
+    "ast_hash": "1bed85cbdfccdb3818d68df9182273b7",
+    "semantic_hash": ""
   },
   "src/components/atoms/markdown-mark.tsx": {
     "mtime": 1793737696.3616126,
@@ -840,18 +840,18 @@
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/footer/index.tsx": {
-    "mtime": 1794851589.142186,
-    "ast_hash": "9388361c6013bbe8c8e161e41747f67f",
+    "mtime": 1795703068.1785982,
+    "ast_hash": "8b590fcb43477fd446d02287aeebbaae",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/index.tsx": {
-    "mtime": 1793737696.3705733,
-    "ast_hash": "f60deac241feb4397d2859c271d6b04a",
+    "mtime": 1795702476.4473197,
+    "ast_hash": "3f5eb2b92b188601197b5b7b5d1d2474",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/mobile/index.tsx": {
-    "mtime": 1793737696.370696,
-    "ast_hash": "831995c6a2ef4a3918cdb98f48e28b00",
+    "mtime": 1795702476.447451,
+    "ast_hash": "5fa802f8f53a2c36172b7ed6d979cb7d",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/signin/index.tsx": {
@@ -1595,8 +1595,8 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1795648304.8720658,
-    "ast_hash": "ceceb914910e411fabb2f74cdb6baf95",
+    "mtime": 1795702593.935568,
+    "ast_hash": "c1eba9218c30de4fedc1a243236119c5",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -2147,16 +2147,6 @@
   ".impeccable/critique/2026-07-17T20-32-59Z__src-app-public-about-page-tsx.md": {
     "mtime": 1793737696.0639992,
     "ast_hash": "24e173e59141ae7c42eeb536203ae3e6",
-    "semantic_hash": ""
-  },
-  "src/components/atoms/logos/municipio/crest.tsx": {
-    "mtime": 1793737696.361542,
-    "ast_hash": "6cc383aa72eb22d9e2e0036fe638b373",
-    "semantic_hash": ""
-  },
-  "public/images/logos/municipio-crest.png": {
-    "mtime": 1793737696.2952578,
-    "ast_hash": "d84bc336672a78b6fec16877c88188d4",
     "semantic_hash": ""
   },
   "src/app/api/admin/spaces/reorder/route.ts": {
@@ -2790,7 +2780,7 @@
     "semantic_hash": ""
   },
   "docs/milestones/README.md": {
-    "mtime": 1795649876.7083542,
+    "mtime": 1795649933.300951,
     "ast_hash": "c4ffee98f4da61c19d6d23f3b704fd76",
     "semantic_hash": ""
   },
@@ -4645,8 +4635,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1795649876.7074656,
-    "ast_hash": "26fdb26625740638e243801ce88e2da3",
+    "mtime": 1795702593.9339552,
+    "ast_hash": "cb5db9301365dd1bf8c8f054c04d6422",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -4985,7 +4975,7 @@
     "semantic_hash": ""
   },
   "docs/milestones/STATUS.md": {
-    "mtime": 1795649876.7078347,
+    "mtime": 1795649933.3012216,
     "ast_hash": "a16829a62deb7eb6163601d1331a1795",
     "semantic_hash": ""
   },
@@ -5095,8 +5085,8 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-41-seo-and-link-previews.md": {
-    "mtime": 1795638051.7312276,
-    "ast_hash": "5f14ffb9513e4f1077ef038e344d53aa",
+    "mtime": 1795702593.9347374,
+    "ast_hash": "626bd894081150bbaca72a7bd6907506",
     "semantic_hash": ""
   },
   "docs/milestones/milestones-42-extended-booking-horizon.md": {
@@ -5115,7 +5105,7 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-45-calendar-export.md": {
-    "mtime": 1795649876.7091665,
+    "mtime": 1795649933.3014486,
     "ast_hash": "1db9a01fb3b162eafd421bae5fa8ba02",
     "semantic_hash": ""
   },
@@ -5125,8 +5115,8 @@
     "semantic_hash": ""
   },
   "scripts/og-default.mjs": {
-    "mtime": 1795638051.773386,
-    "ast_hash": "8f10a123eba2becadbb24206cd16e915",
+    "mtime": 1795702488.0863712,
+    "ast_hash": "de155264ac12e205613bdfa6d8b8f839",
     "semantic_hash": ""
   },
   "src/app/robots.ts": {
@@ -5155,8 +5145,8 @@
     "semantic_hash": ""
   },
   "public/og-default.png": {
-    "mtime": 1795638051.7732508,
-    "ast_hash": "b415bcc85f950291be60c939d3d60d91",
+    "mtime": 1795702488.9572845,
+    "ast_hash": "826d8a0ac323a462734560acb4c6d3bf",
     "semantic_hash": ""
   },
   "src/lib/email/escape.ts": {
@@ -5245,7 +5235,7 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.2.0.md": {
-    "mtime": 1795649866.67193,
+    "mtime": 1795649933.3271377,
     "ast_hash": "e156fd5a187b053b90d03cb70cc09d41",
     "semantic_hash": ""
   },
@@ -5305,8 +5295,18 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.3.0.md": {
-    "mtime": 1795649876.3155103,
+    "mtime": 1795649933.3272548,
     "ast_hash": "8d1583782dba7062085404b772e07e6a",
+    "semantic_hash": ""
+  },
+  "src/assets/changelog/1.3.1.md": {
+    "mtime": 1795702593.9343526,
+    "ast_hash": "c36848a97a8c13d7a249c11c10d73eda",
+    "semantic_hash": ""
+  },
+  "public/images/logos/municipio-seal.png": {
+    "mtime": 1795702460.3958101,
+    "ast_hash": "424024a84e4b51cf48c39df57982d99b",
     "semantic_hash": ""
   }
 }

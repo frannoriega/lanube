@@ -16,7 +16,8 @@
 
 - **No hay ninguna etiqueta Open Graph ni Twitter** en todo `src/` (ni `openGraph` en un
   `metadata`, ni `opengraph-image.*`). Sin `og:image`, WhatsApp/Facebook/X adivinan con la primera
-  imagen que encuentran: el escudo de la municipalidad (`atoms/logos/municipio`) está en el header.
+  imagen que encuentran: el escudo de la municipalidad (`atoms/logos/municipio`) está en el header (desde v1.3.1 es un
+  sello dibujado como máscara CSS, que ya no es una `<img>` que las redes puedan tomar).
 - **No hay `metadataBase`**, así que aunque hubiera imágenes relativas no saldrían como URL absoluta.
 - La descripción global es una sola, genérica: `'Espacio de coworking e innovación "La Nube"'`
   (`src/app/layout.tsx`), y ni la portada, ni `/events/[id]`, ni `/forms/[slug]` tienen
@@ -102,7 +103,9 @@ Implementado el 2026-11-25.
   — para que el usuario la ajuste si quiere; vive en una constante.
 - **Cambio frente al diseño — imagen por defecto:** en lugar de `opengraph-image.tsx` (generada en el
   servidor) es un **PNG estático** `public/og-default.png` generado una vez con
-  `scripts/og-default.mjs` (Playwright, isologo en una píldora clara sobre el degradé de marca). Es
+  `scripts/og-default.mjs` (Playwright, isologo en una píldora clara sobre el degradé de marca; desde v1.3.1, debajo, el sello
+  municipal del alto de dos líneas «Municipalidad de / Concepción del Uruguay», en lugar de la línea
+  «Coworking · Laboratorio · Eventos — …»). Es
   más simple, no gasta servidor y no depende de cómo Next hereda las imágenes de archivo entre
   segmentos. Por lo mismo, una **noticia sin portada** usa la imagen de marca y no una generada con
   su patrón (las portadas son obligatorias desde el milestone 15; solo las viejas no tienen).

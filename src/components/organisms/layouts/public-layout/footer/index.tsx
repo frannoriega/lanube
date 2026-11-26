@@ -68,7 +68,7 @@ export default async function Footer({ className }: { className?: string }) {
                 rel="noopener noreferrer"
                 aria-label="Municipalidad de Concepción del Uruguay"
               >
-                <LogoMunicipio size={200} />
+                <LogoMunicipio size={40} />
               </Link>
             </div>
           </section>
