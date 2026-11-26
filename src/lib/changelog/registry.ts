@@ -109,6 +109,14 @@ export const RELEASES = [
       "El sitio usa el sello nuevo de la Municipalidad de Concepción del Uruguay, con los colores de La Nube en modo claro y oscuro. La imagen que aparece al compartir un enlace muestra el logo y, debajo, el sello junto a «Municipalidad de Concepción del Uruguay».",
     file: "1.3.1.md",
   },
+  {
+    version: "1.3.2",
+    date: "2026-11-26",
+    title: "El sello de la Municipalidad, bien alineado",
+    summary:
+      "El sello de la Municipalidad ya no deja espacio vacío debajo en el encabezado, el menú del celular y el pie de página.",
+    file: "1.3.2.md",
+  },
 ] as const satisfies readonly Release[];
 
 /** La versión que corre: la última del registro. */

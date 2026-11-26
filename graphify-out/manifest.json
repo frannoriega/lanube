@@ -1,81 +1,81 @@
 {
   ".husky/_/applypatch-msg": {
-    "mtime": 1795638786.8003778,
+    "mtime": 1795721894.0255988,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/commit-msg": {
-    "mtime": 1795638786.7998972,
+    "mtime": 1795721894.0236993,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/h": {
-    "mtime": 1795638786.7987545,
+    "mtime": 1795721894.021303,
     "ast_hash": "15239a01c5554e56ff745570fb583a91",
     "semantic_hash": "15239a01c5554e56ff745570fb583a91"
   },
   ".husky/_/husky.sh": {
-    "mtime": 1795638786.8026648,
+    "mtime": 1795721894.0304856,
     "ast_hash": "13871d2ab13e8423790ecb2c01c78c18",
     "semantic_hash": "13871d2ab13e8423790ecb2c01c78c18"
   },
   ".husky/_/post-applypatch": {
-    "mtime": 1795638786.800914,
+    "mtime": 1795721894.0275314,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-checkout": {
-    "mtime": 1795638786.801753,
+    "mtime": 1795721894.0281653,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-commit": {
-    "mtime": 1795638786.8000584,
+    "mtime": 1795721894.0247278,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-merge": {
-    "mtime": 1795638786.8019116,
+    "mtime": 1795721894.0284014,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/post-rewrite": {
-    "mtime": 1795638786.80147,
+    "mtime": 1795721894.0279865,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-applypatch": {
-    "mtime": 1795638786.8005905,
+    "mtime": 1795721894.0268114,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-auto-gc": {
-    "mtime": 1795638786.8024082,
+    "mtime": 1795721894.0292776,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-commit": {
-    "mtime": 1795638786.7989545,
+    "mtime": 1795721894.021929,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-merge-commit": {
-    "mtime": 1795638786.7992861,
+    "mtime": 1795721894.0223086,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-push": {
-    "mtime": 1795638786.802083,
+    "mtime": 1795721894.0286305,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/pre-rebase": {
-    "mtime": 1795638786.8012211,
+    "mtime": 1795721894.0278132,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
   ".husky/_/prepare-commit-msg": {
-    "mtime": 1795638786.7996206,
+    "mtime": 1795721894.022739,
     "ast_hash": "0b71c2e7d39daa010985d529f1320b37",
     "semantic_hash": "0b71c2e7d39daa010985d529f1320b37"
   },
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795702106.2089214,
-    "ast_hash": "514d2cdd8d04b9cc8ce0e52448bc658a",
+    "mtime": 1795724523.4141111,
+    "ast_hash": "7760b2de69d6424aa49454b9971d2f37",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -650,8 +650,8 @@
     "semantic_hash": "0f87433a62b88d68cd889822fff2bbf8"
   },
   "src/components/atoms/logos/municipio/index.tsx": {
-    "mtime": 1795702476.4281738,
-    "ast_hash": "1bed85cbdfccdb3818d68df9182273b7",
+    "mtime": 1795722145.4018555,
+    "ast_hash": "0815ca46918e1bd1d040044988ee5be1",
     "semantic_hash": ""
   },
   "src/components/atoms/markdown-mark.tsx": {
@@ -840,17 +840,17 @@
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/footer/index.tsx": {
-    "mtime": 1795703068.1785982,
+    "mtime": 1795722026.7735996,
     "ast_hash": "8b590fcb43477fd446d02287aeebbaae",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/index.tsx": {
-    "mtime": 1795702476.4473197,
+    "mtime": 1795703162.6859646,
     "ast_hash": "3f5eb2b92b188601197b5b7b5d1d2474",
     "semantic_hash": ""
   },
   "src/components/organisms/layouts/public-layout/header/mobile/index.tsx": {
-    "mtime": 1795702476.447451,
+    "mtime": 1795703162.686138,
     "ast_hash": "5fa802f8f53a2c36172b7ed6d979cb7d",
     "semantic_hash": ""
   },
@@ -1595,7 +1595,7 @@
     "semantic_hash": "b11e0c75a06d8ccdef368a7a5d9abb5c"
   },
   "CLAUDE.md": {
-    "mtime": 1795702593.935568,
+    "mtime": 1795703162.6589973,
     "ast_hash": "c1eba9218c30de4fedc1a243236119c5",
     "semantic_hash": ""
   },
@@ -4635,8 +4635,8 @@
     "semantic_hash": ""
   },
   "src/lib/changelog/registry.ts": {
-    "mtime": 1795702593.9339552,
-    "ast_hash": "cb5db9301365dd1bf8c8f054c04d6422",
+    "mtime": 1795724523.5423875,
+    "ast_hash": "b0106dda95afaa37c0657c863760d028",
     "semantic_hash": ""
   },
   "src/lib/changelog/semver.ts": {
@@ -5085,7 +5085,7 @@
     "semantic_hash": ""
   },
   "docs/milestones/milestones-41-seo-and-link-previews.md": {
-    "mtime": 1795702593.9347374,
+    "mtime": 1795703162.659296,
     "ast_hash": "626bd894081150bbaca72a7bd6907506",
     "semantic_hash": ""
   },
@@ -5115,7 +5115,7 @@
     "semantic_hash": ""
   },
   "scripts/og-default.mjs": {
-    "mtime": 1795702488.0863712,
+    "mtime": 1795703162.685303,
     "ast_hash": "de155264ac12e205613bdfa6d8b8f839",
     "semantic_hash": ""
   },
@@ -5145,7 +5145,7 @@
     "semantic_hash": ""
   },
   "public/og-default.png": {
-    "mtime": 1795702488.9572845,
+    "mtime": 1795703162.685125,
     "ast_hash": "826d8a0ac323a462734560acb4c6d3bf",
     "semantic_hash": ""
   },
@@ -5300,13 +5300,18 @@
     "semantic_hash": ""
   },
   "src/assets/changelog/1.3.1.md": {
-    "mtime": 1795702593.9343526,
+    "mtime": 1795703162.6854258,
     "ast_hash": "c36848a97a8c13d7a249c11c10d73eda",
     "semantic_hash": ""
   },
   "public/images/logos/municipio-seal.png": {
-    "mtime": 1795702460.3958101,
+    "mtime": 1795703162.6843987,
     "ast_hash": "424024a84e4b51cf48c39df57982d99b",
+    "semantic_hash": ""
+  },
+  "src/assets/changelog/1.3.2.md": {
+    "mtime": 1795724523.4276452,
+    "ast_hash": "4c9749f40d7a5583ce8fe91f0510c484",
     "semantic_hash": ""
   }
 }

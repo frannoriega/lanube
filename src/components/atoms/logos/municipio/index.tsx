@@ -28,6 +28,9 @@ const SEAL_H = 637;
  * archivo sirve para el modo claro, el oscuro y la banda oscura del footer.
  *
  * Reemplaza al escudo a color (`crest.tsx`) del header y al logo con nombre del footer.
+ *
+ * Es `block`, no `inline-block`: dentro de un `<Link>` un `inline-block` se apoya en la línea
+ * base del texto y deja debajo el espacio de los descendentes (~6 px vacíos bajo el sello).
  */
 export default function LogoMunicipio({ size = 40, className }: LogoProps) {
   const style: CSSProperties = {
@@ -47,7 +50,7 @@ export default function LogoMunicipio({ size = 40, className }: LogoProps) {
       role="img"
       aria-label="Municipalidad de Concepción del Uruguay"
       className={cn(
-        "inline-block shrink-0 bg-current text-la-nube-selected dark:text-la-nube-secondary",
+        "block shrink-0 bg-current text-la-nube-selected dark:text-la-nube-secondary",
         className,
       )}
       style={style}
